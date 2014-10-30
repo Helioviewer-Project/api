@@ -41,7 +41,7 @@
         <head>
                 <meta charset="utf-8">
                 <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-                <title>Helioviewer.org API Documentation</title>
+                <title>Helioviewer API Documentation</title>
                 <meta name="description" content="">
                 <meta name="viewport" content="width=device-width">
 
@@ -135,7 +135,7 @@
         <a name="appendix" class="anchor"></a>
         <div class="container">
             <h1>Appendix</h1>
-            <p class="description">The appendices below provide further context for Helioviewer.org API usage.</p>
+            <p class="description">The appendices below provide further context for Helioviewer API usage.</p>
         </div>
 
 
@@ -310,7 +310,7 @@
             </footer>
         </div>
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
-        <script>window.jQuery || document.write('<script src="<?php echo HV_API_URL; ?>/docs/js/vendor/jquery-1.10.1.min.js"><\/script>')</script>
+        <script>window.jQuery || document.write('<script src="<?php echo HV_WEB_ROOT_URL; ?>/docs/js/vendor/jquery-1.10.1.min.js"><\/script>')</script>
 
         <script src="<?php echo HV_WEB_ROOT_URL; ?>/docs/js/vendor/bootstrap.min.js"></script>
 
