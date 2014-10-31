@@ -64,7 +64,7 @@ class Module_SolarEvents implements Module {
      * @return void
      */
     public function getEventFRMs() {
-        include_once 'src/Event/HEKAdapter.php';
+        include_once HV_ROOT_DIR.'/../src/Event/HEKAdapter.php';
 
         $hek = new Event_HEKAdapter();
 
@@ -79,7 +79,7 @@ class Module_SolarEvents implements Module {
      * @return void
      */
     public function getFRMs() {
-        include_once 'src/Event/HEKAdapter.php';
+        include_once HV_ROOT_DIR.'/../src/Event/HEKAdapter.php';
 
         $hek = new Event_HEKAdapter();
 
@@ -96,7 +96,7 @@ class Module_SolarEvents implements Module {
      * @return void
      */
     public function getDefaultEventTypes() {
-        include_once 'src/Event/HEKAdapter.php';
+        include_once HV_ROOT_DIR.'/../src/Event/HEKAdapter.php';
 
         $hek = new Event_HEKAdapter();
 
@@ -110,7 +110,7 @@ class Module_SolarEvents implements Module {
      * @return void
      */
     public function getEventGlossary() {
-        include_once 'src/Event/HEKAdapter.php';
+        include_once HV_ROOT_DIR.'/../src/Event/HEKAdapter.php';
 
         $hek = new Event_HEKAdapter();
 
@@ -126,7 +126,7 @@ class Module_SolarEvents implements Module {
      * @return void
      */
     public function  getEventsByEventlayers() {
-        include_once 'src/Event/HEKAdapter.php';
+        include_once HV_ROOT_DIR.'/../src/Event/HEKAdapter.php';
 
         $hek = new Event_HEKAdapter();
 
@@ -163,7 +163,7 @@ class Module_SolarEvents implements Module {
      * @return void
      */
     public function getEvents() {
-        include_once 'src/Event/HEKAdapter.php';
+        include_once HV_ROOT_DIR.'/../src/Event/HEKAdapter.php';
 
         $hek = new Event_HEKAdapter();
 
