@@ -46,8 +46,6 @@
  *       split up the complete error message into it's separate parts, add
  *       a "details" field with the full message, and display only the
  *       top-level error message in "error"
- *
- * @see http://www.firephp.org/
  */
 function handleError($msg, $errorCode=255) {
 
@@ -59,10 +57,6 @@ function handleError($msg, $errorCode=255) {
         'error' => $msg,
         'errno' => $errorCode
     ));
-
-    // Fire PHP
-    include_once HV_ROOT_DIR.'/../lib/FirePHPCore/fb.php';
-    FB::error($msg);
 
     // Don't log non-harmful errors
     $dontLog = array(12, 16, 23, 25, 26, 40, 44, 46);
