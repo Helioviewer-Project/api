@@ -22,12 +22,12 @@
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     http://launchpad.net/helioviewer.org
  */
-class Database_Statistics
-{
+class Database_Statistics {
+
     private $_dbConnection;
 
     /**
-     * Creates an Statistics instance
+     * Constructor
      *
      * @return void
      */
@@ -37,17 +37,37 @@ class Database_Statistics
     }
 
     /**
-     * Adds a new entry to the statistics table
+     * Add a new entry to the `statistics` table
      *
-     * param $type string The action type associated with the query
+     * param $action string The API action to log
+     *
+     * @return boolean
      */
-    public function log($type) {
-    	$this->_dbConnection->query("INSERT INTO statistics VALUES (NULL, NULL, '$type');");
-    	return true;
+    public function log($action) {
+        $sql = sprintf(
+                  "INSERT INTO statistics "
+                . "SET "
+                .     "id "        . " = NULL, "
+                .     "timestamp " . " = NULL, "
+                .     "action "    . " = '%s';",
+                $this->_dbConnection->link->real_escape_string($action)
+               );
+        try {
+            $result = $this->_dbConnection->query($sql);
+        }
+        catch (Exception $e) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
-     * Gets latest usage statistics and returns them as JSON
+     * Get latest usage statistics as JSON
+     *
+     * @param  string  Time resolution
+     *
+     * @return str  JSON
      */
     public function getUsageStatistics($resolution) {
         require_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
@@ -58,6 +78,7 @@ class Database_Statistics
         // Array to keep track of counts for each action
         $counts = array(
             "buildMovie"           => array(),
+            "getClosestData"       => array(),
             "getClosestImage"      => array(),
             "getJPX"               => array(),
             "takeScreenshot"       => array(),
@@ -68,6 +89,7 @@ class Database_Statistics
         // Summary array
         $summary = array(
             "buildMovie"           => 0,
+            "getClosestData"       => 0,
             "getClosestImage"      => 0,
             "getJPX"               => 0,
             "takeScreenshot"       => 0,
@@ -83,8 +105,12 @@ class Database_Statistics
 
         // Query each time interval
         for ($i = 0; $i < $interval["numSteps"]; $i++) {
-            $dateIndex = $date->format($dateFormat); // Format date for array index
-            $dateStart = toMySQLDateString($date);   // MySQL-formatted date string
+
+            // Format date for array index
+            $dateIndex = $date->format($dateFormat);
+
+            // MySQL-formatted date string
+            $dateStart = toMySQLDateString($date);
 
             // Move to end date for the current interval
             $date->add($interval['timestep']);
@@ -95,14 +121,26 @@ class Database_Statistics
             }
             $dateEnd = toMySQLDateString($date);
 
-            $sql = "SELECT action, COUNT(*) as count FROM statistics " .
-                   "WHERE timestamp BETWEEN '$dateStart' AND '$dateEnd' GROUP BY action;";
+            $sql = sprintf(
+                      "SELECT action, COUNT(id) AS count "
+                    . "FROM statistics "
+                    . "WHERE "
+                    .     "timestamp BETWEEN '%s' AND '%s' "
+                    . "GROUP BY action;",
+                    $this->_dbConnection->link->real_escape_string($dateStart),
+                    $this->_dbConnection->link->real_escape_string($dateEnd)
+                   );
+            try {
+                $result = $this->_dbConnection->query($sql);
+            }
+            catch (Exception $e) {
+                return false;
+            }
 
-            $result = $this->_dbConnection->query($sql);
-
-            // And append counts for each action during that interval to the relevant array
+            // Append counts for each API action during that interval
+            // to the appropriate array
             while ($count = $result->fetch_array(MYSQLI_ASSOC)) {
-                $num = (int) $count['count'];
+                $num = (int)$count['count'];
 
                 $counts[$count['action']][$i][$dateIndex] = $num;
                 $summary[$count['action']] += $num;
@@ -116,7 +154,11 @@ class Database_Statistics
     }
 
     /**
-     * Gets latest datasource coverage and return as JSON
+     * Return date format string for the specified time resolution
+     *
+     * @param  string  $resolution  Time resolution string
+     *
+     * @return string  Date format string
      */
     public function getDataCoverageTimeline($resolution, $endDate, $interval,
         $stepSize, $steps) {
@@ -356,11 +398,10 @@ class Database_Statistics
     /**
      * Determines date format to use for the x-axis of the requested resolution
      */
-    private function _getDateFormat($resolution)
-    {
-        switch($resolution) {
+    private function _getDateFormat($resolution) {
+        switch ($resolution) {
             case "hourly":
-                return "ga"; // 4pm
+                return "ga";  // 4pm
                 break;
             case "daily":
                 return "D";   // Tues
@@ -372,15 +413,20 @@ class Database_Statistics
                 return "M y"; // Feb 09
                 break;
             case "yearly":
-                return "Y";    // 2009
+                return "Y";   // 2009
+                break;
         }
     }
 
     /**
-     * Determines time inverals to collect statistics for
+     * Determine time inveral specification for statistics query
+     *
+     * @param  string  $resolution  Time resolution string
+     *
+     * @return array   Array specifying a time interval
      */
-    private function _getQueryIntervals($resolution)
-    {
+    private function _getQueryIntervals($resolution) {
+
         date_default_timezone_set('UTC');
 
         // Variables
@@ -451,15 +497,6 @@ class Database_Statistics
             "timestep"  => $timestep,
             "numSteps"  => $numSteps
         );
-//        $intervals = array();
-
-//        for ($i=0; $i < $numSteps; $i++) {
-//            $startDate = $date;
-//            $date->add($timestep);
-//            $endDate   = $date;
-//
-//            array_push($intervals, array("start" => $startDate, "end" => $endDate));
-//        }
 
         return $intervals;
     }
