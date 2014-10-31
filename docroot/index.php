@@ -50,7 +50,7 @@ if ( isset($_REQUEST['action']) ) {
 
 // Redirect to API Documentation if no API request is being made.
 if ( !isset($params) || !loadModule($params) ) {
-    header('Location: '.HV_WEB_ROOT_URL.'/docs/v1/');
+    header('Location: '.HV_WEB_ROOT_URL.'/docs/v2/');
 }
 
 /**
@@ -178,7 +178,7 @@ function printHTMLErrorMsg($msg) {
 
     include_once HV_ROOT_DIR.'/docs/index.php';
 
-    $api_version = 'v1';
+    $api_version = 'v2';
 
     import_xml($api_version, $api_xml_path, $xml);
     foreach ( $xml->endpoint as $endpoint ) {

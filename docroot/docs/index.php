@@ -10,7 +10,7 @@
     else {
         // No API version found in URL.  Set to default value and use later
         // to redirect to a version-specific URL before rendering.
-        $api_version = 'v1';
+        $api_version = 'v2';
     }
 
     // Script was called directly.  Redirect to an API-version specific URL.
@@ -68,7 +68,7 @@
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                     </button>
-                    <a class="navbar-brand" href="#">Heliviewer API v1</a>
+                    <a class="navbar-brand" href="#">Heliviewer API <?php echo $api_version; ?></a>
                 </div>
                 <div class="navbar-collapse collapse">
                     <ul class="nav navbar-nav">
