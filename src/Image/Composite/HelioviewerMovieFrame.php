@@ -12,7 +12,7 @@
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     http://launchpad.net/helioviewer.org
  */
-require_once 'src/Image/Composite/HelioviewerCompositeImage.php';
+require_once HV_ROOT_DIR.'/../src/Image/Composite/HelioviewerCompositeImage.php';
 /**
  * Image_Composite_HelioviewerMovieFrame class definition
  *
@@ -25,7 +25,7 @@ require_once 'src/Image/Composite/HelioviewerCompositeImage.php';
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     http://launchpad.net/helioviewer.org
  */
-class Image_Composite_HelioviewerMovieFrame 
+class Image_Composite_HelioviewerMovieFrame
    extends Image_Composite_HelioviewerCompositeImage {
 
     /**

@@ -246,13 +246,13 @@
     "height": 820,
     "title": "SDO AIA 1600 (2014-02-03 20:26:16 - 19:40:16 UTC)",
     "thumbnails": {
-        "icon": "http://helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-icon.png",
-        "small": "http://helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-small.png",
-        "medium": "http://helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-medium.png",
-        "large": "http://helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-large.png",
-        "full": "http://helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-full.png"
+        "icon": "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-icon.png",
+        "small": "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-small.png",
+        "medium": "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-medium.png",
+        "large": "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-large.png",
+        "full": "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-full.png"
     },
-    "url": "http://helioviewer.org/cache/movies/2014/02/05/VXvX5/2014_02_03_20_26_16_2014_02_05_19_40_16_AIA_1600.mp4",
+    "url": "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/2014_02_03_20_26_16_2014_02_05_19_40_16_AIA_1600.mp4",
     "timestamp": "2014-02-05 20:25:55",
     "duration": 20,
     "imageScale": 2.42044,
@@ -2935,12 +2935,12 @@
         </response>
         <response code="200" type="string" subtype="JPIP link to JP2 Image">
             <description><![CDATA[If request parameter `jpip` is set to `true` (and the `json` parameter is omitted or set to `false`) the reponse is a plain text string.]]></description>
-            <example query_string="?date=2014-01-01T23:59:59Z&amp;sourceId=14&amp;jpip=true"><![CDATA[jpip://helioviewer.org:8090/AIA/2014/01/02/335/2014_01_02__00_00_02_62__SDO_AIA_AIA_335.jp2]]></example>
+            <example query_string="?date=2014-01-01T23:59:59Z&amp;sourceId=14&amp;jpip=true"><![CDATA[jpip://api.helioviewer.org:8090/AIA/2014/01/02/335/2014_01_02__00_00_02_62__SDO_AIA_AIA_335.jp2]]></example>
         </response>
         <response code="200" type="JP2 Image" subtype="JSON">
             <description><![CDATA[If request parameters `jpip` and `json` are both set to `true`, the reponse is a JSON object.]]></description>
             <example query_string="?date=2014-01-01T23:59:59Z&amp;sourceId=14&amp;jpip=true&amp;json=true"><![CDATA[{
-    "uri": "jpip://helioviewer.org:8090/AIA/2014/01/02/335/2014_01_02__00_00_02_62__SDO_AIA_AIA_335.jp2"
+    "uri": "jpip://api.helioviewer.org:8090/AIA/2014/01/02/335/2014_01_02__00_00_02_62__SDO_AIA_AIA_335.jp2"
 }]]></example>
         </response>
     </endpoint>
@@ -3160,11 +3160,11 @@ Full source code for the entire Helioviewer Project can be found at https://laun
         <parameters>
             <parameter type="string" optional="false" name="startTime">
                 <description><![CDATA[Date/Time for the beginning of the JPX movie data. ISO 8601 combined UTC date and time UTC format.]]></description>
-                <example><![CDATA[2014-01-01T00:00:00Z]]></example>
+                <example><![CDATA[2013-01-01T00:00:00Z]]></example>
             </parameter>
             <parameter type="string" optional="false" name="endTime">
                 <description><![CDATA[Date/Time for the end of the JPX movie data.  ISO 8601 combined UTC date and time UTC format.]]></description>
-                <example><![CDATA[2014-01-01T00:45:00Z]]></example>
+                <example><![CDATA[2013-01-01T00:45:00Z]]></example>
             </parameter>
             <parameter type="number" optional="false" name="sourceId">
                 <description><![CDATA[Unique image datasource identifier.]]></description>
@@ -3191,33 +3191,27 @@ Full source code for the entire Helioviewer Project can be found at https://laun
         </parameters>
         <response code="200" type="binary" subtype="JPX movie data">
             <description><![CDATA[By default, JPX binary movie data is returned.  This assumes that the `jpip` and `verbose` parameters are omitted or set to `false`.]]></description>
-            <example query_string="?startTime=2014-01-01T00:00:00Z&amp;endTime=2014-01-01T00:45:00Z&amp;sourceId=14"/>
+            <example query_string="?startTime=2013-01-01T00:00:00Z&amp;endTime=2013-01-01T00:45:00Z&amp;sourceId=14"/>
         </response>
         <response code="200" type="string" subtype="JPIP link to JPX movie">
             <description><![CDATA[If the `jpip` parameter is set to `true` (and the `verbose` parameter is omitted or set to `false`) the reponse is a a JPIP-protocol link to the JPX movie as a plain text string.]]></description>
-            <example query_string="?startTime=2014-01-01T00:00:00Z&amp;endTime=2014-01-01T00:45:00Z&amp;sourceId=14&amp;jpip=true"><![CDATA[jpip://helioviewer.org:8090/movies/SDO_AIA_AIA_335_F2014-01-01T00.00.00Z_T2014-01-01T00.45.00Z.jpx]]></example>
+            <example query_string="?startTime=2013-01-01T00:00:00Z&amp;endTime=2013-01-01T00:45:00Z&amp;sourceId=14&amp;jpip=true"><![CDATA[jpip://api.helioviewer.org:8090/movies/SDO_AIA_335_F2013-01-01T00.00.00Z_T2013-01-01T00.45.00Z.jpx]]></example>
         </response>
         <response code="200" type="JPIP JPX Movie" subtype="JSON">
             <description><![CDATA[If request parameters `jpip` and `verbose` are both set to `true`, the reponse is a JSON object containing a JPIP-protocol link to the JPX movie plus the timestamps of each frame a message if the value of `cadence` was overridden by the server.]]></description>
-            <example query_string="?startTime=2014-01-01T00:00:00Z&amp;endTime=2014-01-01T00:45:00Z&amp;sourceId=14&amp;jpip=true&amp;verbose=true"><![CDATA[{
-    "message": null,
-    "uri": "jpip://helioviewer.org:8090/movies/SDO_AIA_AIA_335_F2014-01-01T00.00.00Z_T2014-01-01T00.45.00Z.jpx",
-    "frames": [
-        1388534414,
-        1388534450,
-        1388534486,
-        [...],
-        1388537006,
-        1388537042,
-        1388537078
-    ]
+            <example query_string="?startTime=2013-01-01T00:00:00Z&amp;endTime=2013-01-01T00:45:00Z&amp;sourceId=14&amp;jpip=true&amp;verbose=true"><![CDATA[{
+  "frames": [
+    1356998402
+  ],
+  "message": null,
+  "uri": "jpip://api.helioviewer.org:8090/movies/SDO_AIA_335_F2013-01-01T00.00.00Z_T2013-01-01T00.45.00Z.jpx"
 }]]></example>
         </response>
         <response code="200" type="HTTP JPX Movie" subtype="JSON">
             <description><![CDATA[If request parameters `verbose` is set to `true` and `jpip` is omitted or set to `false`, the reponse is a JSON object containing an HTTP-protocol link to the JPX movie plus the timestamps of each frame a message if the value of `cadence` was overridden by the server.]]></description>
-            <example query_string="?startTime=2014-01-01T00:00:00Z&amp;endTime=2014-01-01T00:45:00Z&amp;sourceId=14&amp;verbose=true"><![CDATA[{
+            <example query_string="?startTime=2013-01-01T00:00:00Z&amp;endTime=2013-01-01T00:45:00Z&amp;sourceId=14&amp;verbose=true"><![CDATA[{
     "message": "Movie cadence has been changed to one image every 1284 seconds in order to avoid exceeding the maximum allowed number of frames (1000) between the requested start and end dates.",
-    "uri": "http://helioviewer.org/jp2/movies/SOHO_MDI_MDI_magnetogram_F2003-10-05T00.00.00Z_T2003-10-20T00.00.00ZB1L.jpx",
+    "uri": "http://api.helioviewer.org/jp2/movies/SOHO_MDI_MDI_magnetogram_F2003-10-05T00.00.00Z_T2003-10-20T00.00.00ZB1L.jpx",
     "frames": [
         1065323703,
         1065329463,
@@ -3322,7 +3316,7 @@ Full source code for the entire Helioviewer Project can be found at https://laun
             </parameter>
             <parameter type="string" optional="false" name="description">
                 <description><![CDATA[Move description.]]></description>
-                <example><![CDATA[This movie was produced by Helioviewer.org. See the original at http://helioviewer.org/?movieId=z6vX5 or download a high-quality version from http://helioviewer.org/api/?action=downloadMovie&id=z6vX5&format=mp4&hq=true]]></example>
+                <example><![CDATA[This movie was produced by Helioviewer.org. See the original at http://helioviewer.org/?movieId=z6vX5 or download a high-quality version from http://api.helioviewer.org/v2/downloadMovie/?id=z6vX5&format=mp4&hq=true]]></example>
             </parameter>
             <parameter type="string" optional="false" name="tags">
                 <description><![CDATA[Movie keyword tags (comma separated).]]></description>
@@ -3432,7 +3426,7 @@ Full source code for the entire Helioviewer Project can be found at https://laun
             </parameter>
             <parameter type="string" optional="true" name="description">
                 <description><![CDATA[Move description.]]></description>
-                <example><![CDATA[This movie was produced by Helioviewer.org. See the original at http://helioviewer.org/?movieId=y9tX5 or download a high-quality version from http://helioviewer.org/api/?action=downloadMovie&id=y9tX5&format=mp4&hq=true]]></example>
+                <example><![CDATA[This movie was produced by Helioviewer.org. See the original at http://helioviewer.org/?movieId=y9tX5 or download a high-quality version from http://api.helioviewer.org/downloadMovie/?id=y9tX5&format=mp4&hq=true]]></example>
             </parameter>
             <parameter type="string" optional="true" name="tags">
                 <description><![CDATA[Movie keyword tags (comma separated).]]></description>
@@ -3493,11 +3487,11 @@ Full source code for the entire Helioviewer Project can be found at https://laun
         "id": "J5tX5",
         "url": "http://www.youtube.com/watch?v=x2VYjI1Eo3M",
         "thumbnails": {
-            "icon": "http://helioviewer.org/cache/movies/2014/02/27/J5tX5/preview-icon.png",
-            "small": "http://helioviewer.org/cache/movies/2014/02/27/J5tX5/preview-small.png",
-            "medium": "http://helioviewer.org/cache/movies/2014/02/27/J5tX5/preview-medium.png",
-            "large": "http://helioviewer.org/cache/movies/2014/02/27/J5tX5/preview-large.png",
-            "full": "http://helioviewer.org/cache/movies/2014/02/27/J5tX5/preview-full.png"
+            "icon": "http://api.helioviewer.org/cache/movies/2014/02/27/J5tX5/preview-icon.png",
+            "small": "http://api.helioviewer.org/cache/movies/2014/02/27/J5tX5/preview-small.png",
+            "medium": "http://api.helioviewer.org/cache/movies/2014/02/27/J5tX5/preview-medium.png",
+            "large": "http://api.helioviewer.org/cache/movies/2014/02/27/J5tX5/preview-large.png",
+            "full": "http://api.helioviewer.org/cache/movies/2014/02/27/J5tX5/preview-full.png"
         },
         "published": "2014-02-27 14:56:00"
     },
@@ -3505,11 +3499,11 @@ Full source code for the entire Helioviewer Project can be found at https://laun
         "id": "L5tX5",
         "url": "http://www.youtube.com/watch?v=h6Y6vhpKPRk",
         "thumbnails": {
-            "icon": "http://helioviewer.org/cache/movies/2014/02/27/L5tX5/preview-icon.png",
-            "small": "http://helioviewer.org/cache/movies/2014/02/27/L5tX5/preview-small.png",
-            "medium": "http://helioviewer.org/cache/movies/2014/02/27/L5tX5/preview-medium.png",
-            "large": "http://helioviewer.org/cache/movies/2014/02/27/L5tX5/preview-large.png",
-            "full": "http://helioviewer.org/cache/movies/2014/02/27/L5tX5/preview-full.png"
+            "icon": "http://api.helioviewer.org/cache/movies/2014/02/27/L5tX5/preview-icon.png",
+            "small": "http://api.helioviewer.org/cache/movies/2014/02/27/L5tX5/preview-small.png",
+            "medium": "http://api.helioviewer.org/cache/movies/2014/02/27/L5tX5/preview-medium.png",
+            "large": "http://api.helioviewer.org/cache/movies/2014/02/27/L5tX5/preview-large.png",
+            "full": "http://api.helioviewer.org/cache/movies/2014/02/27/L5tX5/preview-full.png"
         },
         "published": "2014-02-27 14:54:08"
     }
@@ -3602,11 +3596,11 @@ Full source code for the entire Helioviewer Project can be found at https://laun
     <model name="Movie Thumbnails">
         <description></description>
         <example><![CDATA[{
-  "icon": "http://helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-icon.png",
-  "small": "http://helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-small.png",
-  "medium": "http://helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-medium.png",
-  "large": "http://helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-large.png",
-  "full": "http://helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-full.png"
+  "icon": "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-icon.png",
+  "small": "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-small.png",
+  "medium": "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-medium.png",
+  "large": "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-large.png",
+  "full": "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-full.png"
 }]]></example>
         <fields>
             <simple type="string" optional="false" name="full">

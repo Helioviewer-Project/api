@@ -29,6 +29,7 @@ class Module_JHelioviewer implements Module {
 
     private $_params;
     private $_options;
+    private $_sourceInfo;
 
     /**
      * Create a JHelioviewer module instance
@@ -67,7 +68,7 @@ class Module_JHelioviewer implements Module {
      */
     public function getJP2Image() {
 
-        include_once 'src/Database/ImgIndex.php';
+        include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
         $imgIndex = new Database_ImgIndex();
 
         // Optional parameters
@@ -81,15 +82,13 @@ class Module_JHelioviewer implements Module {
         // If image id is set, use it
         if ( isset($this->_params['id']) ) {
             $filepath = HV_JP2_DIR
-                      . $imgIndex->getJP2FilePathFromId($this->_params['id']);
+                      . $imgIndex->getDataFilePathFromId($this->_params['id']);
         }
         else {
-            // Otherwise look up sourceId if not specified
-            $sourceId = $this->_getSourceId($imgIndex);
 
             // Filepath to JP2 Image
-            $filepath = HV_JP2_DIR.$imgIndex->getJP2FilePath(
-                $this->_params['date'], $sourceId);
+            $filepath = HV_JP2_DIR.$imgIndex->getDataFilePath(
+                $this->_params['date'], $this->_params['sourceId']);
         }
 
         // Output results
@@ -116,8 +115,8 @@ class Module_JHelioviewer implements Module {
      */
     public function getJPX() {
 
-        include_once 'src/Image/JPEG2000/HelioviewerJPXImage.php';
-        include_once 'src/Database/ImgIndex.php';
+        include_once HV_ROOT_DIR.'/../src/Image/JPEG2000/HelioviewerJPXImage.php';
+        include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
 
         $imgIndex = new Database_ImgIndex();
 
@@ -139,22 +138,17 @@ class Module_JHelioviewer implements Module {
         }
 */
 
-        // sourceId as well as observatory, instrument, detector and
-        // measurement names are required
-        $sourceId = $this->_getSourceId($imgIndex);
-        list($obs, $inst, $det, $meas) = $this->_getSourceIdInfo($sourceId,
-            $imgIndex);
+        // sourceId as well as hierarchy labels/names are required
+        $this->_getSourceIdInfo($imgIndex);
 
         // Compute filename
-        $filename = $this->_getJPXFilename(
-            $obs, $inst, $det, $meas, $this->_params['startTime'],
-            $this->_params['endTime'], $options['cadence'], $options['linked']
+        $filename = $this->_getJPXFilename($options['cadence'], $options['linked']
         );
 
         // Create JPX image instance
         try {
             $jpx = new Image_JPEG2000_HelioviewerJPXImage(
-                $sourceId, $this->_params['startTime'],
+                $this->_params['sourceId'], $this->_params['startTime'],
                 $this->_params['endTime'], $options['cadence'],
                 $options['linked'], $filename
             );
@@ -186,25 +180,6 @@ class Module_JHelioviewer implements Module {
     }
 
     /**
-     * Return the sourceId for the current request
-     *
-     * @param object &$imgIndex A Helioviewer database instance
-     *
-     * @return int The id of the datasource specified for the request
-     */
-    private function _getSourceId(&$imgIndex) {
-
-        if ( isset($this->_params['sourceId']) ) {
-            return $this->_params['sourceId'];
-        }
-
-        return $imgIndex->getSourceId(
-            $this->_params['observatory'], $this->_params['instrument'],
-            $this->_params['detector'],    $this->_params['measurement']
-        );
-    }
-
-    /**
      * Return info for a given sourceId
      *
      * @param int    $sourceId  Id of data source
@@ -213,43 +188,19 @@ class Module_JHelioviewer implements Module {
      * @return array An array containing the observatory, instrument, detector and measurement associated with the
      *               specified datasource id.
      */
-    private function _getSourceIdInfo($sourceId, &$imgIndex) {
+    private function _getSourceIdInfo(&$imgIndex) {
 
-        if ( !( isset($this->_params['observatory']) &&
-                isset($this->_params['instrument'])  &&
-                isset($this->_params['detector'])    &&
-                isset($this->_params['measurement'])    ) ) {
-
-            // Get an associative array of the datasource meta information
-            $info = $imgIndex->getDatasourceInformationFromSourceId($sourceId);
-
-            // Return as an indexed array
-            return array( $info['observatory'],
-                          $info['instrument'],
-                          $info['detector'],
-                          $info['measurement'] );
+        if ( !isset($this->_sourceInfo) ) {
+            // Get an associative array of the datasource metadata
+            $this->_sourceInfo = $imgIndex->getDatasourceInformationFromSourceId($this->_params['sourceId']);
         }
-        else {
-            return array( $this->_params['observatory'],
-                          $this->_params['instrument'],
-                          $this->_params['detector'],
-                          $this->_params['measurement'] );
-        }
+
+        return $this->_sourceInfo;
     }
 
     /**
      * Generate the filename to use for storing JPXimage.
-     * Filenames are of the form:
-     *     Obs_Inst_Det_Meas_FROM_TO_BY[L].jpx
      *
-     * @param string $obs       Observatory
-     * @param string $inst      Instrument
-     * @param string $det       Detector
-     * @param string $meas      Measurement
-     * @param string $startTime Requested start time for JPX
-     *                          (ISO 8601 UTC date string)
-     * @param string $endTime   Requested finish time for JPX
-     *                          (ISO 8601 UTC date string)
      * @param int    $cadence   Number of seconds between each frame in the
      *                          image series
      * @param bool   $linked    Whether or not requested JPX image should be
@@ -257,13 +208,19 @@ class Module_JHelioviewer implements Module {
      *
      * @return string Filename to use for generated JPX image
      */
-    private function _getJPXFilename($obs, $inst, $det, $meas, $startTime,
-        $endTime, $cadence, $linked) {
+    private function _getJPXFilename($cadence, $linked) {
 
-        $from = str_replace(':', '.', $startTime);
-        $to   = str_replace(':', '.', $endTime);
-        $filename = implode('_', array( $obs, $inst, $det, $meas,
-                                        'F'.$from, 'T'.$to ) );
+        $from = str_replace(':', '.', $this->_params['startTime']);
+        $to   = str_replace(':', '.', $this->_params['endTime']);
+
+        $filename_arr = array();
+        foreach ( $this->_sourceInfo['uiLabels'] as $hierarchy ) {
+            $filename_arr[] = $hierarchy['name'];
+        }
+        $filename_arr[] = 'F'.$from;
+        $filename_arr[] = 'T'.$to;
+
+        $filename = implode('_', $filename_arr);
 
         // Indicate the cadence in the filename if one was specified
         if ( $cadence ) {
