@@ -128,13 +128,6 @@ class Module_WebClient implements Module {
 
         $imgIndex = new Database_ImgIndex();
 
-        // Convert human-readable params to sourceId if needed
-        if ( !isset($this->_params['sourceId']) ) {
-            $this->_params['sourceId'] = $imgIndex->getSourceId(
-                $this->_params['observatory'], $this->_params['instrument'],
-                $this->_params['detector'], $this->_params['measurement'] );
-        }
-
         $image = $imgIndex->getImageFromDatabase($this->_params['date'],
             $this->_params['sourceId']);
 
@@ -887,9 +880,6 @@ class Module_WebClient implements Module {
             }
         }
 
-         // Case 2: nickname (instrument + measurement)
-         // @TODO
-
          // Get a list of the datasources grouped by instrument
          $this->_printJSON(json_encode($statuses));
      }
@@ -1138,26 +1128,13 @@ class Module_WebClient implements Module {
                'optional' => array('callback'),
                'alphanum' => array('callback')
             );
-
-            if ( isset($this->_params['sourceId']) ) {
-                $expected = array_merge(
-                    $expected,
-                    array(
-                        'required' => array('date', 'sourceId'),
-                        'ints'     => array('sourceId')
-                    )
-                );
-            }
-            else {
-                $expected = array_merge(
-                    $expected,
-                    array(
-                        'required' => array('date', 'observatory',
-                                            'instrument', 'detector',
-                                            'measurement')
-                    )
-                );
-            }
+            $expected = array_merge(
+                $expected,
+                array(
+                    'required' => array('date', 'sourceId'),
+                    'ints'     => array('sourceId')
+                )
+            );
             break;
         case 'getDataSources':
             $expected = array(

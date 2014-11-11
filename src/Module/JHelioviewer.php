@@ -382,16 +382,9 @@ class Module_JHelioviewer implements Module {
                 $expected['required'] = array('id');
                 $expected['ints']     = array('id');
             }
-            // Either sourceId or observatory, instrument, detector and
-            // measurement must be specified
-            else if ( isset($this->_params['sourceId']) ) {
+            else {
                 $expected['required'] = array('date', 'sourceId');
                 $expected['ints']     = array('sourceId');
-            }
-            else {
-                $expected['required'] = array('date', 'observatory',
-                                              'instrument', 'detector',
-                                              'measurement');
             }
             break;
 
@@ -404,18 +397,11 @@ class Module_JHelioviewer implements Module {
                 'ints'     => array('cadence')
             );
 
-            // Either sourceId or observatory, instrument, detector
-            // and measurement must be specified
-            if ( isset($this->_params['sourceId']) ) {
-                $expected['required'] = array('startTime', 'endTime',
-                                              'sourceId');
-                $expected['ints']     = array('sourceId');
-            }
-            else {
-                $expected['required'] = array('startTime', 'endTime',
-                                              'observatory', 'instrument',
-                                              'detector', 'measurement');
-            }
+
+            $expected['required'] = array('startTime', 'endTime',
+                                          'sourceId');
+            $expected['ints']     = array('sourceId');
+
             break;
 
         case 'launchJHelioviewer':

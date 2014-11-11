@@ -409,9 +409,7 @@
     </endpoint>
     <endpoint name="getClosestImage" group="Official Clients" http="GET">
         <route>/v2/getClosestImage/</route>
-        <description><![CDATA[Find the image data that is closest to the requested date/time.  Return the associated metadata from the helioviewer database and the XML header of the JPEG2000 image file.
-
-        Either `sourceId` must be specified, or the combination of `observatory`, `instrument`, `detector`, and `measurement`.]]></description>
+        <description><![CDATA[Find the image data that is closest to the requested date/time.  Return the associated metadata from the helioviewer database and the XML header of the JPEG2000 image file.]]></description>
         <parameters>
             <parameter type="string" optional="false" name="date">
                 <description><![CDATA[Desired date/time of the image. ISO 8601 combined UTC date and time UTC format.]]></description>
@@ -421,72 +419,9 @@
                 <description><![CDATA[Wrap the response object in a function call of your choosing.]]></description>
                 <example></example>
             </parameter>
-            <parameter type="number" optional="true" name="sourceId">
-                <description><![CDATA[Unique image datasource identifier.  Can be specified in lieu of the `observatory`, `instrument`, `detector`, and `measurement` parameters.]]></description>
+            <parameter type="number" optional="false" name="sourceId">
+                <description><![CDATA[Unique image datasource identifier.]]></description>
                 <example><![CDATA[14]]></example>
-            </parameter>
-            <parameter type="string" optional="true" name="observatory">
-                <description><![CDATA[Observatory name.]]></description>
-                <example><![CDATA[SDO]]></example>
-                <values>
-                    <value>SDO</value>
-                    <value>SOHO</value>
-                    <value>STEREO_A</value>
-                    <value>STEREO_B</value>
-                    <value>Yohkoh</value>
-                </values>
-            </parameter>
-            <parameter type="string" optional="true" name="instrument">
-                <description><![CDATA[Instrument name.]]></description>
-                <example><![CDATA[AIA]]></example>
-                <values>
-                    <value>AIA</value>
-                    <value>EIT</value>
-                    <value>HMI</value>
-                    <value>LASCO</value>
-                    <value>MDI</value>
-                    <value>SECCHI</value>
-                    <value>SXT</value>
-                </values>
-            </parameter>
-            <parameter type="string" optional="true" name="detector">
-                <description><![CDATA[Detector name.]]></description>
-                <example><![CDATA[AIA]]></example>
-                <values>
-                    <value>AIA</value>
-                    <value>C2</value>
-                    <value>C3</value>
-                    <value>COR1</value>
-                    <value>COR2</value>
-                    <value>EIT</value>
-                    <value>EUVI</value>
-                    <value>HMI</value>
-                    <value>MDI</value>
-                    <value>SXT</value>
-                </values>
-            </parameter>
-            <parameter type="string" optional="true" name="measurement">
-                <description><![CDATA[Measurement name.]]></description>
-                <example><![CDATA[335]]></example>
-                <values>
-                    <value>94</value>
-                    <value>131</value>
-                    <value>171</value>
-                    <value>193</value>
-                    <value>195</value>
-                    <value>211</value>
-                    <value>284</value>
-                    <value>304</value>
-                    <value>335</value>
-                    <value>1600</value>
-                    <value>1700</value>
-                    <value>4500</value>
-                    <value>AlMgMn</value>
-                    <value>continuum</value>
-                    <value>magnetogram</value>
-                    <value>thin-Al</value>
-                    <value>white-light</value>
-                </values>
             </parameter>
         </parameters>
         <response code="200" type="Get Closest Image" subtype="JSON">
@@ -2975,80 +2910,15 @@
     </endpoint>
     <endpoint name="getJP2Image" group="JPEG2000" http="GET">
         <route>/v2/getJP2Image/</route>
-        <description><![CDATA[Download a JP2 image for the specified datasource that is the closest match in time to the `date` requested.
-
-        Either `sourceId` must be specified, or the combination of `observatory`, `instrument`, `detector`, and `measurement`.]]></description>
+        <description><![CDATA[Download a JP2 image for the specified datasource that is the closest match in time to the `date` requested.]]></description>
         <parameters>
             <parameter type="string" optional="false" name="date">
                 <description><![CDATA[Desired date/time of the JP2 image. ISO 8601 combined UTC date and time UTC format.]]></description>
                 <example><![CDATA[2014-01-01T23:59:59Z]]></example>
             </parameter>
-            <parameter type="number" optional="true" name="sourceId">
+            <parameter type="number" optional="false" name="sourceId">
                 <description><![CDATA[Unique image datasource identifier.]]></description>
                 <example><![CDATA[14]]></example>
-            </parameter>
-            <parameter type="string" optional="true" name="observatory">
-                <description><![CDATA[Observatory name.]]></description>
-                <example><![CDATA[SDO]]></example>
-                <values>
-                    <value>SDO</value>
-                    <value>SOHO</value>
-                    <value>STEREO_A</value>
-                    <value>STEREO_B</value>
-                    <value>Yohkoh</value>
-                </values>
-            </parameter>
-            <parameter type="string" optional="true" name="instrument">
-                <description><![CDATA[Instrument name.]]></description>
-                <example><![CDATA[AIA]]></example>
-                <values>
-                    <value>AIA</value>
-                    <value>EIT</value>
-                    <value>HMI</value>
-                    <value>LASCO</value>
-                    <value>MDI</value>
-                    <value>SECCHI</value>
-                    <value>SXT</value>
-                </values>
-            </parameter>
-            <parameter type="string" optional="true" name="detector">
-                <description><![CDATA[Detector name.]]></description>
-                <example><![CDATA[AIA]]></example>
-                <values>
-                    <value>AIA</value>
-                    <value>C2</value>
-                    <value>C3</value>
-                    <value>COR1</value>
-                    <value>COR2</value>
-                    <value>EIT</value>
-                    <value>EUVI</value>
-                    <value>HMI</value>
-                    <value>MDI</value>
-                    <value>SXT</value>
-                </values>
-            </parameter>
-            <parameter type="string" optional="true" name="measurement">
-                <description><![CDATA[Measurement name.]]></description>
-                <example><![CDATA[335]]></example>
-                <values>
-                    <value>94</value>
-                    <value>131</value>
-                    <value>171</value>
-                    <value>193</value>
-                    <value>195</value>
-                    <value>211</value>
-                    <value>284</value>
-                    <value>304</value>
-                    <value>335</value>
-                    <value>1600</value>
-                    <value>1700</value>
-                    <value>4500</value>
-                    <value>AlMgMn</value>
-                    <value>continuum</value>
-                    <value>magnetogram</value>
-                    <value>thin-Al</value>
-                    <value>white-light</value>
-                </values>
             </parameter>
             <parameter type="boolean" optional="true" default="false" name="jpip">
                 <description><![CDATA[Optionally return a JPIP URI instead of the binary data of the image itself.]]></description>
@@ -3286,9 +3156,7 @@ Full source code for the entire Helioviewer Project can be found at https://laun
     </endpoint>
     <endpoint name="getJPX" group="JPEG2000" http="GET">
         <route>/v2/getJPX/</route>
-        <description><![CDATA[Generate and (optionally) download a custom JPX movie of the specified datasource.
-
-        Either `sourceId` must be specified, or the combination of `observatory`, `instrument`, `detector`, and `measurement`.]]></description>
+        <description><![CDATA[Generate and (optionally) download a custom JPX movie of the specified datasource.]]></description>
         <parameters>
             <parameter type="string" optional="false" name="startTime">
                 <description><![CDATA[Date/Time for the beginning of the JPX movie data. ISO 8601 combined UTC date and time UTC format.]]></description>
@@ -3298,72 +3166,9 @@ Full source code for the entire Helioviewer Project can be found at https://laun
                 <description><![CDATA[Date/Time for the end of the JPX movie data.  ISO 8601 combined UTC date and time UTC format.]]></description>
                 <example><![CDATA[2014-01-01T00:45:00Z]]></example>
             </parameter>
-            <parameter type="number" optional="true" name="sourceId">
-                <description><![CDATA[Unique image datasource identifier.  Can be specified in lieu of the `observatory`, `instrument`, `detector`, and `measurement` parameters.]]></description>
+            <parameter type="number" optional="false" name="sourceId">
+                <description><![CDATA[Unique image datasource identifier.]]></description>
                 <example><![CDATA[14]]></example>
-            </parameter>
-            <parameter type="string" optional="true" name="observatory">
-                <description><![CDATA[Observatory name.]]></description>
-                <example><![CDATA[SDO]]></example>
-                <values>
-                    <value>SDO</value>
-                    <value>SOHO</value>
-                    <value>STEREO_A</value>
-                    <value>STEREO_B</value>
-                    <value>Yohkoh</value>
-                </values>
-            </parameter>
-            <parameter type="string" optional="true" name="instrument">
-                <description><![CDATA[Instrument name.]]></description>
-                <example><![CDATA[AIA]]></example>
-                <values>
-                    <value>AIA</value>
-                    <value>EIT</value>
-                    <value>HMI</value>
-                    <value>LASCO</value>
-                    <value>MDI</value>
-                    <value>SECCHI</value>
-                    <value>SXT</value>
-                </values>
-            </parameter>
-            <parameter type="string" optional="true" name="detector">
-                <description><![CDATA[Detector name.]]></description>
-                <example><![CDATA[AIA]]></example>
-                <values>
-                    <value>AIA</value>
-                    <value>C2</value>
-                    <value>C3</value>
-                    <value>COR1</value>
-                    <value>COR2</value>
-                    <value>EIT</value>
-                    <value>EUVI</value>
-                    <value>HMI</value>
-                    <value>MDI</value>
-                    <value>SXT</value>
-                </values>
-            </parameter>
-            <parameter type="string" optional="true" name="measurement">
-                <description><![CDATA[Measurement name.]]></description>
-                <example><![CDATA[335]]></example>
-                <values>
-                    <value>94</value>
-                    <value>131</value>
-                    <value>171</value>
-                    <value>193</value>
-                    <value>195</value>
-                    <value>211</value>
-                    <value>284</value>
-                    <value>304</value>
-                    <value>335</value>
-                    <value>1600</value>
-                    <value>1700</value>
-                    <value>4500</value>
-                    <value>AlMgMn</value>
-                    <value>continuum</value>
-                    <value>magnetogram</value>
-                    <value>thin-Al</value>
-                    <value>white-light</value>
-                </values>
             </parameter>
             <parameter type="boolean" optional="true" default="false" name="linked">
                 <description><![CDATA[Generate a `linked` JPX file containing image pointers instead of data for each individual frame in the series. Currently, only JPX image series support this feature.]]></description>
