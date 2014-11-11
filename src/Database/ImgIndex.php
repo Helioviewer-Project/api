@@ -413,7 +413,7 @@ class Database_ImgIndex {
      *               the `datasources` table.
      */
     public function getDataFromDatabase($date, $sourceId) {
-        include_once 'src/Helper/DateTimeConversions.php';
+        include_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
 
         $this->_dbConnect();
 
@@ -476,7 +476,7 @@ class Database_ImgIndex {
      * @return array Array containing 1 row from the `data` table
      */
     public function getClosestDataBeforeDate($date, $sourceId) {
-        include_once 'src/Helper/DateTimeConversions.php';
+        include_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
 
         $this->_dbConnect();
 
@@ -521,7 +521,7 @@ class Database_ImgIndex {
      * @return array Array containing 1 row from the `data` table
      */
     public function getClosestDataAfterDate($date, $sourceId) {
-        include_once 'src/Helper/DateTimeConversions.php';
+        include_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
 
         $this->_dbConnect();
 
@@ -591,7 +591,7 @@ class Database_ImgIndex {
      * @return int The number of `data` rows matching a source and time range
      */
     public function getDataCount($start, $end, $sourceId) {
-        include_once 'src/Helper/DateTimeConversions.php';
+        include_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
 
         $this->_dbConnect();
 
@@ -599,7 +599,7 @@ class Database_ImgIndex {
         $endDate   = isoDateToMySQL($end);
 
         $sql = sprintf(
-                   "SELECT COUNT(id) as count"
+                   "SELECT COUNT(id) as count "
                  . "FROM data "
                  . "WHERE "
                  .     "sourceId " . " = %d AND "
@@ -633,7 +633,7 @@ class Database_ImgIndex {
      * @return array Array containing matched rows from the `data` table
      */
     public function getDataRange($start, $end, $sourceId) {
-        include_once 'src/Helper/DateTimeConversions.php';
+        include_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
 
         $this->_dbConnect();
 
@@ -679,7 +679,7 @@ class Database_ImgIndex {
      */
     public function extractJP2MetaInfo($image_filepath) {
 
-        include_once "src/Image/JPEG2000/JP2ImageXMLBox.php";
+        include_once HV_ROOT_DIR.'/../src/Image/JPEG2000/JP2ImageXMLBox.php';
 
         try {
             $xmlBox = new Image_JPEG2000_JP2ImageXMLBox($image_filepath);

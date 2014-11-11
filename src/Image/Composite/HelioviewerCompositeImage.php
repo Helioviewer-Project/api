@@ -16,8 +16,8 @@
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     http://launchpad.net/helioviewer.org
  */
-require_once 'src/Image/JPEG2000/JP2Image.php';
-require_once 'src/Database/ImgIndex.php';
+require_once HV_ROOT_DIR.'/../src/Image/JPEG2000/JP2Image.php';
+require_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
 /**
  * Image_Composite_HelioviewerCompositeImage class definition
  *
@@ -143,8 +143,8 @@ class Image_Composite_HelioviewerCompositeImage {
      * @return object A HelioviewerImage instance (e.g. AIAImage or LASCOImage)
      */
     private function _buildImageLayer($layer) {
-        $image = $this->db->getClosestImage($this->date, $layer['sourceId']);
-
+        $image = $this->db->getClosestData($this->date, $layer['sourceId']);
+echo json_encode($layer);
         // Instantiate a JP2Image
         $jp2Filepath = HV_JP2_DIR.$image['filepath'].'/'.$image['filename'];
 
@@ -181,7 +181,7 @@ class Image_Composite_HelioviewerCompositeImage {
             $type = strtoupper($layer['instrument']).'Image';
         }
 
-        include_once 'src/Image/ImageType/'.$type.'.php';
+        include_once HV_ROOT_DIR.'/../src/Image/ImageType/'.$type.'.php';
 
         $classname = 'Image_ImageType_'.$type;
 

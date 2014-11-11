@@ -61,13 +61,13 @@ class Module_Movies implements Module {
      * Queues a request for a Helioviewer.org movie
      */
     public function queueMovie() {
-        include_once 'lib/alphaID/alphaID.php';
-        include_once 'lib/Resque.php';
-        include_once 'lib/Redisent/Redisent.php';
-        include_once 'src/Helper/HelioviewerLayers.php';
-        include_once 'src/Helper/HelioviewerEvents.php';
-        include_once 'src/Database/MovieDatabase.php';
-        include_once 'src/Database/ImgIndex.php';
+        include_once HV_ROOT_DIR.'/../lib/alphaID/alphaID.php';
+        include_once HV_ROOT_DIR.'/../lib/Resque.php';
+        include_once HV_ROOT_DIR.'/../lib/Redisent/Redisent.php';
+        include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerLayers.php';
+        include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerEvents.php';
+        include_once HV_ROOT_DIR.'/../src/Database/MovieDatabase.php';
+        include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
 
         // Connect to redis
         $redis = new Redisent('localhost');
@@ -220,14 +220,14 @@ class Module_Movies implements Module {
      * Queues a request for a Helioviewer.org movie
      */
     public function reQueueMovie($silent=false) {
-        include_once 'lib/alphaID/alphaID.php';
-        include_once 'lib/Resque.php';
-        include_once 'lib/Redisent/Redisent.php';
-        include_once 'src/Helper/HelioviewerLayers.php';
-        include_once 'src/Helper/HelioviewerEvents.php';
-        include_once 'src/Database/MovieDatabase.php';
-        include_once 'src/Database/ImgIndex.php';
-        include_once 'src/Movie/HelioviewerMovie.php';
+        include_once HV_ROOT_DIR.'/../lib/alphaID/alphaID.php';
+        include_once HV_ROOT_DIR.'/../lib/Resque.php';
+        include_once HV_ROOT_DIR.'/../lib/Redisent/Redisent.php';
+        include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerLayers.php';
+        include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerEvents.php';
+        include_once HV_ROOT_DIR.'/../src/Database/MovieDatabase.php';
+        include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
+        include_once HV_ROOT_DIR.'/../src/Movie/HelioviewerMovie.php';
 
         // Connect to redis
         $redis = new Redisent('localhost');
@@ -495,7 +495,7 @@ class Module_Movies implements Module {
      * if one was not properly specified.
      */
     private function _getMovieROI($options) {
-        include_once 'src/Helper/RegionOfInterest.php';
+        include_once HV_ROOT_DIR.'/../src/Helper/RegionOfInterest.php';
 
         // Region of interest (center in arcseconds and dimensions in pixels)
         if (isset($options['x1']) && isset($options['y1']) &&
@@ -551,7 +551,7 @@ class Module_Movies implements Module {
 
         // Estimate number of movies frames for each layer
         foreach ( $layers->toArray() as $layer ) {
-            $numFrames += $db->getImageCount($startTime, $endTime,
+            $numFrames += $db->getDataCount($startTime, $endTime,
                 $layer['sourceId']);
         }
 
@@ -576,7 +576,7 @@ class Module_Movies implements Module {
      * @return file Requested movie
      */
     public function downloadMovie() {
-        include_once 'src/Movie/HelioviewerMovie.php';
+        include_once HV_ROOT_DIR.'/../src/Movie/HelioviewerMovie.php';
 
         // Load movie
         $movie = new Movie_HelioviewerMovie($this->_params['id'],
@@ -677,8 +677,8 @@ class Module_Movies implements Module {
      * @return void
      */
     public function getMovieStatus() {
-        include_once 'src/Movie/HelioviewerMovie.php';
-        require_once 'lib/Resque.php';
+        include_once HV_ROOT_DIR.'/../src/Movie/HelioviewerMovie.php';
+        require_once HV_ROOT_DIR.'/../lib/Resque.php';
         $queueNum = $this->_getQueueNum('on_demand_movie',
             $this->_params['id']) + 1;
 
@@ -763,7 +763,7 @@ class Module_Movies implements Module {
      * a user
      */
     public function checkYouTubeAuth() {
-        include_once 'src/Movie/YouTube.php';
+        include_once HV_ROOT_DIR.'/../src/Movie/YouTube.php';
 
         $youtube = new Movie_YouTube();
 
@@ -775,7 +775,7 @@ class Module_Movies implements Module {
      * of the user.
      */
     public function getYouTubeAuth() {
-        include_once 'src/Movie/YouTube.php';
+        include_once HV_ROOT_DIR.'/../src/Movie/YouTube.php';
 
         $share = isset($this->_options['share']) ?
             $this->_options['share'] : false;
@@ -802,8 +802,8 @@ class Module_Movies implements Module {
      * TODO 2011/05/09: Make sure movie hasn't already been uploaded
      */
     public function uploadMovieToYouTube() {
-        include_once 'src/Movie/HelioviewerMovie.php';
-        include_once 'src/Movie/YouTube.php';
+        include_once HV_ROOT_DIR.'/../src/Movie/HelioviewerMovie.php';
+        include_once HV_ROOT_DIR.'/../src/Movie/YouTube.php';
 
         // Process request
         $movie = new Movie_HelioviewerMovie($this->_params['id'], 'mp4');
@@ -860,9 +860,9 @@ class Module_Movies implements Module {
      * result as a JSON array.
      */
     public function getUserVideos() {
-        include_once 'src/Database/MovieDatabase.php';
-        include_once 'src/Movie/HelioviewerMovie.php';
-        include_once 'lib/alphaID/alphaID.php';
+        include_once HV_ROOT_DIR.'/../src/Database/MovieDatabase.php';
+        include_once HV_ROOT_DIR.'/../src/Movie/HelioviewerMovie.php';
+        include_once HV_ROOT_DIR.'/../lib/alphaID/alphaID.php';
 
         $movies = new Database_MovieDatabase();
 
@@ -967,7 +967,7 @@ $this->_params['force'] = false;
      * @return void
      */
     public function playMovie() {
-        include_once 'src/Movie/HelioviewerMovie.php';
+        include_once HV_ROOT_DIR.'/../src/Movie/HelioviewerMovie.php';
 
         // Load movie
         $movie = new Movie_HelioviewerMovie($this->_params['id'],

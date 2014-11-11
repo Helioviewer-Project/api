@@ -123,15 +123,14 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
      */
     private function _queryJPXImageFrames() {
 
-        include_once 'src/Helper/DateTimeConversions.php';
-        include_once 'src/Database/ImgIndex.php';
+        include_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
+        include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
 
         $imgIndex = new Database_ImgIndex();
 
         // Replace start and end request dates with actual matches in order to
         // account for gaps at either side
         $this->_checkRequestDates($imgIndex);
-
         $start = toUnixTimestamp($this->_startTime);
         $end   = toUnixTimestamp($this->_endTime);
 
@@ -144,7 +143,7 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
         //    requested start and end dates.  Output a warning message
         //    indicating that the cadence was changed.
         if ( $this->_cadence === false ) {
-            $count = $imgIndex->getImageCount($this->_startTime,
+            $count = $imgIndex->getDataCount($this->_startTime,
                 $this->_endTime, $this->_sourceId);
 
             if ( $count > HV_MAX_JPX_FRAMES ) {
@@ -225,7 +224,7 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
         $images = array();
         $dates  = array();
 
-        $results = $imgIndex->getImageRange($this->_startTime,
+        $results = $imgIndex->getDataRange($this->_startTime,
             $this->_endTime, $this->_sourceId, $maxFrames);
 
         foreach ($results as $img) {
@@ -308,9 +307,9 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
         //                    from request date.  Perhaps instead of returning
         //                    a "message" parameter, just return the items of
         //                    interest: startTime, endTime, overmax, etc.
-        $startImage = $imgIndex->getClosestImageAfterDate($this->_startTime,
+        $startImage = $imgIndex->getClosestDataAfterDate($this->_startTime,
             $this->_sourceId);
-        $endImage   = $imgIndex->getClosestImageBeforeDate($this->_endTime,
+        $endImage   = $imgIndex->getClosestDataBeforeDate($this->_endTime,
             $this->_sourceId);
 
         $this->_startTime = isoDateToMySQL($startImage['date']);

@@ -68,8 +68,8 @@ class Module_WebClient implements Module {
      */
     public function downloadScreenshot() {
 
-        include_once '../src/Database/ImgIndex.php';
-        include_once '../src/Helper/HelioviewerLayers.php';
+        include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
+        include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerLayers.php';
 
         $imgIndex = new Database_ImgIndex();
 
@@ -124,7 +124,7 @@ class Module_WebClient implements Module {
      * TODO: Combine with getJP2Image? (e.g. "&display=true")
      */
     public function getClosestImage() {
-        include_once '../src/Database/ImgIndex.php';
+        include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
 
         $imgIndex = new Database_ImgIndex();
 
@@ -155,7 +155,7 @@ class Module_WebClient implements Module {
      */
     public function getDataSources() {
 
-        include_once '../src/Database/ImgIndex.php';
+        include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
 
         $verbose = isset($this->_options['verbose']) ?
             $this->_options['verbose'] : false;
@@ -183,7 +183,7 @@ class Module_WebClient implements Module {
      */
     public function getDataSourceList() {
 
-        include_once '../src/Database/ImgIndex.php';
+        include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
 
         $imgIndex    = new Database_ImgIndex();
 
@@ -198,8 +198,8 @@ class Module_WebClient implements Module {
      * @return void
      */
     public function getJP2Header() {
-        include_once '../src/Database/ImgIndex.php';
-        include_once '../src/Image/JPEG2000/JP2ImageXMLBox.php';
+        include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
+        include_once HV_ROOT_DIR.'/../src/Image/JPEG2000/JP2ImageXMLBox.php';
 
         $imgIndex = new Database_ImgIndex();
         $image = $imgIndex->getImageInformation($this->_params['id']);
@@ -226,9 +226,9 @@ class Module_WebClient implements Module {
      * @return object The image tile
      */
     public function getTile() {
-        include_once '../src/Database/ImgIndex.php';
-        include_once '../src/Image/JPEG2000/JP2Image.php';
-        include_once '../src/Helper/RegionOfInterest.php';
+        include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
+        include_once HV_ROOT_DIR.'/../src/Image/JPEG2000/JP2Image.php';
+        include_once HV_ROOT_DIR.'/../src/Helper/RegionOfInterest.php';
 
         // Tilesize
         $tileSize = 512;
@@ -280,7 +280,7 @@ class Module_WebClient implements Module {
             $type = strtoupper($image['instrument']).'Image';
         }
 
-        include_once '../src/Image/ImageType/'.$type.'.php';
+        include_once HV_ROOT_DIR.'/../src/Image/ImageType/'.$type.'.php';
         $classname = 'Image_ImageType_'.$type;
 
         // Create the tile
@@ -309,9 +309,9 @@ class Module_WebClient implements Module {
      * @return image/jpeg or JSON
      */
     public function takeScreenshot() {
-        include_once '../src/Image/Composite/HelioviewerScreenshot.php';
-        include_once '../src/Helper/HelioviewerLayers.php';
-        include_once '../src/Helper/HelioviewerEvents.php';
+        include_once HV_ROOT_DIR.'/../src/Image/Composite/HelioviewerScreenshot.php';
+        include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerLayers.php';
+        include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerEvents.php';
 
         // Data Layers
         $layers = new Helper_HelioviewerLayers($this->_params['layers']);
@@ -367,11 +367,11 @@ class Module_WebClient implements Module {
      * @return
      */
     public function reTakeScreenshot($screenshotId) {
-        include_once '../src/Database/ImgIndex.php';
-        include_once '../src/Image/Composite/HelioviewerScreenshot.php';
-        include_once '../src/Helper/HelioviewerLayers.php';
-        include_once '../src/Helper/HelioviewerEvents.php';
-        include_once '../src/Helper/RegionOfInterest.php';
+        include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
+        include_once HV_ROOT_DIR.'/../src/Image/Composite/HelioviewerScreenshot.php';
+        include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerLayers.php';
+        include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerEvents.php';
+        include_once HV_ROOT_DIR.'/../src/Helper/RegionOfInterest.php';
 
         // Default options
         $defaults = array(
@@ -449,7 +449,7 @@ class Module_WebClient implements Module {
      */
     public function getNewsFeed() {
 
-        include_once 'lib/JG_Cache/JG_Cache.php';
+        include_once HV_ROOT_DIR.'/../lib/JG_Cache/JG_Cache.php';
 
         // Create cache dir if it doesn't already exist
         $cacheDir = HV_CACHE_DIR . '/remote';
@@ -463,7 +463,7 @@ class Module_WebClient implements Module {
         if( !($feed = $cache->get('news.xml', 1800)) ) {
 
             // Re-fetch if it is old than 30 mins
-            include_once '../src/Net/Proxy.php';
+            include_once HV_ROOT_DIR.'/../src/Net/Proxy.php';
             $proxy = new Net_Proxy(HV_NEWS_FEED_URL);
             $feed  = $proxy->query();
             $cache->set('news.xml', $feed);
@@ -487,7 +487,7 @@ class Module_WebClient implements Module {
      */
     public function shortenURL() {
 
-        include_once '../src/Net/Proxy.php';
+        include_once HV_ROOT_DIR.'/../src/Net/Proxy.php';
 
         $proxy = new Net_Proxy('http://api.bitly.com/v3/shorten?');
 
@@ -531,7 +531,7 @@ class Module_WebClient implements Module {
             $this->_options['resolution'] = 'daily';
         }
 
-        include_once '../src/Database/Statistics.php';
+        include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
         $statistics = new Database_Statistics();
 
         $this->_printJSON($statistics->getUsageStatistics(
@@ -647,7 +647,7 @@ class Module_WebClient implements Module {
             throw new Exception($msg, 25);
         }
 
-        include_once '../src/Database/Statistics.php';
+        include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
         $statistics = new Database_Statistics();
 
         $this->_printJSON(
@@ -769,7 +769,7 @@ class Module_WebClient implements Module {
             throw new Exception($msg, 25);
         }
 
-        include_once '../src/Database/Statistics.php';
+        include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
         $statistics = new Database_Statistics();
 
         $this->_printJSON(
@@ -787,7 +787,7 @@ class Module_WebClient implements Module {
      * Retrieves the latest usage statistics from the database
      */
     public function updateDataCoverage() {
-        include_once '../src/Database/Statistics.php';
+        include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
         $statistics = new Database_Statistics();
         $this->_printJSON(
             $statistics->updateDataCoverage($this->_options['period'])
@@ -813,8 +813,8 @@ class Module_WebClient implements Module {
      public function getStatus() {
 
          // Connect to database
-         include_once '../src/Database/ImgIndex.php';
-         include_once '../src/Helper/DateTimeConversions.php';
+         include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
+         include_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
 
          $imgIndex = new Database_ImgIndex();
 
@@ -953,7 +953,7 @@ class Module_WebClient implements Module {
      */
     private function _getRegionOfInterest() {
 
-        include_once '../src/Helper/RegionOfInterest.php';
+        include_once HV_ROOT_DIR.'/../src/Helper/RegionOfInterest.php';
 
         // Region of interest: x1, x2, y1, y2
         if (isset($this->_options['x1']) && isset($this->_options['y1']) &&
