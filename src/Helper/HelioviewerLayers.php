@@ -31,7 +31,6 @@ class Helper_HelioviewerLayers {
 
     private $_layers = array();
     private $_layerString;
-    private $_layerTree;
     private $_db;
 
     /**
@@ -61,10 +60,6 @@ class Helper_HelioviewerLayers {
                 array_push($this->_layers, $layer);
             }
         }
-
-        // Store a tree representation of the layers for generating
-        // human-readable strings
-        $this->_createLayerTree();
 
         // Check to make sure at least one valid layer was specified
         if (sizeOf($this->_layers) === 0) {
@@ -131,27 +126,16 @@ class Helper_HelioviewerLayers {
      * @return string Human-readable string
      */
     public function toHumanReadableString() {
-        $strings = array();
-
         $layerString = '';
-
-        foreach ($this->_layerTree as $obs=>$names) {
-            if ( !isset($strings[$obs]) ) {
-                $strings[$obs] = $obs.' ';
+        foreach ($this->_layers as $i=>$layer) {
+            foreach ($layer['uiLabels'] as $i=>$obj) {
+                $layerString .= $obj['name'] . ' ';
             }
-            foreach ($names as $nameLHS=>$nameRHS) {
-                $strings[$obs] .= $nameLHS.' ';
-
-                foreach ($nameRHS as $name) {
-                    $strings[$obs] .= $name.'/';
-                }
-                $strings[$obs] = substr($strings[$obs], 0, -1) . ', ';
-            }
-            $layerString .= $strings[$obs];
+            $layerString = substr($layerString,0,-1) . ', ';
         }
+        $layerString = substr($layerString,0,-2);
 
-        // remove trailing __
-        return substr($layerString, 0, -2);
+        return $layerString;
     }
 
     /**
@@ -173,95 +157,47 @@ class Helper_HelioviewerLayers {
     }
 
     /**
-     * Creates a tree representation of the layers
+     * Takes a single layer string and converts it to a more convenient associative array. filling in any
+     * missing details as neccessary
      *
-     * @return void
-     */
-    private function _createLayerTree() {
-        $tree = array();
-
-        foreach ($this->_layers as $layer) {
-            $obs = $layer['observatory'];
-
-            $parts = explode(' ', $layer['name']);
-
-            // AIA 171, LASCO C2, etc.
-            if ( sizeOf($parts) == 2 ) {
-                list($name1, $name2) = $parts;
-            }
-            else {
-                // COR1-A, COR2-B, etc.
-                $name1 = $layer['name'];
-                $name2 = '';
-            }
-
-            if ( !isset($tree[$obs]) ) {
-                $tree[$obs] = array();
-            }
-            if ( !isset($tree[$obs][$name1]) ) {
-                $tree[$obs][$name1] = array();
-            }
-            array_push($tree[$obs][$name1], $name2);
-        }
-
-        $this->_layerTree = $tree;
-    }
-
-    /**
-     * Takes a single layer string and converts it to a more convenient
-     * associative array. filling in any missing details as neccessary
-     *
-     * @param string $layerString A single layer represented as a string in
-     *                            one of the two following forms:
-     *                            [obs,inst,det,meas,visible,opacity] or
-     *                            [sourceId,visible,opacity]
+     * @param string $layerString A single layer represented as a string in one of the two following forms:
+     *                            [obs,inst,det,meas,visible,opacity] or [sourceId,visible,opacity]
      *
      * @return array Associative array representation of the layer
      */
     private function _decodeSingleLayerString($layerString) {
-
         // Break up string into individual components
         $layerArray = explode(',', $layerString);
 
-        // [obs,inst,det,meas,visible,opacity]
-        if (sizeOf($layerArray) === 6) {
-
-            list($observatory, $instrument, $detector, $measurement,
-                $layeringOrder, $opacity) = $layerArray;
-
-            $info = $this->_db->getDatasourceInformationFromNames(
-                $observatory, $instrument, $detector, $measurement
-            );
-
-            $sourceId      = $info['id'];
-            $name          = $info['name'];
-            $layeringOrder = $layeringOrder;
-
-        }
-        else if (sizeOf($layerArray) === 3) {
+        if (sizeOf($layerArray) == 3) {
             // [sourceId,visible,opacity]
             list($sourceId, $layeringOrder, $opacity) = $layerArray;
 
-            $source = $this->_db->getDatasourceInformationFromSourceId(
-                $sourceId);
+            $source = $this->_db->getDatasourceInformationFromSourceId($sourceId);
 
-            $observatory   = $source['observatory'];
-            $instrument    = $source['instrument'];
-            $detector      = $source['detector'];
-            $measurement   = $source['measurement'];
             $layeringOrder = $layeringOrder;
             $name          = $source['name'];
+            $uiLabels      = $source['uiLabels'];
+        }
+        else  {
+            $opacity       = array_pop($layerArray);
+            $layeringOrder = array_pop($layerArray);
+
+            $info = $this->_db->getDatasourceInformationFromNames(
+                        $layerArray);
+            $sourceId      = $info["id"];
+            $name          = $info["name"];
+            $layeringOrder = $layeringOrder;
+            $uiLabels      = $info['uiLabels'];
+
         }
 
         // Associative array form
         return array (
-            'observatory'   => $observatory,
-            'instrument'    => $instrument,
-            'detector'      => $detector,
-            'measurement'   => $measurement,
             'name'          => $name,
             'sourceId'      => (int)$sourceId,
             'layeringOrder' => (int)$layeringOrder,
+            'uiLabels'      => $uiLabels,
             'visible'       => ($layeringOrder > 0) ? true : false,
             'opacity'       => (int)$opacity
         );

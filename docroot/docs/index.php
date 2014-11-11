@@ -143,50 +143,66 @@
 
             <a name="appendix_datasources" class="anchor"></a>
             <h2 class="appendix">Data Sources</h2>
-            <p class="description">Listed below are all valid image data sources hosted by the Helioviewer Project.  Reference a particular datasource in your API requests by either its '<span class="param">sourceId</span>' parameter, or the combination of '<span class="param">observatory</span>', '<span class="param">instrument</span>', '<span class="param">detector</span>' and '<span class="param">measurement</span>' parameters shown in the following tables.</p>
+            <p class="description">Listed below are all valid image data sources hosted by the Helioviewer Project.  Reference a particular datasource in your API requests by its '<span class="param">sourceId</span>' parameter shown in the following tables.</p>
 
 
 <?php
-    $imgIndex = new Database_ImgIndex();
-    $sources = $imgIndex->getDataSources(true, Array('STEREO_A','STEREO_B','Yohkoh','PROBA2'));
 
-    foreach ( $sources as $key0 => $val0) {
-        $observatory = $key0;
-        $observatory_full = $val0['description'];
+    function recursiveGroup($obj, &$out_arr=array()) {
+        foreach ( $obj as $key => $val ) {
+            if ( !array_key_exists('sourceId', $val) ) {
+                recursiveGroup($val, $out_arr);
+            }
+            else {
+                $groupBy  = $val['uiLabels'][0]['name'];
+                $sourceId = $val['sourceId'];
+
+                $current_arr = array();
+
+                $current_arr['sourceId']=$val['sourceId'];
+                $current_arr['nickname']=$val['nickname'];
+                $current_arr['uiLabels']=$val['uiLabels'];
+
+                $out_arr[$groupBy][] = $current_arr;
+                continue;
+            }
+        }
+    }
+
+    $imgIndex = new Database_ImgIndex();
+    recursiveGroup($imgIndex->getDataSources(false), $groupedSources);
+
+    foreach ( $groupedSources as $group => $obj) {
 ?>
-            <a name="datasource_<?php echo strtolower($observatory); ?>" class="anchor"></a>
-            <h3><?php echo $observatory_full; ?></h3>
+            <a name="datasource_<?php echo strtolower($group); ?>" class="anchor"></a>
+            <h3><?php echo $group; ?></h3>
             <table style="width: 100%;">
                 <tr style="border: 1px solid #999; background-color: #eee;">
                     <th style="padding: 2px 6px; text-align:center;">Source ID</th>
                     <th style="padding: 2px 6px;">Description</th>
-                    <th style="padding: 2px 6px;">Layer Identifier</th>
-                    <th>Observatory</th>
-                    <th>Instrument</th>
-                    <th>Detector</th>
-                    <th>Measurement</th>
+<?php
+
+
+        // Grab datasource hierarchy information from first element
+        foreach ($obj[0]['uiLabels'] as $hierarchy) {
+            echo '                    <th>'.$hierarchy['label'].'</th>';
+        }
+?>
                 </tr>
 <?php
-        foreach ( $val0['children'] as $key1 => $val1 ) {
-            $instrument = $key1;
-            foreach ( $val1['children'] as $key2 => $val2  ) {
-                $detector = $key2;
-                foreach ( $val2['children'] as $key3 => $val3  ) {
-                    $measurement = $key3;
-                    $identifier = '['.implode(',', array($observatory, $instrument, $detector, $measurement)).']';
+        foreach ( $obj as $sourceId => $source ) {
+
 ?>
                 <tr>
-                    <td class="sourceId param"><?php echo $val3['sourceId']; ?></td>
-                    <td ><?php echo $val3['nickname'].'<br />'.$val3['description']; ?></td>
-                    <td class="param"><?php echo $identifier; ?></td>
-                    <td class="param"><?php echo $observatory; ?></td>
-                    <td class="param"><?php echo $instrument; ?></td>
-                    <td class="param"><?php echo $detector; ?></td>
-                    <td class="param"><?php echo $measurement; ?></td>
+                    <td class="sourceId param"><?php echo $source['sourceId']; ?></td>
+                    <td ><?php echo $source['nickname']; ?></td>
+<?php
+            foreach ($source['uiLabels'] as $hierarchy) {
+                echo '                    <td>'.$hierarchy['name'].'</td>';
+            }
+?>
                 </tr>
 <?php
-                }
-            }
         }
 ?>
             </table>
