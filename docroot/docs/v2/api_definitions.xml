@@ -3160,11 +3160,11 @@ Full source code for the entire Helioviewer Project can be found at https://laun
         <parameters>
             <parameter type="string" optional="false" name="startTime">
                 <description><![CDATA[Date/Time for the beginning of the JPX movie data. ISO 8601 combined UTC date and time UTC format.]]></description>
-                <example><![CDATA[2013-01-01T00:00:00Z]]></example>
+                <example><![CDATA[2014-01-01T00:00:00Z]]></example>
             </parameter>
             <parameter type="string" optional="false" name="endTime">
                 <description><![CDATA[Date/Time for the end of the JPX movie data.  ISO 8601 combined UTC date and time UTC format.]]></description>
-                <example><![CDATA[2013-01-01T00:45:00Z]]></example>
+                <example><![CDATA[2014-01-01T00:45:00Z]]></example>
             </parameter>
             <parameter type="number" optional="false" name="sourceId">
                 <description><![CDATA[Unique image datasource identifier.]]></description>
@@ -3191,25 +3191,31 @@ Full source code for the entire Helioviewer Project can be found at https://laun
         </parameters>
         <response code="200" type="binary" subtype="JPX movie data">
             <description><![CDATA[By default, JPX binary movie data is returned.  This assumes that the `jpip` and `verbose` parameters are omitted or set to `false`.]]></description>
-            <example query_string="?startTime=2013-01-01T00:00:00Z&amp;endTime=2013-01-01T00:45:00Z&amp;sourceId=14"/>
+            <example query_string="?startTime=2014-01-01T00:00:00Z&amp;endTime=2014-01-01T00:45:00Z&amp;sourceId=14"/>
         </response>
         <response code="200" type="string" subtype="JPIP link to JPX movie">
             <description><![CDATA[If the `jpip` parameter is set to `true` (and the `verbose` parameter is omitted or set to `false`) the reponse is a a JPIP-protocol link to the JPX movie as a plain text string.]]></description>
-            <example query_string="?startTime=2013-01-01T00:00:00Z&amp;endTime=2013-01-01T00:45:00Z&amp;sourceId=14&amp;jpip=true"><![CDATA[jpip://api.helioviewer.org:8090/movies/SDO_AIA_335_F2013-01-01T00.00.00Z_T2013-01-01T00.45.00Z.jpx]]></example>
+            <example query_string="?startTime=2014-01-01T00:00:00Z&amp;endTime=2014-01-01T00:45:00Z&amp;sourceId=14&amp;jpip=true"><![CDATA[jpip://api.helioviewer.org:8090/movies/SDO_AIA_335_F2014-01-01T00.00.00Z_T2014-01-01T00.45.00Z.jpx]]></example>
         </response>
         <response code="200" type="JPIP JPX Movie" subtype="JSON">
             <description><![CDATA[If request parameters `jpip` and `verbose` are both set to `true`, the reponse is a JSON object containing a JPIP-protocol link to the JPX movie plus the timestamps of each frame a message if the value of `cadence` was overridden by the server.]]></description>
-            <example query_string="?startTime=2013-01-01T00:00:00Z&amp;endTime=2013-01-01T00:45:00Z&amp;sourceId=14&amp;jpip=true&amp;verbose=true"><![CDATA[{
+            <example query_string="?startTime=2014-01-01T00:00:00Z&amp;endTime=2014-01-01T00:45:00Z&amp;sourceId=14&amp;jpip=true&amp;verbose=true"><![CDATA[{
   "frames": [
-    1356998402
+    1388534414,
+    1388534450,
+    1388534486,
+    [...],
+    1388537006,
+    1388537042,
+    1388537078
   ],
   "message": null,
-  "uri": "jpip://api.helioviewer.org:8090/movies/SDO_AIA_335_F2013-01-01T00.00.00Z_T2013-01-01T00.45.00Z.jpx"
+  "uri": "jpip://api.helioviewer.org:8090/movies/SDO_AIA_335_F2014-01-01T00.00.00Z_T2014-01-01T00.45.00Z.jpx"
 }]]></example>
         </response>
         <response code="200" type="HTTP JPX Movie" subtype="JSON">
             <description><![CDATA[If request parameters `verbose` is set to `true` and `jpip` is omitted or set to `false`, the reponse is a JSON object containing an HTTP-protocol link to the JPX movie plus the timestamps of each frame a message if the value of `cadence` was overridden by the server.]]></description>
-            <example query_string="?startTime=2013-01-01T00:00:00Z&amp;endTime=2013-01-01T00:45:00Z&amp;sourceId=14&amp;verbose=true"><![CDATA[{
+            <example query_string="?startTime=2014-01-01T00:00:00Z&amp;endTime=2014-01-01T00:45:00Z&amp;sourceId=14&amp;verbose=true"><![CDATA[{
     "message": "Movie cadence has been changed to one image every 1284 seconds in order to avoid exceeding the maximum allowed number of frames (1000) between the requested start and end dates.",
     "uri": "http://api.helioviewer.org/jp2/movies/SOHO_MDI_MDI_magnetogram_F2003-10-05T00.00.00Z_T2003-10-20T00.00.00ZB1L.jpx",
     "frames": [

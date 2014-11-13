@@ -144,7 +144,7 @@ class Image_Composite_HelioviewerCompositeImage {
      */
     private function _buildImageLayer($layer) {
         $image = $this->db->getClosestData($this->date, $layer['sourceId']);
-echo json_encode($layer);
+
         // Instantiate a JP2Image
         $jp2Filepath = HV_JP2_DIR.$image['filepath'].'/'.$image['filename'];
 

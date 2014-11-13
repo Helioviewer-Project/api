@@ -647,8 +647,7 @@ class Database_ImgIndex {
                  . "WHERE "
                  .     "sourceId = %d AND "
                  .     "date BETWEEN '%s' AND '%s' "
-                 . "ORDER BY date ASC "
-                 . "LIMIT 1;",
+                 . "ORDER BY date ASC;",
                  (int)$sourceId,
                  $this->_dbConnection->link->real_escape_string(
                     $startDate),
