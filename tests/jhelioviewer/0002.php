@@ -13,7 +13,8 @@ $params = array(
     'action'   => 'getJP2Image',
     'date'     => '2014-01-01T23:59:59Z',
     'sourceId' => '14',
-    'jpip'     => 'true'
+    'jpip'     => 'true',
+    'json'     => 'true'
 );
 
 echo "\n\nInput to test case:\n";
@@ -28,7 +29,7 @@ echo '$jhv => ';
 var_dump($jhv);
 
 echo "\nExpected Test Output:\n";
-echo 'jpip://api.helioviewer.org:8090/AIA/2014/01/02/335/2014_01_02__00_00_02_62__SDO_AIA_AIA_335.jp2';
+echo '{"uri":"jpip:\/\/api.helioviewer.org:8090\/AIA\/2014\/01\/02\/335\/2014_01_02__00_00_02_62__SDO_AIA_AIA_335.jp2"}';
 
 echo "\n\nExecuting API call:\n";
 echo '$jhv->execute()'."\n";
