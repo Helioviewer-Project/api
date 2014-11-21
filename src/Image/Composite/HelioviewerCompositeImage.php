@@ -169,16 +169,16 @@ class Image_Composite_HelioviewerCompositeImage {
         $tmpFile = $this->_dir . '/' . rand() . '.' . $ext;
 
         // Choose type of image to create
-        if ( $layer['instrument'] == 'SECCHI' ) {
-            if ( substr($layer['detector'], 0, 3) == 'COR' ) {
+        if ( $layer['uiLabels'][1]['name'] == 'SECCHI' ) {
+            if ( substr($layer['uiLabels'][2]['name'], 0, 3) == 'COR' ) {
                 $type = 'CORImage';
             }
             else {
-                $type = strtoupper($layer['detector']).'Image';
+                $type = strtoupper($layer['uiLabels'][2]['name']).'Image';
             }
         }
         else {
-            $type = strtoupper($layer['instrument']).'Image';
+            $type = strtoupper($layer['uiLabels'][1]['name']).'Image';
         }
 
         include_once HV_ROOT_DIR.'/../src/Image/ImageType/'.$type.'.php';
@@ -186,8 +186,7 @@ class Image_Composite_HelioviewerCompositeImage {
         $classname = 'Image_ImageType_'.$type;
 
         return new $classname(
-            $jp2, $tmpFile, $this->roi, $layer['observatory'],
-            $layer['instrument'], $layer['detector'], $layer['measurement'],
+            $jp2, $tmpFile, $this->roi, $layer['uiLabels'],
             $offsetX, $offsetY, $options, $image['sunCenterOffsetParams'] );
     }
 

@@ -14,7 +14,7 @@
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     http://launchpad.net/helioviewer.org
  */
-require_once 'src/Image/HelioviewerImage.php';
+require_once HV_ROOT_DIR.'/../src/Image/HelioviewerImage.php';
 /**
  * Image_ImageType_CORImage class definition
  * There is one xxxImage for each type of detector Helioviewer supports.
@@ -37,24 +37,22 @@ class Image_ImageType_CORImage extends Image_HelioviewerImage {
      * @param string $filepath Location to output the file to
      * @param array  $roi      Top-left and bottom-right pixel coordinates on
      *                         the image
-     * @param string $inst     Instrument
-     * @param string $det      Detector
-     * @param string $meas     Measurement
+     * @param array  $uiLabels Datasource label hierarchy
      * @param int    $offsetX  Offset of the sun center from the image center
      * @param int    $offsetY  Offset of the sun center from the iamge center
      * @param array  $options  Optional parameters
      *
      * @return void
      */
-    public function __construct($jp2, $filepath, $roi, $obs, $inst, $det,
-        $meas, $offsetX, $offsetY, $options) {
+    public function __construct($jp2, $filepath, $roi, $uiLabels, $offsetX,
+        $offsetY, $options) {
 
-        if ($det == 'COR1') {
+        if ($uiLabels[2]['name'] == 'COR1') {
             $colorTable = HV_ROOT_DIR
                         . '/api/resources/images/color-tables'
                         . '/Green-White_Linear.png';
         }
-        else if ($det == 'COR2') {
+        else if ($uiLabels[2]['name'] == 'COR2') {
             $colorTable = HV_ROOT_DIR
                         . '/api/resources/images/color-tables'
                         . '/Red_Temperature.png';
@@ -66,8 +64,8 @@ class Image_ImageType_CORImage extends Image_HelioviewerImage {
 
         $filepath = substr($filepath, 0, -3) . 'png';
 
-        parent::__construct($jp2, $filepath, $roi, $obs, $inst, $det, $meas,
-            $offsetX, $offsetY, $options);
+        parent::__construct($jp2, $filepath, $roi, $uiLabels, $offsetX,
+            $offsetY, $options);
     }
 
     /**
@@ -76,8 +74,8 @@ class Image_ImageType_CORImage extends Image_HelioviewerImage {
      * @return string Watermark name
      */
     public function getWaterMarkName() {
-        $which = substr($this->observatory, -1);
-        return "$this->detector-$which\n";
+        $which = substr($this->uiLabels[0]['name'], -1);
+        return $this->uiLabels[2]['name'].'-'.$which."\n";
     }
 
     /**
@@ -141,7 +139,7 @@ class Image_ImageType_CORImage extends Image_HelioviewerImage {
         $maskHeight = $this->jp2->getHeight();
 
         $dir = HV_ROOT_DIR . '/api/resources/images/alpha-masks/';
-        $which = substr($this->observatory, -1);
+        $which = substr($this->uiLabels[0]['name'], -1);
         $mask = sprintf('%s%s-%s_Mask.png', $dir, $this->detector, $which);
 
         // Scale for zoom level
@@ -182,7 +180,7 @@ class Image_ImageType_CORImage extends Image_HelioviewerImage {
                 $maskWidth * $maskScaleFactor, $maskHeight * $maskScaleFactor);
         $mask->cropImage($cropWidth, $cropHeight, max($maskTopLeftX, 0),
             max($maskTopLeftY, 0));
-        $mask->resetImagePage("{$width}x{$height}+0+0");
+        $mask->resetImagePage('{'.$width.'}x{'.$height.'}+0+0');
 
         $mask->setImageBackgroundColor('black');
         $mask->extentImage($width, $height, $width-$cropWidth,

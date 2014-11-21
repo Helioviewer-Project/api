@@ -29,9 +29,7 @@ require_once 'SubFieldImage.php';
  */
 class Image_HelioviewerImage extends Image_SubFieldImage {
 
-    protected $instrument;
-    protected $detector;
-    protected $measurement;
+    protected $uiLabels;
     protected $filepath;
     protected $options;
 
@@ -42,15 +40,12 @@ class Image_HelioviewerImage extends Image_SubFieldImage {
      *                              should be derrived
      * @param string $filepath      Location to output the file to
      * @param array  $roi           Subfield region of interest in pixels
-     * @param string $instrument    Instrument
-     * @param string $detector      Detector
-     * @param string $measurement   Measurement
+     * @param array  $uiLabels      Datasource label hierarchy
      * @param float  $offsetX       Offset of the sun center from image center
      * @param float  $offsetY       Offset of the sun center from image center
      */
-    public function __construct($jp2, $filepath, $roi, $observatory,
-        $instrument, $detector, $measurement, $offsetX, $offsetY,
-        $options) {
+    public function __construct($jp2, $filepath, $roi, $uiLabels, $offsetX,
+        $offsetY, $options) {
 
         // Default options
         $defaults = array(
@@ -62,10 +57,7 @@ class Image_HelioviewerImage extends Image_SubFieldImage {
         );
         $this->options = array_replace($defaults, $options);
 
-        $this->observatory = $observatory;
-        $this->instrument  = $instrument;
-        $this->detector    = $detector;
-        $this->measurement = $measurement;
+        $this->uiLabels = $uiLabels;
         $this->filepath    = $filepath;
 
         $imageSettings = array('opacity' => $this->options['opacity']);
