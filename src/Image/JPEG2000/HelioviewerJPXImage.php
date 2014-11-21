@@ -268,7 +268,7 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
             // Get next image
             $isoDate = toISOString(parseUnixTimestamp($time));
 
-            $img = $imgIndex->getImageFromDatabase($isoDate, $this->_sourceId);
+            $img = $imgIndex->getDataFromDatabase($isoDate, $this->_sourceId);
             $filepath = HV_JP2_DIR.$img['filepath'].'/'.$img['filename'];
 
             // Ignore redundant images
@@ -280,7 +280,7 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
         }
 
         // Add entry for start time if it isn't already included
-        $img = $imgIndex->getImageFromDatabase($this->_startTime,
+        $img = $imgIndex->getDataFromDatabase($this->_startTime,
             $this->_sourceId);
         $jp2 = HV_JP2_DIR.$img['filepath'].'/'.$img['filename'];
 
