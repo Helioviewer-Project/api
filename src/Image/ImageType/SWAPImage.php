@@ -13,7 +13,7 @@
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     http://launchpad.net/helioviewer.org
  */
-require_once 'src/Image/HelioviewerImage.php';
+require_once HV_ROOT_DIR.'/../src/Image/HelioviewerImage.php';
 /**
  * Image_ImageType_SWAPImage class definition
  * There is one xxxImage for each type of detector Helioviewer supports.
@@ -35,17 +35,15 @@ class Image_ImageType_SWAPImage extends Image_HelioviewerImage {
      * @param string $filepath Location to output the file to
      * @param array  $roi      Top-left and bottom-right pixel coordinates
      *                         on the image
-     * @param string $inst     Instrument
-     * @param string $det      Detector
-     * @param string $meas     Measurement
+     * @param array  $uiLabels Datasource label hierarchy
      * @param int    $offsetX  Offset of the sun center from the image center
      * @param int    $offsetY  Offset of the sun center from the iamge center
      * @param array  $options  Optional parameters
      *
      * @return void
      */
-    public function __construct($jp2, $filepath, $roi, $obs, $inst, $det,
-        $meas, $offsetX, $offsetY, $options) {
+    public function __construct($jp2, $filepath, $roi, $uiLabels, $offsetX,
+        $offsetY, $options) {
 
         $colorTable = HV_ROOT_DIR
                     . '/api/resources/images/color-tables'
@@ -76,8 +74,8 @@ class Image_ImageType_SWAPImage extends Image_HelioviewerImage {
             $options['palettedJP2'] = true;
         }
 
-        parent::__construct($jp2, $filepath, $roi, $obs, $inst, $det, $meas,
-            $offsetX, $offsetY, $options);
+        parent::__construct($jp2, $filepath, $roi, $uiLabels, $offsetX,
+            $offsetY, $options);
     }
 
     /**
@@ -86,7 +84,8 @@ class Image_ImageType_SWAPImage extends Image_HelioviewerImage {
      * @return string watermark name
      */
     public function getWaterMarkName() {
-        return 'SWAP '.$this->measurement."\n";
+        return 'SWAP '.$this->uiLabels[3]['name']."\n";
     }
+
 }
 ?>
