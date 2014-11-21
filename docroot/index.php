@@ -68,7 +68,6 @@ function loadModule($params) {
         'downloadScreenshot'     => 'WebClient',
         'getClosestImage'        => 'WebClient',
         'getDataSources'         => 'WebClient',
-        'getDataSourceList'      => 'WebClient',
         'getJP2Header'           => 'WebClient',
         'getNewsFeed'            => 'WebClient',
         'getStatus'              => 'WebClient',

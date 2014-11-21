@@ -1244,5 +1244,30 @@ class Database_ImgIndex {
         $data = $result->fetch_array(MYSQLI_ASSOC);
         return $data['filepath'];
     }
+
+    /**
+     * Return from the database the parameters that were used to generate
+     * a screenshot.
+     *
+     * @param int Unique screenshot identifier
+     *
+     * @return array Screenshot metadata
+     */
+    public function getScreenshotMetadata($screenshotId) {
+        $this->_dbConnect();
+
+        $sql = sprintf('SELECT *, AsText(regionOfInterest) as roi ' .
+            'FROM screenshots WHERE id=%d LIMIT 1;',
+             (int)$screenshotId
+        );
+        try {
+            $result = $this->_dbConnection->query($sql);
+        }
+        catch (Exception $e) {
+            return false;
+        }
+
+        return $result->fetch_array(MYSQLI_ASSOC);
+    }
 }
 ?>

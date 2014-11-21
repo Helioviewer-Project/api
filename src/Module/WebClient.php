@@ -128,7 +128,7 @@ class Module_WebClient implements Module {
 
         $imgIndex = new Database_ImgIndex();
 
-        $image = $imgIndex->getImageFromDatabase($this->_params['date'],
+        $image = $imgIndex->getDataFromDatabase($this->_params['date'],
             $this->_params['sourceId']);
 
         // Read JPEG 2000 header
@@ -174,22 +174,6 @@ class Module_WebClient implements Module {
 
         // Print result
         $this->_printJSON(json_encode($dataSources), false, true);
-    }
-
-    /**
-     * getDataSourceList
-     *
-     * @return JSON Returns a flat array of data source objects
-     */
-    public function getDataSourceList() {
-
-        include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
-
-        $imgIndex    = new Database_ImgIndex();
-
-        // Print result
-        $this->_printJSON(json_encode($imgIndex->getDataSourceList()),
-            false, true);
     }
 
     /**
@@ -826,14 +810,6 @@ class Module_WebClient implements Module {
          $statuses = array();
 
          // Case 1: instrument
-         /**
-          *
-          * $instIds = (SELECT * FROM instruments)
-          * foreach $instId as $instId:
-          *     $datasources = (SELECT * FROM datasources WHERE instrumentId=$instId)
-          *         find newest (and oldest?) date among the datasources
-          *
-          */
         $instruments = $imgIndex->getDataSourcesByInstrument();
 
         // Date format
@@ -851,7 +827,7 @@ class Module_WebClient implements Module {
             foreach( $dataSources as $dataSource ) {
 
                 // Get date string for most recent image
-                $dateStr = $imgIndex->getNewestImage($dataSource['id']);
+                $dateStr = $imgIndex->getNewestData($dataSource['id']);
 
                 // Skip data source if no images are found
                 if ( is_null($dateStr) ) {
@@ -1141,11 +1117,6 @@ class Module_WebClient implements Module {
                'optional' => array('verbose', 'callback', 'enable'),
                'bools'    => array('verbose'),
                'alphanum' => array('callback')
-            );
-            break;
-        case 'getDataSourceList':
-            $expected = array(
-               'required' => array()
             );
             break;
         case 'getTile':
