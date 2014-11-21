@@ -943,7 +943,6 @@ class Module_Movies implements Module {
                 $this->_params['action'] = 'reQueueMovie';
                 $this->_params['id'] = $id;
                 $this->_params['force'] = true;
-$this->_params['force'] = false;
                 $this->reQueueMovie($silent=true);
             }
             catch (Exception $e) {
