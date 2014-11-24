@@ -335,15 +335,15 @@ class Database_Statistics {
      */
     public function updateDataCoverage($period=null) {
 
-        if ( gettype($period) != 'string' ||
-             preg_match('/^([0-9]+)([mhDMY])$/', $period, $matches) !== 1 ) {
+        if ( gettype($period) == 'string' &&
+             preg_match('/^([0-9]+)([mhDMY])$/', $period, $matches) === 1 ) {
 
-            $magnitude   =  7;
-            $period_abbr = 'D';
-        }
-        else {
             $magnitude   = $matches[1];
             $period_abbr = $matches[2];
+        }
+        else {
+            $magnitude   =  7;
+            $period_abbr = 'D';
         }
 
         switch ($period_abbr) {
@@ -378,7 +378,7 @@ class Database_Statistics {
                     'sourceId, ' .
                     'COUNT(id) ' .
                 'FROM ' .
-                    'images ' .
+                    'data ' .
                 'WHERE ' .
                     'date >= DATE_SUB(NOW(),'.$interval.') ' .
                 'GROUP BY ' .
