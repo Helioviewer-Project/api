@@ -656,7 +656,8 @@ def create_statistics_table(cursor):
       `id`          INT unsigned NOT NULL auto_increment,
       `timestamp`   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       `action`      VARCHAR(32)  NOT NULL,
-       PRIMARY KEY (`id`)
+       PRIMARY KEY (`id`),
+       KEY `date_idx` (`timestamp`,`action`)
     ) DEFAULT CHARSET=utf8;""")
 
 def create_data_coverage_table(cursor):

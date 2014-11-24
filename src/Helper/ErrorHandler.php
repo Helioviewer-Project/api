@@ -53,10 +53,12 @@ function handleError($msg, $errorCode=255) {
     header('Content-type: application/json;charset=UTF-8');
 
     // JSON
-    echo json_encode(array(
-        'error' => $msg,
-        'errno' => $errorCode
-    ));
+    echo json_encode(
+        array(
+            'error' => $msg,
+            'errno' => $errorCode
+        )
+    );
 
     // Don't log non-harmful errors
     $dontLog = array(12, 16, 23, 25, 26, 40, 44, 46);

@@ -53,7 +53,7 @@ class Resque_Worker
 	 * @var Resque_Job Current job, if any, being processed by this worker.
 	 */
 	private $currentJob = null;
-	
+
 	/**
 	 * @var int Process ID of child worker processes.
 	 */
@@ -508,11 +508,13 @@ class Resque_Worker
 		$job->worker = $this;
 		$this->currentJob = $job;
 		$job->updateStatus(Resque_Job_Status::STATUS_RUNNING);
-		$data = json_encode(array(
-			'queue' => $job->queue,
-			'run_at' => strftime('%a %b %d %H:%M:%S %Z %Y'),
-			'payload' => $job->payload
-		));
+		$data = json_encode(
+			array(
+				'queue' => $job->queue,
+				'run_at' => strftime('%a %b %d %H:%M:%S %Z %Y'),
+				'payload' => $job->payload
+			)
+		);
 		Resque::redis()->set('worker:' . $job->worker, $data);
 	}
 

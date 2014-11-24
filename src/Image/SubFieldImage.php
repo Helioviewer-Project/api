@@ -512,7 +512,7 @@ class Image_SubFieldImage {
         $gd = imagecreatefromstring($input);
 
         if (!$gd) {
-            throw new Exception('Unable to apply color-table: ' . $input 
+            throw new Exception('Unable to apply color-table: ' . $input
                 . ' is not a valid image.', 32);
         }
 
@@ -550,7 +550,9 @@ class Image_SubFieldImage {
     public function display() {
 
         //header('Cache-Control: public, max-age=' . $lifetime * 60);
-        $headers = apache_request_headers();
+        if ( function_exists('apache_request_headers') ) {
+            $headers = apache_request_headers();
+        }
 
         // Enable caching of images served by PHP
         // http://us.php.net/manual/en/function.header.php#61903

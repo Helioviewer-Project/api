@@ -332,8 +332,7 @@ class Movie_YouTube {
         else {
             header('Content-type: application/json');
             echo json_encode(
-                array('status' => 'upload in progress.'),
-                JSON_PRETTY_PRINT
+                array('status' => 'upload in progress.')
             );
         }
 
