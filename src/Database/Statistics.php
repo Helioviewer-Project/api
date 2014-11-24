@@ -32,7 +32,7 @@ class Database_Statistics {
      * @return void
      */
     public function __construct() {
-        include_once 'DbConnection.php';
+        include_once HV_ROOT_DIR.'/../src/Database/DbConnection.php';
         $this->_dbConnection = new Database_DbConnection();
     }
 
@@ -163,7 +163,7 @@ class Database_Statistics {
     public function getDataCoverageTimeline($resolution, $endDate, $interval,
         $stepSize, $steps) {
 
-        require_once 'src/Helper/DateTimeConversions.php';
+        require_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
 
         $sql = 'SELECT id, name, description FROM datasources ORDER BY description';
         $result = $this->_dbConnection->query($sql);
@@ -249,7 +249,7 @@ class Database_Statistics {
     public function getDataCoverage($resolution, $endDate, $interval,
         $stepSize, $steps) {
 
-        require_once 'src/Helper/DateTimeConversions.php';
+        require_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
 
         $sql = 'SELECT id, name, description FROM datasources ORDER BY description';
         $result = $this->_dbConnection->query($sql);

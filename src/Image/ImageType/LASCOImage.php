@@ -46,12 +46,12 @@ class Image_ImageType_LASCOImage extends Image_HelioviewerImage {
 
         if ($uiLabels[2]['name'] == 'C2') {
             $colorTable = HV_ROOT_DIR
-                        . '/api/resources/images/color-tables/'
+                        . '/resources/images/color-tables/'
                         . 'Red_Temperature.png';
         }
         else if ($uiLabels[2]['name'] == 'C3') {
             $colorTable = HV_ROOT_DIR
-                        . '/api/resources/images/color-tables/'
+                        . '/resources/images/color-tables/'
                         . 'Blue_White_Linear.png';
         }
 
@@ -121,7 +121,7 @@ class Image_ImageType_LASCOImage extends Image_HelioviewerImage {
         $maskWidth  = 1040;
         $maskHeight = 1040;
         $mask       = HV_ROOT_DIR
-                    . '/api/resources/images/alpha-masks/LASCO_'
+                    . '/resources/images/alpha-masks/LASCO_'
                     . $this->uiLabels[2]['name']
                     . '_Mask.png';
 
@@ -161,7 +161,7 @@ class Image_ImageType_LASCOImage extends Image_HelioviewerImage {
                           $maskHeight * $maskScaleFactor);
         $mask->cropImage($cropWidth, $cropHeight, max($maskTopLeftX, 0),
                          max($maskTopLeftY, 0));
-        $mask->resetImagePage($width.'x'.$height'+0+0');
+        $mask->resetImagePage($width.'x'.$height.'+0+0');
 
         $mask->setImageBackgroundColor('black');
         $mask->extentImage($width, $height, $width - $cropWidth,

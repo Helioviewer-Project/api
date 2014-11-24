@@ -49,12 +49,12 @@ class Image_ImageType_CORImage extends Image_HelioviewerImage {
 
         if ($uiLabels[2]['name'] == 'COR1') {
             $colorTable = HV_ROOT_DIR
-                        . '/api/resources/images/color-tables'
+                        . '/resources/images/color-tables'
                         . '/Green-White_Linear.png';
         }
         else if ($uiLabels[2]['name'] == 'COR2') {
             $colorTable = HV_ROOT_DIR
-                        . '/api/resources/images/color-tables'
+                        . '/resources/images/color-tables'
                         . '/Red_Temperature.png';
         }
 
@@ -138,7 +138,7 @@ class Image_ImageType_CORImage extends Image_HelioviewerImage {
         $maskWidth  = $this->jp2->getWidth();
         $maskHeight = $this->jp2->getHeight();
 
-        $dir = HV_ROOT_DIR . '/api/resources/images/alpha-masks/';
+        $dir = HV_ROOT_DIR . '/resources/images/alpha-masks/';
         $which = substr($this->uiLabels[0]['name'], -1);
         $mask = sprintf('%s%s-%s_Mask.png', $dir, $this->detector, $which);
 

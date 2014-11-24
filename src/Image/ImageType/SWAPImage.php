@@ -46,7 +46,7 @@ class Image_ImageType_SWAPImage extends Image_HelioviewerImage {
         $offsetY, $options) {
 
         $colorTable = HV_ROOT_DIR
-                    . '/api/resources/images/color-tables'
+                    . '/resources/images/color-tables'
                     . '/PROBA2_SWAP_$meas.png';
 
         $imgDate = strtotime($options['date']);

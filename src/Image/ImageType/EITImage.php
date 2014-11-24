@@ -45,7 +45,7 @@ class Image_ImageType_EITImage extends Image_HelioviewerImage {
         $offsetY, $options) {
 
         $colorTable = HV_ROOT_DIR
-                    . '/api/resources/images/color-tables/SOHO_EIT_'
+                    . '/resources/images/color-tables/SOHO_EIT_'
                     . $uiLabels[3]['name']
                     . '.png';
 
