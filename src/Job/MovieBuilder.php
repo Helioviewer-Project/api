@@ -20,16 +20,16 @@
  * @link     http://launchpad.net/helioviewer.org
  *
  */
-include_once 'src/Movie/HelioviewerMovie.php';
-include_once 'src/Helper/ErrorHandler.php';
-include_once 'lib/Redisent/Redisent.php';
+include_once HV_ROOT_DIR.'/../src/Movie/HelioviewerMovie.php';
+include_once HV_ROOT_DIR.'/../src/Helper/ErrorHandler.php';
+include_once HV_ROOT_DIR.'/../lib/Redisent/Redisent.php';
 
 class Job_MovieBuilder
 {
     public function perform()
     {
         printf("Starting movie %s\n", $this->args['movieId']);
-        
+
         // Build movie
         try {
             $movie = new Movie_HelioviewerMovie($this->args['movieId']);
@@ -38,27 +38,27 @@ class Job_MovieBuilder
             // Handle any errors encountered
             printf("Error processing movie %s\n", $this->args['movieId']);
             logErrorMsg($e->getMessage(), "Resque_");
-                        
+
             // If counter was increased at queue time, decrement
             $this->_updateCounter();
-            
+
             throw $e;
         }
-        
+
         printf("Finished movie %s\n", $this->args['movieId']);
         $this->_updateCounter();
-        
+
         // If the queue is empty and no jobs are being processed, set estimated
         // time counter to zero
         //$numWorking = sizeOf($redis->keys("resque:worker:*on_demand_movie"));
         //$queueSize  = $redis->llen("resque:queue:on_demand_movie");
-        
+
         //if ($numWorking <= 1 && $queueSize == 0) {
         //    $redis->set('helioviewer:movie_queue_wait', 0);
         //    return;
         //}
     }
-    
+
     /**
      * Decrements movie wait counter for movie if needed
      */

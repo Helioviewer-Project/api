@@ -43,7 +43,7 @@ class Database_MovieDatabase {
      */
     private function _dbConnect() {
         if ( $this->_dbConnection === false ) {
-            include_once 'DbConnection.php';
+            include_once HV_ROOT_DIR.'/../src/Database/DbConnection.php';
             $this->_dbConnection = new Database_DbConnection();
         }
     }
@@ -292,12 +292,12 @@ class Database_MovieDatabase {
      */
     public function getSharedVideos($num, $since, $force=false) {
 
-        include_once 'src/Helper/DateTimeConversions.php';
+        include_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
 
         $cached = false;
 
         if ( HV_DISABLE_CACHE !== true || $force===false ) {
-            include_once 'src/Helper/Serialize.php';
+            include_once HV_ROOT_DIR.'/../src/Helper/Serialize.php';
 
             $cachedir = 'api/MovieDatabse/getSharedvideos';
             $filename = urlencode($since.'_'.$num.'.cache');

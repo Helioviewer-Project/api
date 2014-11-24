@@ -351,7 +351,7 @@ class Image_Composite_HelioviewerCompositeImage {
         $markerPinPixelOffsetX = 12;
         $markerPinPixelOffsetY = 38;
 
-        require_once 'src/Event/HEKAdapter.php';
+        require_once HV_ROOT_DIR.'/../src/Event/HEKAdapter.php';
 
         $hek = new Event_HEKAdapter();
 
@@ -615,14 +615,14 @@ class Image_Composite_HelioviewerCompositeImage {
         }
 
         $watermark = new IMagick(  HV_ROOT_DIR
-                                 . '/api/resources/images/'
+                                 . '/resources/images/'
                                  . 'watermark_small_black_border.png');
 
         // If the image is too small, use only the circle, not the url, and
         // scale it so it fits the image.
         if ( $this->width / 300 < 2 ) {
             $watermark->readImage(  HV_ROOT_DIR
-                                  . '/api/resources/images/'
+                                  . '/resources/images/'
                                   . 'watermark_circle_small_black_border.png');
             $scale = ($this->width / 2) / 300;
             $width = $watermark->getImageWidth();

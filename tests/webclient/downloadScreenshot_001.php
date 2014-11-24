@@ -22,6 +22,16 @@ $webClient = new Module_WebClient($params);
 echo "\n\nExecuting API call:\n";
 echo '$webClient->execute()'."\n";
 
+echo "\n\nDump PNG binary data to stdout?";
+echo "\n'y' or 'n': ";
+$handle = fopen ("php://stdin","r");
+$line = fgets($handle);
+if ( strtolower(trim($line)) != 'y' ) {
+
+    echo "\n\nTest Script ABORTED: ".date('Y-m-d H:i:s T', time())."\n\n";
+    exit;
+}
+
 echo "\nActual Test Output:\n";
 $webClient->execute();
 

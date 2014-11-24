@@ -45,7 +45,7 @@ class Image_ImageType_AIAImage extends Image_HelioviewerImage {
         $offsetY, $options) {
 
         $colorTable = HV_ROOT_DIR
-                    . '/api/resources/images/color-tables/'
+                    . '/resources/images/color-tables/'
                     . 'SDO_AIA_'.$uiLabels[3]['name'].'.png';
         $this->setColorTable($colorTable);
 

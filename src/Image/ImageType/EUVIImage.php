@@ -45,7 +45,7 @@ class Image_ImageType_EUVIImage extends Image_HelioviewerImage {
         $offsetY, $options) {
 
         $colorTable = HV_ROOT_DIR
-                    . '/api/resources/images/color-tables/STEREO_EUVI_'
+                    . '/resources/images/color-tables/STEREO_EUVI_'
                     . $uiLabels[3]['name']
                     . '.png';
         $this->setColorTable($colorTable);

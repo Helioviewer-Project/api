@@ -45,7 +45,7 @@ class Image_ImageType_SXTImage extends Image_HelioviewerImage {
         $offsetY, $options) {
 
         $colorTable = HV_ROOT_DIR
-                    . '/api/resources/images/color-tables/Yohkoh_SXT_'
+                    . '/resources/images/color-tables/Yohkoh_SXT_'
                     . $uiLabels[3]['name']
                     . '.png';
 

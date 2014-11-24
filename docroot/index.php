@@ -99,7 +99,7 @@ function loadModule($params) {
         'getEventGlossary'       => 'SolarEvents'
     );
 
-    include_once '../src/Validation/InputValidator.php';
+    include_once HV_ROOT_DIR.'/../src/Validation/InputValidator.php';
 
     try {
         if ( !array_key_exists('action', $params) ||
@@ -116,7 +116,7 @@ function loadModule($params) {
             $moduleName = $valid_actions[$params['action']];
             $className  = 'Module_'.$moduleName;
 
-            include_once '../src/Module/'.$moduleName.'.php';
+            include_once HV_ROOT_DIR.'/../src/Module/'.$moduleName.'.php';
 
             $module = new $className($params);
             $module->execute();
@@ -130,7 +130,7 @@ function loadModule($params) {
             if ( HV_ENABLE_STATISTICS_COLLECTION &&
                  in_array($params['action'], $actions_to_keep_stats_for) ) {
 
-                include_once '../src/Database/Statistics.php';
+                include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
                 $statistics = new Database_Statistics();
                 $statistics->log($params['action']);
             }

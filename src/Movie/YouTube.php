@@ -184,7 +184,7 @@ class Movie_YouTube {
         }
         catch (Exception $e) {
             //Zend_Gdata_App_HttpException
-            include_once 'src/Helper/ErrorHandler.php';
+            include_once HV_ROOT_DIR.'/../src/Helper/ErrorHandler.php';
             logErrorMsg($msg, 'Youtube_');
 
             // Discard expired authorization
@@ -292,8 +292,8 @@ class Movie_YouTube {
     private function _uploadVideoToYouTube($videoEntry, $id, $title,
         $description, $tags, $share, $html) {
 
-        include_once 'src/Database/MovieDatabase.php';
-        include_once 'lib/alphaID/alphaID.php';
+        include_once HV_ROOT_DIR.'/../src/Database/MovieDatabase.php';
+        include_once HV_ROOT_DIR.'/../lib/alphaID/alphaID.php';
 
         $movies = new Database_MovieDatabase();
 
@@ -331,7 +331,10 @@ class Movie_YouTube {
         }
         else {
             header('Content-type: application/json');
-            echo json_encode(array('status' => 'upload in progress.'));
+            echo json_encode(
+                array('status' => 'upload in progress.'),
+                JSON_PRETTY_PRINT
+            );
         }
 
         // get the size of the output
