@@ -252,16 +252,18 @@ class Module_WebClient implements Module {
 
         // Choose type of tile to create
         // TODO 2011/04/18: Generalize process of choosing class to use
-        if ($image['instrument'] == 'SECCHI') {
-            if ( substr($image['detector'], 0, 3) == 'COR' ) {
+        if ( count($image['uiLabels']) >= 3
+          && $image['uiLabels'][1]['name'] == 'SECCHI' ) {
+
+            if ( substr($image['uiLabels'][2]['name'], 0, 3) == 'COR' ) {
                 $type = 'CORImage';
             }
             else {
-                $type = strtoupper($image['detector']).'Image';
+                $type = strtoupper($image['uiLabels'][2]['name']).'Image';
             }
         }
-        else {
-            $type = strtoupper($image['instrument']).'Image';
+        else if (count($image['uiLabels']) >=2) {
+            $type = strtoupper($image['uiLabels'][1]['name']).'Image';
         }
 
         include_once HV_ROOT_DIR.'/../src/Image/ImageType/'.$type.'.php';
@@ -269,8 +271,7 @@ class Module_WebClient implements Module {
 
         // Create the tile
         $tile = new $classname(
-            $jp2, $filepath, $roi, $image['observatory'],
-            $image['instrument'], $image['detector'], $image['measurement'],
+            $jp2, $filepath, $roi, $image['uiLabels'],
             $offsetX, $offsetY, $this->_options,
             $image['sunCenterOffsetParams']
         );
