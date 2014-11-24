@@ -774,8 +774,16 @@ class Module_WebClient implements Module {
     public function updateDataCoverage() {
         include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
         $statistics = new Database_Statistics();
+
+        if ( array_key_exists('period', $this->_options) ) {
+            $period = $this->_options['period'];
+        }
+        else {
+            $period = null;
+        }
+
         $this->_printJSON(
-            $statistics->updateDataCoverage($this->_options['period'])
+            $statistics->updateDataCoverage($period)
         );
     }
 
