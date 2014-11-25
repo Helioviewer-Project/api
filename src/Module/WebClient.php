@@ -530,7 +530,7 @@ class Module_WebClient implements Module {
     public function getDataCoverage() {
 
         // Define allowed date/time resolutions
-        $validRes = array('5m', '15m', '30m',
+        $validRes = array('30m',
                           '1h',
                           '1D',
                           '1W',
@@ -652,7 +652,7 @@ class Module_WebClient implements Module {
     public function getDataCoverageTimeline() {
 
         // Define allowed date/time resolutions
-        $validRes = array('5m', '15m', '30m',
+        $validRes = array('30m',
                           '1h',
                           '1D',
                           '1W',
