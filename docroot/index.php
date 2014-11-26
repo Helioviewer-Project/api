@@ -81,7 +81,6 @@ function loadModule($params) {
         'getJP2Image'            => 'JHelioviewer',
         'getJPX'                 => 'JHelioviewer',
         'launchJHelioviewer'     => 'JHelioviewer',
-        'buildMovie'             => 'Movies',
         'downloadMovie'          => 'Movies',
         'getMovieStatus'         => 'Movies',
         'playMovie'              => 'Movies',
