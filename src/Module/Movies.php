@@ -73,17 +73,17 @@ class Module_Movies implements Module {
         $redis = new Redisent('localhost');
 
         // If the queue is currently full, don't process the request
-        $queueSize = Resque::size('on_demand_movie');
+        $queueSize = Resque::size(HV_MOVIE_QUEUE);
         if ( $queueSize >= MOVIE_QUEUE_MAX_SIZE ) {
             throw new Exception(
                 'Sorry, due to current high demand, we are currently unable ' .
                 'to process your request. Please try again later.', 40);
         }
 
-        // Get current number of on_demand_movie workers
+        // Get current number of HV_MOVIE_QUEUE workers
         $workers = Resque::redis()->smembers('workers');
         $movieWorkers = array_filter($workers, function ($elem) {
-            return strpos($elem, 'on_demand_movie') !== false;
+            return strpos($elem, HV_MOVIE_QUEUE) !== false;
         });
 
         // Default options
@@ -196,7 +196,7 @@ class Module_Movies implements Module {
             'format'  => $options['format'],
             'counter' => $updateCounter
         );
-        $token = Resque::enqueue('on_demand_movie', 'Job_MovieBuilder',
+        $token = Resque::enqueue(HV_MOVIE_QUEUE, 'Job_MovieBuilder',
             $args, true);
 
         // Create entries for each version of the movie in the movieFormats
@@ -233,17 +233,17 @@ class Module_Movies implements Module {
         $redis = new Redisent('localhost');
 
         // If the queue is currently full, don't process the request
-        $queueSize = Resque::size('on_demand_movie');
+        $queueSize = Resque::size(HV_MOVIE_QUEUE);
         if ( $queueSize >= MOVIE_QUEUE_MAX_SIZE ) {
             throw new Exception(
                 'Sorry, due to current high demand, we are currently unable ' .
                 'to process your request. Please try again later.', 40);
         }
 
-        // Get current number of on_demand_movie workers
+        // Get current number of HV_MOVIE_QUEUE workers
         $workers = Resque::redis()->smembers('workers');
         $movieWorkers = array_filter($workers, function ($elem) {
-            return strpos($elem, 'on_demand_movie') !== false;
+            return strpos($elem, HV_MOVIE_QUEUE) !== false;
         });
 
         // Default options
@@ -363,7 +363,7 @@ class Module_Movies implements Module {
             'format'  => $options['format'],
             'counter' => $updateCounter
         );
-        $token = Resque::enqueue('on_demand_movie', 'Job_MovieBuilder',
+        $token = Resque::enqueue(HV_MOVIE_QUEUE, 'Job_MovieBuilder',
             $args, true);
 
         // Create entries for each version of the movie in the movieFormats
@@ -679,7 +679,7 @@ class Module_Movies implements Module {
     public function getMovieStatus() {
         include_once HV_ROOT_DIR.'/../src/Movie/HelioviewerMovie.php';
         require_once HV_ROOT_DIR.'/../lib/Resque.php';
-        $queueNum = $this->_getQueueNum('on_demand_movie',
+        $queueNum = $this->_getQueueNum(HV_MOVIE_QUEUE,
             $this->_params['id']) + 1;
 
         // Process request

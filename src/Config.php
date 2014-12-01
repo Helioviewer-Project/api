@@ -91,7 +91,7 @@ class Config {
      */
     private function _setAdditionalParams() {
 
-        define('HV_LOG_DIR',      HV_ROOT_DIR     . '/log');
+        define('HV_LOG_DIR',      HV_ROOT_DIR     . '/../log');
         define('HV_CACHE_URL',    HV_WEB_ROOT_URL . '/cache');
 
         // 1 au in meters (http://maia.usno.navy.mil/NSFA/IAU2009_consts.html)

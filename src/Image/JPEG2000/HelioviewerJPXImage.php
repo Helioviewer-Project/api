@@ -169,7 +169,7 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
         //    thus truncated prior to reaching the requested end date. Output
         //    a warning message indicating the truncation date.
         else if ( $this->_cadence <= 0 ) {
-            $count = $imgIndex->getImageCount($this->_startTime,
+            $count = $imgIndex->getDataCount($this->_startTime,
                 $this->_endTime, $this->_sourceId);
 
             if ( $count > HV_MAX_JPX_FRAMES ) {

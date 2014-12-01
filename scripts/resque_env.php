@@ -6,8 +6,8 @@
 $dir = dirname(dirname(realpath($argv[0])));
 chdir($dir);
 
-require_once "src/Config.php";
-$config = new Config("../settings/Config.ini");
+require_once __DIR__."/../src/Config.php";
+$config = new Config(__DIR__."/../settings/Config.ini");
 
-require_once 'src/Job/MovieBuilder.php';
+require_once HV_ROOT_DIR.'/../src/Job/MovieBuilder.php';
 ?>
