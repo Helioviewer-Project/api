@@ -231,38 +231,55 @@
         <response code="200" type="Movie Status" subtype="JSON">
             <description><![CDATA[A JSON object containing metadata describing a user-generated movie, including its generation status (0=queued, 1=processing, 2=finished, 3=invalid).]]></description>
             <example query_string="?id=VXvX5&amp;format=mp4"><![CDATA[{
-  "status": 0
+  "frameRate": 15,
+  "numFrames": 300,
+  "startDate": "2014-02-03 20:26:16",
+  "status": 2,
+  "endDate": "2014-02-05 20:16:40",
+  "width": 846,
+  "height": 820,
+  "title": "SDO AIA AIA 1600 (2014-02-03 20:26:16 - 20:16:40 UTC)",
+  "thumbnails": {
+    "icon": "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-icon.png",
+    "small": "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-small.png",
+    "medium": "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-medium.png",
+    "large": "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-large.png",
+    "full": "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-full.png"
+  },
+  "url": "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/2014_02_03_20_26_16_2014_02_05_20_16_40_.mp4",
+  "statusLabel": "Completed"
 }]]></example>
         </response>
         <response code="200" type="Movie Status Verbose" subtype="JSON">
             <description><![CDATA[A JSON object containing metadata describing a user-generated movie, including its generation status (0=queued, 1=processing, 2=finished, 3=invalid) and the parameters used to create it.]]></description>
-            <example query_string="?id=VXvX5&amp;format=mp4&amp;verbose=true"><![CDATA[{
-    "frameRate": 15,
-    "numFrames": 300,
-    "startDate": "2014-02-03 20:26:16",
-    "status": 2,
-    "endDate": "2014-02-05 19:40:16",
-    "width": 846,
-    "height": 820,
-    "title": "SDO AIA 1600 (2014-02-03 20:26:16 - 19:40:16 UTC)",
-    "thumbnails": {
-        "icon": "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-icon.png",
-        "small": "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-small.png",
-        "medium": "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-medium.png",
-        "large": "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-large.png",
-        "full": "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-full.png"
-    },
-    "url": "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/2014_02_03_20_26_16_2014_02_05_19_40_16_AIA_1600.mp4",
-    "timestamp": "2014-02-05 20:25:55",
-    "duration": 20,
-    "imageScale": 2.42044,
-    "layers": "[SDO,AIA,AIA,1600,1,100]",
-    "events": "[AR,all,1],[CC,all,1],[CD,all,1],[CH,all,1],[CJ,all,1],[CE,all,1],[CR,all,1],[CW,all,1],[EF,all,1],[ER,all,1],[FI,all,1],[FA,all,1],[FE,all,1],[FL,all,1],[LP,all,1],[OS,all,1],[PG,all,1],[SG,all,1],[SP,all,1],[SS,all,1]",
-    "x1": -1011.7442962,
-    "y1": -980.2785645,
-    "x2": 1035.9487052,
-    "y2": 1004.4829735
-}]]></example>
+            <example query_string="?id=VXvX5&amp;format=webm&amp;verbose=true&amp;callback=callbackTest"><![CDATA[callbackTest({
+  "frameRate": 15,
+  "numFrames": 300,
+  "startDate": "2014-02-03 20:26:16",
+  "status": 2,
+  "endDate": "2014-02-05 20:16:40",
+  "width": 846,
+  "height": 820,
+  "title": "SDO AIA AIA 1600 (2014-02-03 20:26:16 - 20:16:40 UTC)",
+  "thumbnails": {
+    "icon": "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-icon.png",
+    "small": "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-small.png",
+    "medium": "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-medium.png",
+    "large": "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-large.png",
+    "full": "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-full.png"
+  },
+  "url": "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/2014_02_03_20_26_16_2014_02_05_20_16_40_.webm",
+  "timestamp": "2014-02-05 20:25:55",
+  "duration": 20,
+  "imageScale": 2.42044,
+  "layers": "[SDO,AIA,AIA,1600,1,100]",
+  "events": "[AR,all,1],[CC,all,1],[CD,all,1],[CH,all,1],[CJ,all,1],[CE,all,1],[CR,all,1],[CW,all,1],[EF,all,1],[ER,all,1],[FI,all,1],[FA,all,1],[FE,all,1],[FL,all,1],[LP,all,1],[OS,all,1],[PG,all,1],[SG,all,1],[SP,all,1],[SS,all,1]",
+  "x1": -1011.7442962,
+  "y1": -980.2785645,
+  "x2": 1035.9487052,
+  "y2": 1004.4829735,
+  "statusLabel": "Completed"
+})]]></example>
         </response>
     </endpoint>
     <endpoint name="downloadMovie" group="Movies" http="GET">
