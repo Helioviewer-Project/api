@@ -9,8 +9,8 @@ set SCRIPT=`readlink -f "$0"`
 set SCRIPTPATH=`dirname "$SCRIPT"`
 
 setenv APP_INCLUDE "$SCRIPTPATH/resque_env.php"
-setenv QUEUE "on_demand_movie"
-setenv COUNT 6
+setenv QUEUE "api_movie"
+setenv COUNT 2 
 
 setenv MOVIE_QUEUE_STATUS "UNKNOWN"
 

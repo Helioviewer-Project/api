@@ -183,7 +183,7 @@ class Movie_HelioviewerMovie {
             return;
         }
 
-        $this->_db->markMovieAsProcessing($this->id);
+        $this->_db->markMovieAsProcessing($this->id, 'mp4');
 
         try {
             $this->directory = $this->_buildDir();
@@ -632,7 +632,7 @@ class Movie_HelioviewerMovie {
         // Determine the number of images that are available for the request
         // duration for each layer
         foreach ($this->_layers->toArray() as $layer) {
-            $n = $this->_db->getImageCount($this->reqStartDate,
+            $n = $this->_db->getDataCount($this->reqStartDate,
                 $this->reqEndDate, $layer['sourceId']);
 
             $layerCounts[$layer['sourceId']] = $n;
@@ -659,7 +659,7 @@ class Movie_HelioviewerMovie {
 
         // Get the entire range of available images between the movie start
         // and end time
-        $entireRange = $this->_db->getImageRange($this->reqStartDate,
+        $entireRange = $this->_db->getDataRange($this->reqStartDate,
             $this->reqEndDate, $dataSource);
 
         // Sub-sample range so that only $numFrames timestamps are returned
