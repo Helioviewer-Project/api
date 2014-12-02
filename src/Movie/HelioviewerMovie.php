@@ -530,9 +530,12 @@ class Movie_HelioviewerMovie {
         $dateString = $this->getDateString();
 
         // URLS
-        $url1 = HV_WEB_ROOT_URL . '/?movieId='.$this->publicId;
-        $url2 = HV_WEB_ROOT_URL . '/api/?action=downloadMovie&id='
-                                . $this->publicId.'&format='.$this->format;
+        $url1 = HV_WEB_ROOT_URL . '/?action=playMovie&id='
+                                . $this->publicId.'&format='.$this->format
+                                . '&hq=true';
+        $url2 = HV_WEB_ROOT_URL . '/?action=downloadMovie&id='
+                                . $this->publicId.'&format='.$this->format
+                                . '&hq=true';
 
         // Title
         $title = sprintf('%s (%s)', $layerString, $dateString);
