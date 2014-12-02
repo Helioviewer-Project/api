@@ -14,16 +14,16 @@ case ${MAX_DAYS}
 esac
 
 ## Activate the semaphore
-LCK="/tmp/event_cache.LCK";
+LCK="/tmp/event_cache_api.LCK";
 exec 8>$LCK;
 
 #host=`hostname`
-host='helioviewer.org'
+host='api.helioviewer.org'
 
 #api_url_path='/helioviewer/api'
-api_url_path='/api'
+api_url_path=''
 
-log='/tmp/event_cache.log'
+log='/tmp/event_cache_api.log'
 
 echo ""
 echo "### "`date`" ###"
@@ -35,7 +35,7 @@ if flock -n -x 8; then
    do
       startTime=`date --date="$i days ago" +"%Y-%m-%dT00:00:00.000Z"`
       date_path=`date --date="$i days ago" +"%Y/%m/%d/"`
-      cache_pat="/mnt/data/cache/events/"${date_path}
+      cache_pat="/mnt/data/cache-dev/api/events/"${date_path}
       timestamp=`date +"%s"`
 
       max_age_s=$(((${i}*60*60)+(60*60*24*90)))
