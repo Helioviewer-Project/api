@@ -48,10 +48,24 @@ class Config {
 
         $this->config = parse_ini_file($file);
 
+        if ( in_array('acao_url', array_keys($this->config)) ) {
+
+            if ( in_array('HTTP_ORIGIN', array_keys($_SERVER))
+              && in_array($_SERVER['HTTP_ORIGIN'], $this->config['acao_url']) ) {
+
+                header("Access-Control-Allow-Origin: ".$_SERVER['HTTP_ORIGIN']);
+                header("Access-Control-Allow-Methods: ".$this->config['acam']);
+            }
+
+        }
+
+
         $this->_fixTypes();
 
         foreach ($this->config as $key => $value) {
-            define('HV_'.strtoupper($key), $value);
+            if ( gettype($value) != 'array' ) {
+                define('HV_'.strtoupper($key), $value);
+            }
         }
 
         $this->_setAdditionalParams();

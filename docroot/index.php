@@ -119,9 +119,6 @@ function loadModule($params) {
 
             $module = new $className($params);
 
-            header("Access-Control-Allow-Origin: ".HV_ACAO_URL);
-            header("Access-Control-Allow-Methods: ".HV_ACAM);
-
             $module->execute();
 
             // Update usage stats
