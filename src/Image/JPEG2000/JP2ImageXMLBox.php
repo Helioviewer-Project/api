@@ -241,10 +241,6 @@ class Image_JPEG2000_JP2ImageXMLBox {
                     $this->_getElementValue('XCEN');
                 $sunCenterOffsetParams['YCEN'] =
                     $this->_getElementValue('YCEN');
-                $sunCenterOffsetParams['OSLO_XCEN_DELTA'] =
-                    $this->_getElementValue('OSLO_XCEN_DELTA');
-                $sunCenterOffsetParams['OSLO_YCEN_DELTA'] =
-                    $this->_getElementValue('OSLO_YCEN_DELTA');
                 $sunCenterOffsetParams['CDELT1'] =
                     $this->_getElementValue('CDELT1');
                 $sunCenterOffsetParams['CDELT2'] =
