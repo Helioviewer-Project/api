@@ -139,8 +139,9 @@ class Image_ImageType_CORImage extends Image_HelioviewerImage {
         $maskHeight = $this->jp2->getHeight();
 
         $dir = HV_ROOT_DIR . '/resources/images/alpha-masks/';
+        $detector = $this->uiLabels[2]['name'];
         $which = substr($this->uiLabels[0]['name'], -1);
-        $mask = sprintf('%s%s-%s_Mask.png', $dir, $this->detector, $which);
+        $mask = sprintf('%s%s-%s_Mask.png', $dir, $detector, $which);
 
         // Scale for zoom level
         if ($this->reduce > 0) {
