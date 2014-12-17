@@ -71,6 +71,7 @@ function loadModule($params) {
         'getJP2Header'           => 'WebClient',
         'getNewsFeed'            => 'WebClient',
         'getStatus'              => 'WebClient',
+        'getSciDataScript'       => 'WebClient',
         'getTile'                => 'WebClient',
         'getUsageStatistics'     => 'WebClient',
         'getDataCoverageTimeline'=> 'WebClient',

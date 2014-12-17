@@ -525,6 +525,28 @@ class Module_WebClient implements Module {
     }
 
     /**
+     * Creates a SSW script to download the original data associated with
+     * the specified parameters.
+     */
+     public function getSciDataScript()
+     {
+         if (      strtolower($this->_params['lang']) == 'sswidl' ) {
+             include_once HV_ROOT_DIR.'/../src/Helper/SSWIDL.php';
+             $script = new Helper_SSWIDL($this->_params);
+         }
+         else if ( strtolower($this->_params['lang']) == 'sunpy' ) {
+             include_once HV_ROOT_DIR.'/../src/Helper/SunPy.php';
+             $script = new Helper_SunPy($this->_params);
+         }
+         else {
+             handleError(
+                'Invalid value specified for request parameter "lang".', 25);
+         }
+
+         $script->buildScript();
+     }
+
+    /**
      * Retrieves the latest usage statistics from the database
      */
     public function getDataCoverage() {
@@ -1198,6 +1220,21 @@ class Module_WebClient implements Module {
                 'optional' => array('key'),
                 'alphanum' => array('key')
             );
+        case "getSciDataScript":
+            $expected = array(
+                "required" => array('imageScale', 'sourceIds',
+                                    'startDate', 'endDate',
+                                    'lang', 'provider'),
+                "optional" => array('x0','y0', 'width', 'height',
+                                    'x1','y1', 'x2','y2',
+                                    'callback'),
+                "floats"   => array('imageScale','x0','y0',
+                                    'x1','y1','x2','y2'),
+                "ints"     => array('width', 'height'),
+                "dates"    => array('startDate', 'endDate'),
+                "alphanum" => array('provider', 'callback')
+            );
+            break;
         default:
             break;
         }
