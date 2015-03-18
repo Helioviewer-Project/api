@@ -97,8 +97,8 @@ hek_client = hek.HEKClient()
 
 EOD;
 
-        if ( is_null($this->_tend) ) {
-            $this->_tend = $this->_tstart;
+        if ( is_null($this->_end) ) {
+            $this->_end = $this->_start;
         }
 
         $code .= <<<EOD
@@ -107,8 +107,8 @@ EOD;
 # Search for data in the following date time range
 #
 
-tstart = '{$this->_tstart}'
-tend   = '{$this->_tend}'
+tstart = '{$this->_start}'
+tend   = '{$this->_end}'
 EOD;
 
         $code .= <<<EOD
@@ -133,15 +133,15 @@ EOD;
 
         $temp = str_replace( Array('-', ':', ' UTC', ' '),
                              Array(',', ',', '',     ','),
-                             $this->_tstart );
+                             $this->_start );
         list($Y,$m,$d,$H,$i,$s) = explode(',',$temp);
         $str = date('Ymd_His', mktime($H,$i,$s,$m,$d,$Y) );
 
-        if ( !is_null($this->_tend) ) {
+        if ( !is_null($this->_end) ) {
 
             $temp = str_replace( Array('-', ':', ' UTC', ' '),
                                  Array(',', ',', '',     ','),
-                                 $this->_tend );
+                                 $this->_end );
             list($Y,$m,$d,$H,$i,$s) = explode(',',$temp);
             $end   = date('Ymd_His', mktime($H,$i,$s,$m,$d,$Y) );
 
@@ -184,10 +184,10 @@ EOD;
 EOD;
         $count = 0;
         foreach ( $this->_imageLayers as $i=>$layer) {
-            if ( $layer['uiLabels'][1] == 'EIT' ) {
+            if ( $layer['uiLabels'][1]['name'] == 'EIT' ) {
                 $count++;
 
-                if ( is_null($this->_tend) ) {
+                if ( is_null($this->_end) ) {
                     $tstart = $tend = str_replace('/','-',$layer['subDate']).' '.$layer['subTime'];
                     $string .= <<<EOD
 
@@ -199,9 +199,9 @@ EOD;
 
                 $string .= <<<EOD
 
-vso_result_eit_{$layer['uiLabels'][2]} = vso_client.query(vso.attrs.Time(tstart, tend), \
-    vso.attrs.Instrument('eit'), vso.attrs.Wave('{$layer['uiLabels'][2]}','{$layer['uiLabels'][2]}'))
-vso_data_eit_{$layer['uiLabels'][2]}   = vso_client.get(vso_result_eit_{$layer['uiLabels'][2]}, path=localPath)
+vso_result_eit_{$layer['uiLabels'][2]['name']} = vso_client.query(vso.attrs.Time(tstart, tend), \
+    vso.attrs.Instrument('eit'), vso.attrs.Wave('{$layer['uiLabels'][2]['name']}','{$layer['uiLabels'][2]['name']}'))
+vso_data_eit_{$layer['uiLabels'][2]['name']}   = vso_client.get(vso_result_eit_{$layer['uiLabels'][2]['name']}, path=localPath)
 
 EOD;
             }
@@ -223,10 +223,10 @@ EOD;
 EOD;
         $count = 0;
         foreach ( $this->_imageLayers as $i=>$layer ) {
-            if ( $layer['uiLabels'][1] == 'LASCO' ) {
+            if ( $layer['uiLabels'][1]['name'] == 'LASCO' ) {
                 $count++;
 
-                if ( is_null($this->_tend) ) {
+                if ( is_null($this->_end) ) {
                     $tstart = $tend = str_replace('/','-',$layer['subDate']).' '.$layer['subTime'];
                     $string .= <<<EOD
 
@@ -236,7 +236,7 @@ tend   = '{$tend}'
 EOD;
                 }
 
-                $detector = strtolower($layer['uiLabels'][2]);
+                $detector = strtolower($layer['uiLabels'][2]['name']);
                 $string .= <<<EOD
 
 vso_result_lasco_{$detector} = vso_client.query(vso.attrs.Time(tstart, tend), \
@@ -263,10 +263,10 @@ EOD;
 EOD;
         $count = 0;
         foreach ( $this->_imageLayers as $i=>$layer) {
-            if ( $layer['uiLabels'][1] == 'MDI' ) {
+            if ( $layer['uiLabels'][1]['name'] == 'MDI' ) {
                 $count++;
 
-                if ( is_null($this->_tend) ) {
+                if ( is_null($this->_end) ) {
                     $tstart = $tend = str_replace('/','-',$layer['subDate']).' '.$layer['subTime'];
                     $string .= <<<EOD
 
@@ -277,10 +277,10 @@ EOD;
                 }
 
 
-                if ( $layer['uiLabels'][2] == 'continuum' ) {
+                if ( $layer['uiLabels'][2]['name'] == 'continuum' ) {
                     $physobs_str = ", vso.attrs.Physobs('intensity')";
                 }
-                else if ( $layer['uiLabels'][2] == 'magnetogram' ) {
+                else if ( $layer['uiLabels'][2]['name'] == 'magnetogram' ) {
                     $physobs_str = ", vso.attrs.Physobs('LOS_magnetic_field')";
                 }
 
@@ -310,14 +310,14 @@ EOD;
 EOD;
         $count = 0;
         foreach ( $this->_imageLayers as $i=>$layer ) {
-            $observatory = strtolower(str_replace('-','',$layer['uiLabels'][0]));
-            $instrument  = strtolower($layer['uiLabels'][1]);
-            $detector    = strtolower($layer['uiLabels'][2]);
+            $observatory = strtolower(str_replace('-','',$layer['uiLabels'][0]['name']));
+            $instrument  = strtolower($layer['uiLabels'][1]['name']);
+            $detector    = strtolower($layer['uiLabels'][2]['name']);
 
-            if ( $layer['uiLabels'][2] == 'EUVI' ) {
+            if ( $layer['uiLabels'][2]['name'] == 'EUVI' ) {
                 $count++;
 
-                if ( is_null($this->_tend) ) {
+                if ( is_null($this->_end) ) {
                     $tstart = $tend = str_replace('/','-',$layer['subDate']).' '.$layer['subTime'];
                     $string .= <<<EOD
 
@@ -329,19 +329,19 @@ EOD;
 
                 $string .= <<<EOD
 
-vso_result_{$observatory}_{$instrument}_{$detector}_{$layer['uiLabels'][3]} = vso_client.query(vso.attrs.Time(tstart, tend), \
-    vso.attrs.Instrument('euvi'), vso.attrs.Wave('{$layer['uiLabels'][3]}','{$layer['uiLabels'][3]}'))
-vso_data_{$observatory}_{$instrument}_{$detector}_{$layer['uiLabels'][3]}   = vso_client.get(vso_result_{$observatory}_{$instrument}_{$detector}_{$layer['uiLabels'][3]}, \
+vso_result_{$observatory}_{$instrument}_{$detector}_{$layer['uiLabels'][3]['name']} = vso_client.query(vso.attrs.Time(tstart, tend), \
+    vso.attrs.Instrument('euvi'), vso.attrs.Wave('{$layer['uiLabels'][3]['name']}','{$layer['uiLabels'][3]['name']}'))
+vso_data_{$observatory}_{$instrument}_{$detector}_{$layer['uiLabels'][3]['name']}   = vso_client.get(vso_result_{$observatory}_{$instrument}_{$detector}_{$layer['uiLabels'][3]['name']}, \
     path=localPath)
 
 EOD;
             }
-            else if ( $layer['uiLabels'][2] == 'COR1' ||
-                      $layer['uiLabels'][2] == 'COR2' ) {
+            else if ( $layer['uiLabels'][2]['name'] == 'COR1' ||
+                      $layer['uiLabels'][2]['name'] == 'COR2' ) {
 
                 $count++;
 
-                if ( is_null($this->_tend) ) {
+                if ( is_null($this->_end) ) {
                     $tstart = $tend = str_replace('/','-',$layer['subDate']).' '.$layer['subTime'];
                     $string .= <<<EOD
 
@@ -378,10 +378,10 @@ EOD;
 EOD;
         $count = 0;
         foreach ( $this->_imageLayers as $i=>$layer) {
-            if ( $layer['uiLabels'][1] == 'SWAP' ) {
+            if ( $layer['uiLabels'][1]['name'] == 'SWAP' ) {
                 $count++;
 
-                if ( is_null($this->_tend) ) {
+                if ( is_null($this->_end) ) {
                     $tstart = $tend = str_replace('/','-',$layer['subDate']).' '.$layer['subTime'];
                     $string .= <<<EOD
 
@@ -393,9 +393,9 @@ EOD;
 
                 $string .= <<<EOD
 
-vso_result_swap_{$layer['uiLabels'][2]} = vso_client.query(vso.attrs.Time(tstart, tend), \
-    vso.attrs.Instrument('swap'), vso.attrs.Wave('{$layer['uiLabels'][2]}','{$layer['uiLabels'][2]}'))
-vso_data_swap_{$layer['uiLabels'][2]}   = vso_client.get(vso_result_swap_{$layer['uiLabels'][2]}, path=localPath)
+vso_result_swap_{$layer['uiLabels'][2]['name']} = vso_client.query(vso.attrs.Time(tstart, tend), \
+    vso.attrs.Instrument('swap'), vso.attrs.Wave('{$layer['uiLabels'][2]['name']}','{$layer['uiLabels'][2]['name']}'))
+vso_data_swap_{$layer['uiLabels'][2]['name']}   = vso_client.get(vso_result_swap_{$layer['uiLabels'][2]['name']}, path=localPath)
 
 EOD;
             }
@@ -417,10 +417,10 @@ EOD;
 EOD;
         $count = 0;
         foreach ( $this->_imageLayers as $i=>$layer) {
-            if ( $layer['uiLabels'][1] == 'SXT' ) {
+            if ( $layer['uiLabels'][1]['name'] == 'SXT' ) {
                 $count++;
 
-                if ( is_null($this->_tend) ) {
+                if ( is_null($this->_end) ) {
                     $tstart = $tend = str_replace('/','-',$layer['subDate']).' '.$layer['subTime'];
                     $string .= <<<EOD
 
@@ -452,11 +452,11 @@ EOD;
         $AIAwaves = array();
         $HMIwaves = array();
         foreach ( $this->_imageLayers as $i=>$layer ) {
-            if ( $layer['uiLabels'][1] == 'AIA' ) {
-                $AIAwaves[] = $layer['uiLabels'][2];
+            if ( $layer['uiLabels'][1]['name'] == 'AIA' ) {
+                $AIAwaves[] = $layer['uiLabels'][2]['name'];
             }
-            else if ( $layer['uiLabels'][1] == 'HMI' ) {
-                $HMIwaves[]  = $layer['uiLabels'][2];
+            else if ( $layer['uiLabels'][1]['name'] == 'HMI' ) {
+                $HMIwaves[]  = $layer['uiLabels'][2]['name'];
             }
         }
 
@@ -466,7 +466,7 @@ EOD;
 
         $count = 0;
         foreach ( $this->_imageLayers as $i=>$layer ) {
-            if ( $layer['uiLabels'][1] == 'AIA' ) {
+            if ( $layer['uiLabels'][1]['name'] == 'AIA' ) {
                 $count++;
 
                 if ( $count == 1 ) {
@@ -480,7 +480,7 @@ EOD;
 EOD;
                 }
 
-                if ( is_null($this->_tend) ) {
+                if ( is_null($this->_end) ) {
                     $tstart = $tend = str_replace('/','-',$layer['subDate']).' '.$layer['subTime'];
                     $string .= <<<EOD
 
@@ -492,9 +492,9 @@ EOD;
 
                 $string .= <<<EOD
 
-vso_result_aia_{$layer['uiLabels'][2]} = vso_client.query(vso.attrs.Time(tstart, tend), \
-    vso.attrs.Instrument('aia'), vso.attrs.Wave({$layer['uiLabels'][2]},{$layer['uiLabels'][2]}))
-vso_data_aia_{$layer['uiLabels'][2]}   = vso_client.get(vso_result_aia_{$layer['uiLabels'][2]} , path=localPath)
+vso_result_aia_{$layer['uiLabels'][2]['name']} = vso_client.query(vso.attrs.Time(tstart, tend), \
+    vso.attrs.Instrument('aia'), vso.attrs.Wave({$layer['uiLabels'][2]['name']},{$layer['uiLabels'][2]['name']}))
+vso_data_aia_{$layer['uiLabels'][2]['name']}   = vso_client.get(vso_result_aia_{$layer['uiLabels'][2]['name']} , path=localPath)
 
 EOD;
             }
@@ -502,7 +502,7 @@ EOD;
 
         $count = 0;
         foreach ( $this->_imageLayers as $i=>$layer ) {
-            if ( $layer['uiLabels'][1] == 'HMI' ) {
+            if ( $layer['uiLabels'][1]['name'] == 'HMI' ) {
                 $count++;
 
                 if ( $count == 1 ) {
@@ -516,7 +516,7 @@ EOD;
 EOD;
                 }
 
-                if ( is_null($this->_tend) ) {
+                if ( is_null($this->_end) ) {
                     $tstart = $tend = str_replace('/','-',$layer['subDate']).' '.$layer['subTime'];
                     $string .= <<<EOD
 
@@ -526,10 +526,10 @@ tend   = '{$tend}'
 EOD;
                 }
 
-                if ( $layer['uiLabels'][2] == 'continuum' ) {
+                if ( $layer['uiLabels'][2]['name'] == 'continuum' ) {
                     $physobs_str = ", vso.attrs.Physobs('intensity')";
                 }
-                else if ( $layer['uiLabels'][2] == 'magnetogram' ) {
+                else if ( $layer['uiLabels'][2]['name'] == 'magnetogram' ) {
                     $physobs_str = ", vso.attrs.Physobs('LOS_magnetic_field')";
                 }
 
