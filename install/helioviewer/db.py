@@ -3,7 +3,7 @@
 import sys
 import os
 
-def setup_database_schema(adminuser, adminpass, dbname, dbuser, dbpass, mysql):
+def setup_database_schema(adminuser, adminpass, dbhost, dbname, dbuser, dbpass, mysql):
     """Sets up Helioviewer.org database schema"""
     if mysql:
         import MySQLdb
@@ -12,10 +12,10 @@ def setup_database_schema(adminuser, adminpass, dbname, dbuser, dbpass, mysql):
         import pgdb
         adaptor = pgdb
 
-    create_db(adminuser, adminpass, dbname, dbuser, dbpass, mysql, adaptor)
+    create_db(adminuser, adminpass, dbhost, dbname, dbuser, dbpass, mysql, adaptor)
 
     # connect to helioviewer database
-    cursor = get_db_cursor(dbname, dbuser, dbpass, mysql)
+    cursor = get_db_cursor(dbhost, dbname, dbuser, dbpass, mysql)
 
     create_datasource_table(cursor)
     create_datasource_property_table(cursor)
@@ -31,7 +31,7 @@ def setup_database_schema(adminuser, adminpass, dbname, dbuser, dbpass, mysql):
 
     return cursor
 
-def get_db_cursor(dbname, dbuser, dbpass, mysql=True):
+def get_db_cursor(dbhost, dbname, dbuser, dbpass, mysql=True):
     """Creates a database connection"""
     if mysql:
         import MySQLdb
@@ -40,7 +40,7 @@ def get_db_cursor(dbname, dbuser, dbpass, mysql=True):
 
     if mysql:
         db = MySQLdb.connect(use_unicode=True, charset="utf8",
-                             host="localhost", db=dbname, user=dbuser,
+                             host=dbhost, db=dbname, user=dbuser,
                              passwd=dbpass)
     else:
         db = pgdb.connect(use_unicode=True, charset="utf8", database=dbname,
@@ -70,7 +70,7 @@ def check_db_info(adminuser, adminpass, mysql):
     db.close()
     return True
 
-def create_db(adminuser, adminpass, dbname, dbuser, dbpass, mysql, adaptor):
+def create_db(adminuser, adminpass, dbhost, dbname, dbuser, dbpass, mysql, adaptor):
     """Creates Helioviewer database
 
     TODO (2009/08/18) Catch error when db already exists and gracefully exit
@@ -687,8 +687,8 @@ def enable_datasource(cursor, sourceId):
     cursor.execute("UPDATE datasources SET enabled=1 WHERE id=%d;" % sourceId)
 
 def update_image_table_index(cursor):
-    """Updates index on images table"""
-    cursor.execute("OPTIMIZE TABLE images;")
+    """Updates index on data table"""
+    cursor.execute("OPTIMIZE TABLE data;")
 
 def mark_as_corrupt(cursor, filename, note):
     """Adds an image to the 'corrupt' database table"""
