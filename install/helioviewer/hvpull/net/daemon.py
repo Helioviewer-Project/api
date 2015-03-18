@@ -23,14 +23,15 @@ class ImageRetrievalDaemon:
     def __init__(self, servers, browse_method, download_method, conf):
         """Explain."""
         # MySQL/Postgres info
+        self.dbhost = conf.get('database', 'dbhost')
         self.dbname = conf.get('database', 'dbname')
-        self.dbuser = conf.get('database', 'user')
-        self.dbpass = conf.get('database', 'pass')
+        self.dbuser = conf.get('database', 'dbuser')
+        self.dbpass = conf.get('database', 'dbpass')
 
         self.downloaders = []
 
         try:
-            self._db = get_db_cursor(self.dbname, self.dbuser, self.dbpass)
+            self._db = get_db_cursor(self.dbhost, self.dbname, self.dbuser, self.dbpass)
         except MySQLdb.OperationalError:
             logging.error("Unable to access MySQL. Is the database daemon running?")
             self.shutdown()
@@ -180,7 +181,7 @@ class ImageRetrievalDaemon:
                     # functionality to the db module and have it occur
                     # for all queries.
                     try:
-                        self._db = get_db_cursor(self.dbname, self.dbuser, self.dbpass)
+                        self._db = get_db_cursor(self.dbhost, self.dbname, self.dbuser, self.dbpass)
                     except:
                         pass
 
@@ -282,7 +283,7 @@ class ImageRetrievalDaemon:
 
     def ingest(self, urls):
         """
-        Add images to helioviewer images db.
+        Add images to helioviewer data db.
           (1) Make sure the file exists
           (2) Make sure the file is 'good', and quarantine if it is not.
           (3) Apply the ESA JPIP encoding.
@@ -321,7 +322,7 @@ class ImageRetrievalDaemon:
                 continue
 
             # If everything looks good, move to archive and add to database
-            print image_params['date']
+            # print image_params['date']
             date_str = image_params['date'].strftime('%Y/%m/%d')
 
             # Transcode
@@ -597,13 +598,13 @@ class ImageRetrievalDaemon:
         yet been acquired."""
         filename = os.path.basename(url)
 
-        # Check to see if image is in images
-        self._db.execute("SELECT COUNT(*) FROM images WHERE filename='%s'" %
+        # Check to see if image is in `data` table
+        self._db.execute("SELECT COUNT(*) FROM data WHERE filename='%s'" %
                          filename)
         if self._db.fetchone()[0] != 0:
             return False
 
-        # Check to see if image is in corrupt
+        # Check to see if image is in `corrupt` table
         #print('Remove comments characters to reactivate the code beneath when in production!!!')
         self._db.execute("SELECT COUNT(*) FROM corrupt WHERE filename='%s'" %
                  filename)
