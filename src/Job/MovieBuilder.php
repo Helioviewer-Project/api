@@ -3,23 +3,12 @@
 /**
  * Helioviewer.org Movie Builder Resque Job
  *
- * PHP version 5
- *
  * @package  Helioviewer
  * @author   Keith Hughitt <keith.hughitt@nasa.gov>
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
- * @link     http://launchpad.net/helioviewer.org
+ * @link     https://github.com/Helioviewer-Project
  */
 
-/**
- * Helioviewer.org Movie Builder Resque Job
- *
- * @package  Helioviewer
- * @author   Keith Hughitt <keith.hughitt@nasa.gov>
- * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
- * @link     http://launchpad.net/helioviewer.org
- *
- */
 include_once HV_ROOT_DIR.'/../src/Movie/HelioviewerMovie.php';
 include_once HV_ROOT_DIR.'/../src/Helper/ErrorHandler.php';
 include_once HV_ROOT_DIR.'/../lib/Redisent/Redisent.php';

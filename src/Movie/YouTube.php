@@ -2,30 +2,19 @@
 /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
 /**
  * Movie_YouTube Class Definition
+ * Uploads user-created movies to YouTube
  *
  * TODO 2011/01/09 Check for other restricted characters (e.g. '<' and '>')
  * word limits (e.g. keywords), etc. See reference below.
  *
- *
- * PHP version 5
- *
  * @category Movie
  * @package  Helioviewer
  * @author   Jeff Stys <jeff.stys@nasa.gov>
  * @author   Keith Hughitt <keith.hughitt@nasa.gov>
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
- * @link     http://launchpad.net/helioviewer.org
+ * @link     https://github.com/Helioviewer-Project
  */
-/**
- * Uploads user-created movies to YouTube
- *
- * @category Movie
- * @package  Helioviewer
- * @author   Jeff Stys <jeff.stys@nasa.gov>
- * @author   Keith Hughitt <keith.hughitt@nasa.gov>
- * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
- * @link     http://launchpad.net/helioviewer.org
- */
+
 class Movie_YouTube {
 
     private $_appId;

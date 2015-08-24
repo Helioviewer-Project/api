@@ -2,15 +2,14 @@
 /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
 /**
  * HEKAdapter Class Definition
- *
- * PHP version 5
+ * An Adapter to the HEK to allow AJAX requests to be made to the event service
  *
  * @category Event
  * @package  Helioviewer
  * @author   Jeff Stys <jeff.stys@nasa.gov>
  * @author   Keith Hughitt <keith.hughitt@nasa.gov>
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
- * @link     http://launchpad.net/helioviewer.org
+ * @link     https://github.com/Helioviewer-Project
  */
 define('HEK_BASE_URL', 'http://www.lmsal.com/hek/her');
 define('HEK_CACHE_DIR', HV_CACHE_DIR.'/events');
@@ -39,17 +38,6 @@ $GLOBALS['HEK_COLORS'] = Array(
     'ER' =>'FF8DAD',
     'TO' =>'FF8F97' );
 
-/**
- * An Adapter to the HEK to allow AJAX requests to be made to the event service
- *
- * @category Event
- * @package  Helioviewer
- * @author   Jeff Stys <jeff.stys@nasa.gov>
- * @author   Keith Hughitt <keith.hughitt@nasa.gov>
- * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
- * @link     http://launchpad.net/helioviewer.org
- * @see      http://www.lmsal.com/helio-informatics/hpkb/
- */
 class Event_HEKAdapter {
 
     private $_baseURL;

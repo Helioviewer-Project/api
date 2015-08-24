@@ -6,31 +6,17 @@
  * TODO: Instead of writing intermediate layers as files, store as
  * IMagick objects.
  *
- * PHP version 5
- *
  * @category Image
  * @package  Helioviewer
  * @author   Jeff Stys <jeff.stys@nasa.gov>
  * @author   Keith Hughitt <keith.hughitt@nasa.gov>
  * @author   Jaclyn Beck <jaclyn.r.beck@gmail.com>
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
- * @link     http://launchpad.net/helioviewer.org
+ * @link     https://github.com/Helioviewer-Project
  */
 require_once HV_ROOT_DIR.'/../src/Image/JPEG2000/JP2Image.php';
 require_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
-/**
- * Image_Composite_HelioviewerCompositeImage class definition
- *
- * PHP version 5
- *
- * @category Image
- * @package  Helioviewer
- * @author   Jeff Stys <jeff.stys@nasa.gov>
- * @author   Keith Hughitt <keith.hughitt@nasa.gov>
- * @author   Jaclyn Beck <jaclyn.r.beck@gmail.com>
- * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
- * @link     http://launchpad.net/helioviewer.org
- */
+
 class Image_Composite_HelioviewerCompositeImage {
 
     private   $_composite;

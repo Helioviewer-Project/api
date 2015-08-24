@@ -3,15 +3,13 @@
 /**
  * Helioviewer Module Interface
  *
- * PHP version 5
- *
  * @category Configuration
  * @package  Helioviewer
  * @author   Jeff Stys <jeff.stys@nasa.gov>
  * @author   Keith Hughitt <keith.hughitt@nasa.gov>
  * @author   Jonathan Harper <jwh376@msstate.edu>
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
- * @link     http://launchpad.net/helioviewer.org
+ * @link     https://github.com/Helioviewer-Project
  */
 interface Module {
     /**

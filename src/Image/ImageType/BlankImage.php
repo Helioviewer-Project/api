@@ -3,32 +3,18 @@
 /**
  * Image_ImageType_BlankImage class definition
  * There is one xxxImage for each type of detector Helioviewer supports.
- *
- * PHP version 5
- *
- * @category Image
- * @package  Helioviewer
- * @author   Jeff Stys <jeff.stys@nasa.gov>
- * @author   Jaclyn Beck <jaclyn.r.beck@gmail.com>
- * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
- * @link     http://launchpad.net/helioviewer.org
- */
-require_once HV_ROOT_DIR.'/../src/Image/HelioviewerImage.php';
-/**
- * Image_ImageType_BlankImage class definition
- * There is one xxxImage for each type of detector Helioviewer supports.
  * This class represents an image that cannot be built because it has either no
  * width or no height, and so a transparent 512x512 image is substituted instead.
  *
- * PHP version 5
- *
  * @category Image
  * @package  Helioviewer
  * @author   Jeff Stys <jeff.stys@nasa.gov>
  * @author   Jaclyn Beck <jaclyn.r.beck@gmail.com>
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
- * @link     http://launchpad.net/helioviewer.org
+ * @link     https://github.com/Helioviewer-Project
  */
+require_once HV_ROOT_DIR.'/../src/Image/HelioviewerImage.php';
+
 class Image_ImageType_BlankImage extends Image_SubFieldImage {
     /**
      * Creates a new blank image

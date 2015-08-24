@@ -2,19 +2,6 @@
 /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
 /**
  * Image_SubFieldImage class definition
- *
- * PHP version 5
- *
- * @category Image
- * @package  Helioviewer
- * @author   Jeff Stys <jeff.stys@nasa.gov>
- * @author   Keith Hughitt <keith.hughitt@nasa.gov>
- * @author   Jaclyn Beck <jaclyn.r.beck@gmail.com>
- * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
- * @link     http://launchpad.net/helioviewer.org
- */
-
-/**
  * Represents a JPEG 2000 sub-field image.
  *
  * The SubFieldImage class provides functionality for outputting a sub-section
@@ -30,8 +17,9 @@
  * @author   Keith Hughitt <keith.hughitt@nasa.gov>
  * @author   Jaclyn Beck <jaclyn.r.beck@gmail.com>
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
- * @link     http://launchpad.net/helioviewer.org
+ * @link     https://github.com/Helioviewer-Project
  */
+
 class Image_SubFieldImage {
 
     protected $jp2;

@@ -3165,7 +3165,7 @@ Contact Helioviewer LMSAL Franchise (slater@lmsal.com) for more details/question
 HVS (Helioviewer setup) file used to create this JP2 file: hvs_version5.pro (version 5.0).
 FITS to JP2 source code provided by ESA/NASA Helioviewer Project [contact the Helioviewer Project at webmaster@helioviewer.org][NASA-GSFC] and is available for download at https://launchpad.net/jp2gen.
 Please contact the source code providers if you suspect an error in the source code.
-Full source code for the entire Helioviewer Project can be found at https://launchpad.net/helioviewer.&lt;/HV_COMMENT&gt;
+Full source code for the entire Helioviewer Project can be found at https://github.com/Helioviewer-Project.&lt;/HV_COMMENT&gt;
         &lt;HV_SUPPORTED&gt;TRUE&lt;/HV_SUPPORTED&gt;
     &lt;/helioviewer&gt;
 &lt;/meta&gt;]]></example>
