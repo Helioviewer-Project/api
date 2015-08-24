@@ -2,18 +2,6 @@
 /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
 /**
  * Helioviewer-specific JPEG 2000 JPX Image Class Definition
- *
- * PHP version 5
- *
- * @category Image
- * @package  Helioviewer
- * @author   Jeff Stys <jeff.stys@nasa.gov>
- * @author   Keith Hughitt <keith.hughitt@nasa.gov>
- * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
- * @link     http://launchpad.net/helioviewer.org
- */
-require_once 'JPXImage.php';
-/**
  * Class for generating JPX images in Helioviewer
  *
  * @category Image
@@ -21,8 +9,10 @@ require_once 'JPXImage.php';
  * @author   Jeff Stys <jeff.stys@nasa.gov>
  * @author   Keith Hughitt <keith.hughitt@nasa.gov>
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
- * @link     http://launchpad.net/helioviewer.org
+ * @link     https://github.com/Helioviewer-Project
  */
+require_once 'JPXImage.php';
+
 class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
 
     private $_sourceId;

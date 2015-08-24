@@ -2,6 +2,7 @@
 /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
 /**
  * JPEG 2000 JPX Image Class Definition
+ * Class for working with JPX images
  *
  * = 02/13/2010 =
  * MJ2 Creation has been removed since it is not currently being used.
@@ -10,24 +11,13 @@
  *
  *     -mj2_tracks P:0-@25
  *
- * PHP version 5
- *
  * @category Image
  * @package  Helioviewer
  * @author   Keith Hughitt <keith.hughitt@nasa.gov>
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
- * @link     http://launchpad.net/helioviewer.org
+ * @link     https://github.com/Helioviewer-Project
  */
-/**
- * Class for working with JPX images.
- *
- * @category Image
- * @package  Helioviewer
- * @author   Keith Hughitt <keith.hughitt@nasa.gov>
- * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
- * @link     http://launchpad.net/helioviewer.org
- *
- */
+
 class Image_JPEG2000_JPXImage
 {
     protected $frames;

@@ -3,13 +3,11 @@
 /**
  * Science Data Download Script Generator
  *
- * PHP version 5
- *
  * @category Helper
  * @package  Helioviewer
  * @author   Jeff Stys <jeff.stys@nasa.gov>
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
- * @link     http://launchpad.net/helioviewer.org
+ * @link     https://github.com/Helioviewer-Project
  *
  */
 class Helper_SciScript {

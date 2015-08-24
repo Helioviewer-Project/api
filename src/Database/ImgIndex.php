@@ -3,27 +3,15 @@
 /**
  * ImgIndex Class definition
  *
- * PHP version 5
- *
  * @category Database
  * @package  Helioviewer
  * @author   Jeff Stys <jeff.stys@nasa.gov>
  * @author   Keith Hughitt <keith.hughitt@nasa.gov>
  * @author   Patrick Schmiedel <patrick.schmiedel@gmx.net>
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
- * @link     http://launchpad.net/helioviewer.org
+ * @link     https://github.com/Helioviewer-Project/
  */
-/**
- * Provides methods for interacting with a JPEG 2000 archive.
- *
- * @category Database
- * @package  Helioviewer
- * @author   Jeff Stys <jeff.stys@nasa.gov>
- * @author   Keith Hughitt <keith.hughitt@nasa.gov>
- * @author   Patrick Schmiedel <patrick.schmiedel@gmx.net>
- * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
- * @link     http://launchpad.net/helioviewer.org
- */
+
 class Database_ImgIndex {
 
     private $_dbConnection;

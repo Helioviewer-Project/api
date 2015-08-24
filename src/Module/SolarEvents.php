@@ -2,18 +2,6 @@
 /* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
 /**
  * Helioviewer SolarEvents Module class definition.
- *
- * PHP version 5
- *
- * @category Application
- * @package  Helioviewer
- * @author   Jeff Stys <jeff.stys@nasa.gov>
- * @author   Keith Hughitt <keith.hughitt@nasa.gov>
- * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
- * @link     http://launchpad.net/helioviewer.org
- */
-require_once 'interface.Module.php';
-/**
  * Defines methods used by Helioviewer.org to interact with a JPEG 2000 archive.
  *
  * @category Application
@@ -21,9 +9,10 @@ require_once 'interface.Module.php';
  * @author   Jeff Stys <jeff.stys@nasa.gov>
  * @author   Keith Hughitt <keith.hughitt@nasa.gov>
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
- * @link     http://launchpad.net/helioviewer.org
- *
+ * @link     https://github.com/Helioviewer-Project
  */
+require_once 'interface.Module.php';
+
 class Module_SolarEvents implements Module {
 
     private $_params;
