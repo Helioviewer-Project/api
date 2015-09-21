@@ -4,9 +4,6 @@
  * Movie_YouTube Class Definition
  * Uploads user-created movies to YouTube
  *
- * TODO 2011/01/09 Check for other restricted characters (e.g. '<' and '>')
- * word limits (e.g. keywords), etc. See reference below.
- *
  * @category Movie
  * @package  Helioviewer
  * @author   Jeff Stys <jeff.stys@nasa.gov>
@@ -31,17 +28,13 @@ class Movie_YouTube {
      */
     public function __construct() {
 
-        include_once 'Zend/Loader.php';
-
-        Zend_Loader::loadClass('Zend_Gdata_AuthSub');
+        include_once 'Google/autoload.php';
 
         $this->_appId     = 'Helioviewer.org User Video Uploader';
         $this->_clientId  = 'Helioviewer.org (2.4.0)';
 
-        $this->_testURL   = 'http://gdata.youtube.com/feeds/api/users/default/'
-                          . 'uploads?max-results=1';
-        $this->_uploadURL = 'http://uploads.gdata.youtube.com/feeds/api/users/'
-                          . 'default/uploads';
+        //$this->_testURL   = 'http://gdata.youtube.com/feeds/api/users/default/uploads?max-results=1';
+        //$this->_uploadURL = 'http://uploads.gdata.youtube.com/feeds/api/users/default/uploads';
 
         if ( !isset($_SESSION) ) {
             # Note: If same user begins upload, and then shortly after tried
@@ -51,6 +44,17 @@ class Movie_YouTube {
             session_start();
         }
 
+		
+		$this->_httpClient = new Google_Client();
+		$this->_httpClient->setApplicationName("Helioviewer");
+		$this->_httpClient->setClientId(HV_GOOGLE_OAUTH2_CLIENT_ID);
+		$this->_httpClient->setClientSecret(HV_GOOGLE_OAUTH2_CLIENT_SECRET);
+		$this->_httpClient->setScopes('https://www.googleapis.com/auth/youtube.upload');
+		
+        // Post-auth upload URL
+        $redirect = filter_var(HV_WEB_ROOT_URL . '?action=uploadMovieToYouTube&html=true', FILTER_SANITIZE_URL);
+		$this->_httpClient->setRedirectUri($redirect);
+		
     }
 
     /**
@@ -60,20 +64,18 @@ class Movie_YouTube {
      *
      * @return void
      */
-    public function uploadVideo($movie, $id, $title, $description, $tags,
-        $share, $html) {
+    public function uploadVideo($movie, $id, $title, $description, $tags, $share, $html) {
 
         // Re-confirm authorization and convert single-use token to session
         // token if applicable
         $this->_checkAuthorization();
-
+        
         // Once we have a session token get an AuthSubHttpClient
-        $this->_httpClient = Zend_Gdata_AuthSub::getHttpClient(
-            $_SESSION['sessionToken']);
+        $this->_httpClient->setAccessToken($_SESSION['sessionToken']);
 
         // Increase timeout time to prevent client from timing out
         // during uploads
-        $this->_httpClient->setConfig(array('timeout' => 600));
+        //$this->_httpClient->setConfig(array('timeout' => 600));
 
         // Creates an instance of the Youtube GData object
         $this->_youTube = $this->_getYoutubeInstance();
@@ -86,11 +88,7 @@ class Movie_YouTube {
 
         $filepath = $movie->getFilepath(true);
 
-        $videoEntry = $this->_createGDataVideoEntry($filepath, $title,
-            $description, $tags, $share);
-
-        $this->_uploadVideoToYouTube($videoEntry, $id, $title, $description,
-            $tags, $share, $html);
+        $this->uploadVideoToYouTube($filepath, $id, $title, $description, $tags, $share, $html);
     }
 
     /**
@@ -104,9 +102,8 @@ class Movie_YouTube {
         if ( !isset($_SESSION['sessionToken']) ) {
             return false;
         }
-
-        $this->_httpClient = Zend_Gdata_AuthSub::getHttpClient(
-            $_SESSION['sessionToken']);
+		
+		$this->_httpClient->setAccessToken($_SESSION['sessionToken']);
         $this->_youTube    = $this->_getYoutubeInstance();
 
         return $this->_authorizationIsValid();
@@ -118,14 +115,8 @@ class Movie_YouTube {
      */
     public function getYouTubeAuth($id) {
 
-        // Post-auth upload URL
-        $uploadURL = HV_WEB_ROOT_URL
-                   . '/?action=uploadMovieToYouTube&id='.$id.'&html=true';
-
         // Get URL for authorization
-        $authURL = Zend_Gdata_AuthSub::getAuthSubTokenUri(
-            $uploadURL, "http://gdata.youtube.com", false, true
-        );
+        $authURL = $this->_httpClient->createAuthUrl();
 
         // Redirect user to YouTube authorization page
         header('Location: '.$authURL);
@@ -145,16 +136,16 @@ class Movie_YouTube {
     private function _checkAuthorization() {
 
         if ( !isset($_SESSION['sessionToken']) ) {
-
             // If no session token exists, check for single-use URL token
             if ( isset($_GET['token']) ) {
-                $_SESSION['sessionToken'] =
-                    Zend_Gdata_AuthSub::getAuthSubSessionToken($_GET['token']);
-            }
-            else {
+	            $this->_httpClient->authenticate($_GET['token']);
+	            $_SESSION['sessionToken'] = $this->_httpClient->getAccessToken();
+            }else if ( isset($_GET['code']) ) {
+	            $this->_httpClient->authenticate($_GET['code']);
+	            $_SESSION['sessionToken'] = $this->_httpClient->getAccessToken();
+            }else {
                 // Otherwise, send user to authorization page
-                throw new Exception('Authorization required before movie ' .
-                    'can be uploaded.', 45);
+                throw new Exception('Authorization required before movie can be uploaded.', 45);
             }
         }
     }
@@ -167,12 +158,13 @@ class Movie_YouTube {
      * authentication is still good, and false otherwise
      */
     private function _authorizationIsValid() {
-        // Attempt a simple query to make sure session token has not expired
-        try {
-            $this->_youTube->getVideoFeed($this->_testURL);
-        }
-        catch (Exception $e) {
-            //Zend_Gdata_App_HttpException
+        if ( $this->_httpClient->isAccessTokenExpired() ) {
+	        unset($_SESSION['sessionToken']);
+	        return false;
+        }if ($this->_httpClient->getAccessToken()) {
+	        return true;
+        }else{
+	        //Zend_Gdata_App_HttpException
             include_once HV_ROOT_DIR.'/../src/Helper/ErrorHandler.php';
             logErrorMsg($msg, 'Youtube_');
 
@@ -184,61 +176,6 @@ class Movie_YouTube {
         return true;
     }
 
-    /**
-     * Creates an instance of a Zend_Gdata_YouTube_VideoEntry using the
-     * user-submitted values
-     *
-     * @param string $filepath  Path to the video
-     *
-     * @return Zend_Gdata_YouTube_VideoEntry Video entry
-     */
-    private function _createGDataVideoEntry($filepath, $title, $description,
-        $tags, $share) {
-
-        // Create a new VideoEntry object
-        $videoEntry = new Zend_Gdata_YouTube_VideoEntry();
-
-        // Create a new FileSource object
-        $fileSource = $this->_createMediaFileSource($filepath);
-
-        // add the filesource to the video entry
-        $videoEntry->setMediaSource($fileSource);
-
-        $videoEntry->setVideoTitle($title);
-        $videoEntry->setVideoDescription($description);
-        $videoEntry->setVideoCategory('Tech');
-
-        // Set keywords. Please note that this must be a comma-separated string
-        // and that individual keywords cannot contain whitespace
-        $videoEntry->SetVideoTags($tags);
-
-        // Add Helioviewer.org developer tag
-        $videoEntry->setVideoDeveloperTags(array('Helioviewer.org'));
-
-        return $videoEntry;
-    }
-
-    /**
-     * Creates an instance of a Zend_Gdata_App_MediaFileSource
-     *
-     * @param string $filepath Path of the video file
-     *
-     * @return Zend_Gdata_App_MediaFileSource media source associated with
-     * the video to be uploaded
-     */
-    private function _createMediaFileSource($filepath) {
-
-        // Create a new Zend_Gdata_App_MediaFileSource object
-        $filesource = $this->_youTube->newMediaFileSource($filepath);
-        $filesource->setContentType('video/mp4');
-
-        // Set slug header
-        // http://code.google.com/apis/youtube/2.0/
-        //    developers_guide_protocol_captions.html#Create_Caption_Track
-        $filesource->setSlug($filepath);
-
-        return $filesource;
-    }
 
     /**
      * Initializes a YouTube GData object instance
@@ -247,18 +184,53 @@ class Movie_YouTube {
      */
     private function _getYoutubeInstance() {
 
-        // Load YouTube class
-        Zend_Loader::loadClass('Zend_Gdata_YouTube');
-
         // Instantiate Youtube object
-        $yt = new Zend_Gdata_YouTube(
-            $this->_httpClient, $this->_appId, $this->_clientId,
-            HV_YOUTUBE_DEVELOPER_KEY
-        );
-        $yt->setMajorProtocolVersion(2); // Use API version 2
+		$yt = new Google_Service_YouTube($this->_httpClient);
 
         return $yt;
     }
+	
+	/**
+     * Uploads a single video to YouTube
+     *
+     * @param string                           	$filepath       Movie id
+     * @param int                           	$id         	Movie id
+     * @param string                           	$title         	Movie id
+     * @param string                           	$description    Movie id
+     * @param array                           	$tags         	Movie id
+     * @param boolean                       	$share    		Movie options
+     * @param boolean                       	$html    		Movie options
+     *
+     */
+     public function uploadVideoToYouTube($filepath, $id, $title, $description, $tags, $share, $html) {
+		// Create a snippet with title, description, tags and category ID
+		// Create an asset resource and set its snippet metadata and type.
+		// This example sets the video's title, description, keyword tags, and
+		// video category.
+		$snippet = new Google_Service_YouTube_VideoSnippet();
+		$snippet->setTitle($title);
+		$snippet->setDescription($description);
+		$snippet->setTags($tags);
+		//$snippet->setPublishedAt(array('Helioviewer.org'));
+		
+		// Numeric video category. See
+		// https://developers.google.com/youtube/v3/docs/videoCategories/list 
+		$snippet->setCategoryId("28");
+		
+		// Set the video's status to "public". Valid statuses are "public",
+		// "private" and "unlisted".
+		$status = new Google_Service_YouTube_VideoStatus();
+		$status->privacyStatus = "public";
+		
+		// Associate the snippet and status objects with a new video resource.
+		$video = new Google_Service_YouTube_Video();
+		$video->setSnippet($snippet);
+		$video->setStatus($status);
+		
+		//Proceed to upload
+		$this->_uploadVideoToYouTube($video, $filepath, $id, $title, $description, $tags, $share, $html);
+
+	}
 
     /**
      * Uploads a single video to YouTube
@@ -278,8 +250,7 @@ class Movie_YouTube {
      *
      * @return Zend_Gdata_YouTube_VideoEntry
      */
-    private function _uploadVideoToYouTube($videoEntry, $id, $title,
-        $description, $tags, $share, $html) {
+    private function _uploadVideoToYouTube($video, $filepath, $id, $title, $description, $tags, $share, $html) {
 
         include_once HV_ROOT_DIR.'/../src/Database/MovieDatabase.php';
         include_once HV_ROOT_DIR.'/../lib/alphaID/alphaID.php';
@@ -289,12 +260,9 @@ class Movie_YouTube {
         // Add movie entry to YouTube table if entry does not already exist
         $movieId = alphaID($id, true, 5, HV_MOVIE_ID_PASS);
 
-        if ( !$movies->insertYouTubeMovie($movieId, $title, $description,
-            $tags, $share) ) {
+        if ( !$movies->insertYouTubeMovie($movieId, $title, $description, $tags, $share) ) {
 
-            throw new Exception(
-                'Movie has already been uploaded. Please allow several ' .
-                'minutes for your video to appear on YouTube.', 46);
+            throw new Exception('Movie has already been uploaded. Please allow several minutes for your video to appear on YouTube.', 46);
         }
 
         // buffer all upcoming output
@@ -320,9 +288,7 @@ class Movie_YouTube {
         }
         else {
             header('Content-type: application/json');
-            echo json_encode(
-                array('status' => 'upload in progress.')
-            );
+            echo json_encode(array('status' => 'upload in progress.'));
         }
 
         // get the size of the output
@@ -344,9 +310,41 @@ class Movie_YouTube {
 
         // Begin upload
         try {
-            $newEntry = $this->_youTube->insertEntry($videoEntry,
-                $this->_uploadURL, 'Zend_Gdata_YouTube_VideoEntry'
-            );
+            // Specify the size of each chunk of data, in bytes. Set a higher value for
+			// reliable connection as fewer chunks lead to faster uploads. Set a lower
+			// value for better recovery on less reliable connections.
+			$chunkSizeBytes = 1 * 1024 * 1024;
+            
+            // Setting the defer flag to true tells the client to return a request which can be called
+			// with ->execute(); instead of making the API call immediately.
+			$this->_httpClient->setDefer(true);
+			
+			// Create a request for the API's videos.insert method to create and upload the video.
+			$insertRequest = $this->_youTube->videos->insert("status,snippet", $video);
+			
+			// Create a MediaFileUpload object for resumable uploads.
+			$media = new Google_Http_MediaFileUpload(
+			    $this->_httpClient,
+			    $insertRequest,
+			    'video/*',
+			    null,
+			    true,
+			    $chunkSizeBytes
+			);
+			$media->setFileSize(filesize($filepath));
+
+			// Read the media file and upload it chunk by chunk.
+			$status = false;
+			$handle = fopen($filepath, "rb");
+			while (!$status && !feof($handle)) {
+				$chunk = fread($handle, $chunkSizeBytes);
+				$status = $media->nextChunk($chunk);
+			}
+			
+			fclose($handle);
+			
+			// If you want to make other calls after the file upload, set setDefer back to false
+			$this->_httpClient->setDefer(false);
         }
         catch (Zend_Gdata_App_HttpException $httpException) {
             throw($httpException);
@@ -355,14 +353,10 @@ class Movie_YouTube {
             throw($e);
         }
 
-        // When upload finishes, get youtube id
-        $newEntry->setMajorProtocolVersion(2);
-        $youtubeId = $newEntry->getVideoId();
-
         // Update database entry and return result
-        $movies->updateYouTubeMovie($movieId, $youtubeId);
+        $movies->updateYouTubeMovie($movieId, $status['id']);
 
-        return $newEntry;
+        return $media;
     }
 }
 ?>

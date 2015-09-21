@@ -2,7 +2,7 @@
 
     // Determine which API version to render
     preg_match('/^.*\/docs\/(v[0-9]+)\/.*$/',
-        $_SERVER['SCRIPT_URL'], $matches);
+        $_SERVER['REQUEST_URI'], $matches);
     if ( count($matches) >= 2 ) {
         // API version found in URL
         $api_version = $matches[1];

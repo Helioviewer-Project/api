@@ -111,7 +111,7 @@ class Movie_HelioviewerMovie {
         $this->startDate    = $info['startDate'];
         $this->endDate      = $info['endDate'];
         $this->timestamp    = $info['timestamp'];
-        $this->modified     = $info['modified'];
+        $this->modified     = (isset($info['modified']) ? $info['modified'] : null);
         $this->imageScale   = (float)$info['imageScale'];
         $this->frameRate    = (float)$info['frameRate'];
         $this->movieLength  = (float)$info['movieLength'];

@@ -792,6 +792,11 @@ class Module_Movies implements Module {
     public function uploadMovieToYouTube() {
         include_once HV_ROOT_DIR.'/../src/Movie/HelioviewerMovie.php';
         include_once HV_ROOT_DIR.'/../src/Movie/YouTube.php';
+		
+		if(empty($this->_params['id'])){
+			session_start();
+			$this->_params['id'] = $_SESSION['video-id'];
+		}
 
         // Process request
         $movie = new Movie_HelioviewerMovie($this->_params['id'], 'mp4');
@@ -812,7 +817,9 @@ class Module_Movies implements Module {
         }
         else {
             // Otherwise read form data back in from session variables
-            session_start();
+            if( !isset($_SESSION) ){
+	            session_start();
+            }
 
             if ( !isset($_SESSION['video-title']) ) {
                 $msg = 'Error encountered during authentication. '.
@@ -1120,9 +1127,9 @@ class Module_Movies implements Module {
             break;
         case 'uploadMovieToYouTube':
             $expected = array(
-                'required' => array('id'),
-                'optional' => array('title', 'description', 'tags', 'share',
-                                    'token', 'html'),
+                //'required' => array('id'),
+                'optional' => array('id', 'title', 'description', 'tags', 'share',
+                                    'token', 'code', 'html'),
                 'alphanum' => array('id'),
                 'bools'    => array('share', 'html')
             );

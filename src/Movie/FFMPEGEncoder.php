@@ -138,12 +138,12 @@ class Movie_FFMPEGEncoder
     {
         // Include x264 FFpreset if specified
         if ($preset) {
-            $ffpreset = "-vpre $preset ";
+            $ffpreset = "-preset $preset ";
         } else {
             $ffpreset = "";
         }
         $cmd = HV_FFMPEG . " -r " . $this->_frameRate . " -i " . $this->_directory . "frames/frame%d.bmp"
-            . " -r " . $this->_frameRate . " -vcodec libx264 " . $ffpreset . $this->_getMetaDataString() . "-threads " 
+            . " -r " . $this->_frameRate . " -vcodec libx264 -pix_fmt yuv420p " . $ffpreset . $this->_getMetaDataString() . "-threads " 
             . HV_FFMPEG_MAX_THREADS . " -crf $crf -s " . $this->_width . "x" . $this->_height . " -an -y $outputFile 2>/dev/null";
             
         $this->_logCommand($cmd);
@@ -242,7 +242,7 @@ class Movie_FFMPEGEncoder
     {
         return sprintf(
             '-metadata title="%s" -metadata artist="Helioviewer.org" ' . 
-            '-metadata description="%s" -metadata comment="%s" -timestamp "%s" ',
+            '-metadata description="%s" -metadata comment="%s" -metadata creation_time="%s" ',
             $this->_title,
             $this->_description,
             str_replace(array("mp4", "webm"), $this->_format, $this->_comment),
