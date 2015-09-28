@@ -45,7 +45,7 @@ class Image_ImageType_AIAImage extends Image_HelioviewerImage {
      * @return string watermark name
      */
     public function getWaterMarkName() {
-        return 'AIA '.$this->uiLabels[3]['name']."\n";
+        return 'AIA '.$this->uiLabels[2]['name']."\n";
     }
 }
 ?>

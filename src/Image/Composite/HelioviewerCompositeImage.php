@@ -256,8 +256,10 @@ class Image_Composite_HelioviewerCompositeImage {
         $imagickImage->commentImage($comment);
 
         // Flatten image and write to disk
-        $imagickImage->setImageAlphaChannel(IMagick::ALPHACHANNEL_OPAQUE);
-        $imagickImage->setImageBackgroundColor('black');
+        //$imagickImage->setImageAlphaChannel(IMagick::ALPHACHANNEL_OPAQUE);
+        $imagickImage->setImageBackgroundColor(new ImagickPixel('black'));
+        $imagickImage->setImageAlphaChannel(11);
+		$imagickImage->mergeImageLayers(imagick::LAYERMETHOD_FLATTEN);
         $imagickImage->setImageType(imagick::IMGTYPE_TRUECOLOR);
         $imagickImage = $imagickImage->flattenImages();
         $imagickImage->writeImage($output);
