@@ -28,7 +28,7 @@ class Movie_YouTube {
      */
     public function __construct() {
 
-        include_once 'Google/autoload.php';
+        include_once 'GoogleSDK/src/Google/autoload.php';
 
         $this->_appId     = 'Helioviewer.org User Video Uploader';
         $this->_clientId  = 'Helioviewer.org (2.4.0)';
