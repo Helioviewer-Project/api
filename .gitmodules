@@ -1,0 +1,3 @@
+[submodule "src/Movie/GoogleSDK"]
+	path = src/Movie/GoogleSDK
+	url = https://github.com/google/google-api-php-client.git

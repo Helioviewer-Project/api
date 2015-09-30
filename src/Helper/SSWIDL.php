@@ -125,16 +125,16 @@ EOD;
     private function _getScriptFilename() {
         date_default_timezone_set('UTC');
 
-        $temp = str_replace( Array('-', ':', ' UTC', ' '),
-                             Array(',', ',', '',     ','),
+        $temp = str_replace( Array('/', '-', ':', ' UTC', ' '),
+                             Array(',', ',', ',', '',     ','),
                              $this->_start );
         list($Y,$m,$d,$H,$i,$s) = explode(',',$temp);
         $str = date('Ymd_His', mktime($H,$i,$s,$m,$d,$Y) );
 
         if ( !is_null($this->_end) ) {
 
-            $temp = str_replace( Array('-', ':', ' UTC', ' '),
-                                 Array(',', ',', '',     ','),
+            $temp = str_replace( Array('/', '-', ':', ' UTC', ' '),
+                                 Array(',', ',', ',', '',     ','),
                                  $this->_end );
             list($Y,$m,$d,$H,$i,$s) = explode(',',$temp);
             $end   = date('Ymd_His', mktime($H,$i,$s,$m,$d,$Y) );

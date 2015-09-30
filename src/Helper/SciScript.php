@@ -14,6 +14,7 @@ class Helper_SciScript {
 
     protected $_params;
     protected $_imageLayers;
+    protected $_eventLayers;
     protected $_start;
     protected $_end;
 
