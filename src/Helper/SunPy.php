@@ -90,8 +90,13 @@ import sunpy
 from sunpy.net import vso
 from sunpy.net import hek
 
+import astropy.units as u
+
 vso_client = vso.VSOClient()
 hek_client = hek.HEKClient()
+
+if sunpy.version < '0.6':
+	raise ValueError('SunPy version 0.6 or higher is required to run this script.')
 
 EOD;
 
@@ -491,7 +496,7 @@ EOD;
                 $string .= <<<EOD
 
 vso_result_aia_{$layer['uiLabels'][2]['name']} = vso_client.query(vso.attrs.Time(tstart, tend), \
-    vso.attrs.Instrument('aia'), vso.attrs.Wave({$layer['uiLabels'][2]['name']},{$layer['uiLabels'][2]['name']}))
+    vso.attrs.Instrument('aia'), vso.attrs.Wave({$layer['uiLabels'][2]['name']} * u.Angstrom,{$layer['uiLabels'][2]['name']} * u.Angstrom))
 vso_data_aia_{$layer['uiLabels'][2]['name']}   = vso_client.get(vso_result_aia_{$layer['uiLabels'][2]['name']} , path=localPath)
 
 EOD;
