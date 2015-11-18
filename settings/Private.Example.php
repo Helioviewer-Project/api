@@ -34,4 +34,10 @@ define("HV_MOVIE_ID_PASS", "");
 define("HV_BITLY_USER", "");
 define("HV_BITLY_API_KEY", "");
 
+/**
+ * Proxy Settings
+ */
+define("HV_PROXY_HOST", "");
+define("HV_PROXY_USER_PASSWORD", ""); // must be a string in username:password format, leave it empty if proxy do not use authorization
+
 ?>

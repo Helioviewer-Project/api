@@ -439,7 +439,7 @@ class Module_WebClient implements Module {
             // Re-fetch if it is old than 30 mins
             include_once HV_ROOT_DIR.'/../src/Net/Proxy.php';
             $proxy = new Net_Proxy(HV_NEWS_FEED_URL);
-            $feed  = $proxy->query();
+            $feed  = $proxy->query(array(), true);
             $cache->set('news.xml', $feed);
         }
 
@@ -474,7 +474,7 @@ class Module_WebClient implements Module {
             'apiKey'  => HV_BITLY_API_KEY
         );
 
-        $this->_printJSON($proxy->query($params));
+        $this->_printJSON($proxy->query($params, true));
     }
 
     /**
@@ -539,26 +539,99 @@ class Module_WebClient implements Module {
      * Retrieves the latest usage statistics from the database
      */
     public function getDataCoverage() {
-
+	    include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerLayers.php';
+	    // Data Layers
+        $layers = new Helper_HelioviewerLayers($this->_options['imageLayers']);
+        
+        $start = @$this->_options['startDate'];
+		if ($start && !preg_match('/^[0-9]+$/', $start)) {
+			die("Invalid start parameter: $start");
+		}
+		$end = @$this->_options['endDate'];
+		if ($end && !preg_match('/^[0-9]+$/', $end)) {
+			die("Invalid end parameter: $end");
+		}
+		if (!$start) $start = 0;
+		if (!$end) $end = time() * 1000;
+        
+        // set some utility variables
+		$range = $end - $start;
+		$startDate = gmstrftime('%Y-%m-%d %H:%M:%S', $start / 1000) + 60;
+		$endDate = gmstrftime('%Y-%m-%d %H:%M:%S', $end / 1000) - 60;
+        
+        // find the right range
+		// two days range loads minute data
+		if ($range < 2 * 24 * 3600 * 1000) {
+			$resolution = 'm';
+			
+		// one month range loads hourly data
+		} elseif ($range < 31 * 24 * 3600 * 1000) {
+			$resolution = 'h';
+			
+		// one year range loads daily data
+		} elseif ($range < 15 * 31 * 24 * 3600 * 1000) {
+			$resolution = 'D';
+		// greater range loads monthly data
+		} else {
+			$resolution = 'M';
+		} 
+		//$resolution = 'm';
+		
+        $dateEnd = new DateTime();
+        if ( isset($this->_options['endDate']) ) {
+            $dateEnd->setTimestamp( $this->_options['endDate']/1000);
+        }else{
+	        $dateEnd->setTimestamp( $end/1000);
+        }
+        $dateStart = new DateTime();
+        if ( isset($this->_options['startDate']) ) {
+            $dateStart->setTimestamp( $this->_options['startDate']/1000);
+        }else{
+	        $dateStart->setTimestamp( $start/1000);
+        }
+        
+        include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
+        $statistics = new Database_Statistics();
+        
+        $eventsStr = '';
+        if(isset($this->_options['eventLayers']) && !empty($this->_options['eventLayers'])){
+	        $eventsStr = $this->_options['eventLayers'];
+        }
+        
+        $this->_printJSON(
+            $statistics->getDataCoverage(
+	            $layers,
+                $resolution,
+                $dateStart,
+                $dateEnd,
+                $eventsStr
+            )
+        );
+        
+        
+        
+        
+        
+        
+        /*    
         // Define allowed date/time resolutions
         $validRes = array('30m',
                           '1h',
                           '1D',
                           '1W',
-                          '1M', '3M',
+                          '1M', 
+                          '3M',
                           '1Y');
-        if ( isset($this->_options['resolution']) && $this->_options['resolution']!='') {
+        
+        $resolution = '1Y';
+        if ( isset($this->_options['resolution']) && !empty($this->_options['resolution'])) {
 
             // Make sure a valid resolution was specified
             if ( !in_array($this->_options['resolution'], $validRes) ) {
-                $msg = 'Invalid resolution specified. Valid options include: '
-                     . implode(', ', $validRes);
+                $msg = 'Invalid resolution specified. Valid options include: ' . implode(', ', $validRes);
                 throw new Exception($msg, 25);
             }
             $resolution = $this->_options['resolution'];
-        }
-        else {
-            $resolution = '1h';
         }
 
         $magnitude   = intval($resolution);
@@ -648,13 +721,14 @@ class Module_WebClient implements Module {
 
         $this->_printJSON(
             $statistics->getDataCoverage(
+	            $layers,
                 $resolution,
                 $endDate,
                 $interval,
                 $stepSize,
                 $steps
             )
-        );
+        );*/
     }
 
     /**
@@ -966,15 +1040,11 @@ class Module_WebClient implements Module {
                   isset($this->_options['height']) ) {
 
             // Region of interest: x0, y0, width, height
-            $x1 = $this->_options['x0'] - 0.5 * $this->_options['width']
-                * $this->_params['imageScale'];
-            $y1 = $this->_options['y0'] - 0.5 * $this->_options['height']
-                * $this->_params['imageScale'];
+            $x1 = $this->_options['x0'] - 0.5 * $this->_options['width'] * $this->_params['imageScale'];
+            $y1 = $this->_options['y0'] - 0.5 * $this->_options['height'] * $this->_params['imageScale'];
 
-            $x2 = $this->_options['x0'] + 0.5 * $this->_options['width']
-                * $this->_params['imageScale'];
-            $y2 = $this->_options['y0'] + 0.5 * $this->_options['height']
-                * $this->_params['imageScale'];
+            $x2 = $this->_options['x0'] + 0.5 * $this->_options['width'] * $this->_params['imageScale'];
+            $y2 = $this->_options['y0'] + 0.5 * $this->_options['height'] * $this->_params['imageScale'];
         }
         else {
             throw new Exception(
@@ -1168,10 +1238,9 @@ class Module_WebClient implements Module {
             break;
         case 'getDataCoverage':
             $expected = array(
-                'optional' => array('resolution','endDate',
-                    'callback'),
+                'optional' => array('resolution','startDate','endDate','callback','imageLayers','startDate','endDate','eventLayers'),
                 'alphanum' => array('resolution', 'callback'),
-                'dates'    => array('endDate')
+                'dates'    => array()
             );
             break;
         case 'updateDataCoverage':
