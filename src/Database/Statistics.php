@@ -280,24 +280,16 @@ class Database_Statistics {
 		            $sql = 'SELECT date AS time,
 					       COUNT(*) AS count,
 					       sourceId
-					FROM data2
+					FROM data
 					WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
 					GROUP BY sourceId, time
 					ORDER BY time;';
 		            break;
-		            /*$sql = 'SELECT DATE_FORMAT(date, "%Y-%m-%d %H:%i:00") AS time,
-					       COUNT(*) AS count,
-					       sourceId
-					FROM data2
-					WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
-					GROUP BY sourceId, time
-					ORDER BY time;';
-		            break;*/
 		        case 'h':
 		            $sql = 'SELECT DATE_FORMAT(date, "%Y-%m-%d %H:00:00") AS time,
 					       COUNT(*) AS count,
 					       sourceId
-					FROM data2
+					FROM data
 					WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
 					GROUP BY sourceId, time
 					ORDER BY time;';
@@ -306,51 +298,28 @@ class Database_Statistics {
 		        	$sql = 'SELECT DATE(date) AS time,
 					       SUM(count) AS count,
 					       sourceId
-					FROM data_coverage_30_min2
+					FROM data_coverage_30_min
 					WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
 					GROUP BY sourceId, DATE(time)
 					ORDER BY DATE(time);';
 		            break;
-		            /*$sql = 'SELECT DATE(date) AS time,
-					       COUNT(*) AS count,
-					       sourceId
-					FROM data2
-					WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
-					GROUP BY sourceId, DATE(time)
-					ORDER BY DATE(time);';
-		            break;*/
 		        case 'M':
 		        	$sql = 'SELECT DATE(DATE_FORMAT(date, "%Y-%m-01")) AS time,
 					       SUM(count) AS count,
 					       sourceId
-					FROM data_coverage_30_min2
+					FROM data_coverage_30_min
 					WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
 					GROUP BY sourceId, DATE(DATE_FORMAT(date, "%Y-%m-01"))
 					ORDER BY DATE(DATE_FORMAT(date, "%Y-%m-01"));';
 		            break;
-		            /*$sql = 'SELECT DATE(DATE_FORMAT(date, "%Y-%m-01")) AS time,
-					       COUNT(*) AS count,
-					       sourceId
-					FROM data2
-					WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
-					GROUP BY sourceId, DATE(DATE_FORMAT(date, "%Y-%m-01"))
-					ORDER BY DATE(DATE_FORMAT(date, "%Y-%m-01"));';
-		            break;*/
 		        case 'Y':
 		            $sql = 'SELECT DATE(DATE_FORMAT(date, "%Y-01-01")) AS time,
 					       SUM(count) AS count,
 					       sourceId
-					FROM data_coverage_30_min2
+					FROM data_coverage_30_min
 					WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
 					GROUP BY sourceId, DATE(DATE_FORMAT(date, "%Y-01-01"))
 					ORDER BY DATE(DATE_FORMAT(date, "%Y-01-01"));';
-		            /*$sql = 'SELECT DATE(DATE_FORMAT(date, "%Y-01-01")) AS time,
-					       COUNT(*) AS count,
-					       sourceId
-					FROM data2
-					WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
-					GROUP BY sourceId, DATE(DATE_FORMAT(date, "%Y-01-01"))
-					ORDER BY DATE(DATE_FORMAT(date, "%Y-01-01"));';*/
 		            break;
 		        default:
 		            $msg = 'Invalid resolution specified. Valid options include: '
