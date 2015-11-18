@@ -86,6 +86,52 @@ class Event_HEKAdapter {
      *
      * @return JSON List of event FRMs sorted by event type
      */
+    public function getFRMsByType($startTime, $endTime, $events = '**') {
+	    
+        if(empty($events)){
+	        $events = '**';
+        }
+        
+        $params = array(
+            'event_starttime' => $startTime,
+            'event_endtime'   => $endTime,
+            'event_type'      => $events,
+            'result_limit'    => 200,
+            'return'          => 'event_coordsys,event_starttime,event_type,obs_channelid,eventtype,obs_observatory,frm_institute,event_coordunit,obs_includesnrt,frm_specificid,event_title,obs_instrument,event_endtime,concept,frm_name'
+        );
+        
+        $decoded = json_decode($this->_proxy->query($params, true), true);
+
+        // create an array to keep track of which FRMs have been added
+        $times = array();
+
+        $unsorted = array();
+        foreach ($decoded['result'] as $frm) {
+            $eventType = $frm['concept'].'/'.$frm['event_type'];
+            $starttime      = $frm['event_starttime'];
+            $endtime      = $frm['event_endtime'];
+			$key = $starttime.'-'.$endtime;
+			if (!array_key_exists($key, $times)) {
+				$times[$key] = 1;
+                $sorted[$eventType]['type'] = $frm['event_type'];
+                $sorted[$eventType]['label'] = $eventType;
+				$sorted[$eventType]['data'][] = array(strtotime($starttime)*1000, strtotime($endtime)*1000);
+            }
+			
+			
+        }
+		
+        return $sorted;
+    }
+
+    /**
+     * Return a list of event FRMs sorted by event type
+     *
+     * @param string $startTime Query start date
+     * @param string $endTime   Query end date
+     *
+     * @return JSON List of event FRMs sorted by event type
+     */
     public function getFRMs($startTime, $endTime) {
         $params = array(
             'event_starttime' => $startTime,

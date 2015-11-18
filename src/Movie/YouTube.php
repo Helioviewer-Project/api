@@ -55,6 +55,18 @@ class Movie_YouTube {
         $redirect = filter_var(HV_WEB_ROOT_URL . '?action=uploadMovieToYouTube&html=true', FILTER_SANITIZE_URL);
 		$this->_httpClient->setRedirectUri($redirect);
 		
+		//set proxy config for curl io
+		if(!empty(HV_PROXY_HOST)){
+			$io = new Google_IO_Curl($this->_httpClient);
+			$curloptions = array();
+			$curloptions[CURLOPT_PROXY] = HV_PROXY_HOST;
+			if(!empty(HV_PROXY_USER_PASSWORD)){
+				$curloptions[CURLOPT_PROXYUSERPWD] = HV_PROXY_USER_PASSWORD;
+			}
+			$io->setOptions($curloptions);
+			$this->_httpClient->setIo($io);
+		}
+		
     }
 
     /**

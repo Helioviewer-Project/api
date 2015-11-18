@@ -235,87 +235,150 @@ class Database_Statistics {
     /**
      * Gets latest datasource coverage and return as JSON
      */
-    public function getDataCoverage($resolution, $endDate, $interval,
-        $stepSize, $steps) {
+    public function getDataCoverage($layers, $resolution, $startDate, $endDate, $eventsStr) {
 
         require_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
-
-        $sql = 'SELECT id, name, description FROM datasources ORDER BY description';
-        $result = $this->_dbConnection->query($sql);
-
-        $output = array();
-
-        while ($row = $result->fetch_array(MYSQLI_ASSOC)) {
-            $sourceId = $row['id'];
-
-            $output['sourceId'.$sourceId] = new stdClass;
-            $output['sourceId'.$sourceId]->sourceId = $sourceId;
-            $output['sourceId'.$sourceId]->label = $row['description'];
-            $output['sourceId'.$sourceId]->data = array();
-        }
-
-        // Format to use for displaying dates
-        switch($resolution) {
-        case "5m":
-        case "15m":
-        case "30m":
-            $dateFormat = "Y-m-d H:i";
-            break;
-        case "1h":
-            $dateFormat = "Y-m-d H:i";
-            break;
-        case "1D":
-            $dateFormat = "Y-m-d";
-            break;
-        case "14D":
-        case "1W":
-            $dateFormat = "Y-m-d";
-            break;
-        case "30D":
-        case "1M":
-        case "3M":
-        case "6M":
-            $dateFormat = "M Y";
-            break;
-        case "1Y":
-            $dateFormat = "Y";
-            break;
-        default:
-            $dateFormat = "Y-m-d H:i e";
-        }
-
-
-        // Start date
-        $date = $endDate->sub($interval);
-
-        // Query each time interval
-        for ($i = 0; $i < $steps; $i++) {
-            $dateIndex = $date->format($dateFormat); // Format date for array index
-            $dateStart = toMySQLDateString($date);   // MySQL-formatted date string
-
-            // Move to end date for the current interval
-            $date->add($stepSize);
-
-            // Fill with zeros to begin with
-            foreach ($output as $sourceId => $arr) {
-                array_push($output[$sourceId]->data, array($dateIndex => 0));
-            }
-            $dateEnd = toMySQLDateString($date);
-
-            $sql = "SELECT sourceId, SUM(count) as count FROM data_coverage_30_min " .
-                   "WHERE date BETWEEN '$dateStart' AND '$dateEnd' GROUP BY sourceId;";
-            //echo "\n<br />";
-
-            $result = $this->_dbConnection->query($sql);
-
-            // And append counts for each sourceId during that interval to the relevant array
-            while ($count = $result->fetch_array(MYSQLI_ASSOC)) {
-                $num = (int) $count['count'];
-                $output['sourceId'.$count['sourceId']]->data[$i][$dateIndex] = $num;
-            }
-        }
-
-        return json_encode($output);
+        ini_set('memory_limit', '512M');
+		set_time_limit(0);
+		
+		
+		$dateStart = toMySQLDateString($startDate);
+		$dateEnd = toMySQLDateString($endDate);
+		
+		$dateStartISO = str_replace("Z", "", toISOString($startDate));
+		$dateEndISO = str_replace("Z", "", toISOString($endDate));
+		
+        $sources = array();
+		$events = array();
+		if(!empty($eventsStr)){
+			include_once HV_ROOT_DIR.'/../src/Event/HEKAdapter.php';
+			$hek = new Event_HEKAdapter();
+        	$events = $hek->getFRMsByType($dateStartISO, $dateEndISO, $eventsStr);
+        	return json_encode($events);
+		}else{
+		
+			$layersArray = array();
+			$layersKeys = array();
+			$layersCount = 0;
+			foreach($layers->toArray() as $layer){
+				$sourceId = $layer['sourceId'];
+				
+	            $sources[$layersCount] = new stdClass;
+	            $sources[$layersCount]->sourceId = $sourceId;
+	            $sources[$layersCount]->name = (isset($layer['uiLabels'][0]['name']) ? $layer['uiLabels'][0]['name'] : '').' '.(isset($layer['uiLabels'][1]['name']) ? $layer['uiLabels'][1]['name'] : '').' '.(isset($layer['uiLabels'][2]['name']) ? $layer['uiLabels'][2]['name'] : '');
+	            $sources[$layersCount]->data = array();
+	            
+	            $layersArray[] = $sourceId;
+	            $layersKeys[$sourceId] = $layersCount;
+	            $layersCount++;
+	        }
+			
+			$layersString = implode(' OR sourceId = ', $layersArray);
+			
+			switch ($resolution) {
+		        case 'm':
+		            $sql = 'SELECT date AS time,
+					       COUNT(*) AS count,
+					       sourceId
+					FROM data2
+					WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
+					GROUP BY sourceId, time
+					ORDER BY time;';
+		            break;
+		            /*$sql = 'SELECT DATE_FORMAT(date, "%Y-%m-%d %H:%i:00") AS time,
+					       COUNT(*) AS count,
+					       sourceId
+					FROM data2
+					WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
+					GROUP BY sourceId, time
+					ORDER BY time;';
+		            break;*/
+		        case 'h':
+		            $sql = 'SELECT DATE_FORMAT(date, "%Y-%m-%d %H:00:00") AS time,
+					       COUNT(*) AS count,
+					       sourceId
+					FROM data2
+					WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
+					GROUP BY sourceId, time
+					ORDER BY time;';
+		            break;
+		        case 'D':
+		        	$sql = 'SELECT DATE(date) AS time,
+					       SUM(count) AS count,
+					       sourceId
+					FROM data_coverage_30_min2
+					WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
+					GROUP BY sourceId, DATE(time)
+					ORDER BY DATE(time);';
+		            break;
+		            /*$sql = 'SELECT DATE(date) AS time,
+					       COUNT(*) AS count,
+					       sourceId
+					FROM data2
+					WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
+					GROUP BY sourceId, DATE(time)
+					ORDER BY DATE(time);';
+		            break;*/
+		        case 'M':
+		        	$sql = 'SELECT DATE(DATE_FORMAT(date, "%Y-%m-01")) AS time,
+					       SUM(count) AS count,
+					       sourceId
+					FROM data_coverage_30_min2
+					WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
+					GROUP BY sourceId, DATE(DATE_FORMAT(date, "%Y-%m-01"))
+					ORDER BY DATE(DATE_FORMAT(date, "%Y-%m-01"));';
+		            break;
+		            /*$sql = 'SELECT DATE(DATE_FORMAT(date, "%Y-%m-01")) AS time,
+					       COUNT(*) AS count,
+					       sourceId
+					FROM data2
+					WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
+					GROUP BY sourceId, DATE(DATE_FORMAT(date, "%Y-%m-01"))
+					ORDER BY DATE(DATE_FORMAT(date, "%Y-%m-01"));';
+		            break;*/
+		        case 'Y':
+		            $sql = 'SELECT DATE(DATE_FORMAT(date, "%Y-01-01")) AS time,
+					       SUM(count) AS count,
+					       sourceId
+					FROM data_coverage_30_min2
+					WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
+					GROUP BY sourceId, DATE(DATE_FORMAT(date, "%Y-01-01"))
+					ORDER BY DATE(DATE_FORMAT(date, "%Y-01-01"));';
+		            /*$sql = 'SELECT DATE(DATE_FORMAT(date, "%Y-01-01")) AS time,
+					       COUNT(*) AS count,
+					       sourceId
+					FROM data2
+					WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
+					GROUP BY sourceId, DATE(DATE_FORMAT(date, "%Y-01-01"))
+					ORDER BY DATE(DATE_FORMAT(date, "%Y-01-01"));';*/
+		            break;
+		        default:
+		            $msg = 'Invalid resolution specified. Valid options include: '
+		                 . implode(', ', $validRes);
+		            throw new Exception($msg, 25);
+		    }
+			
+			//echo $sql."\n<br />";
+			
+			$result = $this->_dbConnection->query($sql);
+			
+			while ($row = $result->fetch_array(MYSQLI_ASSOC)) {
+	            $num = (int) $row['count'];
+	            $sourceId = $row['sourceId'];
+	            $key = $layersKeys[$sourceId];
+	            if($resolution == 'm'){
+		            $sources[$key]->data[] = array(strtotime($row['time'])*1000, $key+1);
+	            }else{
+		            $sources[$key]->data[] = array(strtotime($row['time'])*1000, $num);
+	            }
+	        }
+	        
+	        foreach($sources as $sourceId=>$row){
+		        $sources[$sourceId]->data[] = array($endDate->getTimestamp()*1000, null);
+	        }
+	        
+	        return json_encode($sources);
+		}
     }
 
     /**
