@@ -238,9 +238,12 @@ class Database_Statistics {
     public function getDataCoverage($layers, $resolution, $startDate, $endDate, $eventsStr) {
 
         require_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
-        ini_set('memory_limit', '512M');
-		set_time_limit(0);
 		
+		$distance = $endDate->getTimestamp() - $startDate->getTimestamp();
+		$interval = new DateInterval('PT'.$distance.'S');
+		
+		$startDate->modify('-'.$distance.' seconds');
+		$endDate->modify('+'.$distance.' seconds');
 		
 		$dateStart = toMySQLDateString($startDate);
 		$dateEnd = toMySQLDateString($endDate);
@@ -267,6 +270,8 @@ class Database_Statistics {
 	            $sources[$layersCount]->sourceId = $sourceId;
 	            $sources[$layersCount]->name = (isset($layer['uiLabels'][0]['name']) ? $layer['uiLabels'][0]['name'] : '').' '.(isset($layer['uiLabels'][1]['name']) ? $layer['uiLabels'][1]['name'] : '').' '.(isset($layer['uiLabels'][2]['name']) ? $layer['uiLabels'][2]['name'] : '');
 	            $sources[$layersCount]->data = array();
+	            
+		        $sources[$layersCount]->data[] = array($startDate->getTimestamp()*1000, null);
 	            
 	            $layersArray[] = $sourceId;
 	            $layersKeys[$sourceId] = $layersCount;
