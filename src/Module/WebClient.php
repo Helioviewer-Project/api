@@ -541,7 +541,12 @@ class Module_WebClient implements Module {
     public function getDataCoverage() {
 	    include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerLayers.php';
 	    // Data Layers
-        $layers = new Helper_HelioviewerLayers($this->_options['imageLayers']);
+	    if(!empty($this->_options['imageLayers'])){
+		    $layers = new Helper_HelioviewerLayers($this->_options['imageLayers']);
+	    }else{
+		    $layers = null;
+	    }
+        
         
         $start = @$this->_options['startDate'];
 		if ($start && !preg_match('/^[0-9]+$/', $start)) {

@@ -259,7 +259,11 @@ class Database_Statistics {
         	$events = $hek->getFRMsByType($dateStartISO, $dateEndISO, $eventsStr);
         	return json_encode($events);
 		}else{
-		
+			
+			if(!$layers){
+				return json_encode(array());
+			}
+			
 			$layersArray = array();
 			$layersKeys = array();
 			$layersCount = 0;
