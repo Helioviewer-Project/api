@@ -23,7 +23,7 @@ def find_images(path):
 
     return images
 
-def process_jp2_images (images, root_dir, cursor, mysql=True, step_fxn=None):
+def process_jp2_images (images, root_dir, cursor, mysql=True, step_fxn=None, cursor_v2=None):
     '''Processes a collection of JPEG 2000 Images'''
     if mysql:
         import MySQLdb
@@ -37,9 +37,9 @@ def process_jp2_images (images, root_dir, cursor, mysql=True, step_fxn=None):
     while len(images) > 0:
         subset = images[:__INSERTS_PER_QUERY__]
         images = images[__INSERTS_PER_QUERY__:]
-        insert_images(subset, sources, root_dir, cursor, mysql, step_fxn)
+        insert_images(subset, sources, root_dir, cursor, mysql, step_fxn, cursor_v2)
 
-def insert_images(images, sources, rootdir, cursor, mysql, step_function=None):
+def insert_images(images, sources, rootdir, cursor, mysql, step_function=None, cursor_v2=None):
     """Inserts multiple images into a database using a single query
 
     Parameters
@@ -57,7 +57,16 @@ def insert_images(images, sources, rootdir, cursor, mysql, step_function=None):
     step_function : function
         function to call after each insert query
     """
+    
+    # TEMPORARY SOLUTION
+    # Because of database tables changes in Helioviewer v2 and Helioviewer v3
+    # we need have same data on both databases we need to insert image information into both databases
+    # separatly.
+    #
+    # To solve this we duplicated query with different table names and exetuning it to different databases.
+    #
     query = "INSERT IGNORE INTO data VALUES "
+    query_v2 = "INSERT IGNORE INTO images VALUES "
 
     # Add images to SQL query
     for i, img in enumerate(images):
@@ -81,6 +90,7 @@ def insert_images(images, sources, rootdir, cursor, mysql, step_function=None):
 
         # insert into database
         query += "(NULL, '%s', '%s', '%s', NULL, %d)," % (path, filename, img["date"], source['id'])
+        query_v2 += "(NULL, '%s', '%s', '%s', %d)," % (path, filename, img["date"], source['id'])
 
         # Progressbar
         if step_function and (i + 1) % __STEP_FXN_THROTTLE__ is 0:
@@ -88,9 +98,14 @@ def insert_images(images, sources, rootdir, cursor, mysql, step_function=None):
 
     # Remove trailing comma
     query = query[:-1] + ";"
+    query_v2 = query_v2[:-1] + ";"
 
     # Execute query
     cursor.execute(query)
+    
+    if cursor_v2:
+    	cursor_v2.execute(query_v2)
+    	
 
 class BadImage(ValueError):
     """Exception to raise when a "bad" image (e.g. corrupt or calibration) is
