@@ -27,6 +27,11 @@ class ImageRetrievalDaemon:
         self.dbname = conf.get('database', 'dbname')
         self.dbuser = conf.get('database', 'dbuser')
         self.dbpass = conf.get('database', 'dbpass')
+        # MySQL/Postgres info v2
+        self.dbhost_v2 = conf.get('database_v2', 'dbhost_v2')
+        self.dbname_v2 = conf.get('database_v2', 'dbname_v2')
+        self.dbuser_v2 = conf.get('database_v2', 'dbuser_v2')
+        self.dbpass_v2 = conf.get('database_v2', 'dbpass_v2')
 
         self.downloaders = []
 
@@ -36,6 +41,17 @@ class ImageRetrievalDaemon:
             logging.error("Unable to access MySQL. Is the database daemon running?")
             self.shutdown()
             self.stop()
+        
+        # v2 database  
+        if self.dbhost_v2 != "" and self.dbname_v2 != "":
+	        try:
+	            self._db_v2 = get_db_cursor(self.dbhost_v2, self.dbname_v2, self.dbuser_v2, self.dbpass_v2)
+	        except MySQLdb.OperationalError:
+	            logging.error("Unable to access MySQL. Is the database daemon running (v2)?")
+	            self.shutdown()
+	            self.stop()  
+        else:
+        	self._db_v2 = None   
 
         # Email notification
         self.email_server = conf.get('notifications', 'server')
@@ -49,10 +65,8 @@ class ImageRetrievalDaemon:
         self.max_downloads = conf.getint('network', 'max_downloads')
 
         # Directories
-        self.working_dir = os.path.expanduser(conf.get('directories',
-                                                       'working_dir'))
-        self.image_archive = os.path.expanduser(conf.get('directories',
-                                                         'image_archive'))
+        self.working_dir = os.path.expanduser(conf.get('directories', 'working_dir'))
+        self.image_archive = os.path.expanduser(conf.get('directories', 'image_archive'))
         self.incoming = os.path.join(self.working_dir, 'incoming')
         self.quarantine = os.path.join(self.working_dir, 'quarantine')
 
@@ -364,7 +378,7 @@ class ImageRetrievalDaemon:
             images.append(image_params)
 
         # Add valid images to main Database
-        process_jp2_images(images, self.image_archive, self._db)
+        process_jp2_images(images, self.image_archive, self._db, True, None, self._db_v2)
 
         logging.info("Added %d images to database", len(images))
 
