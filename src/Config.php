@@ -36,7 +36,7 @@ class Config {
         if ( in_array('acao_url', array_keys($this->config)) ) {
 
             if ( in_array('HTTP_ORIGIN', array_keys($_SERVER))
-              && $_SERVER['HTTP_ORIGIN'] == $this->config['acao_url'] ) {
+              && in_array($_SERVER['HTTP_ORIGIN'], $this->config['acao_url']) ) {
 
                 header("Access-Control-Allow-Origin: ".$_SERVER['HTTP_ORIGIN']);
                 header("Access-Control-Allow-Methods: ".$this->config['acam']);
