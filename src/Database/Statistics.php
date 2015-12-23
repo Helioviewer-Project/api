@@ -66,24 +66,26 @@ class Database_Statistics {
 
         // Array to keep track of counts for each action
         $counts = array(
-            "buildMovie"           => array(),
-            "getClosestData"       => array(),
-            "getClosestImage"      => array(),
-            "getJPX"               => array(),
-            "takeScreenshot"       => array(),
-            "uploadMovieToYouTube" => array(),
-            "embed"                => array()
+            "buildMovie"           		=> array(),
+            "getClosestData"       		=> array(),
+            "getClosestImage"      		=> array(),
+            "getJPX"               		=> array(),
+            "getJPXClosestToMidPoint" 	=> array(),
+            "takeScreenshot"       		=> array(),
+            "uploadMovieToYouTube" 		=> array(),
+            "embed"                		=> array()
         );
 
         // Summary array
         $summary = array(
-            "buildMovie"           => 0,
-            "getClosestData"       => 0,
-            "getClosestImage"      => 0,
-            "getJPX"               => 0,
-            "takeScreenshot"       => 0,
-            "uploadMovieToYouTube" => 0,
-            "embed"                => 0
+            "buildMovie"           		=> 0,
+            "getClosestData"       		=> 0,
+            "getClosestImage"      		=> 0,
+            "getJPX"               		=> 0,
+            "getJPXClosestToMidPoint"   => 0,
+            "takeScreenshot"       		=> 0,
+            "uploadMovieToYouTube" 		=> 0,
+            "embed"                		=> 0
         );
 
         // Format to use for displaying dates

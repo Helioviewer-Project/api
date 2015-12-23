@@ -656,6 +656,62 @@ class Database_ImgIndex {
 
         return $data;
     }
+    
+    /**
+     * Return an array of data from a given data source within the specified
+     * time range.
+     *
+     * @param datetime $start    Query start time
+     * @param datetime $end      Query end time
+     * @param int      $sourceId The data source identifier in the database
+     *
+     * @return array Array containing matched rows from the `data` table
+     */
+    public function getDataMidPoint($start, $end, $mid, $sourceId) {
+        include_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
+
+        $this->_dbConnect();
+
+        $data      = array();
+        $startDate = date("Y-m-d H:i:s", $start);
+        $endDate   = date("Y-m-d H:i:s", $end);
+        $midDate   = date("Y-m-d H:i:s", $mid);
+
+        $sql = sprintf("
+	        SELECT * FROM
+				(
+				  ( SELECT *, TIMESTAMPDIFF(SECOND, '%s', `date`) as diff
+				    FROM `data` WHERE `date` >= '%s' AND `date` < '%s' AND sourceId = %d
+				    ORDER BY `date` asc  limit 1
+				  )
+				  union
+				  ( SELECT *, TIMESTAMPDIFF(SECOND, `date`, '%s') as diff
+				    FROM `data` WHERE `date` < '%s' AND `date` > '%s' AND sourceId = %d
+				    ORDER BY `date` desc limit 1
+				  )
+				) x
+				ORDER BY diff
+				LIMIT 1;",
+                 $this->_dbConnection->link->real_escape_string($midDate),
+                 $this->_dbConnection->link->real_escape_string($midDate),
+                 $this->_dbConnection->link->real_escape_string($endDate),
+                 (int)$sourceId,
+                 $this->_dbConnection->link->real_escape_string($midDate),
+                 $this->_dbConnection->link->real_escape_string($midDate),
+                 $this->_dbConnection->link->real_escape_string($startDate),
+                 (int)$sourceId
+               );
+        try {
+            $result = $this->_dbConnection->query($sql);
+        }
+        catch (Exception $e) {
+            return false;
+        }
+		
+		$data = $result->fetch_array(MYSQLI_ASSOC);
+
+        return $data;
+    }
 
     /**
      * Extract metadata from JP2 image file's XML header

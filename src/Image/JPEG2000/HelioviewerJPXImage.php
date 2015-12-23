@@ -39,8 +39,7 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
      *
      * @return void
      */
-    public function __construct($sourceId, $startTime, $endTime, $cadence,
-        $linked, $filename) {
+    public function __construct($sourceId, $startTime, $endTime, $cadence, $linked, $filename, $middleFrames = false) {
 
         $this->_sourceId  = $sourceId;
         $this->_startTime = $startTime;
@@ -60,9 +59,17 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
         // If the file doesn't exist already, create it
         if ( !@file_exists($filepath) ) {
             try {
-                list($images, $timestamps) = $this->_queryJPXImageFrames();
+                $this->_timestamps = array();
+	            $this->_images     = array();
+	            
+                if($middleFrames == false){
+	                list($images, $timestamps) = $this->_queryJPXImageFrames();
+                }else{
+	                list($images, $timestamps) = $this->_queryJPXImageFramesMidPoint();
+                }
+                
                 $this->_timestamps = $timestamps;
-                $this->_images     = $images;
+	            $this->_images     = $images;
 
                 // Make sure that at least some movie frames were found
                 if ( sizeOf($images) > 0 ) {
@@ -103,7 +110,55 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
             }
         }
     }
+	
+	
+	/**
+     * Return list of JP2 files to use for JPX generation selected by Mid Points
+     *
+     * @return array List of filepaths of images to use during JPX generation
+     *               as well as a list of the times for each image in the
+     *               series.
+     */
+    private function _queryJPXImageFramesMidPoint() {
 
+        include_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
+        include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
+
+        $imgIndex = new Database_ImgIndex();
+		
+		// Parse List of dates and convert them to Unix Timestaps
+		$startTimesArray                 = explode(',', $this->_startTime);
+		$endTimesArray                   = explode(',', $this->_endTime);
+		
+		if(count($startTimesArray) < 1 || count($endTimesArray) < 1){
+			throw new Exception('At least one Start and End date need to be specified. Please use timestamps separated with commas.', 61);
+		}
+		
+		if(count($startTimesArray) != count($endTimesArray)){
+			throw new Exception('Number of Start dates doesn\'t match the number of End dates. Please use equal amount of Start and End dates.', 61);
+		}
+		
+		$images = array();
+        $dates  = array();
+		
+		foreach($startTimesArray as $k => $start){
+			$end = $endTimesArray[$k];
+			$middle = round(($start + $end) / 2);
+			
+			$results = $imgIndex->getDataMidPoint($start, $end, $middle, $this->_sourceId);
+			if($results && isset($results['id'])){
+				$filepath = HV_JP2_DIR.$results['filepath'].'/'.$results['filename'];
+				array_push($images, $filepath);
+				array_push($dates, toUnixTimestamp($results['date']));
+			}else{
+				array_push($images, null);
+				array_push($dates, null);
+			}
+		}
+
+        return array($images, $dates);
+    }
+	
     /**
      * Return list of JP2 files to use for JPX generation
      *
