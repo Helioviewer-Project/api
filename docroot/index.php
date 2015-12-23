@@ -79,6 +79,7 @@ function loadModule($params) {
         'takeScreenshot'         => 'WebClient',
         'getJP2Image'            => 'JHelioviewer',
         'getJPX'                 => 'JHelioviewer',
+        'getJPXClosestToMidPoint'=> 'JHelioviewer',
         'launchJHelioviewer'     => 'JHelioviewer',
         'downloadMovie'          => 'Movies',
         'getMovieStatus'         => 'Movies',

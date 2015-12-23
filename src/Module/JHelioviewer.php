@@ -169,6 +169,67 @@ class Module_JHelioviewer implements Module {
     }
 
     /**
+     * Construct a getJPXClosestToMidPoint image series
+     *
+     * @return void
+     */
+    public function getJPXClosestToMidPoint() {
+
+        include_once HV_ROOT_DIR.'/../src/Image/JPEG2000/HelioviewerJPXImage.php';
+        include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
+
+        $imgIndex = new Database_ImgIndex();
+
+        // Optional parameters
+        $defaults = array(
+            'jpip'    => false,
+            'cadence' => false,
+            'linked'  => false,
+            'verbose' => false
+        );
+        $options = array_replace($defaults, $this->_options);
+
+        // sourceId as well as hierarchy labels/names are required
+        $this->_getSourceIdInfo($imgIndex);
+
+        // Compute filename
+        $filename = $this->_getJPXMidPointFilename($options['cadence'], $options['linked']);
+
+        // Create JPX image instance
+        try {
+            $jpx = new Image_JPEG2000_HelioviewerJPXImage(
+                $this->_params['sourceId'], $this->_params['startTimes'],
+                $this->_params['endTimes'], $options['cadence'],
+                $options['linked'], $filename, true
+            );
+        }
+        catch (Exception $e) {
+            // If a problem is encountered, return an error message as JSON
+            header('Content-type: application/json;charset=UTF-8');
+            echo json_encode(
+                array(
+                    'error'   => $e->getMessage(),
+                    'uri'     => null
+                )
+            );
+            return;
+        }
+
+        // Chose appropriate action based on request parameters
+        if ( $options['verbose'] ) {
+            $jpx->printJSON($options['jpip'], $options['verbose']);
+        }
+        else {
+            if ( $options['jpip'] ) {
+                echo $jpx->getJPIPURL();
+            }
+            else {
+                $jpx->displayImage();
+            }
+        }
+    }
+
+    /**
      * Return info for a given sourceId
      *
      * @param int    $sourceId  Id of data source
@@ -201,6 +262,46 @@ class Module_JHelioviewer implements Module {
 
         $from = str_replace(':', '.', $this->_params['startTime']);
         $to   = str_replace(':', '.', $this->_params['endTime']);
+
+        $filename_arr = array();
+        foreach ( $this->_sourceInfo['uiLabels'] as $hierarchy ) {
+            $filename_arr[] = $hierarchy['name'];
+        }
+        $filename_arr[] = 'F'.$from;
+        $filename_arr[] = 'T'.$to;
+
+        $filename = implode('_', $filename_arr);
+
+        // Indicate the cadence in the filename if one was specified
+        if ( $cadence ) {
+            $filename .= 'B'.$cadence;
+        }
+
+        // Append an "L" to the filename for "Linked" JPX files
+        if ( $linked ) {
+            $filename .= 'L';
+        }
+
+        return str_replace(' ', '-', $filename).'.jpx';
+    }
+
+    /**
+     * Generate the filename to use for storing JPXimageFromMidPoint.
+     *
+     * @param int    $cadence   Number of seconds between each frame in the
+     *                          image series
+     * @param bool   $linked    Whether or not requested JPX image should be
+     *                          a linked JPX
+     *
+     * @return string Filename to use for generated JPX image
+     */
+    private function _getJPXMidPointFilename($cadence, $linked) {
+		$startTimesArray                 = explode(',', $this->_params['startTimes']);
+		$endTimesArray                   = explode(',', $this->_params['endTimes']);
+        $endArrayValues = array_values($endTimesArray);
+
+        $from = str_replace(':', '.', date("Y-m-d\TH:i:s\Z", current($startTimesArray)) );
+        $to   = str_replace(':', '.', date("Y-m-d\TH:i:s\Z", end($endArrayValues)) );
 
         $filename_arr = array();
         foreach ( $this->_sourceInfo['uiLabels'] as $hierarchy ) {
@@ -347,6 +448,17 @@ class Module_JHelioviewer implements Module {
             $expected['required'] = array('startTime', 'endTime',
                                           'sourceId');
             $expected['ints']     = array('sourceId');
+
+            break;
+
+        case 'getJPXClosestToMidPoint':
+            $expected = array(
+                'required' => array('sourceId','startTimes', 'endTimes'),
+                'optional' => array('jpip', 'linked', 'verbose'),
+                'bools'    => array('jpip', 'verbose', 'linked'),
+                'dates'    => array(),
+                'ints'     => array('sourceId')
+            );
 
             break;
 
