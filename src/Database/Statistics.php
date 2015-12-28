@@ -244,8 +244,11 @@ class Database_Statistics {
 		$distance = $endDate->getTimestamp() - $startDate->getTimestamp();
 		$interval = new DateInterval('PT'.$distance.'S');
 		
-		$startDate->modify('-'.$distance.' seconds');
-		$endDate->modify('+'.$distance.' seconds');
+		$startDateTimeline = clone $startDate;
+		$endDateTimeline = clone $endDate;
+		
+		$startDateTimeline->modify('-'.$distance.' seconds');
+		$endDateTimeline->modify('+'.$distance.' seconds');
 		
 		$dateStart = toMySQLDateString($startDate);
 		$dateEnd = toMySQLDateString($endDate);
@@ -277,7 +280,8 @@ class Database_Statistics {
 	            $sources[$layersCount]->name = (isset($layer['uiLabels'][0]['name']) ? $layer['uiLabels'][0]['name'] : '').' '.(isset($layer['uiLabels'][1]['name']) ? $layer['uiLabels'][1]['name'] : '').' '.(isset($layer['uiLabels'][2]['name']) ? $layer['uiLabels'][2]['name'] : '');
 	            $sources[$layersCount]->data = array();
 	            
-		        $sources[$layersCount]->data[] = array($startDate->getTimestamp()*1000, null);
+		        $sources[$layersCount]->data[] = array($startDateTimeline->getTimestamp()*1000, null);
+		        //$sources[$layersCount]->data[] = array($startDate->getTimestamp()*1000, null);
 	            
 	            $layersArray[] = $sourceId;
 	            $layersKeys[$sourceId] = $layersCount;
@@ -338,8 +342,6 @@ class Database_Statistics {
 		            throw new Exception($msg, 25);
 		    }
 			
-			//echo $sql."\n<br />";
-			
 			$result = $this->_dbConnection->query($sql);
 			
 			while ($row = $result->fetch_array(MYSQLI_ASSOC)) {
@@ -354,7 +356,8 @@ class Database_Statistics {
 	        }
 	        
 	        foreach($sources as $sourceId=>$row){
-		        $sources[$sourceId]->data[] = array($endDate->getTimestamp()*1000, null);
+		        //$sources[$sourceId]->data[] = array($endDate->getTimestamp()*1000, null);
+		        $sources[$sourceId]->data[] = array($endDateTimeline->getTimestamp()*1000, null);
 	        }
 	        
 	        return json_encode($sources);
