@@ -250,6 +250,9 @@ class Database_Statistics {
 		$dateStart = toMySQLDateString($startDate);
 		$dateEnd = toMySQLDateString($endDate);
 		
+		$startTimestamp = $startDate->getTimestamp();
+		$endTimestamp = $endDate->getTimestamp();
+		
 		$dateStartISO = str_replace("Z", "", toISOString($startDate));
 		$dateEndISO = str_replace("Z", "", toISOString($endDate));
 		
@@ -277,7 +280,7 @@ class Database_Statistics {
 	            $sources[$layersCount]->name = (isset($layer['uiLabels'][0]['name']) ? $layer['uiLabels'][0]['name'] : '').' '.(isset($layer['uiLabels'][1]['name']) ? $layer['uiLabels'][1]['name'] : '').' '.(isset($layer['uiLabels'][2]['name']) ? $layer['uiLabels'][2]['name'] : '');
 	            $sources[$layersCount]->data = array();
 	            
-		        $sources[$layersCount]->data[] = array($startDate->getTimestamp()*1000, null);
+		        //$sources[$layersCount]->data[] = array($startDate->getTimestamp()*1000, null);
 	            
 	            $layersArray[] = $sourceId;
 	            $layersKeys[$sourceId] = $layersCount;
@@ -295,7 +298,65 @@ class Database_Statistics {
 					WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
 					GROUP BY sourceId, time
 					ORDER BY time;';
+					
 		            break;
+		        case '5m':
+		            $sql = 'SELECT 
+		            		FROM_UNIXTIME(floor((UNIX_TIMESTAMP(date) / 300)) * 300) as time,
+							COUNT(*) AS count,
+							sourceId
+					FROM data
+					WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
+					GROUP BY sourceId, time
+					ORDER BY time;';
+					
+					$beginInterval = new DateTime();
+					$endInterval = new DateTime();
+					$beginInterval->setTimestamp(floor($startTimestamp / 300) * 300);
+					$endInterval->setTimestamp(floor($endTimestamp / 300) * 300);
+					
+					$interval = DateInterval::createFromDateString('5 minutes');
+					$period = new DatePeriod($beginInterval, $interval, $endInterval);
+					
+		            break;
+		        case '15m':
+		            $sql = 'SELECT 
+		            		FROM_UNIXTIME(floor((UNIX_TIMESTAMP(date) / 900)) * 900) as time,
+							COUNT(*) AS count,
+							sourceId
+					FROM data
+					WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
+					GROUP BY sourceId, time
+					ORDER BY time;';
+					
+					$beginInterval = new DateTime();
+					$endInterval = new DateTime();
+					$beginInterval->setTimestamp(floor($startTimestamp / 900) * 900);
+					$endInterval->setTimestamp(floor($endTimestamp / 900) * 900);
+					
+					$interval = DateInterval::createFromDateString('15 minutes');
+					$period = new DatePeriod($beginInterval, $interval, $endInterval);
+					
+		            break;
+		        case '30m':
+		            $sql = 'SELECT 
+		            		FROM_UNIXTIME(floor((UNIX_TIMESTAMP(date) / 1800)) * 1800) as time,
+							COUNT(*) AS count,
+							sourceId
+					FROM data
+					WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
+					GROUP BY sourceId, time
+					ORDER BY time;';
+					
+					$beginInterval = new DateTime();
+					$endInterval = new DateTime();
+					$beginInterval->setTimestamp(floor($startTimestamp / 1800) * 1800);
+					$endInterval->setTimestamp(floor($endTimestamp / 1800) * 1800);
+					
+					$interval = DateInterval::createFromDateString('30 minutes');
+					$period = new DatePeriod($beginInterval, $interval, $endInterval);
+					
+		            break;         
 		        case 'h':
 		            $sql = 'SELECT DATE_FORMAT(date, "%Y-%m-%d %H:00:00") AS time,
 					       COUNT(*) AS count,
@@ -304,6 +365,13 @@ class Database_Statistics {
 					WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
 					GROUP BY sourceId, time
 					ORDER BY time;';
+					
+					$beginInterval = new DateTime(date('Y-m-d H:00:00', $startTimestamp));
+					$endInterval = new DateTime(date('Y-m-d H:00:00', $endTimestamp));
+					
+					$interval = DateInterval::createFromDateString('1 hour');
+					$period = new DatePeriod($beginInterval, $interval, $endInterval);
+					
 		            break;
 		        case 'D':
 		        	$sql = 'SELECT DATE(date) AS time,
@@ -313,6 +381,13 @@ class Database_Statistics {
 					WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
 					GROUP BY sourceId, DATE(time)
 					ORDER BY DATE(time);';
+					
+					$beginInterval = new DateTime(date('Y-m-d 00:00:00', $startTimestamp));
+					$endInterval = new DateTime(date('Y-m-d 00:00:00', $endTimestamp));
+					
+					$interval = DateInterval::createFromDateString('1 day');
+					$period = new DatePeriod($beginInterval, $interval, $endInterval);
+					
 		            break;
 		        case 'M':
 		        	$sql = 'SELECT DATE(DATE_FORMAT(date, "%Y-%m-01")) AS time,
@@ -322,6 +397,13 @@ class Database_Statistics {
 					WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
 					GROUP BY sourceId, DATE(DATE_FORMAT(date, "%Y-%m-01"))
 					ORDER BY DATE(DATE_FORMAT(date, "%Y-%m-01"));';
+					
+					$beginInterval = new DateTime(date('Y-m-01 00:00:00', $startTimestamp));
+					$endInterval = new DateTime(date('Y-m-01 00:00:00', $endTimestamp));
+					
+					$interval = DateInterval::createFromDateString('1 month');
+					$period = new DatePeriod($beginInterval, $interval, $endInterval);
+					
 		            break;
 		        case 'Y':
 		            $sql = 'SELECT DATE(DATE_FORMAT(date, "%Y-01-01")) AS time,
@@ -331,16 +413,30 @@ class Database_Statistics {
 					WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
 					GROUP BY sourceId, DATE(DATE_FORMAT(date, "%Y-01-01"))
 					ORDER BY DATE(DATE_FORMAT(date, "%Y-01-01"));';
+					
+					$beginInterval = new DateTime(date('Y-01-01 00:00:00', $startTimestamp));
+					$endInterval = new DateTime(date('Y-01-01 00:00:00', $endTimestamp));
+					
+					$interval = DateInterval::createFromDateString('1 year');
+					$period = new DatePeriod($beginInterval, $interval, $endInterval);
+					
 		            break;
 		        default:
 		            $msg = 'Invalid resolution specified. Valid options include: ' . implode(', ', $validRes);
 		            throw new Exception($msg, 25);
 		    }
 			
-			//echo $sql."\n<br />";
+			//build 0 data array
+			if($resolution != 'm'){
+				$emptyData = array();
+				foreach ( $period as $dt ){
+					$emptyData[ $dt->getTimestamp() ] = 0;
+				}
+			}
 			
+			//Procceed SQL Data
 			$result = $this->_dbConnection->query($sql);
-			
+			$dbData = array();
 			while ($row = $result->fetch_array(MYSQLI_ASSOC)) {
 	            $num = (int) $row['count'];
 	            $sourceId = $row['sourceId'];
@@ -348,13 +444,24 @@ class Database_Statistics {
 	            if($resolution == 'm'){
 		            $sources[$key]->data[] = array(strtotime($row['time'])*1000, $key+1);
 	            }else{
-		            $sources[$key]->data[] = array(strtotime($row['time'])*1000, $num);
+		            $dbData[$key][strtotime($row['time'])] = $num;
 	            }
 	        }
 	        
-	        foreach($sources as $sourceId=>$row){
-		        $sources[$sourceId]->data[] = array($endDate->getTimestamp()*1000, null);
+	        //Fill 0 values rows
+	        if($resolution != 'm'){
+		        foreach($layersKeys as $sourceId=>$key){
+			        foreach($emptyData as $timestamp=>$count){
+				        if(isset($dbData[$key]) && isset($dbData[$key][ $timestamp ])){
+					        $count = $dbData[$key][ $timestamp ];
+				        }
+				        $sources[$key]->data[] = array($timestamp*1000, $count);
+			        }
+		        }
 	        }
+	        //foreach($sources as $sourceId=>$row){
+		    //    $sources[$sourceId]->data[] = array($endDate->getTimestamp()*1000, null);
+	        //}
 	        
 	        return json_encode($sources);
 		}
