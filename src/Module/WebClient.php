@@ -565,7 +565,7 @@ class Module_WebClient implements Module {
 		$endDate = gmstrftime('%Y-%m-%d %H:%M:%S', $end / 1000) - 60;
         
         // find the right range
-		if ($range < 90 * 60 * 1000) {
+		if ($range < 105 * 60 * 1000) {
 			$resolution = 'm';
 			
 		// 12 hours range loads hourly data
