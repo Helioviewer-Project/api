@@ -134,8 +134,8 @@ class ImageRetrievalDaemon:
             # much further back for data that may have been missed.  This is
             # intended to be a relatively infrequently run data ingestion
             # process, and should be run as a cron job.
-            starttime = datetime.datetime.utcnow() - datetime.timedelta(days=backfill)
-            endtime = datetime.datetime.utcnow()
+            starttime = datetime.datetime.utcnow() - datetime.timedelta(days=backfill[0])
+            endtime = datetime.datetime.utcnow() - datetime.timedelta(days=backfill[1])
             self.query(starttime, endtime)
             self.sleep()
             return None
