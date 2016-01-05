@@ -565,12 +565,19 @@ class Module_WebClient implements Module {
 		$endDate = gmstrftime('%Y-%m-%d %H:%M:%S', $end / 1000) - 60;
         
         // find the right range
-		// two days range loads minute data
-		if ($range < 2 * 24 * 3600 * 1000) {
+		if ($range < 90 * 60 * 1000) {
 			$resolution = 'm';
 			
+		// 12 hours range loads hourly data
+		} elseif  ($range < 12 * 3600 * 1000) {
+			$resolution = '5m';
+			
 		// one month range loads hourly data
-		} elseif ($range < 31 * 24 * 3600 * 1000) {
+		} elseif  ($range < 2 * 24 * 3600 * 1000) {
+			$resolution = '15m';
+			
+		// one month range loads hourly data
+		} elseif ($range < 20 * 24 * 3600 * 1000) {
 			$resolution = 'h';
 			
 		// one year range loads daily data
