@@ -44,14 +44,14 @@ class ImageRetrievalDaemon:
         
         # v2 database  
         if self.dbhost_v2 != "" and self.dbname_v2 != "":
-	        try:
-	            self._db_v2 = get_db_cursor(self.dbhost_v2, self.dbname_v2, self.dbuser_v2, self.dbpass_v2)
-	        except MySQLdb.OperationalError:
-	            logging.error("Unable to access MySQL. Is the database daemon running (v2)?")
-	            self.shutdown()
-	            self.stop()  
+            try:
+                self._db_v2 = get_db_cursor(self.dbhost_v2, self.dbname_v2, self.dbuser_v2, self.dbpass_v2)
+            except MySQLdb.OperationalError:
+                logging.error("Unable to access MySQL. Is the database daemon running (v2)?")
+                self.shutdown()
+                self.stop()
         else:
-        	self._db_v2 = None   
+            self._db_v2 = None
 
         # Email notification
         self.email_server = conf.get('notifications', 'server')
@@ -91,7 +91,7 @@ class ImageRetrievalDaemon:
         # Shutdown switch
         self.shutdown_requested = False
 
-    def start(self, starttime=None, endtime=None):
+    def start(self, starttime=None, endtime=None, backfill=None):
         """Start daemon operation."""
         logging.info("Initializing HVPull")
 
@@ -105,24 +105,40 @@ class ImageRetrievalDaemon:
         #
         # @TODO: Send email notification when HVpull stops/exits for any reason?
 
-        # Determine starttime to use
-        if starttime is not None:
-            starttime = datetime.datetime.strptime(starttime, date_fmt)
-        else:
-            starttime = self.servers[0].get_starttime()
+        # Determine starttime and endtime to use
+        if backfill is not None:
+            if starttime is not None:
+                starttime = datetime.datetime.strptime(starttime, date_fmt)
+            else:
+                starttime = self.servers[0].get_starttime()
 
-        # If end time is specified, fill in data from start to end
-        if endtime is not None:
-            endtime = datetime.datetime.strptime(endtime, date_fmt)
+            # If end time is specified, fill in data from start to end
+            if endtime is not None:
+                endtime = datetime.datetime.strptime(endtime, date_fmt)
+                self.query(starttime, endtime)
+                self.sleep()
+
+                return None
+            else:
+                # Otherwise, first query from start -> now
+                now = datetime.datetime.utcnow()
+                self.query(starttime, now)
+                self.sleep()
+        else:
+            # Backfill process has been requested.  Look for data in the last
+            # "backfill" days. In normal operations, only the most recent
+            # data from each instrument is ingested.  If the pipeline halts for
+            # some reason, then the the regular ingestion process can leave
+            # gaps since it looks for data at some fixed time back from now.
+            # The backfill process is a less regularly run process that looks
+            # much further back for data that may have been missed.  This is
+            # intended to be a relatively infrequently run data ingestion
+            # process, and should be run as a cron job.
+            starttime = datetime.datetime.utcnow() - datetime.timedelta(days=backfill)
+            endtime = datetime.datetime.utcnow()
             self.query(starttime, endtime)
             self.sleep()
-
             return None
-        else:
-        # Otherwise, first query from start -> now
-            now = datetime.datetime.utcnow()
-            self.query(starttime, now)
-            self.sleep()
 
         # Begin main loop
         while not self.shutdown_requested:
