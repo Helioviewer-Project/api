@@ -577,7 +577,7 @@ class Module_WebClient implements Module {
 			$resolution = '15m';
 			
 		// one month range loads hourly data
-		} elseif ($range < 20 * 24 * 3600 * 1000) {
+		} elseif ($range < 10 * 24 * 3600 * 1000) {
 			$resolution = 'h';
 			
 		// one year range loads daily data
