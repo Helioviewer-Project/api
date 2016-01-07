@@ -389,6 +389,26 @@ class Database_Statistics {
 					$period = new DatePeriod($beginInterval, $interval, $endInterval);
 					
 		            break;
+		        case 'W':
+		        	$weekTimestamp = 7 * 24 * 60 * 60;
+		            $sql = 'SELECT 
+		            		FROM_UNIXTIME(floor((UNIX_TIMESTAMP(date) / '.$weekTimestamp.')) * '.$weekTimestamp.') as time,
+							COUNT(*) AS count,
+							sourceId
+					FROM data_coverage_30_min
+					WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
+					GROUP BY sourceId, time
+					ORDER BY time;';
+					
+					$beginInterval = new DateTime();
+					$endInterval = new DateTime();
+					$beginInterval->setTimestamp(floor($startTimestamp / $weekTimestamp) * $weekTimestamp);
+					$endInterval->setTimestamp(floor($endTimestamp / $weekTimestamp) * $weekTimestamp);
+					
+					$interval = DateInterval::createFromDateString('1 week');
+					$period = new DatePeriod($beginInterval, $interval, $endInterval);
+					
+		            break;     
 		        case 'M':
 		        	$sql = 'SELECT DATE(DATE_FORMAT(date, "%Y-%m-01")) AS time,
 					       SUM(count) AS count,
