@@ -173,9 +173,10 @@ are on the same file system as Helioviewer.  Note that using "-m localmove" does
 not imply the use of "-b local".  The browse method "-b local" must be specified
 when using "-m localmove".
 
-6. downloader.py -f 7
+6. downloader.py -f 7 1
 
-Look for data in the previous seven days.
+Look for data in the time range from current UTC (now) minus seven days to
+current UTC (now) minus 1 day.
 
 ''')    
     
