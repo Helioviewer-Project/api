@@ -62,11 +62,11 @@ def main():
     signal.signal(signal.SIGINT, on_quit)
     
     # Begin data retrieval
-    daemon.start(args.start, args.end)
+    daemon.start(args.start, args.end, args.backfill)
     
     logging.info("Finished processing all files in requested time range")
     logging.info("Exiting HVPull")
-   
+
 def get_config(filepath):
     """Load configuration file"""
     config = ConfigParser.ConfigParser()
@@ -83,7 +83,7 @@ def get_config(filepath):
                                         'settings/settings.example.cfg')))
         
     return config
-        
+
 def get_args():
     parser = argparse.ArgumentParser(description='Retrieves JPEG 2000 images.', add_help=False)
     parser.add_argument('-h', '--help', help='Show this help message and exit', action='store_true')
@@ -101,10 +101,12 @@ def get_args():
                         help='Full path to hvpull user defined general configuration file')
     parser.add_argument('-l', '--log-path', metavar='log', dest='log',
                         help='Filepath to use for logging events. Defaults to HVPull working directory.')
-   
+    parser.add_argument('-f', '--backfill', metavar='N_days', dest='backfill', nargs=2, type=int,
+                        help='Search for data with observation times starting at "now - N_days_0" and ending at "now - N_days_1".')
+
     # Parse arguments
     args = parser.parse_args()
-    
+
     # Print help
     if args.help:
         print_help(parser)
@@ -170,6 +172,11 @@ files from their directory into Helioviewer.  It is assumed that the SOHO files
 are on the same file system as Helioviewer.  Note that using "-m localmove" does
 not imply the use of "-b local".  The browse method "-b local" must be specified
 when using "-m localmove".
+
+6. downloader.py -f 7 1
+
+Look for data in the time range from current UTC (now) minus seven days to
+current UTC (now) minus 1 day.
 
 ''')    
     
