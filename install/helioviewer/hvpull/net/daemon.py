@@ -106,7 +106,7 @@ class ImageRetrievalDaemon:
         # @TODO: Send email notification when HVpull stops/exits for any reason?
 
         # Determine starttime and endtime to use
-        if backfill is not None:
+        if backfill is None:
             if starttime is not None:
                 starttime = datetime.datetime.strptime(starttime, date_fmt)
             else:
@@ -137,8 +137,7 @@ class ImageRetrievalDaemon:
             starttime = datetime.datetime.utcnow() - datetime.timedelta(days=backfill[0])
             endtime = datetime.datetime.utcnow() - datetime.timedelta(days=backfill[1])
             self.query(starttime, endtime)
-            self.sleep()
-            return None
+            self.stop()
 
         # Begin main loop
         while not self.shutdown_requested:

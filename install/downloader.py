@@ -101,7 +101,7 @@ def get_args():
                         help='Full path to hvpull user defined general configuration file')
     parser.add_argument('-l', '--log-path', metavar='log', dest='log',
                         help='Filepath to use for logging events. Defaults to HVPull working directory.')
-    parser.add_argument('-f', '--backfill', metavar='N_days', dest='backfill', nargs=2,
+    parser.add_argument('-f', '--backfill', metavar='N_days', dest='backfill', nargs=2, type=int,
                         help='Search for data with observation times starting at "now - N_days_0" and ending at "now - N_days_1".')
 
     # Parse arguments
