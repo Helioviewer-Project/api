@@ -76,14 +76,13 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
                     $this->buildJPXImage($images, $linked);
                 }
                 else {
-                    throw new Exception('No images were found for the ' .
-                                        'requested time range.', 12);
-                                        // Do not log
+	                //$this->_removeFileGenerationReport();
+                    throw new Exception('No images were found for the ' . 'requested time range.', 12); // Do not log
                 }
             }
             catch (Exception $e) {
-                throw new Exception('Error encountered during JPX creation: ' .
-                                    $e->getMessage(), 60);
+                //$this->_removeFileGenerationReport();
+                throw new Exception('Error encountered during JPX creation: ' . $e->getMessage(), 60);
             }
 
             $this->_writeFileGenerationReport();
@@ -101,6 +100,7 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
                     if ( @file_exists($this->_summaryFile) ) {
                         return;
                     }
+	                $i++;
                 }
 
                 // If the summary file is still not present after 120 seconds,
@@ -378,6 +378,18 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
         $fp = @fopen($this->_summaryFile, 'w');
         @fwrite($fp, json_encode($contents));
         @fclose($fp);
+    }
+    
+    /**
+     * Remove a summary file for the generated JPX file encountered during
+     * the creation process.
+     *
+     * @return void
+     */
+    private function _removeFileGenerationReport() {
+        if ( @file_exists($this->_summaryFile) ) {
+            @unlink($this->_summaryFile);
+        }
     }
 
     /**
