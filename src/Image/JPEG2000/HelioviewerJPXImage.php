@@ -95,7 +95,7 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
 
                 // Wait five seconds and check to see if processing is
                 // finished.  If not, sleep and try again.
-                while ($i < 24) {
+                while ($i < 23) {
                     sleep(5);
                     if ( @file_exists($this->_summaryFile) ) {
                         return;

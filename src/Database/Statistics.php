@@ -462,7 +462,7 @@ class Database_Statistics {
 	            $sourceId = $row['sourceId'];
 	            $key = $layersKeys[$sourceId];
 	            if($resolution == 'm'){
-		            $sources[$key]->data[] = array(strtotime($row['time'])*1000, $key+1);
+		            $sources[$key]->data[] = array( (strtotime($row['time'])* 1000) + $key , $key+1);
 	            }else{
 		            $dbData[$key][strtotime($row['time'])] = $num;
 	            }
