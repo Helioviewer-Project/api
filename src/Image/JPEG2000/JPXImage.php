@@ -53,9 +53,10 @@ class Image_JPEG2000_JPXImage
 
         foreach ($frames as $jp2) {
             if ( @filesize($jp2) === false ) {
-                error_log('File is missing:  '.$jp2);
-            }
-            else {
+                if(!empty($jp2)){
+	                error_log('File is missing:  '.$jp2);
+                }
+            }else {
                 $cmd .= "$jp2,";
             }
         }
