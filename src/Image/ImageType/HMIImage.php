@@ -55,7 +55,8 @@ class Image_ImageType_HMIImage extends Image_HelioviewerImage {
      * @return string watermark name
      */
     public function getWaterMarkName() {
-        return 'HMI '.$this->uiLabels[3]['name']."\n";
+	    $labelName = isset($uiLabels[3]) ? $uiLabels[3]['name'] : $uiLabels[2]['name'];
+        return 'HMI '.$labelName."\n";
     }
 
 }

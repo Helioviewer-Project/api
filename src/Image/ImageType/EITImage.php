@@ -29,14 +29,18 @@ class Image_ImageType_EITImage extends Image_HelioviewerImage {
      */
     public function __construct($jp2, $filepath, $roi, $uiLabels, $offsetX,
         $offsetY, $options) {
-
+		
+		$labelName = isset($uiLabels[3]) ? $uiLabels[3]['name'] : $uiLabels[2]['name'];
+		
         $colorTable = HV_ROOT_DIR
                     . '/resources/images/color-tables/SOHO_EIT_'
-                    . $uiLabels[3]['name']
+                    . $labelName
                     . '.png';
 
         if ( @file_exists($colorTable) ) {
             $this->setColorTable($colorTable);
+        }else{
+	        error_log('Not exist! Label: '.$labelName.'; ColorTable: '.$colorTable);
         }
 
         parent::__construct($jp2, $filepath, $roi, $uiLabels, $offsetX,
@@ -49,7 +53,8 @@ class Image_ImageType_EITImage extends Image_HelioviewerImage {
      * @return string watermark name
      */
     public function getWaterMarkName() {
-        return 'EIT '.$this->uiLabels[3]['name']."\n";
+	    $labelName = isset($uiLabels[3]) ? $uiLabels[3]['name'] : $uiLabels[2]['name'];
+        return 'EIT '.$labelName."\n";
     }
 
 }
