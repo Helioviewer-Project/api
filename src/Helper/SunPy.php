@@ -50,7 +50,7 @@ class Helper_SunPy extends Helper_SciScript {
 # (2) The SunPy environment and commands used to find and acquire data
 # ------------------------------------------------------------------------
 #
-# This script requires an up-to-date installation of SunPy (version 0.3 or
+# This script requires an up-to-date installation of SunPy (version 0.6 or
 # higher).  To install SunPy, please follow the instructions at www.sunpy.org.
 #
 # This script is provided AS-IS. NOTE: It may require editing for it to
@@ -78,24 +78,23 @@ class Helper_SunPy extends Helper_SciScript {
 #
 # python path/to/script/{$filename}
 #
-# By default, data will be downloaded to your home directory ('~/')
-# unless you modify the value of the 'localPath' variable below.
+# By default, data will be downloaded to your home directory
+# unless you modify the value of the 'local_path' variable below.
 #
 #
 # (4) Script
 # ----------
 
-import sunpy
-
+import os
+import astropy.units as u
+import sunpy.version as version
 from sunpy.net import vso
 from sunpy.net import hek
-
-import astropy.units as u
 
 vso_client = vso.VSOClient()
 hek_client = hek.HEKClient()
 
-if sunpy.version < '0.6':
+if version.version < '0.6':
 	raise ValueError('SunPy version 0.6 or higher is required to run this script.')
 
 EOD;
@@ -121,7 +120,7 @@ EOD;
 # Save data to the following path
 #
 
-localPath = '{$this->_localPath}'
+local_path = os.path.expanduser('{$this->_localPath}')
 {$DataSnippet}
 #
 # (5) End of Script
@@ -204,7 +203,7 @@ EOD;
 
 vso_result_eit_{$layer['uiLabels'][2]['name']} = vso_client.query(vso.attrs.Time(tstart, tend), \
     vso.attrs.Instrument('eit'), vso.attrs.Wave('{$layer['uiLabels'][2]['name']}','{$layer['uiLabels'][2]['name']}'))
-vso_data_eit_{$layer['uiLabels'][2]['name']}   = vso_client.get(vso_result_eit_{$layer['uiLabels'][2]['name']}, path=localPath)
+vso_data_eit_{$layer['uiLabels'][2]['name']}   = vso_client.get(vso_result_eit_{$layer['uiLabels'][2]['name']}, path=local_path)
 
 EOD;
             }
@@ -244,7 +243,7 @@ EOD;
 
 vso_result_lasco_{$detector} = vso_client.query(vso.attrs.Time(tstart, tend), \
     vso.attrs.Instrument('lasco-{$detector}'))
-vso_data_lasco_{$detector}   = vso_client.get(vso_result_lasco_{$detector}, path=localPath)
+vso_data_lasco_{$detector}   = vso_client.get(vso_result_lasco_{$detector}, path=local_path)
 
 EOD;
             }
@@ -291,7 +290,7 @@ EOD;
 
 vso_result_mdi = vso_client.query(vso.attrs.Time(tstart, tend), \
     vso.attrs.Instrument('mdi'){$physobs_str})
-vso_data_mdi   = vso_client.get(vso_result_mdi, path=localPath)
+vso_data_mdi   = vso_client.get(vso_result_mdi, path=local_path)
 
 EOD;
             }
@@ -335,7 +334,7 @@ EOD;
 vso_result_{$observatory}_{$instrument}_{$detector}_{$layer['uiLabels'][3]['name']} = vso_client.query(vso.attrs.Time(tstart, tend), \
     vso.attrs.Instrument('euvi'), vso.attrs.Wave('{$layer['uiLabels'][3]['name']}','{$layer['uiLabels'][3]['name']}'))
 vso_data_{$observatory}_{$instrument}_{$detector}_{$layer['uiLabels'][3]['name']}   = vso_client.get(vso_result_{$observatory}_{$instrument}_{$detector}_{$layer['uiLabels'][3]['name']}, \
-    path=localPath)
+    path=local_path)
 
 EOD;
             }
@@ -359,7 +358,7 @@ EOD;
 vso_result_{$observatory}_{$instrument}_{$detector} = vso_client.query(vso.attrs.Time(tstart, tend), \
     vso.attrs.Instrument('{$instrument}'), vso.attrs.Detector('{$detector}'))
 vso_data_{$observatory}_{$instrument}_{$detector}   = vso_client.get(vso_result_{$observatory}_{$instrument}_{$detector}, \
-    path=localPath)
+    path=local_path)
 
 EOD;
             }
@@ -398,7 +397,7 @@ EOD;
 
 vso_result_swap_{$layer['uiLabels'][2]['name']} = vso_client.query(vso.attrs.Time(tstart, tend), \
     vso.attrs.Instrument('swap'), vso.attrs.Wave('{$layer['uiLabels'][2]['name']}','{$layer['uiLabels'][2]['name']}'))
-vso_data_swap_{$layer['uiLabels'][2]['name']}   = vso_client.get(vso_result_swap_{$layer['uiLabels'][2]['name']}, path=localPath)
+vso_data_swap_{$layer['uiLabels'][2]['name']}   = vso_client.get(vso_result_swap_{$layer['uiLabels'][2]['name']}, path=local_path)
 
 EOD;
             }
@@ -436,7 +435,7 @@ EOD;
                 $string .= <<<EOD
 
 vso_result_sxt = vso_client.query(vso.attrs.Time(tstart, tend), vso.attrs.Instrument('yohkoh'))
-vso_data_sxt   = vso_client.get(vso_result_sxt, path=localPath)
+vso_data_sxt   = vso_client.get(vso_result_sxt, path=local_path)
 
 EOD;
                 break;
@@ -497,7 +496,7 @@ EOD;
 
 vso_result_aia_{$layer['uiLabels'][2]['name']} = vso_client.query(vso.attrs.Time(tstart, tend), \
     vso.attrs.Instrument('aia'), vso.attrs.Wave({$layer['uiLabels'][2]['name']} * u.Angstrom,{$layer['uiLabels'][2]['name']} * u.Angstrom))
-vso_data_aia_{$layer['uiLabels'][2]['name']}   = vso_client.get(vso_result_aia_{$layer['uiLabels'][2]['name']} , path=localPath)
+vso_data_aia_{$layer['uiLabels'][2]['name']}   = vso_client.get(vso_result_aia_{$layer['uiLabels'][2]['name']} , path=local_path)
 
 EOD;
             }
@@ -540,7 +539,7 @@ EOD;
 
 vso_result_hmi = vso_client.query(vso.attrs.Time(tstart, tend), \
     vso.attrs.Instrument('hmi'){$physobs_str})
-vso_data_hmi   = vso_client.get(vso_result_hmi, path=localPath)
+vso_data_hmi   = vso_client.get(vso_result_hmi, path=local_path)
 
 EOD;
             }
