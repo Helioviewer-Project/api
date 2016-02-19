@@ -149,7 +149,7 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
 			if($results && isset($results['id'])){
 				$filepath = HV_JP2_DIR.$results['filepath'].'/'.$results['filename'];
 				array_push($images, $filepath);
-				array_push($dates, toUnixTimestamp($results['date']));
+				array_push($dates, strtotime($results['date']));
 			}else{
 				array_push($images, null);
 				array_push($dates, null);
