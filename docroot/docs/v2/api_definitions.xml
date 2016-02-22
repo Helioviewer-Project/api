@@ -3253,11 +3253,11 @@ Full source code for the entire Helioviewer Project can be found at https://gith
         <parameters>
             <parameter type="string" optional="false" name="startTimes">
                 <description><![CDATA[Comma separated Date/Time for the beginning of the JPX movie data. Date and time in Unix timestamps format separated with commas.]]></description>
-                <example><![CDATA[2014-01-01T00:00:00Z]]></example>
+                <example><![CDATA[1306886400,1306887000,1306887600]]></example>
             </parameter>
             <parameter type="string" optional="false" name="endTimes">
                 <description><![CDATA[Comma separated Date/Time for the end of the JPX movie data. Date and time in Unix timestamps format separated with commas.]]></description>
-                <example><![CDATA[2014-01-01T00:45:00Z]]></example>
+                <example><![CDATA[1306886700,1306887300,1306887900]]></example>
             </parameter>
             <parameter type="number" optional="false" name="sourceId">
                 <description><![CDATA[Unique image datasource identifier.]]></description>
