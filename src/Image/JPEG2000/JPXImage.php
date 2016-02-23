@@ -82,19 +82,30 @@ class Image_JPEG2000_JPXImage
      */
     public function displayImage()
     {
-        $fp   = fopen($this->outputFile, 'r');
-        $stat = stat($this->outputFile);
+        if(file_exists($this->outputFile)){
+            $fp   = fopen($this->outputFile, 'r');
+	        $stat = stat($this->outputFile);
+	
+	        $filename = basename($this->outputFile);
+	
+	        header("Content-Length: " . $stat['size']);
+	        header("Content-Type: "   . image_type_to_mime_type(IMAGETYPE_JPX));
+	        header("Content-Disposition: attachment; filename=\"$filename\"");
+	
+	        $contents = fread($fp, $stat['size']);
+	
+	        echo $contents;
+	        fclose($fp);
+        }else{
+			$filename = basename($this->outputFile);
 
-        $filename = basename($this->outputFile);
-
-        header("Content-Length: " . $stat['size']);
-        header("Content-Type: "   . image_type_to_mime_type(IMAGETYPE_JPX));
-        header("Content-Disposition: attachment; filename=\"$filename\"");
-
-        $contents = fread($fp, $stat['size']);
-
-        echo $contents;
-        fclose($fp);
+	        header("Content-Length: 0");
+	        header("Content-Type: "   . image_type_to_mime_type(IMAGETYPE_JPX));
+	        header("Content-Disposition: attachment; filename=\"$filename\"");
+	
+	        echo '';
+        }
+        
     }
 }
 ?>
