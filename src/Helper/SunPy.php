@@ -70,13 +70,13 @@ class Helper_SunPy extends Helper_SciScript {
 # (3) Executing the script
 # ------------------------
 #
-# To run this script, type the following at your shell prompt
+# To run this script, type the following from inside a Python session
 #
-# python {$filename}
+# execfile("{$filename}")
 #
-# or preprend the script with a path to the script, for example,
+# or preprend the script with a path to it, for example,
 #
-# python path/to/script/{$filename}
+# execfile("path/to/script/{$filename}")
 #
 # By default, data will be downloaded to your home directory
 # unless you modify the value of the 'local_path' variable below.
@@ -120,7 +120,7 @@ EOD;
 # Save data to the following path
 #
 
-local_path = os.path.expanduser('{$this->_localPath}')
+local_path = '{:s}{:s}'.format(os.path.expanduser('~/'), '{file}')
 {$DataSnippet}
 #
 # (5) End of Script
