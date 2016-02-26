@@ -219,6 +219,10 @@ class Image_Composite_HelioviewerCompositeImage {
             $this->_addEarthScale($image);
         }
 
+        if ( $this->scale && $this->scaleType == 'scalebar' ) {
+            $this->_addScaleBar($image);
+        }
+
         if ( $this->watermark ) {
             $this->_addWatermark($image);
         }
@@ -576,6 +580,103 @@ class Image_Composite_HelioviewerCompositeImage {
             $text->destroy();
         }
     }
+    
+    
+     /**
+     * Composites an Lenght-scale indicator
+     *
+     * @param object $imagickImage An Imagick object
+     *
+     * @return void
+     */
+    private function _addScaleBar($imagickImage) {
+        $rect_width  = 73;
+        $rect_height = 56;
+
+        // Calculate earth scale in piexls
+		
+		$earthInPixels = 2 * (6367.5 / 695500.0) * (959.705 / $this->roi->imageScale());
+		
+		$sizeInKM = round((50 * (2 * 6367.5)) / $earthInPixels);
+		$sizeInKMRounded = round($sizeInKM/1000)*1000;
+		
+		$scaleBarSizeInKM = number_format($sizeInKMRounded, 0, '.', ',') . ' km';
+		
+        // Convert x,y position of top left of EarthScale rectangle
+        // from arcseconds to pixels
+        if ( $this->scaleX != 0 && $this->scaleY != 0 ) {
+            $topLeftX = (( $this->scaleX - $this->roi->left())
+                / $this->roi->imageScale());
+            $topLeftY = ((-$this->scaleY - $this->roi->top() )
+                / $this->roi->imageScale());
+        }
+        else {
+            $topLeftX = -1;
+            $topLeftY = $imagickImage->getImageHeight() - $rect_height;
+        }
+
+        // Draw black rectangle background for indicator and label
+        $draw = new ImagickDraw();
+        $draw->setFillColor('#00000066');
+        $draw->setStrokeColor('#888888FF');
+        $draw->rectangle( $topLeftX, $topLeftY, $topLeftX+$rect_width,
+                          $topLeftY+$rect_height );
+        $imagickImage->drawImage($draw);
+
+        // Draw Scalebar to scale
+        $scalebar = new IMagick(HV_ROOT_DIR .'/resources/images/scalebar.png');
+        $x = 1 + $topLeftX + $rect_width/2 - 25;
+        $y = 8 + $topLeftY + $rect_height/2 + 4;
+        $imagickImage->compositeImage($scalebar, IMagick::COMPOSITE_DISSOLVE, $x, $y);
+
+
+        // Draw grey rectangle background for text label
+        $draw = new ImagickDraw();
+        $draw->setFillColor('#333333FF');
+        $draw->rectangle( $topLeftX+1, $topLeftY+1, $topLeftX+$rect_width-1,
+                          $topLeftY+16 );
+        $imagickImage->drawImage($draw);
+
+        // Write 'Earth Scale' label in white
+        $text = new IMagickDraw();
+        $text->setTextEncoding('utf-8');
+        $text->setFont('/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf');
+        $text->setFontSize(10);
+        $text->setFillColor('#ffff');
+        $text->setTextAntialias(true);
+        $text->setStrokeWidth(0);
+        $x = $topLeftX + 15;
+        $y = $topLeftY + 13;
+        $imagickImage->annotateImage($text, $x, $y, 0,'Bar Scale');
+        
+        // Write 'Scale in km' label in white
+        $text2 = new IMagickDraw();
+        $text2->setTextEncoding('utf-8');
+        $text2->setFont('/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf');
+        $text2->setFontSize(8);
+        $text2->setFillColor('#ffff');
+        $text2->setTextAntialias(true);
+        $text2->setStrokeWidth(0);
+        $text2->setTextAlignment(IMagick::ALIGN_CENTER);
+        $x = $topLeftX + $rect_width/2 + 2;
+        $y = $topLeftY + 32;
+        $imagickImage->annotateImage($text2, $x, $y, 0,$scaleBarSizeInKM);
+
+        // Cleanup
+        if ( isset($draw) ) {
+            $draw->destroy();
+        }
+        if ( isset($scalebar) ) {
+            $scalebar->destroy();
+        }
+        if ( isset($text) ) {
+            $text->destroy();
+        }
+        if ( isset($text2) ) {
+            $text2->destroy();
+        }
+    }
+    
 
 
     /**
