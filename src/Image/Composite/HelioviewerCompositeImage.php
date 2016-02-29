@@ -65,7 +65,7 @@ class Image_Composite_HelioviewerCompositeImage {
         $defaults = array(
             'database'  => false,
             'watermark' => true,
-            'compress'  => true,
+            'compress'  => false,
             'interlace' => true
         );
 
