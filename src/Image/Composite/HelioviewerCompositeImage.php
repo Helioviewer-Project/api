@@ -65,7 +65,7 @@ class Image_Composite_HelioviewerCompositeImage {
         $defaults = array(
             'database'  => false,
             'watermark' => true,
-            'compress'  => false,
+            'compress'  => true,
             'interlace' => true
         );
 
@@ -303,7 +303,7 @@ class Image_Composite_HelioviewerCompositeImage {
                 // (256/layer + 512 for watermark)
                 $imagickImage->quantizeImage(
                     $this->layers->length() * 256 + 512,
-                    IMagick::COLORSPACE_RGB, 0, FALSE, FALSE );
+                    IMagick::COLORSPACE_RGB, 0, FALSE );
             }
         }
         else if ( $this->_format === 'jpg' ) {
