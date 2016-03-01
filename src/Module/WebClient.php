@@ -464,17 +464,34 @@ class Module_WebClient implements Module {
         include_once HV_ROOT_DIR.'/../src/Net/Proxy.php';
 
         $proxy = new Net_Proxy('http://api.bitly.com/v3/shorten?');
+		
+		$allowed = false;
+		
+		if (stripos($this->_params['queryString'], HV_BITLY_ALLOWED_DOMAIN) !== false) {
+			$allowed = true;
+		}
+		
+		if($allowed){
+			$longURL = urldecode($this->_params['queryString']);
 
-        $longURL = HV_WEB_ROOT_URL.'/?'
-                 . urldecode($this->_params['queryString']);
-
-        $params = array(
-            'longUrl' => $longURL,
-            'login'   => HV_BITLY_USER,
-            'apiKey'  => HV_BITLY_API_KEY
-        );
-
-        $this->_printJSON($proxy->query($params, true));
+	        $params = array(
+	            'longUrl' => $longURL,
+	            'login'   => HV_BITLY_USER,
+	            'apiKey'  => HV_BITLY_API_KEY
+	        );
+	
+	        $this->_printJSON($proxy->query($params, true));
+		}else{
+			$this->_printJSON(json_encode(array(
+				"status_code" => 200, 
+				"status_txt" => "OK", 
+				"data" => array( 
+					"long_url" => $this->_params['queryString'], 
+					"url" => $this->_params['queryString'],
+				)) 
+			));
+		}
+        
     }
 
     /**

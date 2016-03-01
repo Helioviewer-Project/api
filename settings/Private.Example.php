@@ -32,6 +32,7 @@ define("HV_MOVIE_ID_PASS", "");
  * http://code.google.com/p/bitly-api/wiki/ApiDocumentation
  */
 define("HV_BITLY_USER", "");
+define("HV_BITLY_ALLOWED_DOMAIN", ""); // string to validate correct domain name when using AJAX
 define("HV_BITLY_API_KEY", "");
 
 /**
