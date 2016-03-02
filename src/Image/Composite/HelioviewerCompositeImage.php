@@ -301,10 +301,14 @@ class Image_Composite_HelioviewerCompositeImage {
             if ($this->compress) {
                 // Reduce the number of colors used for the image
                 // (256/layer + 512 for watermark)
-                $imagickImage->quantizeImage(
-                    $this->layers->length() * 256 + 512,
-                    IMagick::COLORSPACE_RGB, 0, FALSE );
+
+                //Commented because right now this function doesnot make any changes
+                //$imagickImage->quantizeImage(
+                //    $this->layers->length() * 256 + 512,
+                //    IMagick::COLORSPACE_RGB, 0, FALSE, FALSE );
             }
+            
+            $imagickImage->stripImage();
         }
         else if ( $this->_format === 'jpg' ) {
 

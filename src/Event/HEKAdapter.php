@@ -696,6 +696,10 @@ class Event_HEKAdapter {
                 $labelArray['SPoCA Identifier'] =
                     'SPoCA ' . ltrim(array_pop($tmpArr), '0');
             }
+            else if ( $event['frm_name'] == 'SolarMonitor Active Region Tracker (SMART)' ) {
+                $labelArray['SMART Identifier'] =
+                    'SMART ' . $event['frm_specificid'];
+            }
         }
         else if ( $event['event_type'] == 'CE') {
             if ( $event['frm_name']=='CACTus (Computer Aided CME Tracking)' ) {
@@ -800,9 +804,9 @@ class Event_HEKAdapter {
             }
         }
         else {
+	        
             $labelArray = Array('Event Type' => $event['concept']);
         }
-
         return $labelArray;
     }
 
