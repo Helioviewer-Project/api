@@ -43,6 +43,7 @@ class Image_ImageType_EITImage extends Image_HelioviewerImage {
 	        error_log('Not exist! Label: '.$labelName.'; ColorTable: '.$colorTable);
         }
 
+
         parent::__construct($jp2, $filepath, $roi, $uiLabels, $offsetX,
             $offsetY, $options);
     }
@@ -53,7 +54,7 @@ class Image_ImageType_EITImage extends Image_HelioviewerImage {
      * @return string watermark name
      */
     public function getWaterMarkName() {
-	    $labelName = isset($uiLabels[3]) ? $uiLabels[3]['name'] : $uiLabels[2]['name'];
+	    $labelName = isset($this->uiLabels[3]) ? $this->uiLabels[3]['name'] : $this->uiLabels[2]['name'];
         return 'EIT '.$labelName."\n";
     }
 
