@@ -591,7 +591,11 @@ class Module_Movies implements Module {
                 $filename . '"');
             header('Content-Transfer-Encoding: binary');
             header('Content-Length: ' . @filesize($filepath));
-            header('Content-type: video/'.$this->_params['format']);
+            if($this->_params['format'] == 'gif'){
+	            header('Content-type: image/gif');
+            }else{
+	            header('Content-type: video/'.$this->_params['format']);
+            }
 
             // Return movie data
             echo @file_get_contents($filepath);
