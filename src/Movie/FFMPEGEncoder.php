@@ -182,6 +182,52 @@ class Movie_FFMPEGEncoder
             throw new Exception("FFmpeg error encountered: Unable to create flv.", 43);
     }
     
+    /**
+     * Creates a gif video by converting it from the high quality file
+     *
+     * @param string $directory  The directory where both files are stored
+     * @param string $filename   Base filename of the video
+     * @param string $origFormat The original container format
+     * @param string $newFormat  The new container format
+     * 
+     * @return void
+     */
+    public function createGifVideo()
+    {
+        $file = $this->_directory . substr($this->_filename, 0, -4);
+        
+        //create palette file
+        $cmd = sprintf('%s -v warning -i %s.mp4 -vf "fps=5,scale=%s:-1:flags=lanczos,palettegen" -y %s',
+            HV_FFMPEG,
+            $file,
+            $this->_width,
+            $this->_directory.'palette.png'
+        );
+
+        $this->_logCommand($cmd);
+        exec($cmd);
+
+        // Check to ensure that movie size is valid
+        if (filesize($this->_directory.'palette.png') < 10)
+            throw new Exception("FFmpeg error encountered: Unable to create palette.png for the GIF image.", 43);
+        
+        //Create GIF file    
+        $cmd = sprintf('%s -v warning -i %s.mp4 -i %s -lavfi "fps=5,scale=%s:-1:flags=lanczos [x]; [x][1:v] paletteuse" -y %s.gif',
+            HV_FFMPEG,
+            $file,
+            $this->_directory.'palette.png',
+            $this->_width,
+            $file
+        );
+
+        $this->_logCommand($cmd);
+        exec($cmd);
+
+        // Check to ensure that movie size is valid
+        if (filesize($file . ".gif") < 1000)
+            throw new Exception("FFmpeg error encountered: Unable to create gif.", 43);    
+    }
+    
     
     /**
      * Creates an ipod-compatible mp4 video

@@ -563,6 +563,7 @@ class Movie_HelioviewerMovie {
         $ffmpeg->createVideo();
         $ffmpeg->createHQVideo();
         $ffmpeg->createFlashVideo();
+        //$ffmpeg->createGifVideo();
 
         // Mark mp4 movie as completed
         $t2 = time();
