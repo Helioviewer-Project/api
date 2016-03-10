@@ -322,7 +322,7 @@ class Module_JHelioviewer implements Module {
             $filename .= 'L';
         }
 
-        return str_replace(' ', '-', $filename).'.jpx';
+        return str_replace(' ', '-', $filename).'CMP.jpx';
     }
 
     /**
