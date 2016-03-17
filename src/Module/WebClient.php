@@ -241,6 +241,7 @@ class Module_WebClient implements Module {
 
         // Choose type of tile to create
         // TODO 2011/04/18: Generalize process of choosing class to use
+        //error_log(json_encode($image['uiLabels']));
         if ( count($image['uiLabels']) >= 3
           && $image['uiLabels'][1]['name'] == 'SECCHI' ) {
 
@@ -250,6 +251,9 @@ class Module_WebClient implements Module {
             else {
                 $type = strtoupper($image['uiLabels'][2]['name']).'Image';
             }
+        }
+        else if ($image['uiLabels'][0]['name'] == 'TRACE') {
+            $type = strtoupper($image['uiLabels'][0]['name']).'Image';
         }
         else if (count($image['uiLabels']) >=2) {
             $type = strtoupper($image['uiLabels'][1]['name']).'Image';

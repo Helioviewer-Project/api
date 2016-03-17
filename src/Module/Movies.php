@@ -571,6 +571,7 @@ class Module_Movies implements Module {
                                             $this->_params['format']);
 
         if ( $this->_verifyMediaExists($movie, $allowRegeneration=true) ) {
+            ini_set('memory_limit', '1024M');
             // Default options
             $defaults = array(
                 "hq" => false
