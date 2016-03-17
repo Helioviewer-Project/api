@@ -163,6 +163,9 @@ class Image_Composite_HelioviewerCompositeImage {
                 $type = strtoupper($layer['uiLabels'][2]['name']).'Image';
             }
         }
+        else if ($layer['uiLabels'][0]['name'] == 'TRACE') {
+            $type = strtoupper($layer['uiLabels'][0]['name']).'Image';
+        }
         else {
             $type = strtoupper($layer['uiLabels'][1]['name']).'Image';
         }
