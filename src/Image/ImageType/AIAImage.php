@@ -29,10 +29,19 @@ class Image_ImageType_AIAImage extends Image_HelioviewerImage {
      */
     public function __construct($jp2, $filepath, $roi, $uiLabels, $offsetX,
         $offsetY, $options) {
-
+		
+		/*
+			Temporary fix to use correct color table. Because both v2 and v3 runnning at same time some 
+			names have different parameters
+		*/
+		$name = $uiLabels[2]['name'];
+		if($uiLabels[2]['name'] == 'AIA'){
+			$name = $uiLabels[3]['name'];
+		}
+		
         $colorTable = HV_ROOT_DIR
                     . '/resources/images/color-tables/'
-                    . 'SDO_AIA_'.$uiLabels[2]['name'].'.png';
+                    . 'SDO_AIA_'.$name.'.png';
         $this->setColorTable($colorTable);
 
         parent::__construct($jp2, $filepath, $roi, $uiLabels, $offsetX,
@@ -45,7 +54,11 @@ class Image_ImageType_AIAImage extends Image_HelioviewerImage {
      * @return string watermark name
      */
     public function getWaterMarkName() {
-        return 'AIA '.$this->uiLabels[2]['name']."\n";
+        $name = $this->uiLabels[2]['name'];
+		if($this->uiLabels[2]['name'] == 'AIA'){
+			$name = $this->uiLabels[3]['name'];
+		}
+        return 'AIA '.$name."\n";
     }
 }
 ?>
