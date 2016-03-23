@@ -18,6 +18,7 @@ from helioviewer.db  import get_db_cursor, mark_as_corrupt
 from helioviewer.hvpull.browser.basebrowser import NetworkError
 from sunpy.time import is_time
 
+
 class ImageRetrievalDaemon:
     """Retrieves images from the server as specified"""
     def __init__(self, servers, browse_method, download_method, conf):
@@ -388,7 +389,6 @@ class ImageRetrievalDaemon:
                               "enough free space?")
                 self.shutdown_requested = True
 
-
             # Add to list to send to main database
             images.append(image_params)
 
@@ -397,7 +397,7 @@ class ImageRetrievalDaemon:
 
         logging.info("Added %d images to database", len(images))
 
-        if (len(corrupt) > 0):
+        if len(corrupt) > 0:
             logging.info("Marked %d images as corrupt", len(corrupt))
 
     def send_email_alert(self, message):
@@ -427,7 +427,6 @@ class ImageRetrievalDaemon:
         smtp = smtplib.SMTP(self.email_server)
         smtp.sendmail(self.email_from, recipients, msg.as_string() )
         smtp.close()
-
 
     def shutdown(self):
         print("Stopping HVPull. This may take a few minutes...")
@@ -509,9 +508,9 @@ class ImageRetrievalDaemon:
 
         # Loop through files, switching between servers on each iteration
         for i in range(n):
-            idx = i % m # Server index
+            idx = i % m  # Server index
 
-            if(len(files[idx]) > counters[idx]):
+            if len(files[idx]) > counters[idx]:
                 value = files[idx][counters[idx]]
 
                 # Skip over files that have been set to None
@@ -651,7 +650,8 @@ class ImageRetrievalDaemon:
             "stereo": "STEREODataServer",
             "jsoc": "JSOCDataServer",
             "rob": "ROBDataServer",
-            "uio": "UIODataServer"
+            "uio": "UIODataServer",
+            "trace": "TRACEDataServer"
         }
 
     @classmethod
@@ -670,10 +670,12 @@ class ImageRetrievalDaemon:
             "localmove": "LocalFileMove"
         }
 
+
 class KduTranscodeError(RuntimeError):
     """Exception to raise an image cannot be transcoded."""
     def __init__(self, message=""):
         self.message = message
+
     def get_message(self):
         return self.message
 
