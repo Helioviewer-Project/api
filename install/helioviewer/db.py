@@ -3,6 +3,7 @@
 import sys
 import os
 
+
 def setup_database_schema(adminuser, adminpass, dbhost, dbname, dbuser, dbpass, mysql):
     """Sets up Helioviewer.org database schema"""
     if mysql:
@@ -31,6 +32,7 @@ def setup_database_schema(adminuser, adminpass, dbhost, dbname, dbuser, dbpass, 
 
     return cursor
 
+
 def get_db_cursor(dbhost, dbname, dbuser, dbpass, mysql=True):
     """Creates a database connection"""
     if mysql:
@@ -48,6 +50,7 @@ def get_db_cursor(dbhost, dbname, dbuser, dbpass, mysql=True):
 
     db.autocommit(True)
     return db.cursor()
+
 
 def check_db_info(adminuser, adminpass, mysql):
     """Validate database login information"""
@@ -69,6 +72,7 @@ def check_db_info(adminuser, adminpass, mysql):
 
     db.close()
     return True
+
 
 def create_db(adminuser, adminpass, dbhost, dbname, dbuser, dbpass, mysql, adaptor):
     """Creates Helioviewer database
@@ -102,6 +106,7 @@ def create_db(adminuser, adminpass, dbhost, dbname, dbuser, dbpass, mysql, adapt
 
     cursor.close()
 
+
 def create_data_table(cursor):
     """Creates table to store data information"""
     sql = \
@@ -118,6 +123,7 @@ def create_data_table(cursor):
     ) ENGINE=MyISAM DEFAULT CHARSET=utf8;"""
     cursor.execute(sql)
 
+
 def create_corrupt_table(cursor):
     """Creates table to store corrupt image information"""
     sql = \
@@ -131,6 +137,7 @@ def create_corrupt_table(cursor):
       UNIQUE INDEX filename_idx(filename)
     ) DEFAULT CHARSET=ascii;"""
     cursor.execute(sql)
+
 
 def create_datasource_table(cursor):
     """Creates a table with the known datasources"""
@@ -228,7 +235,6 @@ def create_datasource_table(cursor):
         (80,'TRACE 1600','TRACE 1600','Å',1,1),
         (81,'TRACE 1700','TRACE 1700','Å',1,1),
         (82,'TRACE white-light','TRACE white-light','',1,1);""")
-
 
 
 def create_datasource_property_table(cursor):
@@ -536,6 +542,7 @@ def create_datasource_property_table(cursor):
         (82,'Observatory','TRACE','TRACE','Transition Region and Coronal Explorer',1),
         (82,'Measurement','white-light','WL','TRACE white-light',2);""")
 
+
 def create_movies_table(cursor):
     """Creates movie table
 
@@ -578,6 +585,7 @@ def create_movies_table(cursor):
        PRIMARY KEY (`id`)
     ) DEFAULT CHARSET=utf8;""")
 
+
 def create_movie_formats_table(cursor):
     """Creates movie formats table
 
@@ -593,6 +601,7 @@ def create_movie_formats_table(cursor):
       `procTime`          SMALLINT UNSIGNED,
        PRIMARY KEY (`id`)
     ) DEFAULT CHARSET=utf8;""")
+
 
 def create_youtube_table(cursor):
     """Creates a table to track shared movie uploads.
@@ -613,6 +622,7 @@ def create_youtube_table(cursor):
        PRIMARY KEY (`id`),
        UNIQUE INDEX movieid_idx(movieId)
     ) DEFAULT CHARSET=utf8;""")
+
 
 def create_screenshots_table(cursor):
     """Creates screenshot table
@@ -645,6 +655,7 @@ def create_screenshots_table(cursor):
        PRIMARY KEY (`id`)
     ) DEFAULT CHARSET=utf8;""")
 
+
 def create_statistics_table(cursor):
     """Creates a table to keep query statistics
 
@@ -659,6 +670,7 @@ def create_statistics_table(cursor):
        PRIMARY KEY (`id`),
        KEY `date_idx` (`timestamp`,`action`)
     ) DEFAULT CHARSET=utf8;""")
+
 
 def create_data_coverage_table(cursor):
     """Creates a table to keep data coverage statistics
@@ -686,9 +698,11 @@ def enable_datasource(cursor, sourceId):
     """
     cursor.execute("UPDATE datasources SET enabled=1 WHERE id=%d;" % sourceId)
 
+
 def update_image_table_index(cursor):
     """Updates index on data table"""
     cursor.execute("OPTIMIZE TABLE data;")
+
 
 def mark_as_corrupt(cursor, filename, note):
     """Adds an image to the 'corrupt' database table"""
@@ -696,6 +710,7 @@ def mark_as_corrupt(cursor, filename, note):
                                                                     note)
 
     cursor.execute(sql)
+
 
 def get_datasources(cursor):
     """Returns a list of the known datasources"""
