@@ -277,7 +277,11 @@ class Database_Statistics {
 				
 	            $sources[$layersCount] = new stdClass;
 	            $sources[$layersCount]->sourceId = $sourceId;
-	            $sources[$layersCount]->name = (isset($layer['uiLabels'][0]['name']) ? $layer['uiLabels'][0]['name'] : '').' '.(isset($layer['uiLabels'][1]['name']) ? $layer['uiLabels'][1]['name'] : '').' '.(isset($layer['uiLabels'][2]['name']) ? $layer['uiLabels'][2]['name'] : '');
+	            $sources[$layersCount]->name = (isset($layer['uiLabels'][0]['name']) ? $layer['uiLabels'][0]['name'] : '').' '
+	            								.(isset($layer['uiLabels'][1]['name']) ? $layer['uiLabels'][1]['name'] : '').' '
+	            								.(isset($layer['uiLabels'][2]['name']) ? $layer['uiLabels'][2]['name'] : '').' '
+	            								.(isset($layer['uiLabels'][3]['name']) ? $layer['uiLabels'][3]['name'] : '').' '
+	            								.(isset($layer['uiLabels'][4]['name']) ? $layer['uiLabels'][4]['name'] : '');
 	            $sources[$layersCount]->data = array();
 	            
 		        //$sources[$layersCount]->data[] = array($startDate->getTimestamp()*1000, null);
