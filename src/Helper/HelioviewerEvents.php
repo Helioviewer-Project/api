@@ -32,7 +32,7 @@ class Helper_HelioviewerEvents {
     	    return;
     	}
 
-        $eventStringArray = explode("],[", substr($eventString, 1, -1));
+        $eventStringArray = explode("],[", substr(stripslashes($eventString), 1, -1));
 
         // Process individual events in string
         foreach ($eventStringArray as $singleEventString) {
