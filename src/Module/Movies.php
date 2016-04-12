@@ -991,6 +991,7 @@ class Module_Movies implements Module {
         // Get filepath
         $filepath = $movie->getFilepath($options['hq']);
         $filename = basename($filepath);
+        $filename = basename($filepath, '.flv');
 
         // Return an error if movie is not available
         if ( !@file_exists($filepath) ) {
@@ -1007,27 +1008,31 @@ class Module_Movies implements Module {
 
         // Movie URL
         $url = str_replace(HV_CACHE_DIR, HV_CACHE_URL, $filepath);
+        $urlFolder = str_replace(HV_CACHE_DIR, HV_CACHE_URL, dirname($filepath));
 ?>
 <!DOCTYPE html>
 <html>
 <head>
     <title>Helioviewer.org - <?php echo $filename?></title>
     <!-- player skin -->
-    <link rel="stylesheet" type="text/css" href="<?php echo HV_WEB_ROOT_URL; ?>/lib/flowplayer-5.4.6/skin/minimalist.css">
+    <link rel="stylesheet" type="text/css" href="<?php echo HV_WEB_ROOT_URL; ?>/lib/mediaelement-2.20.1/build/mediaelementplayer.min.css">
     <!-- flowplayer depends on jQuery 1.7.1+ (for now) -->
     <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
     <!-- include flowplayer -->
-    <script type="text/javascript" src="<?php echo HV_WEB_ROOT_URL; ?>/lib/flowplayer-5.4.6/flowplayer.min.js"></script>
+    <script type="text/javascript" src="<?php echo HV_WEB_ROOT_URL; ?>/lib/mediaelement-2.20.1/build/mediaelement-and-player.min.js"></script>
 </head>
 <body>
 
-
-   <!-- the player -->
-   <div class="flowplayer" data-swf="<?php echo HV_WEB_ROOT_URL; ?>/lib/flowplayer-5.4.6/flowplayer.swf" style="display:block; <?php print $dimensions; ?>;" id="movie-player">
-      <video>
-         <source src="<?php echo $url; ?>">
-      </video>
-   </div>
+	<video width="<?=$options['width']?>" height="<?=$options['height']?>" poster="<?=$urlFolder?>/preview-full.png" controls="controls" preload="none">
+	    <source type="video/mp4" src="<?=$urlFolder?>/<?=$filename?>.mp4" />
+	    <source type="video/webm" src="<?=$urlFolder?>/<?=$filename?>.webm" />
+	    <!--<source type="video/ogg" src="myvideo.ogv" />-->
+	    <object width="<?=$options['width']?>" height="<?=$options['height']?>" type="application/x-shockwave-flash" data="<?php echo HV_WEB_ROOT_URL; ?>/lib/mediaelement-2.20.1/build/flashmediaelement.swf">
+	        <param name="movie" value="<?php echo HV_WEB_ROOT_URL; ?>/lib/mediaelement-2.20.1/build/flashmediaelement.swf" /> 
+	        <param name="flashvars" value="controls=true&amp;poster=<?=$urlFolder?>/preview-full.png&amp;file=<?=$urlFolder?>/<?=$filename?>.mp4" />        
+	        <img src="<?=$urlFolder?>/preview-full.png" width="<?=$options['width']?>" height="<?=$options['height']?>" title="No video playback capabilities" />
+	    </object>
+	</video>
 </body>
 </html>
 <?php
