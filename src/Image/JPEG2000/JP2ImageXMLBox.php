@@ -129,6 +129,10 @@ class Image_JPEG2000_JP2ImageXMLBox {
                     throw new Exception(
                         'Invalid value for CDELT1: '.$scale, 15);
                 }
+                if ( $rsun == 0 ) {
+                    throw new Exception(
+                        'Invalid value for RSUN: '.$rsun, 15);
+                }
                 $dsun = (HV_CONSTANT_RSUN / ($rsun * $scale))
                         * HV_CONSTANT_AU;
             }
