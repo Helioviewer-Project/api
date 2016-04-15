@@ -70,7 +70,7 @@ class Image_ImageType_SWAPImage extends Image_HelioviewerImage {
      * @return string watermark name
      */
     public function getWaterMarkName() {
-        return 'SWAP '.$this->uiLabels[3]['name']."\n";
+        return 'SWAP '.(isset($this->uiLabels[3]) ? $this->uiLabels[3]['name'] : $this->uiLabels[2]['name'])."\n";
     }
 
 }

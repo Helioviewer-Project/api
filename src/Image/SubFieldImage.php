@@ -476,7 +476,7 @@ class Image_SubFieldImage {
         $files = glob(substr($filename, 0, -3).'*');
 
         if ($files) {
-            foreach($tmpFiles as $file) {
+            foreach($files as $file) {
                 @unlink($file);
             }
         }

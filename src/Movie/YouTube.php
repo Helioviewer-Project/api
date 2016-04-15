@@ -311,8 +311,8 @@ class Movie_YouTube {
         header('Connection: close');
 
         // flush all output
-        ob_end_flush();
         ob_flush();
+        ob_end_flush();
         flush();
 
         // close current session
