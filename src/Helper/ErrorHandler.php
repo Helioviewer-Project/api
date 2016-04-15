@@ -61,7 +61,7 @@ function handleError($msg, $errorCode=255) {
     );
 
     // Don't log non-harmful errors
-    $dontLog = array(12, 16, 23, 25, 26, 40, 44, 46);
+    $dontLog = array(12, 16, 23, 25, 26, 40, 42, 44, 45, 46);
 
     if ( !in_array($errorCode, $dontLog) ) {
         logErrorMsg($msg);
