@@ -668,11 +668,8 @@ class Event_HEKAdapter {
         $labelArray = Array();
 
         if ( $event['event_type'] == 'AR') {
-            if ( $event['frm_name'] == 'HMI HARP' ) {
-                $labelArray['Area at Disk Center'] =
-                    str_replace('+', '',
-                        sprintf('%.1e', (float)$event['area_atdiskcenter'])
-                    ) . ' ' . str_replace('2','²',$event['area_unit']);
+            if ( $event['frm_name'] == 'HMI SHARP' ) {
+                $labelArray['HMI SHARP Identifier'] = 'HMI SHARP ' . $event['frm_specificid'];
             }
             else if ( $event['frm_name'] == 'NOAA SWPC Observer' ) {
                 $labelArray['NOAA Number'] = 'NOAA '.$event['ar_noaanum'];
