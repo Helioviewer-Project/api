@@ -77,6 +77,45 @@ class Event_HEKAdapter {
 
         $this->_proxy = new Net_Proxy($this->_baseURL);
     }
+    
+    /**
+     * Return an JSON object of the Event
+     *
+     * @param string $id ID
+     * @param string $kb_archivid   Unique ArchiveId
+     *
+     * @return JSON object of event
+     */
+    public function getEvent($id = 0, $kb_archivid = '') {
+	    $event = array();
+	    
+	    include_once HV_ROOT_DIR.'/../src/Database/DbConnection.php';
+        $dbConnection = new Database_DbConnection();
+	    $sql = '';
+	    
+	    if(!empty($kb_archivid)){
+	        $sql = sprintf( "SELECT *  FROM events WHERE kb_archivid = '%s' LIMIT 1;", (string)$kb_archivid );
+        }else if($id > 0){
+	        $sql = sprintf( "SELECT *  FROM events WHERE id = '%d' LIMIT 1;", (int)$id );
+        }
+        
+        if(!empty($sql)){
+	        try {
+	            $result = $dbConnection->query($sql);
+	        }
+	        catch (Exception $e) {
+	            return false;
+	        }
+	
+	        $event =  $result->fetch_array(MYSQLI_ASSOC);
+        }
+        
+        if(isset($event['event_json']) && !empty($event['event_json'])){
+	        $event = json_decode($event['event_json']);
+        }
+		
+        return json_encode($event);
+    }
 
     /**
      * Return a list of event FRMs sorted by event type
@@ -653,6 +692,273 @@ class Event_HEKAdapter {
         }
 
         return $events;
+    }
+
+
+	/**
+     * Returns an array of event objects as a JSON string
+     *
+     * @param date   $startTime Start time for which events should be retrieved
+     * @param string $options   Optional parameters
+     *
+     * @return JSON string
+     */
+    public function importEvents($period) {
+        ini_set('memory_limit', '8024M');
+		ini_set('max_execution_time', 0);
+		
+		if ( gettype($period) == 'string' &&
+             preg_match('/^([0-9]+)([DMY])$/', $period, $matches) === 1 ) {
+
+            $magnitude   = $matches[1];
+            $period_abbr = $matches[2];
+        }
+        else {
+            $magnitude   =  1;
+            $period_abbr = 'D';
+        }
+        
+        //Start and End dates
+        $eDate = new DateTime();
+        $eDate->setTime(23, 59, 59);
+        
+        $sDate = new DateTime();
+        $sDate->setTime(0, 0, 0);
+        $sDate->sub(new DateInterval("P".$magnitude.$period_abbr));
+		
+		// Fetch data from live external API and write to local JSON cache
+        // HEK query parameters
+        $params = array(
+            'event_starttime' => $sDate->format('Y-m-d\TH:i:s').'.000Z',
+            'event_endtime'   => $eDate->format('Y-m-d\TH:i:s').'.000Z',
+            'event_type'      => '**', // Fetch all event types always,
+                                       // filter by $options['event_type']
+                                       // later
+            'showtests'       => 'hide',
+            'page'       	  => 1,
+            'result_limit'    => 1000
+        );
+        $response = JSON_decode($this->_proxy->query($params, true), true);
+		$this->_parseEvents($response);
+		
+		//Check if response is not complete and we need to download more pages
+		if($response['overmax'] == 'true'){
+			$overmax = true;
+		}else{
+			$overmax = false;
+		}
+		unset($response);
+		
+		$params['page']++;
+		while ($overmax == true) {
+		    $response = JSON_decode($this->_proxy->query($params, true), true);
+			$this->_parseEvents($response);
+			
+			if($response['overmax'] == 'true'){
+				$overmax = true;
+			}else{
+				$overmax = false;
+			}
+			unset($response);
+			$params['page']++;
+		}
+    }
+    
+    private function _parseEvents($result){
+
+        include_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
+        include_once HV_ROOT_DIR.'/../scripts/rot_hpc.php';
+		include_once HV_ROOT_DIR.'/../src/Database/DbConnection.php';
+        $dbConnection = new Database_DbConnection();
+        
+	    if(count($result['result']) > 0){
+			foreach($result['result'] as $k=>$event){
+				$event_starttime = new DateTime($event['event_starttime'].'Z');
+				$event_endtime   = new DateTime($event['event_endtime']  .'Z');
+				
+				//Cache dir location to store bounding boxes images
+				$cache_base_dir = HV_CACHE_DIR.'/events/'.$event_starttime->format('Y').'/'.$event_starttime->format('m').'/'.$event_starttime->format('d');
+				
+				// Scalar for normalizing HEK hpc_x and hpc_y coordinates based on the
+		        // apparent size of the Sun as seen from Earth at the specified timestamp.
+		        // A reasonable approximation in the absence of the appropriate
+		        // spacecraft's position at the timestamp of the image(s) used for F/E detection.
+		        $au_scalar = sunearth_distance($event['event_starttime'].'.000Z');
+		        
+		        // Get Unique ID for the event
+		        $event['hv_labels_formatted'] = $this->_buildLabelArray($event);
+		      
+		        // Generate polygon PNG for events that have a chain code
+                if ( $event['hpc_boundcc'] != '' ) {
+                    $this->drawPolygon($event, $au_scalar, $polyOffsetX, $polyOffsetY, $polyURL, $polyWidth, $polyHeight);
+
+                    // Save polygon info into $data to be cached
+                    $event['hv_poly_hpc_x_ul_scaled_norot'] = $polyOffsetX;
+                    $event['hv_poly_hpc_y_ul_scaled_norot'] = $polyOffsetY;
+                    $event['hv_poly_url'] = $polyURL;
+                    $event['hv_poly_width_max_zoom_pixels'] = $polyWidth;
+                    $event['hv_poly_height_max_zoom_pixels'] = $polyHeight;
+                }
+		        
+		        // Calculate radial distance for determining whether or not to apply differential rotation.
+                $event['hv_hpc_r_scaled'] = sqrt( pow($event['hpc_x'],2) + pow($event['hpc_y'],2) ) * $au_scalar;
+		        
+		        if ( $event['hv_hpc_r_scaled'] < 961.07064 ) {
+
+                    // Differential rotation of the event marker's X,Y position
+					$rotateFromTime = $event['event_starttime'].'.000Z';
+                    $rotateToTime   = $event['event_starttime'].'.000Z';//$startTime;
+
+                    if ( $event['frm_name'] == 'SPoCA' ) {
+                        $rotateFromTime = $event['event_endtime'].'.000Z';
+                    }
+                    else if (
+                        $event['frm_name'] == 'Emerging flux region module' &&
+                        floatval($event['frm_versionnumber']) < 0.55
+                        ) {
+
+                        $rotateFromTime = $event['event_peaktime'].'.000Z';
+                    }
+
+                    list( $event['hv_hpc_x_notscaled_rot'], $event['hv_hpc_y_notscaled_rot']) =
+                        rot_hpc( $event['hpc_x'], $event['hpc_y'],
+                                 $rotateFromTime, $rotateToTime,
+                                 $spacecraft=null, $vstart=null, $vend=null);
+
+                    $event['hv_hpc_x_rot_delta_notscaled'] = $event['hv_hpc_x_notscaled_rot'] - $event['hpc_x'];
+                    $event['hv_hpc_y_rot_delta_notscaled'] = $event['hv_hpc_y_notscaled_rot'] - $event['hpc_y'];
+
+                    $event['hv_hpc_x_scaled_rot'] = $event['hv_hpc_x_notscaled_rot'] * $au_scalar;
+                    $event['hv_hpc_y_scaled_rot'] = $event['hv_hpc_y_notscaled_rot'] * $au_scalar;
+
+                    $event['hv_rot_hpc_time_base'] = $event['event_starttime'];
+                    $event['hv_rot_hpc_time_targ'] = $event['event_starttime'].'.000Z';//$startTime;
+
+                    // These values will be used to place the event marker
+                    // in the viewport, screenshots, and movies.
+                    $event['hv_hpc_x_final'] = $event['hv_hpc_x_scaled_rot'];
+                    $event['hv_hpc_y_final'] = $event['hv_hpc_y_scaled_rot'];
+
+
+                    // Drop events whose calculated marker position is NaN
+                    if ( is_nan($event['hv_hpc_x_final']) ||
+                         is_nan($event['hv_hpc_y_final']) ) {
+
+                        continue;
+                    }
+
+                    // Apply differential rotation offset to the region
+                    // polygon's upper-left X,Y position
+                    if ( isset($event['hv_poly_hpc_x_ul_scaled_norot']) &&
+                         isset($event['hv_poly_hpc_y_ul_scaled_norot']) &&
+                         is_numeric($event['hv_poly_hpc_x_ul_scaled_norot']) &&
+                         is_numeric($event['hv_poly_hpc_y_ul_scaled_norot'])
+                       ) {
+
+                        $event['hv_poly_hpc_x_ul_scaled_rot']
+                            = $event['hv_poly_hpc_x_ul_scaled_norot']
+                              + ( $event['hv_hpc_x_rot_delta_notscaled']
+                                  * $au_scalar );
+
+                        $event['hv_poly_hpc_y_ul_scaled_rot']
+                            = $event['hv_poly_hpc_y_ul_scaled_norot']
+                              + ( $event['hv_hpc_y_rot_delta_notscaled']
+                                  * $au_scalar );
+
+                        // These values will be used to place the region
+                        // polygon in the viewport, screenshots, and movies.
+                        // Represents upper-left corner of polygon PNG.
+                        $event['hv_poly_hpc_x_final'] = $event['hv_poly_hpc_x_ul_scaled_rot'];
+                        $event['hv_poly_hpc_y_final'] = $event['hv_poly_hpc_y_ul_scaled_rot'];
+                    }
+                }
+                else {
+                    // Don't apply differential rotation to objects beyond
+                    // the disk but do normalize them with the $au_scalar.
+
+                    // These values will be used to place the event marker
+                    // in the viewport, screenshots, and movies.
+                    $event['hv_hpc_x_final'] = $event['hpc_x'] * $au_scalar;
+                    $event['hv_hpc_y_final'] = $event['hpc_y'] * $au_scalar;
+
+                    if (   isset($event['hv_poly_hpc_x_ul_scaled_norot'])
+                        && isset($event['hv_poly_hpc_y_ul_scaled_norot'])
+                        && is_numeric($event['hv_poly_hpc_x_ul_scaled_norot'])
+                        && is_numeric($event['hv_poly_hpc_y_ul_scaled_norot'])
+                       ) {
+
+                        // These values will be used to place the event
+                        // polygons in the viewport, screenshots, and movies.
+                        $event['hv_poly_hpc_x_final'] = $event['hv_poly_hpc_x_ul_scaled_norot'];
+						$event['hv_poly_hpc_y_final'] = $event['hv_poly_hpc_y_ul_scaled_norot'];
+                    }
+                }
+		        
+		        
+		        // Sort HEK results by parameter name
+				if ( defined('PHP_VERSION_ID') && PHP_VERSION_ID >= 50400 ) {
+                    ksort($event, SORT_NATURAL | SORT_FLAG_CASE);
+                }
+                else {
+                    ksort($event, SORT_STRING);
+                }
+                
+                //Store Result in Database
+	            $sql = "REPLACE INTO `events` 
+	            		(`kb_archivid`, `frm_name`, `concept`, `frm_specificid`, 
+	            		`event_starttime`, `event_endtime`, `event_peaktime`, `event_type`, 
+	            		`event_before`, `event_after`, `hpc_boundcc`, 
+	            		`hv_labels_formatted`, `hv_poly_url`, `hv_event_starttime`, `hv_event_endtime`, 
+	            		`hv_rot_hpc_time_base`, `hv_rot_hpc_time_targ`, `hv_hpc_x_notscaled_rot`, 
+	            		`hv_hpc_y_notscaled_rot`, `hv_hpc_x_rot_delta_notscaled`, `hv_hpc_y_rot_delta_notscaled`, 
+	            		`hv_hpc_x_scaled_rot`, `hv_hpc_y_scaled_rot`, `hv_hpc_y_final`, 
+	            		`hv_hpc_x_final`, `hv_hpc_r_scaled`, `hv_poly_hpc_x_final`, 
+	            		`hv_poly_hpc_y_final`, `hv_poly_hpc_x_ul_scaled_rot`, 
+	            		`hv_poly_hpc_y_ul_scaled_rot`, `hv_poly_hpc_x_ul_scaled_norot`, 
+	            		`hv_poly_hpc_y_ul_scaled_norot`, `hv_poly_width_max_zoom_pixels`, 
+	            		`hv_poly_height_max_zoom_pixels`, `event_json`) 
+	            	VALUES ( 
+	            		'".str_replace("ivo://helio-informatics.org/", "", $event['kb_archivid'])."', 
+	            		'".(isset($event['frm_name']) ? $event['frm_name'] : '')."', 
+	            		'".(isset($event['concept']) ? $event['concept'] : '')."', 
+	            		'".(isset($event['frm_specificid']) ? $event['frm_specificid'] : '')."', 
+	            		'".(isset($event['event_starttime']) ? $event['event_starttime'] : '0000-00-00 00:00:00')."', 
+	            		'".(isset($event['event_endtime']) ? $event['event_endtime'] : '0000-00-00 00:00:00')."', 
+	            		'".(isset($event['event_peaktime']) ? $event['event_peaktime'] : '0000-00-00 00:00:00')."', 
+	            		'".(isset($event['event_type']) ? $event['event_type'] : '')."', 
+	            		'".(isset($event['event_before']) ? $event['event_before'] : '')."', 
+	            		'".(isset($event['event_after']) ? $event['event_after'] : '')."', 
+	            		'".(isset($event['hpc_boundcc']) ? $event['hpc_boundcc'] : '')."', 
+	            		'".json_encode($event['hv_labels_formatted'])."', 
+	            		'".(isset($event['hv_poly_url']) ? $event['hv_poly_url'] : '')."', 
+	            		'".(isset($event['hv_event_starttime']) ? $event['hv_event_starttime'] : '0000-00-00 00:00:00')."', 
+	            		'".(isset($event['hv_event_endtime']) ? $event['hv_event_endtime'] : '0000-00-00 00:00:00')."', 
+	            		'".(isset($event['hv_rot_hpc_time_base']) ? $event['hv_rot_hpc_time_base'] : '0000-00-00 00:00:00')."', 
+	            		'".(isset($event['hv_rot_hpc_time_targ']) ? $event['hv_rot_hpc_time_targ'] : '0000-00-00 00:00:00')."', 
+	            		".(isset($event['hv_hpc_x_notscaled_rot']) ? $event['hv_hpc_x_notscaled_rot'] : 'null').", 
+	            		".(isset($event['hv_hpc_y_notscaled_rot']) ? $event['hv_hpc_y_notscaled_rot'] : 'null').", 
+	            		".(isset($event['hv_hpc_x_rot_delta_notscaled']) ? $event['hv_hpc_x_rot_delta_notscaled'] : 'null').", 
+	            		".(isset($event['hv_hpc_y_rot_delta_notscaled']) ? $event['hv_hpc_y_rot_delta_notscaled'] : 'null').", 
+	            		".(isset($event['hv_hpc_x_scaled_rot']) ? $event['hv_hpc_x_scaled_rot'] : 'null').", 
+	            		".(isset($event['hv_hpc_y_scaled_rot']) ? $event['hv_hpc_y_scaled_rot'] : 'null').", 
+	            		".(isset($event['hv_hpc_y_final']) ? $event['hv_hpc_y_final'] : 'null').", 
+	            		".(isset($event['hv_hpc_x_final']) ? $event['hv_hpc_x_final'] : 'null').", 
+	            		".(isset($event['hv_hpc_r_scaled']) ? $event['hv_hpc_r_scaled'] : 'null').", 
+	            		".(isset($event['hv_poly_hpc_x_final']) ? $event['hv_poly_hpc_x_final'] : 'null').", 
+	            		".(isset($event['hv_poly_hpc_y_final']) ? $event['hv_poly_hpc_y_final'] : 'null').", 
+	            		".(isset($event['hv_poly_hpc_x_ul_scaled_rot']) ? $event['hv_poly_hpc_x_ul_scaled_rot'] : 'null').", 
+	            		".(isset($event['hv_poly_hpc_y_ul_scaled_rot']) ? $event['hv_poly_hpc_y_ul_scaled_rot'] : 'null').", 
+	            		".(isset($event['hv_poly_hpc_x_ul_scaled_norot']) ? $event['hv_poly_hpc_x_ul_scaled_norot'] : 'null').", 
+	            		".(isset($event['hv_poly_hpc_y_ul_scaled_norot']) ? $event['hv_poly_hpc_y_ul_scaled_norot'] : 'null').", 
+	            		".(isset($event['hv_poly_width_max_zoom_pixels']) ? $event['hv_poly_width_max_zoom_pixels'] : 'null').", 
+	            		".(isset($event['hv_poly_height_max_zoom_pixels']) ? $event['hv_poly_height_max_zoom_pixels'] : 'null').", 
+	            		'".str_replace("'", "\'", json_encode($event))."');";
+	            $dbConnection->query($sql);
+				
+		        unset($event);
+		        unset($result['result'][$k]);
+			}
+		}
     }
 
 

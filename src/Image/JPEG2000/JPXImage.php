@@ -83,7 +83,6 @@ class Image_JPEG2000_JPXImage
     public function displayImage()
     {
         ini_set('memory_limit', '2048M');
-        
         if(file_exists($this->outputFile)){
             $fp   = fopen($this->outputFile, 'r');
 	        $stat = stat($this->outputFile);

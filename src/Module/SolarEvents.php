@@ -48,6 +48,21 @@ class Module_SolarEvents implements Module {
 
     /**
      * Gets a JSON-formatted list of the Feature Recognition Methods which have
+     * associated event by event Unique ID or Archive ID
+     *
+     * @return void
+     */
+    public function getEvent() {
+        include_once HV_ROOT_DIR.'/../src/Event/HEKAdapter.php';
+
+        $hek = new Event_HEKAdapter();
+
+        header('Content-type: application/json');
+        echo $hek->getEvent(intval($this->_params['id']), $this->_params['kb_archivid']);
+    }
+
+    /**
+     * Gets a JSON-formatted list of the Feature Recognition Methods which have
      * associated events for the requested time window, sorted by event type
      *
      * @return void
@@ -162,6 +177,30 @@ class Module_SolarEvents implements Module {
         header('Content-Type: application/json');
         echo json_encode($events);
     }
+    
+    /**
+     * Import Features/Events from HEK database to the helioviewer for the requested time range
+     *
+     * @return void
+     */
+    public function importEvents() {
+        include_once HV_ROOT_DIR.'/../src/Event/HEKAdapter.php';
+
+        $hek = new Event_HEKAdapter();
+
+        if ( array_key_exists('period', $this->_options) ) {
+            $period = $this->_options['period'];
+        }
+        else {
+            $period = null;
+        }
+        
+        // Query the HEK
+        $events = $hek->importEvents($period);
+
+        header('Content-Type: application/json');
+        echo json_encode('{"status":"success"}');
+    }
 
     /**
      * validate
@@ -170,6 +209,19 @@ class Module_SolarEvents implements Module {
      */
     public function validate() {
         switch( $this->_params['action'] ) {
+
+        case 'importEvents':
+            $expected = array(
+                'optional' => array('period', 'callback'),
+                'alphanum' => array('period', 'callback')
+            );
+            break;
+
+        case 'getEvent':
+            $expected = array(
+                'optional' => array('id', 'kb_archivid')
+            );
+            break;
 
         case 'getEvents':
             $expected = array(

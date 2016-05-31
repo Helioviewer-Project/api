@@ -3,7 +3,6 @@
 import sys
 import os
 
-
 def setup_database_schema(adminuser, adminpass, dbhost, dbname, dbuser, dbpass, mysql):
     """Sets up Helioviewer.org database schema"""
     if mysql:
@@ -29,9 +28,10 @@ def setup_database_schema(adminuser, adminpass, dbhost, dbname, dbuser, dbpass, 
     create_statistics_table(cursor)
     create_data_coverage_table(cursor)
     update_image_table_index(cursor)
+    create_events_table(cursor)
+    create_events_coverage_table(cursor)
 
     return cursor
-
 
 def get_db_cursor(dbhost, dbname, dbuser, dbpass, mysql=True):
     """Creates a database connection"""
@@ -50,7 +50,6 @@ def get_db_cursor(dbhost, dbname, dbuser, dbpass, mysql=True):
 
     db.autocommit(True)
     return db.cursor()
-
 
 def check_db_info(adminuser, adminpass, mysql):
     """Validate database login information"""
@@ -72,7 +71,6 @@ def check_db_info(adminuser, adminpass, mysql):
 
     db.close()
     return True
-
 
 def create_db(adminuser, adminpass, dbhost, dbname, dbuser, dbpass, mysql, adaptor):
     """Creates Helioviewer database
@@ -106,7 +104,6 @@ def create_db(adminuser, adminpass, dbhost, dbname, dbuser, dbpass, mysql, adapt
 
     cursor.close()
 
-
 def create_data_table(cursor):
     """Creates table to store data information"""
     sql = \
@@ -123,7 +120,6 @@ def create_data_table(cursor):
     ) ENGINE=MyISAM DEFAULT CHARSET=utf8;"""
     cursor.execute(sql)
 
-
 def create_corrupt_table(cursor):
     """Creates table to store corrupt image information"""
     sql = \
@@ -137,7 +133,6 @@ def create_corrupt_table(cursor):
       UNIQUE INDEX filename_idx(filename)
     ) DEFAULT CHARSET=ascii;"""
     cursor.execute(sql)
-
 
 def create_datasource_table(cursor):
     """Creates a table with the known datasources"""
@@ -235,6 +230,7 @@ def create_datasource_table(cursor):
         (80,'TRACE 1600','TRACE 1600','Å',1,1),
         (81,'TRACE 1700','TRACE 1700','Å',1,1),
         (82,'TRACE white-light','TRACE white-light','',1,1);""")
+
 
 
 def create_datasource_property_table(cursor):
@@ -542,7 +538,6 @@ def create_datasource_property_table(cursor):
         (82,'Observatory','TRACE','TRACE','Transition Region and Coronal Explorer',1),
         (82,'Measurement','white-light','WL','TRACE white-light',2);""")
 
-
 def create_movies_table(cursor):
     """Creates movie table
 
@@ -585,7 +580,6 @@ def create_movies_table(cursor):
        PRIMARY KEY (`id`)
     ) DEFAULT CHARSET=utf8;""")
 
-
 def create_movie_formats_table(cursor):
     """Creates movie formats table
 
@@ -601,7 +595,6 @@ def create_movie_formats_table(cursor):
       `procTime`          SMALLINT UNSIGNED,
        PRIMARY KEY (`id`)
     ) DEFAULT CHARSET=utf8;""")
-
 
 def create_youtube_table(cursor):
     """Creates a table to track shared movie uploads.
@@ -622,7 +615,6 @@ def create_youtube_table(cursor):
        PRIMARY KEY (`id`),
        UNIQUE INDEX movieid_idx(movieId)
     ) DEFAULT CHARSET=utf8;""")
-
 
 def create_screenshots_table(cursor):
     """Creates screenshot table
@@ -655,7 +647,6 @@ def create_screenshots_table(cursor):
        PRIMARY KEY (`id`)
     ) DEFAULT CHARSET=utf8;""")
 
-
 def create_statistics_table(cursor):
     """Creates a table to keep query statistics
 
@@ -670,7 +661,6 @@ def create_statistics_table(cursor):
        PRIMARY KEY (`id`),
        KEY `date_idx` (`timestamp`,`action`)
     ) DEFAULT CHARSET=utf8;""")
-
 
 def create_data_coverage_table(cursor):
     """Creates a table to keep data coverage statistics
@@ -688,6 +678,78 @@ def create_data_coverage_table(cursor):
       KEY `index3` (`sourceId`,`date`),
       KEY `index4` (`date`,`sourceId`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+    
+def create_events_table(cursor):
+    """Creates a table to keep data coverage statistics
+
+    Creates a simple table for storing data coverage statistics
+    """
+    cursor.execute("""
+    CREATE TABLE `events` (
+	  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+	  `kb_archivid` varchar(128) DEFAULT NULL,
+	  `frm_name` varchar(128) DEFAULT NULL,
+	  `concept` varchar(128) DEFAULT NULL,
+	  `frm_specificid` varchar(128) DEFAULT NULL,
+	  `event_starttime` datetime DEFAULT NULL,
+	  `event_endtime` datetime DEFAULT NULL,
+	  `event_peaktime` datetime DEFAULT NULL,
+	  `event_type` varchar(32) DEFAULT NULL,
+	  `event_before` varchar(128) DEFAULT NULL,
+	  `event_after` varchar(128) DEFAULT NULL,
+	  `hpc_boundcc` text,
+	  `hv_labels_formatted` text,
+	  `hv_poly_url` varchar(256) DEFAULT NULL,
+	  `hv_event_starttime` datetime DEFAULT NULL,
+	  `hv_event_endtime` datetime DEFAULT NULL,
+	  `hv_rot_hpc_time_base` datetime DEFAULT NULL,
+	  `hv_rot_hpc_time_targ` datetime DEFAULT NULL,
+	  `hv_hpc_x_notscaled_rot` decimal(20,16) DEFAULT NULL,
+	  `hv_hpc_y_notscaled_rot` decimal(20,16) DEFAULT NULL,
+	  `hv_hpc_x_rot_delta_notscaled` decimal(20,16) DEFAULT NULL,
+	  `hv_hpc_y_rot_delta_notscaled` decimal(20,16) DEFAULT NULL,
+	  `hv_hpc_x_scaled_rot` decimal(20,16) DEFAULT NULL,
+	  `hv_hpc_y_scaled_rot` decimal(20,16) DEFAULT NULL,
+	  `hv_hpc_y_final` decimal(20,16) DEFAULT NULL,
+	  `hv_hpc_x_final` decimal(20,16) DEFAULT NULL,
+	  `hv_hpc_r_scaled` decimal(20,16) DEFAULT NULL,
+	  `hv_poly_hpc_x_final` decimal(20,16) DEFAULT NULL,
+	  `hv_poly_hpc_y_final` decimal(20,16) DEFAULT NULL,
+	  `hv_poly_hpc_x_ul_scaled_rot` decimal(20,16) DEFAULT NULL,
+	  `hv_poly_hpc_y_ul_scaled_rot` decimal(20,16) DEFAULT NULL,
+	  `hv_poly_hpc_x_ul_scaled_norot` decimal(20,16) DEFAULT NULL,
+	  `hv_poly_hpc_y_ul_scaled_norot` decimal(20,16) DEFAULT NULL,
+	  `hv_poly_width_max_zoom_pixels` decimal(20,16) DEFAULT NULL,
+	  `hv_poly_height_max_zoom_pixels` decimal(20,16) DEFAULT NULL,
+	  `event_json` text
+	) ENGINE=MyISAM DEFAULT CHARSET=utf8;""")
+	
+	cursor.execute("""
+	ALTER TABLE `events`
+	  ADD PRIMARY KEY (`id`),
+	  ADD UNIQUE KEY `kb_archivid` (`kb_archivid`) USING BTREE,
+	  ADD KEY `concept` (`concept`),
+	  ADD KEY `event_type` (`event_type`),
+	  ADD KEY `event_starttime` (`event_starttime`),
+	  ADD KEY `event_endtime` (`event_endtime`),
+	  ADD KEY `event_starttime_2` (`event_starttime`,`event_endtime`),
+	  ADD KEY `frm_name` (`frm_name`),
+	  ADD KEY `frm_name_2` (`frm_name`,`event_type`);
+	;""")
+    
+def create_events_coverage_table(cursor):
+    """Creates a table to keep data coverage statistics
+
+    Creates a simple table for storing data coverage statistics
+    """
+    cursor.execute("""
+    CREATE TABLE `events_coverage_30_min` (
+      `date` datetime NOT NULL,
+      `event_type` varchar(32) NOT NULL,
+      `count` int(10) unsigned NOT NULL DEFAULT '0',
+      PRIMARY KEY (`date`,`event_type`),
+      KEY `event_type` (`event_type`)
+    ) ENGINE=MyISAM DEFAULT CHARSET=utf8;""")        
 
 
 def enable_datasource(cursor, sourceId):
@@ -698,11 +760,9 @@ def enable_datasource(cursor, sourceId):
     """
     cursor.execute("UPDATE datasources SET enabled=1 WHERE id=%d;" % sourceId)
 
-
 def update_image_table_index(cursor):
     """Updates index on data table"""
     cursor.execute("OPTIMIZE TABLE data;")
-
 
 def mark_as_corrupt(cursor, filename, note):
     """Adds an image to the 'corrupt' database table"""
@@ -710,7 +770,6 @@ def mark_as_corrupt(cursor, filename, note):
                                                                     note)
 
     cursor.execute(sql)
-
 
 def get_datasources(cursor):
     """Returns a list of the known datasources"""
