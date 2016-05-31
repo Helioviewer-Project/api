@@ -91,9 +91,11 @@ function loadModule($params) {
         'getYouTubeAuth'         => 'Movies',
         'getUserVideos'          => 'Movies',
         'getEventFRMs'           => 'SolarEvents',
+        'getEvent'		         => 'SolarEvents',
         'getFRMs'                => 'SolarEvents',
         'getDefaultEventTypes'   => 'SolarEvents',
         'getEvents'              => 'SolarEvents',
+        'importEvents'           => 'SolarEvents',
         'getEventsByEventLayers' => 'SolarEvents',
         'getEventGlossary'       => 'SolarEvents'
     );

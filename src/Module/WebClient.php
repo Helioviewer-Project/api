@@ -561,12 +561,22 @@ class Module_WebClient implements Module {
      */
     public function getDataCoverage() {
 	    include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerLayers.php';
+	    include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerEvents.php';
+	    
 	    // Data Layers
 	    if(!empty($this->_options['imageLayers'])){
 		    $layers = new Helper_HelioviewerLayers($this->_options['imageLayers']);
 	    }else{
 		    $layers = null;
 	    }
+
+        // Events Layers
+	    if(!empty($this->_options['eventLayers'])){
+		    $events = new Helper_HelioviewerEvents($this->_params['eventLayers']);
+	    }else{
+		    $events = null;
+	    }
+        
         
         
         $start = @$this->_options['startDate'];
@@ -586,7 +596,7 @@ class Module_WebClient implements Module {
 		$endDate = gmstrftime('%Y-%m-%d %H:%M:%S', $end / 1000) - 60;
         
         // find the right range
-		if ($range < 105 * 60 * 1000) {
+		if ($range < 24 * 60 * 60 * 1000) {
 			$resolution = 'm';
 			
 		// 12 hours range loads hourly data
@@ -631,142 +641,30 @@ class Module_WebClient implements Module {
         include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
         $statistics = new Database_Statistics();
         
-        $eventsStr = '';
-        if(isset($this->_options['eventLayers']) && !empty($this->_options['eventLayers'])){
-	        $eventsStr = $this->_options['eventLayers'];
+        if($layers != null){
+	        $this->_printJSON(
+	            $statistics->getDataCoverage(
+		            $layers,
+	                $resolution,
+	                $dateStart,
+	                $dateEnd
+	            )
+	        );
+        }else if($events != null){
+	        if($resolution == '5m' || $resolution == '5m' || $resolution == '15m' ){
+		        $resolution = '30m';
+	        }
+	        $this->_printJSON(
+	            $statistics->getDataCoverageEvents(
+		            $events,
+	                $resolution,
+	                $dateStart,
+	                $dateEnd
+	            )
+	        );
         }
         
-        $this->_printJSON(
-            $statistics->getDataCoverage(
-	            $layers,
-                $resolution,
-                $dateStart,
-                $dateEnd,
-                $eventsStr
-            )
-        );
         
-        
-        
-        
-        
-        
-        /*    
-        // Define allowed date/time resolutions
-        $validRes = array('30m',
-                          '1h',
-                          '1D',
-                          '1W',
-                          '1M', 
-                          '3M',
-                          '1Y');
-        
-        $resolution = '1Y';
-        if ( isset($this->_options['resolution']) && !empty($this->_options['resolution'])) {
-
-            // Make sure a valid resolution was specified
-            if ( !in_array($this->_options['resolution'], $validRes) ) {
-                $msg = 'Invalid resolution specified. Valid options include: ' . implode(', ', $validRes);
-                throw new Exception($msg, 25);
-            }
-            $resolution = $this->_options['resolution'];
-        }
-
-        $magnitude   = intval($resolution);
-        $period_abbr = ltrim($resolution, '0123456789');
-
-
-        $date = false;
-        if ( isset($this->_options['endDate']) ) {
-            $formatArr = Array('Y-m-d\TH:i:s\Z',
-                               'Y-m-d\TH:i:s.u\Z',
-                               'Y-m-d\TH:i:s.\Z');
-            foreach ( $formatArr as $fmt ) {
-                $date = DateTime::createFromFormat(
-                    $fmt, $this->_options['endDate'] );
-                if ( $date !== false ) {
-                    break;
-                }
-            }
-        }
-        if ( $date === false ) {
-            $date = new DateTime();
-        }
-
-
-        switch ($period_abbr) {
-        case 'm':
-            $steps    = 30;
-            $stepSize = new DateInterval('PT'.($magnitude).'M');
-            $interval = new DateInterval('PT'.($magnitude*$steps).'M');
-            $endDate = clone $date;
-            $endDate->setTime(date_format($date,'H'), 59, 59);
-            $endDate->add(new DateInterval('PT1S'));
-            break;
-        case 'h':
-            $steps    = 24;
-            $stepSize = new DateInterval('PT'.($magnitude).'H');
-            $interval = new DateInterval('PT'.($magnitude*$steps).'H');
-            $date->setTime(date_format($date,'H'), 59, 59);
-            $endDate = clone $date;
-            $endDate->setTime(date_format($date,'H'), 59, 59);
-            $endDate->add(new DateInterval('PT1S'));
-            break;
-        case 'D':
-            $steps = 30;
-            $stepSize = new DateInterval('P'.($magnitude).'D');
-            $interval = new DateInterval('P'.($magnitude*$steps).'D');
-            $endDate = clone $date;
-            $endDate->setTime(23, 59, 59);
-            $endDate->add(new DateInterval('PT1S'));
-            break;
-        case 'W':
-            $steps = 36;
-            $stepSize = new DateInterval('P'.($magnitude).'W');
-            $interval = new DateInterval('P'.($magnitude*$steps).'W');
-            $endDate = clone $date;
-            $endDate->modify('first day of this week');
-            $endDate->add(new DateInterval('P2W'));
-            $endDate->setTime(23, 59, 59);
-            $endDate->add(new DateInterval('PT1S'));
-            break;
-        case 'M':
-            $steps = 36;
-            $stepSize = new DateInterval('P'.($magnitude).'M');
-            $interval = new DateInterval('P'.($magnitude*$steps).'M');
-            $endDate = clone $date;
-            $endDate->modify('last day of this month');
-            $endDate->setTime(23, 59, 59);
-            $endDate->add(new DateInterval('PT1S'));
-            break;
-        case 'Y':
-            $steps = 25;
-            $stepSize = new DateInterval('P'.($magnitude).'Y');
-            $interval = new DateInterval('P'.($magnitude*$steps).'Y');
-            $endDate = clone $date;
-            $endDate->setDate(date_format($date,'Y'), 12, 31);
-            $endDate->setTime(23, 59, 59);
-            $endDate->add(new DateInterval('PT1S'));
-            break;
-        default:
-            $msg = 'Invalid resolution specified. Valid options include: '
-                 . implode(', ', $validRes);
-            throw new Exception($msg, 25);
-        }
-
-        include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
-        $statistics = new Database_Statistics();
-
-        $this->_printJSON(
-            $statistics->getDataCoverage(
-	            $layers,
-                $resolution,
-                $endDate,
-                $interval,
-                $stepSize,
-                $steps
-            )
-        );*/
     }
 
     /**

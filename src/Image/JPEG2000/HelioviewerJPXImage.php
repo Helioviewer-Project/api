@@ -70,7 +70,8 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
                 
                 $this->_timestamps = $timestamps;
 	            $this->_images     = $images;
-
+                
+                
                 // Make sure that at least some movie frames were found
                 if ( sizeOf($images) > 0 ) {
                     $this->buildJPXImage($images, $linked);
@@ -84,7 +85,6 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
                 //$this->_removeFileGenerationReport();
                 throw new Exception('Error encountered during JPX creation: ' . $e->getMessage(), 60);
             }
-
             $this->_writeFileGenerationReport();
         }
         else {
