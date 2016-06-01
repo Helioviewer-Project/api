@@ -596,7 +596,7 @@ class Module_WebClient implements Module {
 		$endDate = gmstrftime('%Y-%m-%d %H:%M:%S', $end / 1000) - 60;
         
         // find the right range
-		if ($range < 24 * 60 * 60 * 1000) {
+		if ($range < 105 * 60 * 1000) {
 			$resolution = 'm';
 			
 		// 12 hours range loads hourly data
@@ -651,6 +651,10 @@ class Module_WebClient implements Module {
 	            )
 	        );
         }else if($events != null){
+	        if ($range < 24 * 60 * 60 * 1000) {
+				$resolution = 'm';
+			}
+			
 	        if($resolution == '5m' || $resolution == '5m' || $resolution == '15m' ){
 		        $resolution = '30m';
 	        }
