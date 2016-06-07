@@ -582,7 +582,7 @@ class Database_Statistics {
 				FROM events_coverage_30_min
 				WHERE ('.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
 				GROUP BY event_type, time
-				ORDER BY time;';
+				ORDER BY event_type, time;';
 	            /*$sql = 'SELECT 
 	            		event_endtime, 
 	            		event_starttime,
@@ -609,7 +609,7 @@ class Database_Statistics {
 				FROM events_coverage_30_min
 				WHERE ('.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
 				GROUP BY event_type, time
-				ORDER BY time;';
+				ORDER BY event_type, time;';
 	            /*$sql = 'SELECT 
 	            		event_endtime, 
 	            		event_starttime,
@@ -634,7 +634,7 @@ class Database_Statistics {
 				FROM events_coverage_30_min
 				WHERE ('.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
 				GROUP BY event_type, DATE(time)
-				ORDER BY DATE(time);';
+				ORDER BY event_type, DATE(time);';
 				
 				$beginInterval = new DateTime(date('Y-m-d 00:00:00', $startTimestamp));
 				$endInterval = new DateTime(date('Y-m-d 00:00:00', $endTimestamp));
@@ -652,7 +652,7 @@ class Database_Statistics {
 				FROM events_coverage_30_min
 				WHERE ('.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
 				GROUP BY event_type, time
-				ORDER BY time;';
+				ORDER BY event_type, time;';
 				
 				$beginInterval = new DateTime();
 				$endInterval = new DateTime();
@@ -670,7 +670,7 @@ class Database_Statistics {
 				FROM events_coverage_30_min
 				WHERE ('.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
 				GROUP BY event_type, DATE(DATE_FORMAT(date, "%Y-%m-01"))
-				ORDER BY DATE(DATE_FORMAT(date, "%Y-%m-01"));';
+				ORDER BY event_type, DATE(DATE_FORMAT(date, "%Y-%m-01"));';
 				
 				$beginInterval = new DateTime(date('Y-m-01 00:00:00', $startTimestamp));
 				$endInterval = new DateTime(date('Y-m-01 00:00:00', $endTimestamp));
@@ -686,7 +686,7 @@ class Database_Statistics {
 				FROM events_coverage_30_min
 				WHERE ('.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
 				GROUP BY event_type, DATE(DATE_FORMAT(date, "%Y-01-01"))
-				ORDER BY DATE(DATE_FORMAT(date, "%Y-01-01"));';
+				ORDER BY event_type, DATE(DATE_FORMAT(date, "%Y-01-01"));';
 				
 				$beginInterval = new DateTime(date('Y-01-01 00:00:00', $startTimestamp));
 				$endInterval = new DateTime(date('Y-01-01 00:00:00', $endTimestamp));
@@ -846,7 +846,7 @@ class Database_Statistics {
 	        }
         }else{
 	        ksort($sources);
-	        $i = 0;
+	        $i = 1;
 	        //foreach($sources as $k=>$series){
 		    //    $sources[$k]['data'] = array();
 		    //    foreach($series['data'] as $v){
