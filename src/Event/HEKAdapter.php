@@ -88,13 +88,13 @@ class Event_HEKAdapter {
      */
     public function getEvent($id = 0, $kb_archivid = '') {
 	    $event = array();
-	    
+
 	    include_once HV_ROOT_DIR.'/../src/Database/DbConnection.php';
         $dbConnection = new Database_DbConnection();
 	    $sql = '';
 	    
 	    if(!empty($kb_archivid)){
-	        $sql = sprintf( "SELECT *  FROM events WHERE kb_archivid = '%s' LIMIT 1;", (string)$kb_archivid );
+	        $sql = sprintf( "SELECT *  FROM events WHERE kb_archivid LIKE '%s' LIMIT 1;", (string)$kb_archivid );
         }else if($id > 0){
 	        $sql = sprintf( "SELECT *  FROM events WHERE id = '%d' LIMIT 1;", (int)$id );
         }
@@ -109,7 +109,7 @@ class Event_HEKAdapter {
 	
 	        $event =  $result->fetch_array(MYSQLI_ASSOC);
         }
-        
+
         if(isset($event['event_json']) && !empty($event['event_json'])){
 	        $event = json_decode($event['event_json']);
         }
@@ -351,7 +351,18 @@ class Event_HEKAdapter {
             . '/' . str_pad($hourOffset,2,'0',STR_PAD_LEFT)
             .':00:00.000Z-'. str_pad($hourOffset+HEK_CACHE_WINDOW_HOURS-1, 2,
             '0', STR_PAD_LEFT) . ':59:59.999Z.json';
-
+		
+		$dateStartSql = 
+			implode('-',
+	            Array( $dateArray['year'],
+	                   str_pad($dateArray['month'],2,'0',STR_PAD_LEFT),
+	                   str_pad($dateArray['day'],  2,'0',STR_PAD_LEFT) )
+	            ) . 
+	        ' ' . 
+	        implode(':', Array( $dateArray['hour'],
+	                   str_pad($dateArray['minute'],2,'0',STR_PAD_LEFT),
+	                   str_pad($dateArray['second'],  2,'0',STR_PAD_LEFT) )
+	    );	
 
         include_once HV_ROOT_DIR.'/../scripts/rot_hpc.php';
 
@@ -362,97 +373,122 @@ class Event_HEKAdapter {
         // spacecraft's position at the timestamp of the image(s) used for F/E
         // detection.
         $au_scalar = sunearth_distance($startTime);
-
-
-        // Fetch data from cache or live external API query
-
-        $fh = @fopen($cache_filename, 'r');
-        if ( $fh !== false && $options['force'] === false) {
-            $data = json_decode(@fread($fh, @filesize($cache_filename)));
-            @fclose($fh);
-        }
-        else {
-            // Fetch data from live external API and write to local JSON cache
-            // HEK query parameters
-            $params = array(
-                'event_starttime' => $externalAPIStartTime,
-                'event_endtime'   => $externalAPIEndTime,
-                'event_type'      => '**', // Fetch all event types always,
-                                           // filter by $options['event_type']
-                                           // later
-                'showtests'       => 'hide',
-                'result_limit'    => 1000
-            );
-            $response = JSON_decode($this->_proxy->query($params, true), true);
-            if ( count($response['result']) == 0 ) {
+		
+		if ( HV_DB_EVENTS == true ) {
+			include_once HV_ROOT_DIR.'/../src/Database/DbConnection.php';
+			$dbConnection = new Database_DbConnection();
+			
+			$sql = sprintf(
+                    "SELECT * FROM events WHERE '%s' BETWEEN event_starttime AND event_endtime ORDER BY event_starttime;",
+                    $dbConnection->link->real_escape_string($dateStartSql)
+                   );
+            try {
+                $result = $dbConnection->query($sql);
+            }
+            catch (Exception $e) {
                 return false;
             }
 
-            // Sort HEK results by parameter name for each event
-            $data = Array();
-            foreach ($response['result'] as $index => $event) {
-
-                if ( defined('PHP_VERSION_ID') && PHP_VERSION_ID >= 50400 ) {
-                    ksort($event, SORT_NATURAL | SORT_FLAG_CASE);
-                }
-                else {
-                    ksort($event, SORT_STRING);
-                }
-
-                // Build array of key/value pairs to use in marker labels
-                // and popups
-                $event['hv_labels_formatted']=$this->_buildLabelArray($event);
-
-                $data[$index] = $event;
+            // Append counts for each API action during that interval
+            // to the appropriate array
+            $data = array();
+            while ($event = $result->fetch_array(MYSQLI_ASSOC)) {
+                if(isset($event['event_json']) && !empty($event['event_json'])){
+			        $data[] = json_decode($event['event_json']);
+		        }
             }
+		}else{
+			// Fetch data from cache or live external API query
+	        $fh = @fopen($cache_filename, 'r');
+	        if ( $fh !== false && $options['force'] === false) {
+	            $data = json_decode(@fread($fh, @filesize($cache_filename)));
+	            @fclose($fh);
+	        }
+	        else {
+	            // Fetch data from live external API and write to local JSON cache
+	            // HEK query parameters
+	            $params = array(
+	                'event_starttime' => $externalAPIStartTime,
+	                'event_endtime'   => $externalAPIEndTime,
+	                'event_type'      => '**', // Fetch all event types always,
+	                                           // filter by $options['event_type']
+	                                           // later
+	                'showtests'       => 'hide',
+	                'result_limit'    => 1000
+	            );
+	            $response = JSON_decode($this->_proxy->query($params, true), true);
+	            if ( count($response['result']) == 0 ) {
+	                return false;
+	            }
+	
+	            // Sort HEK results by parameter name for each event
+	            $data = Array();
+	            foreach ($response['result'] as $index => $event) {
+	
+	                if ( defined('PHP_VERSION_ID') && PHP_VERSION_ID >= 50400 ) {
+	                    ksort($event, SORT_NATURAL | SORT_FLAG_CASE);
+	                }
+	                else {
+	                    ksort($event, SORT_STRING);
+	                }
+	
+	                // Build array of key/value pairs to use in marker labels
+	                // and popups
+	                $event['hv_labels_formatted']=$this->_buildLabelArray($event);
+	
+	                $data[$index] = $event;
+	            }
+	
+	            if ( $response['overmax'] === true ) {
+	                // TODO  Handle case where there are more results to fetch
+	                $error = new stdClass;
+	                $error->overmax = $response['overmax'];
+	
+	                return($error);
+	            }
+	
+	            // Only cache if results exist
+	            if ( count($data) > 0 ) {
+	
+	                // Check existence of cache directory
+	                if ( !@file_exists($cache_base_dir) ) {
+	                    @mkdir($cache_base_dir, 0777, true);
+	                    @chmod($cache_base_dir, 0777);
+	                }
+	
+	                $count = count($data);
+	                for ( $i=0; $i<$count; $i++ ) {
+	
+	                    // Generate polygon PNG for events that have a chain code
+	                    if ( $data[$i]['hpc_boundcc'] != '' ) {
+	                        $this->drawPolygon($data[$i], $au_scalar,
+	                            $polyOffsetX, $polyOffsetY, $polyURL,
+	                            $polyWidth, $polyHeight);
+	
+	                        // Save polygon info into $data to be cached
+	                        $data[$i]['hv_poly_hpc_x_ul_scaled_norot']
+	                            = $polyOffsetX;
+	                        $data[$i]['hv_poly_hpc_y_ul_scaled_norot']
+	                            = $polyOffsetY;
+	                        $data[$i]['hv_poly_url']
+	                            = $polyURL;
+	                        $data[$i]['hv_poly_width_max_zoom_pixels']
+	                            = $polyWidth;
+	                        $data[$i]['hv_poly_height_max_zoom_pixels']
+	                            = $polyHeight;
+	                    }
+	                }
+	
+	                // Write cache file
+	                $fh = @fopen($cache_filename, 'w');
+	                if ( $fh !== false ) {
+	                    @fwrite($fh, json_encode($data));
+	                }
+	            }
+	        }
+		}
 
-            if ( $response['overmax'] === true ) {
-                // TODO  Handle case where there are more results to fetch
-                $error = new stdClass;
-                $error->overmax = $response['overmax'];
-
-                return($error);
-            }
-
-            // Only cache if results exist
-            if ( count($data) > 0 ) {
-
-                // Check existence of cache directory
-                if ( !@file_exists($cache_base_dir) ) {
-                    @mkdir($cache_base_dir, 0777, true);
-                    @chmod($cache_base_dir, 0777);
-                }
-
-                $count = count($data);
-                for ( $i=0; $i<$count; $i++ ) {
-
-                    // Generate polygon PNG for events that have a chain code
-                    if ( $data[$i]['hpc_boundcc'] != '' ) {
-                        $this->drawPolygon($data[$i], $au_scalar,
-                            $polyOffsetX, $polyOffsetY, $polyURL,
-                            $polyWidth, $polyHeight);
-
-                        // Save polygon info into $data to be cached
-                        $data[$i]['hv_poly_hpc_x_ul_scaled_norot']
-                            = $polyOffsetX;
-                        $data[$i]['hv_poly_hpc_y_ul_scaled_norot']
-                            = $polyOffsetY;
-                        $data[$i]['hv_poly_url']
-                            = $polyURL;
-                        $data[$i]['hv_poly_width_max_zoom_pixels']
-                            = $polyWidth;
-                        $data[$i]['hv_poly_height_max_zoom_pixels']
-                            = $polyHeight;
-                    }
-                }
-
-                // Write cache file
-                $fh = @fopen($cache_filename, 'w');
-                if ( $fh !== false ) {
-                    @fwrite($fh, json_encode($data));
-                }
-            }
-        }
+        
 
         // No output is desired for cacheOnly requests.
         // Also no need to calculate differential rotation or to
@@ -1219,7 +1255,7 @@ class Event_HEKAdapter {
      * @return string
      */
     public function getEventById($eventId) {
-        $params = array(
+		$params = array(
             'event_starttime' => '0001-01-01T00:00:00Z',
             'event_endtime'   => '9999-01-01T00:00:00Z',
             'event_type'      => '**',
