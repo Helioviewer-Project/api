@@ -576,21 +576,10 @@ class Database_Statistics {
 				
 	            break;
 	        case '30m':
-	            $sql = 'SELECT date AS time,
-				       count,
-				       event_type
-				FROM events_coverage_30_min
-				WHERE ('.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
-				GROUP BY event_type, time
-				ORDER BY event_type, time;';
-	            /*$sql = 'SELECT 
-	            		event_endtime, 
-	            		event_starttime,
-				       event_type,
-				       frm_name
+	            $sql = 'SELECT event_type, event_starttime, event_endtime
 				FROM events
 				WHERE ('.$layersString.') AND (event_endtime >= "'.$dateStart.'" AND event_starttime <= "'.$dateEnd.'")
-				ORDER BY event_starttime;';*/
+				ORDER BY event_starttime;';
 				
 				$beginInterval = new DateTime();
 				$endInterval = new DateTime();
@@ -603,21 +592,10 @@ class Database_Statistics {
 				
 	            break;         
 	        case 'h':
-	            $sql = 'SELECT FROM_UNIXTIME(floor((UNIX_TIMESTAMP(date) / 3600)) * 3600) AS time,
-				       count,
-				       event_type
-				FROM events_coverage_30_min
-				WHERE ('.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
-				GROUP BY event_type, time
-				ORDER BY event_type, time;';
-	            /*$sql = 'SELECT 
-	            		event_endtime, 
-	            		event_starttime,
-						event_type,
-						frm_name
+	            $sql = 'SELECT event_type, event_starttime, event_endtime
 				FROM events
 				WHERE ('.$layersString.') AND (event_endtime >= "'.$dateStart.'" AND event_starttime <= "'.$dateEnd.'")
-				ORDER BY event_starttime;';*/
+				ORDER BY event_starttime;';
 				
 				$beginInterval = new DateTime(date('Y-m-d H:00:00', $startTimestamp));
 				$endInterval = new DateTime(date('Y-m-d H:00:00', $endTimestamp));
@@ -628,13 +606,13 @@ class Database_Statistics {
 				
 	            break;
 	        case 'D':
-	        	$sql = 'SELECT DATE(date) AS time,
-				       SUM(count) AS count,
+	        	$sql = 'SELECT DATE(event_starttime) AS event_starttime,
+				       COUNT(*) AS count,
 				       event_type
-				FROM events_coverage_30_min
-				WHERE ('.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
-				GROUP BY event_type, DATE(time)
-				ORDER BY event_type, DATE(time);';
+				FROM events
+				WHERE ('.$layersString.') AND (`event_starttime` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'") 
+				GROUP BY event_type, DATE(event_starttime)
+				ORDER BY event_type, DATE(event_starttime);';
 				
 				$beginInterval = new DateTime(date('Y-m-d 00:00:00', $startTimestamp));
 				$endInterval = new DateTime(date('Y-m-d 00:00:00', $endTimestamp));
@@ -646,13 +624,13 @@ class Database_Statistics {
 	        case 'W':
 	        	$weekTimestamp = 7 * 24 * 60 * 60;
 	            $sql = 'SELECT 
-	            		FROM_UNIXTIME(floor((UNIX_TIMESTAMP(date) / '.$weekTimestamp.')) * '.$weekTimestamp.') as time,
+	            		FROM_UNIXTIME(floor((UNIX_TIMESTAMP(event_starttime) / '.$weekTimestamp.')) * '.$weekTimestamp.') as event_starttime,
 						COUNT(*) AS count,
 				       event_type
-				FROM events_coverage_30_min
-				WHERE ('.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
-				GROUP BY event_type, time
-				ORDER BY event_type, time;';
+				FROM events
+				WHERE ('.$layersString.') AND `event_starttime` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
+				GROUP BY event_type, event_starttime
+				ORDER BY event_type, event_starttime;';
 				
 				$beginInterval = new DateTime();
 				$endInterval = new DateTime();
@@ -664,13 +642,13 @@ class Database_Statistics {
 				
 	            break;     
 	        case 'M':
-	        	$sql = 'SELECT DATE(DATE_FORMAT(date, "%Y-%m-01")) AS time,
-				       SUM(count) AS count,
+	        	$sql = 'SELECT DATE(DATE_FORMAT(event_starttime, "%Y-%m-01")) AS event_starttime,
+				       COUNT(*) AS count,
 				       event_type
-				FROM events_coverage_30_min
-				WHERE ('.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
-				GROUP BY event_type, DATE(DATE_FORMAT(date, "%Y-%m-01"))
-				ORDER BY event_type, DATE(DATE_FORMAT(date, "%Y-%m-01"));';
+				FROM events
+				WHERE ('.$layersString.') AND `event_starttime` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
+				GROUP BY event_type, DATE(DATE_FORMAT(event_starttime, "%Y-%m-01"))
+				ORDER BY event_type, DATE(DATE_FORMAT(event_starttime, "%Y-%m-01"));';
 				
 				$beginInterval = new DateTime(date('Y-m-01 00:00:00', $startTimestamp));
 				$endInterval = new DateTime(date('Y-m-01 00:00:00', $endTimestamp));
@@ -680,13 +658,13 @@ class Database_Statistics {
 				
 	            break;
 	        case 'Y':
-	            $sql = 'SELECT DATE(DATE_FORMAT(date, "%Y-01-01")) AS time,
-				       SUM(count) AS count,
+	            $sql = 'SELECT DATE(DATE_FORMAT(event_starttime, "%Y-01-01")) AS event_starttime,
+				       COUNT(*) AS count,
 				       event_type
-				FROM events_coverage_30_min
-				WHERE ('.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
-				GROUP BY event_type, DATE(DATE_FORMAT(date, "%Y-01-01"))
-				ORDER BY event_type, DATE(DATE_FORMAT(date, "%Y-01-01"));';
+				FROM events
+				WHERE ('.$layersString.') AND `event_starttime` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
+				GROUP BY event_type, DATE(DATE_FORMAT(event_starttime, "%Y-01-01"))
+				ORDER BY event_type, DATE(DATE_FORMAT(event_starttime, "%Y-01-01"));';
 				
 				$beginInterval = new DateTime(date('Y-01-01 00:00:00', $startTimestamp));
 				$endInterval = new DateTime(date('Y-01-01 00:00:00', $endTimestamp));
@@ -809,8 +787,8 @@ class Database_Statistics {
 					$j++;
 				}	
 			}else if(
-				$resolution == '5m' ||
-				$resolution == '15m'
+				$resolution == '30m' ||
+				$resolution == 'h'
 			){
 				foreach($emptyData as $timestamp => $d){
 					$start = (strtotime($row['event_starttime'])* 1000);
@@ -828,7 +806,7 @@ class Database_Statistics {
 					}
 				}
 			}else{
-				$timestamp = (strtotime($row['time'])* 1000);
+				$timestamp = (strtotime($row['event_starttime'])* 1000);
 				$dbData[$eventKey][$timestamp] = (int)$row['count'];
 			}
 			$i++;
