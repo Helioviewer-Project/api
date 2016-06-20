@@ -743,13 +743,15 @@ def create_events_coverage_table(cursor):
     Creates a simple table for storing data coverage statistics
     """
     cursor.execute("""
-    CREATE TABLE `events_coverage_30_min` (
-      `date` datetime NOT NULL,
-      `event_type` varchar(32) NOT NULL,
-      `count` int(10) unsigned NOT NULL DEFAULT '0',
-      PRIMARY KEY (`date`,`event_type`),
-      KEY `event_type` (`event_type`)
-    ) ENGINE=MyISAM DEFAULT CHARSET=utf8;""")        
+    CREATE TABLE `events_coverage` (
+	  `date` datetime NOT NULL,
+	  `period` varchar(4) NOT NULL DEFAULT '30m',
+	  `event_type` varchar(32) NOT NULL,
+	  `count` int(11) NOT NULL DEFAULT '0',
+	  PRIMARY KEY (`date`,`period`,`event_type`) USING BTREE,
+	  KEY `event_type` (`event_type`),
+	  KEY `period` (`period`,`event_type`)
+	) ENGINE=MyISAM DEFAULT CHARSET=utf8;""")        
 
 
 def enable_datasource(cursor, sourceId):

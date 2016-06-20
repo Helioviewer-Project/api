@@ -655,7 +655,7 @@ class Module_WebClient implements Module {
 				$resolution = 'm';
 			}
 			
-	        if($resolution == '5m' || $resolution == '5m' || $resolution == '15m' ){
+	        if($resolution == '5m' || $resolution == '15m' ){
 		        $resolution = '30m';
 	        }
 	        $this->_printJSON(
