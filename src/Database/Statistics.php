@@ -869,7 +869,9 @@ class Database_Statistics {
 	        
         }
         
-        //$sources = array_values($sources);
+        
+        ksort($sources);
+        $sources = array_values($sources);
         return json_encode($sources);
 		
     }
@@ -939,7 +941,7 @@ class Database_Statistics {
         $result = $this->_dbConnection->query($sql);
         
 		// 30m Update Events Data coverage
-		$endDate 	= new DateTime(date("Y-m-d H:00:00",time()));
+		$endDate 	= new DateTime(date("Y-m-d 23:59:59",time()));
 		$startDate 	= new DateTime(date("Y-m-d 00:00:00",time()));
 		$startDate 	= $startDate->modify($eventsInterval);
 		
@@ -964,7 +966,7 @@ class Database_Statistics {
 		}
 		
 		// 1hour
-		$endDate 	= new DateTime(date("Y-m-d H:00:00",time()));
+		$endDate 	= new DateTime(date("Y-m-d 23:59:59",time()));
 		$startDate 	= new DateTime(date("Y-m-d 00:00:00",time()));
 		$startDate 	= $startDate->modify($eventsInterval);
 		
@@ -990,7 +992,7 @@ class Database_Statistics {
 		}  
 		
 		// 1day
-		$endDate 	= new DateTime(date("Y-m-d H:00:00",time()));
+		$endDate 	= new DateTime(date("Y-m-d 23:59:59",time()));
 		$startDate 	= new DateTime(date("Y-m-d 00:00:00",time()));
 		$startDate 	= $startDate->modify($eventsInterval);
 
@@ -1042,7 +1044,7 @@ class Database_Statistics {
 		}
 		
 		// 1month
-		$endDate 	= new DateTime(date("Y-m-d H:00:00",time()));
+		$endDate 	= new DateTime(date("Y-m-d 23:59:59",time()));
 		$startDate 	= new DateTime(date("Y-m-01 00:00:00",time()));
 		$startDate 	= $startDate->modify('-2 MONTH');
 
@@ -1068,7 +1070,7 @@ class Database_Statistics {
 		}	
 		
 		// 1year
-		$endDate 	= new DateTime(date("Y-m-d H:00:00",time()));
+		$endDate 	= new DateTime(date("Y-m-d 23:59:59",time()));
 		$startDate 	= new DateTime(date("Y-01-01 00:00:00",time()));
 		$startDate = $startDate->modify('-2 YEAR');
 
