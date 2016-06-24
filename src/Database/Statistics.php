@@ -488,7 +488,7 @@ class Database_Statistics {
     /**
      * Gets latest datasource coverage and return as JSON
      */
-    public function getDataCoverageEvents($events, $resolution, $startDate, $endDate) {
+    public function getDataCoverageEvents($events, $resolution, $startDate, $endDate, $currentDate) {
 
         require_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
 		
@@ -503,6 +503,7 @@ class Database_Statistics {
 		
 		$startTimestamp = $startDate->getTimestamp();
 		$endTimestamp = $endDate->getTimestamp();
+		$currentTimestamp = $currentDate->getTimestamp();
 		
 		$dateStartISO = str_replace("Z", "", toISOString($startDate));
 		$dateEndISO = str_replace("Z", "", toISOString($endDate));
@@ -728,7 +729,7 @@ class Database_Statistics {
 					'data' => array(),
 					'event_type' => $row['event_type'],
 					'res' => $resolution,
-					'sql' => $sql
+					//'sql' => $sql
 				);
 			}
 			if(!isset($dbData[$eventKey])){
@@ -768,6 +769,11 @@ class Database_Statistics {
 						'event_starttime' => $row['event_starttime'],
 						'event_endtime' => $row['event_endtime']
 					);
+					//echo $timeStart.' | '.($currentTimestamp*1000).' | '.$timeEnd,'<br/>';
+					if($currentTimestamp >= $timeStart && $currentTimestamp <= $timeEnd){
+						$sources[$eventKey]['data'][$j]['borderColor'] = '#ffffff';
+					}
+					
 					$uniqueIds[$row['frm_specificid']] = $j;
 					$j++;
 				//}	

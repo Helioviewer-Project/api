@@ -587,8 +587,13 @@ class Module_WebClient implements Module {
 		if ($end && !preg_match('/^[0-9]+$/', $end)) {
 			die("Invalid end parameter: $end");
 		}
+		$current = @$this->_options['currentDate'];
+		if ($current && !preg_match('/^[0-9]+$/', $current)) {
+			die("Invalid end parameter: $current");
+		}
 		if (!$start) $start = 0;
 		if (!$end) $end = time() * 1000;
+		if (!$current) $current = 0;
         
         // set some utility variables
 		$range = $end - $start;
@@ -637,6 +642,12 @@ class Module_WebClient implements Module {
         }else{
 	        $dateStart->setTimestamp( $start/1000);
         }
+        $dateCurrent = new DateTime();
+        if ( isset($this->_options['currentDate']) ) {
+            $dateCurrent->setTimestamp( $this->_options['currentDate']);
+        }else{
+	        $dateCurrent->setTimestamp( $current);
+        }
         
         include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
         $statistics = new Database_Statistics();
@@ -663,7 +674,8 @@ class Module_WebClient implements Module {
 		            $events,
 	                $resolution,
 	                $dateStart,
-	                $dateEnd
+	                $dateEnd,
+	                $dateCurrent
 	            )
 	        );
         }
@@ -1178,7 +1190,7 @@ class Module_WebClient implements Module {
             break;
         case 'getDataCoverage':
             $expected = array(
-                'optional' => array('resolution','startDate','endDate','callback','imageLayers','startDate','endDate','eventLayers'),
+                'optional' => array('resolution','currentDate','startDate','endDate','callback','imageLayers','startDate','endDate','eventLayers'),
                 'alphanum' => array('resolution', 'callback'),
                 'dates'    => array()
             );
