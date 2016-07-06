@@ -513,17 +513,26 @@ class Database_Statistics {
 		if(!$events){
 			return json_encode(array());
 		}
-		
+				
 		$eventTypes = array();
 		$layersString = '';
 		foreach($events->toArray() as $layer){
-			if(!empty($layersString)){
-				$layersString .= ' OR ';
-			}
 			
-			if(!isset($eventTypes[$layer['event_type']])){
+			
+			if(!empty($layer['frm_name']) && $layer['frm_name'] != 'all'){
+				$frms = explode(';', $layer['frm_name']);
+				foreach($frms as $frm_name){
+					if(!empty($layersString)){
+						$layersString .= ' OR ';
+					}
+					$frm_name = str_replace('_', ' ', $frm_name);
+					$layersString .= '(event_type = "'.$layer['event_type'].'" AND frm_name = "'.$frm_name.'")';
+				}
+			}else{
+				if(!empty($layersString)){
+					$layersString .= ' OR ';
+				}
 				$layersString .= 'event_type = "'.$layer['event_type'].'"';
-				$eventTypes[$layer['event_type']] = 1;
 			}
         }
         
@@ -577,9 +586,13 @@ class Database_Statistics {
 				
 	            break;
 	        case '30m':
-	            $sql = 'SELECT *
+	            $sql = 'SELECT 
+	            	date,
+	            	event_type,
+	            	SUM(count) as count
 				FROM events_coverage
 				WHERE period = "30m" AND ('.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
+				GROUP BY date, event_type
 				ORDER BY date;';
 				
 				$beginInterval = new DateTime();
@@ -593,9 +606,13 @@ class Database_Statistics {
 				
 	            break;         
 	        case 'h':
-	            $sql = 'SELECT *
+	            $sql = 'SELECT 
+	            	date,
+	            	event_type,
+	            	SUM(count) as count
 				FROM events_coverage
 				WHERE period = "1H" AND ('.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
+				GROUP BY date, event_type
 				ORDER BY date;';
 				
 				$beginInterval = new DateTime(date('Y-m-d H:00:00', $startTimestamp));
@@ -607,9 +624,13 @@ class Database_Statistics {
 				
 	            break;     
 	        case 'D':
-	        	$sql = 'SELECT *
+	        	$sql = 'SELECT 
+	            	date,
+	            	event_type,
+	            	SUM(count) as count
 				FROM events_coverage
 				WHERE period = "1D" AND ('.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
+				GROUP BY date, event_type
 				ORDER BY date;';
 				
 				$beginInterval = new DateTime(date('Y-m-d 00:00:00', $startTimestamp));
@@ -620,9 +641,13 @@ class Database_Statistics {
 				
 	            break;
 	        case 'W':
-				$sql = 'SELECT *
+				$sql = 'SELECT 
+	            	date,
+	            	event_type,
+	            	SUM(count) as count
 				FROM events_coverage
 				WHERE period = "1W" AND ('.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
+				GROUP BY date, event_type
 				ORDER BY date;';
 				
 				$beginInterval = new DateTime(date('Y-m-d 00:00:00', strtotime('Last Monday', $startTimestamp)));
@@ -633,9 +658,13 @@ class Database_Statistics {
 				
 	            break;     
 	        case 'M':
-	        	$sql = 'SELECT *
+	        	$sql = 'SELECT 
+	            	date,
+	            	event_type,
+	            	SUM(count) as count
 				FROM events_coverage
 				WHERE period = "1M" AND ('.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
+				GROUP BY date, event_type
 				ORDER BY date;';
 				
 				$beginInterval = new DateTime(date('Y-m-01 00:00:00', $startTimestamp));
@@ -646,9 +675,13 @@ class Database_Statistics {
 				
 	            break;
 	        case 'Y':
-	            $sql = 'SELECT *
+	            $sql = 'SELECT 
+	            	date,
+	            	event_type,
+	            	SUM(count) as count
 				FROM events_coverage
 				WHERE period = "1Y" AND ('.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
+				GROUP BY date, event_type
 				ORDER BY date;';
 				
 				$beginInterval = new DateTime(date('Y-01-01 00:00:00', $startTimestamp));
@@ -662,7 +695,7 @@ class Database_Statistics {
 	            $msg = 'Invalid resolution specified. Valid options include: ' . implode(', ', $validRes);
 	            throw new Exception($msg, 25);
 	    }
-		
+
 		//build 0 data array
 		if($resolution != 'm'){
 			$emptyData = array();
@@ -886,8 +919,7 @@ class Database_Statistics {
      * Update data source coverage data for the last 7 Days
      * (or specified time period).
      */
-    public function updateDataCoverage($period=null, $t=0) {
-
+    public function updateDataCoverage($period=null) {
         if ( gettype($period) == 'string' &&
              preg_match('/^([0-9]+)([mhDMY])$/', $period, $matches) === 1 ) {
 
@@ -957,16 +989,17 @@ class Database_Statistics {
 			$startDate = $startDate->modify('+30 MINUTE');  
 			$endDateStr = $startDate->format('Y-m-d H:i:s');
 
-			$sql = 'REPLACE INTO events_coverage (date, period, event_type, count)
+			$sql = 'REPLACE INTO events_coverage (date, period, event_type, frm_name, count)
 				SELECT 
 					SQL_BIG_RESULT SQL_BUFFER_RESULT SQL_NO_CACHE
 						"'.$startDateStr.'" AS bin, 
 						"30m" AS period, 
 						event_type,
+						frm_name,
 			            COUNT(id)
 			        FROM events
 			        WHERE (event_endtime >= "'.$startDateStr.'" AND event_starttime <= "'.$endDateStr.'") 
-			        GROUP BY bin, event_type;';
+			        GROUP BY bin, event_type, frm_name;';
 
             $result = $this->_dbConnection->query($sql);      
 		}
@@ -983,16 +1016,17 @@ class Database_Statistics {
 			$chankEndDate = clone $startDate;
 			$endDateStr = $chankEndDate->modify('-1 Second')->format('Y-m-d H:i:s');
 
-			$sql = 'REPLACE INTO events_coverage (date, period, event_type, count)
+			$sql = 'REPLACE INTO events_coverage (date, period, event_type, frm_name, count)
 				SELECT 
 					SQL_BIG_RESULT SQL_BUFFER_RESULT SQL_NO_CACHE
 						"'.$startDateStr.'" AS bin, 
 						"1H" AS period, 
 						event_type,
+						frm_name,
 			            COUNT(id)
 			        FROM events
 			        WHERE (event_endtime >= "'.$startDateStr.'" AND event_starttime <= "'.$endDateStr.'") 
-			        GROUP BY bin, event_type;';
+			        GROUP BY bin, event_type, frm_name;';
 
             $result = $this->_dbConnection->query($sql);      
 		}  
@@ -1009,16 +1043,17 @@ class Database_Statistics {
 			$chankEndDate = clone $startDate;
 			$endDateStr = $chankEndDate->modify('-1 Second')->format('Y-m-d H:i:s');
 
-			$sql = 'REPLACE INTO events_coverage (date, period, event_type, count)
+			$sql = 'REPLACE INTO events_coverage (date, period, event_type, frm_name, count)
 				SELECT 
 					SQL_BIG_RESULT SQL_BUFFER_RESULT SQL_NO_CACHE
 						"'.$startDateStr.'" AS bin, 
 						"1D" AS period, 
 						event_type,
+						frm_name,
 			            COUNT(id)
 			        FROM events
 			        WHERE (event_endtime >= "'.$startDateStr.'" AND event_starttime <= "'.$endDateStr.'") 
-			        GROUP BY bin, event_type;';
+			        GROUP BY bin, event_type, frm_name;';
 
             $result = $this->_dbConnection->query($sql);      
 		}
@@ -1035,16 +1070,17 @@ class Database_Statistics {
 			$chankEndDate = clone $startDate;
 			$endDateStr = $chankEndDate->modify('+1 DAY')->format('Y-m-d 00:00:00');
 
-			$sql = 'REPLACE INTO events_coverage (date, period, event_type, count)
+			$sql = 'REPLACE INTO events_coverage (date, period, event_type, frm_name, count)
 				SELECT 
 					SQL_BIG_RESULT SQL_BUFFER_RESULT SQL_NO_CACHE
 						"'.$endDateStr.'" AS bin, 
 						"1W" AS period, 
 						event_type,
+						frm_name,
 			            COUNT(id)
 			        FROM events
 			        WHERE (event_endtime >= "'.$endDateStr.'" AND event_starttime <= "'.$startDateStr.'") 
-			        GROUP BY bin, event_type;';
+			        GROUP BY bin, event_type, frm_name;';
 
             $result = $this->_dbConnection->query($sql);      
 		}
@@ -1061,16 +1097,17 @@ class Database_Statistics {
 			$chankEndDate = clone $startDate;
 			$endDateStr = $chankEndDate->modify('-1 Second')->format('Y-m-d H:i:s');
 
-			$sql = 'REPLACE INTO events_coverage (date, period, event_type, count)
+			$sql = 'REPLACE INTO events_coverage (date, period, event_type, frm_name, count)
 				SELECT 
 					SQL_BIG_RESULT SQL_BUFFER_RESULT SQL_NO_CACHE
 						"'.$startDateStr.'" AS bin, 
 						"1M" AS period, 
 						event_type,
+						frm_name,
 			            COUNT(id)
 			        FROM events
 			        WHERE (event_endtime >= "'.$startDateStr.'" AND event_starttime <= "'.$endDateStr.'") 
-			        GROUP BY bin, event_type;';
+			        GROUP BY bin, event_type, frm_name;';
 
             $result = $this->_dbConnection->query($sql);      
 		}	
@@ -1087,16 +1124,17 @@ class Database_Statistics {
 			$chankEndDate = clone $startDate;
 			$endDateStr = $chankEndDate->modify('-1 Second')->format('Y-m-d H:i:s');
 
-			$sql = 'REPLACE INTO events_coverage (date, period, event_type, count)
+			$sql = 'REPLACE INTO events_coverage (date, period, event_type, frm_name, count)
 				SELECT 
 					SQL_BIG_RESULT SQL_BUFFER_RESULT SQL_NO_CACHE
 						"'.$startDateStr.'" AS bin, 
 						"1Y" AS period, 
 						event_type,
+						frm_name,
 			            COUNT(id)
 			        FROM events
 			        WHERE (event_endtime >= "'.$startDateStr.'" AND event_starttime <= "'.$endDateStr.'") 
-			        GROUP BY bin, event_type;';
+			        GROUP BY bin, event_type, frm_name;';
 
             $result = $this->_dbConnection->query($sql);      
 		}
@@ -1106,7 +1144,7 @@ class Database_Statistics {
             'result'     => $result,
             'interval'     => $interval
         );
-		
+
         return json_encode($output);
     }
 

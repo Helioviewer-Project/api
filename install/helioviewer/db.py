@@ -747,10 +747,12 @@ def create_events_coverage_table(cursor):
 	  `date` datetime NOT NULL,
 	  `period` varchar(4) NOT NULL DEFAULT '30m',
 	  `event_type` varchar(32) NOT NULL,
+	  `frm_name` varchar(128) NOT NULL DEFAULT '',
 	  `count` int(11) NOT NULL DEFAULT '0',
-	  PRIMARY KEY (`date`,`period`,`event_type`) USING BTREE,
+	  PRIMARY KEY (`date`,`period`,`event_type`,`frm_name`),
 	  KEY `event_type` (`event_type`),
-	  KEY `period` (`period`,`event_type`)
+	  KEY `period` (`period`,`event_type`),
+	  KEY `date` (`date`,`period`,`event_type`)
 	) ENGINE=MyISAM DEFAULT CHARSET=utf8;""")        
 
 
