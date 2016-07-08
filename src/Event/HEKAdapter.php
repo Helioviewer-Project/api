@@ -705,7 +705,8 @@ class Event_HEKAdapter {
                     foreach ( $events as $i => $event ) {
                         if ( $event['event_type'] != 'AR' ||
                              !isset($event['ar_noaanum']) ||
-                             $event['ar_noaanum'] == '' ) {
+                             $event['ar_noaanum'] == '' ||
+                             $event['frm_name'] != 'NOAA SWPC Observer' ) {
 
                            continue;
                         }
