@@ -495,6 +495,9 @@ class Database_Statistics {
 		$distance = $endDate->getTimestamp() - $startDate->getTimestamp();
 		$interval = new DateInterval('PT'.$distance.'S');
 		
+		$visibleStartTimestamp = $startDate->getTimestamp();
+		$visibleEndTimestamp = $endDate->getTimestamp();
+		
 		$startDate->modify('-'.$distance.' seconds');
 		$endDate->modify('+'.$distance.' seconds');
 		
@@ -707,6 +710,7 @@ class Database_Statistics {
 		//Procceed SQL Data
 		$result = $this->_dbConnection->query($sql);
 		$dbData = array();
+		$dbVisibleData = array();
 		$eventsKeys = array();
 		$i = 1;
 		$uniqueIds = array();
@@ -749,20 +753,14 @@ class Database_Statistics {
 			//Event Name
 			$key = $row['event_type'];
 			
-				
-			//Add event name to keys array and assign order
-			//if(!isset($eventsKeys[$key])){
-			//	$eventsKeys[$key] = count($eventsKeys);
-			//}
-			
 			$eventKey = $eventsKeys[$key];
 
 			if(!isset($sources[$eventKey]) ){
+				$dbVisibleData[$eventKey] = false;
 				$sources[$eventKey] = array(
 					'data' => array(),
 					'event_type' => $row['event_type'],
-					'res' => $resolution,
-					//'sql' => $sql
+					'res' => $resolution
 				);
 			}
 			if(!isset($dbData[$eventKey])){
@@ -780,58 +778,37 @@ class Database_Statistics {
 					$timeEnd = ($endInterval->getTimestamp() * 1000);
 				}
 				
-				/*if(!empty($row['frm_specificid']) && isset($uniqueIds[$row['frm_specificid']])){
-					$id = $uniqueIds[$row['frm_specificid']];//if($id == 24){echo $id.' '.$row['frm_specificid'].' ';print_r($row);}
-					if($sources[$eventKey]['data'][$id]['x'] > $timeStart){
-						$sources[$eventKey]['data'][$id]['x'] = $timeStart;
-					}
-					if($sources[$eventKey]['data'][$id]['x2'] < $timeEnd){
-						$sources[$eventKey]['data'][$id]['x2'] = $timeEnd;
-					}
-				}else{*/
-					$sources[$eventKey]['data'][$j] = array(
-						'x' => $timeStart,
-						'x2' => $timeEnd,
-						'y' => $j,//(($eventKey * 10) + $i),//$eventKey
-						'kb_archivid' => $row['kb_archivid'],
-						'hv_labels_formatted' => json_decode($row['hv_labels_formatted']),
-						'event_type' => $row['event_type'],
-						'frm_name' => $row['frm_name'],
-						'frm_specificid' => $row['frm_specificid'],
-						'event_peaktime' => $row['event_peaktime'],
-						'event_starttime' => $row['event_starttime'],
-						'event_endtime' => $row['event_endtime']
-					);
-					//echo $timeStart.' | '.($currentTimestamp*1000).' | '.$timeEnd,'<br/>';
-					if($currentTimestamp >= $timeStart && $currentTimestamp <= $timeEnd){
-						$sources[$eventKey]['data'][$j]['borderColor'] = '#ffffff';
-					}
-					
-					$uniqueIds[$row['frm_specificid']] = $j;
-					$j++;
-				//}	
-			/*}else if(
-				$resolution == '30m' ||
-				$resolution == 'h'
-			){
-				foreach($emptyData as $timestamp => $d){
-					$start = (strtotime($row['event_starttime'])* 1000);
-					$end = (strtotime($row['event_endtime'])* 1000);
-					
-					if(!isset($dbData[$eventKey][$timestamp])){
-						$dbData[$eventKey][$timestamp] = 0;
-					}
-					
-					if(
-						$start <= ($timestamp + $periodSeconds) && 
-						$end >= $timestamp
-					){
-						$dbData[$eventKey][$timestamp]++;
-					}
-				}*/
+				$sources[$eventKey]['data'][$j] = array(
+					'x' => $timeStart,
+					'x2' => $timeEnd,
+					'y' => $j,//(($eventKey * 10) + $i),//$eventKey
+					'kb_archivid' => $row['kb_archivid'],
+					'hv_labels_formatted' => json_decode($row['hv_labels_formatted']),
+					'event_type' => $row['event_type'],
+					'frm_name' => $row['frm_name'],
+					'frm_specificid' => $row['frm_specificid'],
+					'event_peaktime' => $row['event_peaktime'],
+					'event_starttime' => $row['event_starttime'],
+					'event_endtime' => $row['event_endtime']
+				);
+
+				if($currentTimestamp >= $timeStart && $currentTimestamp <= $timeEnd){
+					$sources[$eventKey]['data'][$j]['borderColor'] = '#ffffff';
+				}
+
+				if($visibleEndTimestamp >= strtotime($row['event_starttime']) && $visibleStartTimestamp <= strtotime($row['event_endtime'])){
+					$dbVisibleData[$eventKey] = true;
+				}
+				
+				$uniqueIds[$row['frm_specificid']] = $j;
+				$j++;
 			}else{
 				$timestamp = (strtotime($row['date'])* 1000);
 				$dbData[$eventKey][$timestamp] = (int)$row['count'];
+				
+				if($visibleEndTimestamp >= strtotime($row['date']) && $visibleStartTimestamp <= strtotime($row['date'])){
+					$dbVisibleData[$eventKey] = true;
+				}
 			}
 			$i++;
 		}
@@ -849,14 +826,6 @@ class Database_Statistics {
         }else{
 	        ksort($sources);
 	        $i = 1;
-	        //foreach($sources as $k=>$series){
-		    //    $sources[$k]['data'] = array();
-		    //    foreach($series['data'] as $v){
-			//        $v['y'] = $i;
-			//        $sources[$k]['data'][] = $v;
-			//        $i++;
-		    //    }
-	        //}
 	        
 			$levels = array();
 	        foreach($sources as $k=>$series){
@@ -907,6 +876,13 @@ class Database_Statistics {
 	        }
 	        
         }
+        
+        //Remove not visible events
+        //foreach($dbVisibleData as $k => $isVisible){
+	    //    if(!$isVisible){
+		//        unset($sources[$k]);
+	    //    }
+        //}
         
         
         ksort($sources);
