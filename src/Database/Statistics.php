@@ -760,7 +760,8 @@ class Database_Statistics {
 				$sources[$eventKey] = array(
 					'data' => array(),
 					'event_type' => $row['event_type'],
-					'res' => $resolution
+					'res' => $resolution,
+					'showInLegend' => true
 				);
 			}
 			if(!isset($dbData[$eventKey])){
@@ -905,11 +906,11 @@ class Database_Statistics {
         }
         
         //Remove not visible events
-        //foreach($dbVisibleData as $k => $isVisible){
-	    //    if(!$isVisible){
-		//        unset($sources[$k]);
-	    //    }
-        //}
+        foreach($dbVisibleData as $k => $isVisible){
+	        if(!$isVisible){
+		        $sources[$k]['showInLegend'] = false;
+	        }
+        }
         
         
         ksort($sources);
