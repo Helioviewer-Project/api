@@ -833,6 +833,20 @@ class Database_Statistics {
 		        //$i = count($levels);
 		        //$levels = array();
 		        $data = array();
+				$data[] = array(
+					'x' => ($beginInterval->getTimestamp() * 1000),
+					'x2' => ($beginInterval->getTimestamp() * 1000),
+					'y' => 0,
+					'kb_archivid' => '',
+					'hv_labels_formatted' => '',
+					'event_type' => '',
+					'frm_name' => '',
+					'frm_specificid' => '',
+					'event_peaktime' => '',
+					'event_starttime' => '',
+					'event_endtime' => ''
+				);
+
 				foreach($series['data'] as $dk => $event){
 				    //was this event placed in a level already?
 				    $placed = false;
@@ -858,22 +872,35 @@ class Database_Statistics {
 				        $i++;
 				    }
 				}
+				$data[] = array(
+					'x' => ($endInterval->getTimestamp() * 1000) - 1000,
+					'x2' => ($endInterval->getTimestamp() * 1000) + 1000,
+					'y' => 0,
+					'kb_archivid' => '',
+					'hv_labels_formatted' => '',
+					'event_type' => '',
+					'frm_name' => '',
+					'frm_specificid' => '',
+					'event_peaktime' => '',
+					'event_starttime' => '',
+					'event_endtime' => ''
+				);
 				$sources[$k]['data'] = $data;
 	        }
 	        
 	        //To avoid Highcharts error we need to create at least one empty row
-	        if(count($sources) < 1){
+	        /*if(count($sources) < 1){
 		        foreach($eventTypes as $e=>$k){
 			        $sources[] = array(
 						'data' => array(
-							array(($beginInterval->getTimestamp() * 1000),($beginInterval->getTimestamp() * 1000),0),
-							array(($endInterval->getTimestamp() * 1000),($endInterval->getTimestamp() * 1000),0),
+							array(($beginInterval->getTimestamp() * 1000),($beginInterval->getTimestamp() * 1000) + 1000,0),
+							array(($endInterval->getTimestamp() * 1000) - 1000,($endInterval->getTimestamp() * 1000),0),
 						),
 						'event_type' => $e,
 						'res' => $resolution
 					);
 		        }
-	        }
+	        }*/
 	        
         }
         
