@@ -724,8 +724,8 @@ def create_events_table(cursor):
 	  `event_json` text
 	) ENGINE=MyISAM DEFAULT CHARSET=utf8;""")
 	
-	cursor.execute("""
-	ALTER TABLE `events`
+    cursor.execute("""
+    ALTER TABLE `events`
 	  ADD PRIMARY KEY (`id`),
 	  ADD UNIQUE KEY `kb_archivid` (`kb_archivid`) USING BTREE,
 	  ADD KEY `concept` (`concept`),
