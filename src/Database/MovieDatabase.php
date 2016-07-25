@@ -293,8 +293,7 @@ class Database_MovieDatabase {
             $filename = urlencode($since.'_'.$num.'.cache');
             $filepath = $cachedir.'/'.$filename;
 
-            $cache = new Helper_Serialize($cachedir,
-                $filename, 90);
+            $cache = new Helper_Serialize($cachedir, $filename, 90);
 
             // Read cache (and invalidate if older than
             // Helper_Serialize::_maxAgeSec)
@@ -311,18 +310,21 @@ class Database_MovieDatabase {
             $date = isoDateToMySQL($since);
 
             $sql = sprintf(
-                       'SELECT movieId, youtubeId, timestamp '
-                     . 'FROM youtube '
-                     . 'WHERE '
-                     .     'shared=1 AND '
-                     .     'youtubeId IS NOT NULL AND '
-                     .     'timestamp > "%s" '
-                     . 'ORDER BY id DESC '
-                     . 'LIMIT %d;',
-                     mysqli_real_escape_string($this->_dbConnection->link,
-                        $since),
-                     (int)$num
-                   );
+                   'SELECT youtube.movieId, youtube.youtubeId, youtube.timestamp, youtube.title, youtube.description, '
+                 . 'youtube.keywords, youtube.shared, movies.imageScale, movies.dataSourceString, movies.eventSourceString, '
+                 . 'movies.movieLength, movies.width, movies.height, movies.startDate, movies.endDate '
+                 . 'FROM youtube '
+                 . 'LEFT JOIN movies '
+                 . 'ON movies.id = youtube.movieId '
+                 . 'WHERE '
+                 .     'youtube.shared>0 AND '
+                 .     'youtube.youtubeId IS NOT NULL AND '
+                 .     'youtube.timestamp > "%s" '
+                 . 'ORDER BY youtube.timestamp DESC '
+                 . 'LIMIT %d;',
+                 mysqli_real_escape_string($this->_dbConnection->link, $date),
+                 (int)$num
+               );
             try {
                 $result = $this->_dbConnection->query($sql);
             }
@@ -343,6 +345,115 @@ class Database_MovieDatabase {
         }
 
         return $videos;
+    }
+
+    /**
+     * Get a list of movies recently shared on YouTube from a cache file
+     * or from a live database query.
+     *
+     * @param int  $num    Number of movies to return
+     * @param str  $since  ISO date
+     * @param bool $force  Force reading from database instead of cache
+     *
+     * @return arr Array containing movieId, youtubeId, timestamp for each
+     *             of the matched movies or boolean false.
+     */
+    public function getSharedVideosByTime($num, $date) {
+		/*ini_set('memory_limit', '8000M');
+		ini_set('max_execution_time', 0);
+		// Load data directly from the database
+        $this->_dbConnect();
+        try {
+            $result = $this->_dbConnection->query('SELECT * FROM youtube WHERE shared>0');
+        }
+        catch (Exception $e) {
+            return false;
+        }
+		$exist = 0;
+		$notexist = 0;
+        while ($row = $result->fetch_array(MYSQLI_ASSOC)) {
+            include_once HV_ROOT_DIR.'/../src/Net/Proxy.php';
+			$videoID = $row['youtubeId'];
+			$theURL = "http://www.youtube.com/oembed?url=http://www.youtube.com/watch?v=$videoID&format=json";
+	        $proxy = new Net_Proxy($theURL);
+		    $response = $proxy->query(array(), true);
+		    if($response == 'Not Found' || $response == 'Unauthorized'){
+			    $notexist++;
+			    echo ' OR id='.$row['id'].'';
+			     //$sql2 = sprintf('UPDATE youtube SET shared = 0 WHERE id = "%s"', mysqli_real_escape_string($this->_dbConnection->link, $row['id']));echo $sql2.'<br/>';
+			    // try {
+		        //    $result = $this->_dbConnection->query($sql2);
+		        //}
+		        //catch (Exception $e) {
+		        //    var_dump($e);
+		        //}
+		    }else{
+			    $exist++;
+			    $data = json_decode($proxy->query(array(), true), true);
+			    if (!isset($data['type'])) {
+				    echo $exist .' | '.$notexist.' | '.$response;die;
+			    }
+		    }
+		    
+		    
+        }
+		echo $exist .' | '.$notexist;die;*/
+        include_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
+
+        // Load data directly from the database
+        $this->_dbConnect();
+
+        $date = isoDateToMySQL($date);
+
+        $sql = sprintf(
+                   'SELECT youtube.movieId, youtube.youtubeId, youtube.timestamp, youtube.title, youtube.description, '
+                 . 'youtube.keywords, youtube.shared, movies.imageScale, movies.dataSourceString, movies.eventSourceString, '
+                 . 'movies.movieLength, movies.width, movies.height, movies.startDate, movies.endDate '
+                 . 'FROM youtube '
+                 . 'LEFT JOIN movies '
+                 . 'ON movies.id = youtube.movieId '
+                 . 'WHERE '
+                 .     'youtube.shared>0 AND '
+                 .     'youtube.youtubeId IS NOT NULL AND '
+                 .     '("%s" BETWEEN movies.startDate AND movies.endDate) '
+                 . 'ORDER BY movies.startDate DESC '
+                 . 'LIMIT %d;',
+                 mysqli_real_escape_string($this->_dbConnection->link, $date),
+                 (int)$num
+               );
+        try {
+            $result = $this->_dbConnection->query($sql);
+        }
+        catch (Exception $e) {
+            return false;
+        }
+
+        $videos = array();
+        while ($row = $result->fetch_array(MYSQLI_ASSOC)) {
+            array_push($videos, $row);
+        }
+
+        return $videos;
+    }
+    
+    /**
+     * Change YouTube status to un-shared
+     *
+     * @param str  $youtubeId 
+     */
+    public function videoRemovedFromYouTube($youtubeId){
+	    // Load data directly from the database
+        $this->_dbConnect();
+        
+        $sql = sprintf('UPDATE youtube SET shared = 0 WHERE youtubeId = "%s"', mysqli_real_escape_string($this->_dbConnection->link, $youtubeId));
+        try {
+            $result = $this->_dbConnection->query($sql);
+        }
+        catch (Exception $e) {
+            return false;
+        }
+        
+        return true;
     }
 
     /**
