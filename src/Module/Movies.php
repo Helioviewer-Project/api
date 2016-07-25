@@ -877,8 +877,7 @@ class Module_Movies implements Module {
         // Get a list of recent videos
         $videos = array();
 
-        foreach( $movies->getSharedVideos($opts['num'], $opts['since'],
-            $opts['force']) as $video) {
+        foreach( $movies->getSharedVideos($opts['num'], $opts['since'], $opts['force']) as $video) {
 
             $youtubeId = $video['youtubeId'];
             $movieId   = (int)$video['movieId'];
@@ -906,7 +905,19 @@ class Module_Movies implements Module {
                 'id'  => $publicId,
                 'url' => 'http://www.youtube.com/watch?v='.$youtubeId,
                 'thumbnails' => $movie->getPreviewImages(),
-                'published'  => $video['timestamp'] )
+                'published'  => $video['timestamp'],
+                'title'  => $video['title'],
+                'description'  => $video['description'],
+                'keywords'  => $video['keywords'],
+                'imageScale'  => $video['imageScale'],
+                'dataSourceString'  => $video['dataSourceString'],
+                'eventSourceString'  => $video['eventSourceString'],
+                'movieLength'  => $video['movieLength'],
+                'width'  => $video['width'],
+                'height'  => $video['height'],
+                'startDate'  => $video['startDate'],
+                'endDate'  => $video['endDate']
+                )
             );
             //}
         }
@@ -914,6 +925,97 @@ class Module_Movies implements Module {
         $this->_printJSON(json_encode($videos));
     }
 
+    /**
+     * Retrieves user-submitted videos from YouTube and returns the
+     * result as a JSON array.
+     */
+    public function getObservationDateVideos() {
+        include_once HV_ROOT_DIR.'/../src/Database/MovieDatabase.php';
+        include_once HV_ROOT_DIR.'/../src/Movie/HelioviewerMovie.php';
+        include_once HV_ROOT_DIR.'/../lib/alphaID/alphaID.php';
+
+        $movies = new Database_MovieDatabase();
+
+        // Default options
+        $defaults = array(
+            'num'   => 10,
+            'date' => getUTCDateString()//'2000/01/01T00:00:00.000Z'
+        );
+        $opts = array_replace($defaults, $this->_options);
+
+        // Get a list of recent videos
+        $videos = array();
+
+        foreach( $movies->getSharedVideosByTime($opts['num'], $opts['date']) as $video) {
+
+            $youtubeId = $video['youtubeId'];
+            $movieId   = (int)$video['movieId'];
+
+            // Convert id
+            $publicId = alphaID($movieId, false, 5, HV_MOVIE_ID_PASS);
+
+            // Load movie
+            $movie = new Movie_HelioviewerMovie($publicId);
+
+            // Check to make sure video was not removed by the user
+            // 2011/06/08: Disabling for now since this delays time before
+            // videos
+            // $handle = curl_init("http://gdata.youtube.com/feeds/api/videos/$youtubeId?v=2");
+            // curl_setopt($handle, CURLOPT_RETURNTRANSFER, TRUE);
+
+            // $response = curl_exec($handle);
+            // $httpCode = curl_getinfo($handle, CURLINFO_HTTP_CODE);
+
+            //curl_close($handle);
+
+            // Only add videos with response code 200
+            //if ($httpCode == 200) {
+	        $videoData = $this->isYouTubeVideoExist($youtubeId);    
+	        if($videoData && isset($videoData['type'])){
+	            array_push($videos, array(
+	                'id'  => $publicId,
+	                'url' => 'http://www.youtube.com/watch?v='.$youtubeId,
+	                'thumbnails' => array(
+		                'small' => $videoData['thumbnail_url'],
+		                'medium' => $videoData['thumbnail_url']
+	                ),
+	                'published'  => $video['timestamp'],
+	                'title'  => $video['title'],
+	                'description'  => $video['description'],
+	                'keywords'  => $video['keywords'],
+	                'imageScale'  => $video['imageScale'],
+	                'dataSourceString'  => $video['dataSourceString'],
+	                'eventSourceString'  => $video['eventSourceString'],
+	                'movieLength'  => $video['movieLength'],
+	                'width'  => $video['width'],
+	                'height'  => $video['height'],
+	                'startDate'  => $video['startDate'],
+	                'endDate'  => $video['endDate']
+	                )
+	            );
+	        }else{
+		        $movies->videoRemovedFromYouTube($video);
+	        }
+            //}
+        }
+
+        $this->_printJSON(json_encode($videos));
+    }
+	
+	public function isYouTubeVideoExist($videoID) {
+	    include_once HV_ROOT_DIR.'/../src/Net/Proxy.php';
+		
+		$theURL = "http://www.youtube.com/oembed?url=http://www.youtube.com/watch?v=$videoID&format=json";
+        $proxy = new Net_Proxy($theURL);
+	    $data = json_decode($proxy->query(array(), true), true);
+
+	    if (isset($data['type'])) {
+	        return $data;
+	    } else {
+	        return false;
+	    }
+	}
+	
     /**
      *
      *
@@ -1151,6 +1253,14 @@ class Module_Movies implements Module {
                 'ints'     => array('num'),
                 'dates'    => array('since'),
                 'bools'    => array('force')
+            );
+            break;
+        case 'getObservationDateVideos':
+            $expected = array(
+                'optional' => array('num', 'date', 'callback'),
+                'alphanum' => array('callback'),
+                'ints'     => array('num'),
+                'dates'    => array('date')
             );
             break;
         case 'checkYouTubeAuth':
