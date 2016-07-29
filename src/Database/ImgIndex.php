@@ -821,20 +821,25 @@ class Database_ImgIndex {
         $from_clause   = array();
         $where_clause  = array();
 
-
+		$previousAttr = '';
+		$order = 1;
         foreach ($property_array as $i=>$property) {
-            $i = intval($i);
-            $property = $this->_dbConnection->link->real_escape_string(
-                $property);
-
-            $select_clause[] = $letters[$i].'.label AS '.$letters[$i].'_label';
-            $from_clause[]  = 'datasource_property '.$letters[$i];
-            if ($i > 0) {
-                $where_clause[] = 'ds.id=a.sourceId';
-                $where_clause[] = 'a.sourceId='.$letters[$i].'.sourceId';
-            }
-            $where_clause[] = $letters[$i].'.name="'.$property.'"';
-            $where_clause[] = $letters[$i].'.uiOrder='.++$i;
+            if($previousAttr != $property){
+	            $i = intval($i);
+	            $property = $this->_dbConnection->link->real_escape_string(
+	                $property);
+	
+	            $select_clause[] = $letters[$i].'.label AS '.$letters[$i].'_label';
+	            $from_clause[]  = 'datasource_property '.$letters[$i];
+	            if ($i > 0) {
+	                $where_clause[] = 'ds.id=a.sourceId';
+	                $where_clause[] = 'a.sourceId='.$letters[$i].'.sourceId';
+	            }
+	            $where_clause[] = $letters[$i].'.name="'.$property.'"';
+	            $where_clause[] = $letters[$i].'.uiOrder='.$order;
+	            $previousAttr = $property;
+	            $order++;
+	        }
         }
         $sql  = 'SELECT ' . implode(', ', $select_clause) . ' ';
         $sql .= 'FROM datasources ds, ' . implode(', ', $from_clause);
