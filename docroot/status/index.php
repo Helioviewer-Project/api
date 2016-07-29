@@ -196,12 +196,36 @@
                 }
 
                 $datetime = $oldest['datetime'];
-                printf($tableRow, "instrument", $name, $datetime->format('M j H:i:s'), $attribution, $oldest['icon']);
+                printf($tableRow, "instrument", $name, $datetime->format('M j Y H:i:s'), $attribution, $oldest['icon']);
                 print($subTableHTML);
             }
         }
     ?>
     </table>
+    
+    <br /><br />
+    
+    <h3>Data Injection</h3>
+    <table id='statuses'>
+    <tr id='status-headers'>
+        <th width='120'>Source</th>
+        <th width='50' align='center'>Status <span id='info'>(?)</span></th>
+    </tr>
+    <?php
+	    $commands = unserialize(TERMINAL_COMMANDS);
+		$output = shell_exec('ps -ef | grep python');
+		
+		foreach($commands as $cmd => $name){
+	        if (strpos($output, $cmd) !== false) {
+		        echo '<tr><td>'.$name.'</td><td align="center"><img class="status-icon" src="icons/status_icon_green.png" alt="Data Injection script running" /></td></tr>';
+	        }else{
+		        echo '<tr><td>'.$name.'</td><td align="center""><img class="status-icon" src="icons/status_icon_red.png" alt="Data Injection script not running" /></td></tr>';
+	        }
+	    }
+	    
+    ?>
+    </table>
+    
     <br />
     <div id='footer'><strong>Upstream: </strong>
         <a class='provider-link' href='http://aia.lmsal.com/public/SDOcalendar.html'>SDO Calendar</a>,
