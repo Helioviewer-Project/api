@@ -41,4 +41,15 @@ define("HV_BITLY_API_KEY", "");
 define("HV_PROXY_HOST", "");
 define("HV_PROXY_USER_PASSWORD", ""); // must be a string in username:password format, leave it empty if proxy do not use authorization
 
+/**
+ * Terminal commands that need to be checked for running
+ * Example:
+ * serialize(array(
+ * 	   'terminal command' => 'name of command'	 
+ * ))
+ *
+ * TODO:
+ * PHP 7 support arrays inside constants.
+ */
+define("TERMINAL_COMMANDS", serialize(array()));
 ?>
