@@ -359,46 +359,8 @@ class Database_MovieDatabase {
      *             of the matched movies or boolean false.
      */
     public function getSharedVideosByTime($num, $date) {
-		/*ini_set('memory_limit', '8000M');
-		ini_set('max_execution_time', 0);
-		// Load data directly from the database
-        $this->_dbConnect();
-        try {
-            $result = $this->_dbConnection->query('SELECT * FROM youtube WHERE shared>0');
-        }
-        catch (Exception $e) {
-            return false;
-        }
-		$exist = 0;
-		$notexist = 0;
-        while ($row = $result->fetch_array(MYSQLI_ASSOC)) {
-            include_once HV_ROOT_DIR.'/../src/Net/Proxy.php';
-			$videoID = $row['youtubeId'];
-			$theURL = "http://www.youtube.com/oembed?url=http://www.youtube.com/watch?v=$videoID&format=json";
-	        $proxy = new Net_Proxy($theURL);
-		    $response = $proxy->query(array(), true);
-		    if($response == 'Not Found' || $response == 'Unauthorized'){
-			    $notexist++;
-			    echo ' OR id='.$row['id'].'';
-			     //$sql2 = sprintf('UPDATE youtube SET shared = 0 WHERE id = "%s"', mysqli_real_escape_string($this->_dbConnection->link, $row['id']));echo $sql2.'<br/>';
-			    // try {
-		        //    $result = $this->_dbConnection->query($sql2);
-		        //}
-		        //catch (Exception $e) {
-		        //    var_dump($e);
-		        //}
-		    }else{
-			    $exist++;
-			    $data = json_decode($proxy->query(array(), true), true);
-			    if (!isset($data['type'])) {
-				    echo $exist .' | '.$notexist.' | '.$response;die;
-			    }
-		    }
-		    
-		    
-        }
-		echo $exist .' | '.$notexist;die;*/
         include_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
+	    include_once HV_ROOT_DIR.'/../src/Net/Proxy.php';
 
         // Load data directly from the database
         $this->_dbConnect();
@@ -406,8 +368,8 @@ class Database_MovieDatabase {
         $date = isoDateToMySQL($date);
 
         $sql = sprintf(
-                   'SELECT youtube.movieId, youtube.youtubeId, youtube.timestamp, youtube.title, youtube.description, '
-                 . 'youtube.keywords, youtube.shared, movies.imageScale, movies.dataSourceString, movies.eventSourceString, '
+                   'SELECT youtube.id, youtube.movieId, youtube.youtubeId, youtube.timestamp, youtube.title, youtube.description, '
+                 . 'youtube.keywords, youtube.shared, youtube.checked, movies.imageScale, movies.dataSourceString, movies.eventSourceString, '
                  . 'movies.movieLength, movies.width, movies.height, movies.startDate, movies.endDate '
                  . 'FROM youtube '
                  . 'LEFT JOIN movies '
@@ -429,31 +391,25 @@ class Database_MovieDatabase {
         }
 
         $videos = array();
+        $timestamp = time();
         while ($row = $result->fetch_array(MYSQLI_ASSOC)) {
-            array_push($videos, $row);
+			//Check if Video is still exist/shared on YouTube
+			$videoID = $row['youtubeId'];
+			$theURL = "http://www.youtube.com/oembed?url=http://www.youtube.com/watch?v=$videoID&format=json";
+	        $proxy = new Net_Proxy($theURL);
+		    $response = $proxy->query(array(), true);
+	
+		    if($response == 'Not Found' || $response == 'Unauthorized'){
+		        $this->_dbConnection->query('UPDATE youtube SET shared = 0 WHERE id = '.$row['id'].'');
+		    } else {
+		        $this->_dbConnection->query('UPDATE youtube SET shared = 1 WHERE id = '.$row['id'].'');
+		        $data = json_decode($response, true);
+		        $row['thumbnail'] = $data['thumbnail_url'];
+		        array_push($videos, $row);
+		    }
         }
 
         return $videos;
-    }
-    
-    /**
-     * Change YouTube status to un-shared
-     *
-     * @param str  $youtubeId 
-     */
-    public function videoRemovedFromYouTube($youtubeId){
-	    // Load data directly from the database
-        $this->_dbConnect();
-        
-        $sql = sprintf('UPDATE youtube SET shared = 0 WHERE youtubeId = "%s"', mysqli_real_escape_string($this->_dbConnection->link, $youtubeId));
-        try {
-            $result = $this->_dbConnection->query($sql);
-        }
-        catch (Exception $e) {
-            return false;
-        }
-        
-        return true;
     }
 
     /**

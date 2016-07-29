@@ -933,7 +933,8 @@ class Module_Movies implements Module {
         include_once HV_ROOT_DIR.'/../src/Database/MovieDatabase.php';
         include_once HV_ROOT_DIR.'/../src/Movie/HelioviewerMovie.php';
         include_once HV_ROOT_DIR.'/../lib/alphaID/alphaID.php';
-
+		include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerLayers.php';
+		
         $movies = new Database_MovieDatabase();
 
         // Default options
@@ -956,47 +957,38 @@ class Module_Movies implements Module {
 
             // Load movie
             $movie = new Movie_HelioviewerMovie($publicId);
-
-            // Check to make sure video was not removed by the user
-            // 2011/06/08: Disabling for now since this delays time before
-            // videos
-            // $handle = curl_init("http://gdata.youtube.com/feeds/api/videos/$youtubeId?v=2");
-            // curl_setopt($handle, CURLOPT_RETURNTRANSFER, TRUE);
-
-            // $response = curl_exec($handle);
-            // $httpCode = curl_getinfo($handle, CURLINFO_HTTP_CODE);
-
-            //curl_close($handle);
-
-            // Only add videos with response code 200
-            //if ($httpCode == 200) {
-	        $videoData = $this->isYouTubeVideoExist($youtubeId);    
-	        if($videoData && isset($videoData['type'])){
-	            array_push($videos, array(
-	                'id'  => $publicId,
-	                'url' => 'http://www.youtube.com/watch?v='.$youtubeId,
-	                'thumbnails' => array(
-		                'small' => $videoData['thumbnail_url'],
-		                'medium' => $videoData['thumbnail_url']
-	                ),
-	                'published'  => $video['timestamp'],
-	                'title'  => $video['title'],
-	                'description'  => $video['description'],
-	                'keywords'  => $video['keywords'],
-	                'imageScale'  => $video['imageScale'],
-	                'dataSourceString'  => $video['dataSourceString'],
-	                'eventSourceString'  => $video['eventSourceString'],
-	                'movieLength'  => $video['movieLength'],
-	                'width'  => $video['width'],
-	                'height'  => $video['height'],
-	                'startDate'  => $video['startDate'],
-	                'endDate'  => $video['endDate']
-	                )
-	            );
-	        }else{
-		        $movies->videoRemovedFromYouTube($video);
-	        }
-            //}
+	            
+            $layers = new Helper_HelioviewerLayers($video['dataSourceString']);
+			$layersArray = $layers->toArray();
+			$name = '';
+			if(count($layersArray) > 0){
+				foreach($layersArray as $layer){
+					$name .= $layer['name'].', ';
+				}
+			}
+			$name = substr($name, 0, -2);
+			
+            array_push($videos, array(
+                'id'  => $publicId,
+                'url' => 'http://www.youtube.com/watch?v='.$youtubeId,
+                'thumbnails' => array(
+	                'small' => $video['thumbnail'],
+	                'medium' => $video['thumbnail']
+                ),
+                'published'  => $video['timestamp'],
+                'title'  => $name.' ('.$video['startDate'].' - '.$video['endDate'].' UTC)',
+                'description'  => $video['description'],
+                'keywords'  => $video['keywords'],
+                'imageScale'  => $video['imageScale'],
+                'dataSourceString'  => $video['dataSourceString'],
+                'eventSourceString'  => $video['eventSourceString'],
+                'movieLength'  => $video['movieLength'],
+                'width'  => $video['width'],
+                'height'  => $video['height'],
+                'startDate'  => $video['startDate'],
+                'endDate'  => $video['endDate']
+                )
+            );
         }
 
         $this->_printJSON(json_encode($videos));
