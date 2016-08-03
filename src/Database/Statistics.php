@@ -749,6 +749,39 @@ class Database_Statistics {
 			'UNK' => 28
 		);
 		
+		$eventsColors = array(
+			'AR' => '#ff8f97',
+			'CE' => '#ffb294',
+			'CME' => '#ffb294',
+			'CD' => '#ffd391',
+			'CH' => '#fef38e',
+			'CW' => '#ebff8c',
+			'FI' => '#c8ff8d',
+			'FE' => '#a3ff8d',
+			'FA' => '#7bff8e',
+			'FL' => '#7affae',
+			'LP' => '#7cffc9',
+			'OS' => '#81fffc',
+			'SS' => '#8ce6ff',
+			'EF' => '#95c6ff',
+			'CJ' => '#9da4ff',
+			'PG' => '#ab8cff',
+			'OT' => '#d4d4d4',
+			'NR' => '#d4d4d4',
+			'SG' => '#e986ff',
+			'SP' => '#ff82ff',
+			'CR' => '#ff85ff',
+			'CC' => '#ff8acc',
+			'ER' => '#ff8dad',
+			'TO' => '#ca89ff',
+			'HY' => '#00ffff',
+			'BO' => '#a7e417',
+			'EE' => '#fec00a',
+			'PB' => '#b3d5e4',
+			'PT' => '#494a37',
+			'UNK' => '#d4d4d4'
+		);
+		
 		while ($row = $result->fetch_array(MYSQLI_ASSOC)) {
 			//Event Name
 			$key = $row['event_type'];
@@ -795,6 +828,8 @@ class Database_Statistics {
 
 				if($currentTimestamp >= $timeStart && $currentTimestamp <= $timeEnd){
 					$sources[$eventKey]['data'][$j]['borderColor'] = '#ffffff';
+				}else{
+					$sources[$eventKey]['data'][$j]['color'] = $this->colourBrightness($eventsColors[ $row['event_type'] ], -0.9);
 				}
 
 				if($visibleEndTimestamp >= strtotime($row['event_starttime']) && $visibleStartTimestamp <= strtotime($row['event_endtime'])){
@@ -918,6 +953,49 @@ class Database_Statistics {
         return json_encode($sources);
 		
     }
+    /*
+	    Change the brightness of HEX color
+    */
+    public function colourBrightness($hex, $percent) {
+		// Work out if hash given
+		$hash = '';
+		if (stristr($hex,'#')) {
+			$hex = str_replace('#','',$hex);
+			$hash = '#';
+		}
+		/// HEX TO RGB
+		$rgb = array(hexdec(substr($hex,0,2)), hexdec(substr($hex,2,2)), hexdec(substr($hex,4,2)));
+		//// CALCULATE 
+		for ($i=0; $i<3; $i++) {
+			// See if brighter or darker
+			if ($percent > 0) {
+				// Lighter
+				$rgb[$i] = round($rgb[$i] * $percent) + round(255 * (1-$percent));
+			} else {
+				// Darker
+				$positivePercent = $percent - ($percent*2);
+				$rgb[$i] = round($rgb[$i] * $positivePercent) + round(0 * (1-$positivePercent));
+			}
+			// In case rounding up causes us to go to 256
+			if ($rgb[$i] > 255) {
+				$rgb[$i] = 255;
+			}
+		}
+		//// RBG to Hex
+		$hex = '';
+		for($i=0; $i < 3; $i++) {
+			// Convert the decimal digit to hex
+			$hexDigit = dechex($rgb[$i]);
+			// Add a leading zero if necessary
+			if(strlen($hexDigit) == 1) {
+			$hexDigit = "0" . $hexDigit;
+			}
+			// Append to the hex string
+			$hex .= $hexDigit;
+		}
+		return $hash.$hex;
+	}
+
 
     /**
      * Update data source coverage data for the last 7 Days
