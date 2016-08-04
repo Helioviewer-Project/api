@@ -516,11 +516,78 @@ class Database_Statistics {
 		if(!$events){
 			return json_encode(array());
 		}
+		
+		$eventsKeys = array(
+			'AR' => 0,
+			'CC' => 1,
+			'CD' => 2,
+			'CH' => 3,
+			'CJ' => 4,
+			'CE' => 5,
+			'CR' => 6,
+			'CW' => 7,
+			'EF' => 8,
+			'ER' => 9,
+			'FI' => 10,
+			'FA' => 11,
+			'FE' => 12,
+			'FL' => 13,
+			'LP' => 14,
+			'OS' => 15,
+			'PG' => 16,
+			'SG' => 17,
+			'SP' => 18,
+			'SS' => 19,
+			//unused
+			'OT' => 20,
+			'NR' => 21,
+			'TO' => 22,
+			'HY' => 23,
+			'BO' => 24,
+			'EE' => 25,
+			'PB' => 26,
+			'PT' => 27,
+			'UNK' => 28
+		);
+		
+		$eventsColors = array(
+			'AR' => '#ff8f97',
+			'CE' => '#ffb294',
+			'CME' => '#ffb294',
+			'CD' => '#ffd391',
+			'CH' => '#fef38e',
+			'CW' => '#ebff8c',
+			'FI' => '#c8ff8d',
+			'FE' => '#a3ff8d',
+			'FA' => '#7bff8e',
+			'FL' => '#7affae',
+			'LP' => '#7cffc9',
+			'OS' => '#81fffc',
+			'SS' => '#8ce6ff',
+			'EF' => '#95c6ff',
+			'CJ' => '#9da4ff',
+			'PG' => '#ab8cff',
+			'OT' => '#d4d4d4',
+			'NR' => '#d4d4d4',
+			'SG' => '#e986ff',
+			'SP' => '#ff82ff',
+			'CR' => '#ff85ff',
+			'CC' => '#ff8acc',
+			'ER' => '#ff8dad',
+			'TO' => '#ca89ff',
+			'HY' => '#00ffff',
+			'BO' => '#a7e417',
+			'EE' => '#fec00a',
+			'PB' => '#b3d5e4',
+			'PT' => '#494a37',
+			'UNK' => '#d4d4d4'
+		);
 				
 		$eventTypes = array();
+		$dbData = array();
+		$dbVisibleData = array();
 		$layersString = '';
 		foreach($events->toArray() as $layer){
-			
 			
 			if(!empty($layer['frm_name']) && $layer['frm_name'] != 'all'){
 				$frms = explode(';', $layer['frm_name']);
@@ -537,6 +604,16 @@ class Database_Statistics {
 				}
 				$layersString .= 'event_type = "'.$layer['event_type'].'"';
 			}
+			
+			$eventKey = $eventsKeys[ $layer['event_type'] ];
+			$dbData[$eventKey] = array();
+			$dbVisibleData[$eventKey] = false;
+			$sources[$eventKey] = array(
+				'data' => array(),
+				'event_type' => $layer['event_type'],
+				'res' => $resolution,
+				'showInLegend' => false
+			);
         }
         
 		
@@ -709,98 +786,16 @@ class Database_Statistics {
 		
 		//Procceed SQL Data
 		$result = $this->_dbConnection->query($sql);
-		$dbData = array();
-		$dbVisibleData = array();
-		$eventsKeys = array();
 		$i = 1;
 		$uniqueIds = array();
 		$j = 0;
-		
-		$eventsKeys = array(
-			'AR' => 0,
-			'CC' => 1,
-			'CD' => 2,
-			'CH' => 3,
-			'CJ' => 4,
-			'CE' => 5,
-			'CR' => 6,
-			'CW' => 7,
-			'EF' => 8,
-			'ER' => 9,
-			'FI' => 10,
-			'FA' => 11,
-			'FE' => 12,
-			'FL' => 13,
-			'LP' => 14,
-			'OS' => 15,
-			'PG' => 16,
-			'SG' => 17,
-			'SP' => 18,
-			'SS' => 19,
-			//unused
-			'OT' => 20,
-			'NR' => 21,
-			'TO' => 22,
-			'HY' => 23,
-			'BO' => 24,
-			'EE' => 25,
-			'PB' => 26,
-			'PT' => 27,
-			'UNK' => 28
-		);
-		
-		$eventsColors = array(
-			'AR' => '#ff8f97',
-			'CE' => '#ffb294',
-			'CME' => '#ffb294',
-			'CD' => '#ffd391',
-			'CH' => '#fef38e',
-			'CW' => '#ebff8c',
-			'FI' => '#c8ff8d',
-			'FE' => '#a3ff8d',
-			'FA' => '#7bff8e',
-			'FL' => '#7affae',
-			'LP' => '#7cffc9',
-			'OS' => '#81fffc',
-			'SS' => '#8ce6ff',
-			'EF' => '#95c6ff',
-			'CJ' => '#9da4ff',
-			'PG' => '#ab8cff',
-			'OT' => '#d4d4d4',
-			'NR' => '#d4d4d4',
-			'SG' => '#e986ff',
-			'SP' => '#ff82ff',
-			'CR' => '#ff85ff',
-			'CC' => '#ff8acc',
-			'ER' => '#ff8dad',
-			'TO' => '#ca89ff',
-			'HY' => '#00ffff',
-			'BO' => '#a7e417',
-			'EE' => '#fec00a',
-			'PB' => '#b3d5e4',
-			'PT' => '#494a37',
-			'UNK' => '#d4d4d4'
-		);
 		
 		while ($row = $result->fetch_array(MYSQLI_ASSOC)) {
 			//Event Name
 			$key = $row['event_type'];
 			
 			$eventKey = $eventsKeys[$key];
-
-			if(!isset($sources[$eventKey]) ){
-				$dbVisibleData[$eventKey] = false;
-				$sources[$eventKey] = array(
-					'data' => array(),
-					'event_type' => $row['event_type'],
-					'res' => $resolution,
-					'showInLegend' => true
-				);
-			}
-			if(!isset($dbData[$eventKey])){
-				$dbData[$eventKey] = array();
-			}
-			
+						
 			//Build data array
 			if($resolution == 'm'){
 				$timeStart = (strtotime($row['event_starttime'])* 1000);
@@ -815,7 +810,7 @@ class Database_Statistics {
 				$sources[$eventKey]['data'][$j] = array(
 					'x' => $timeStart,
 					'x2' => $timeEnd,
-					'y' => $j,//(($eventKey * 10) + $i),//$eventKey
+					'y' => $j,
 					'kb_archivid' => $row['kb_archivid'],
 					'hv_labels_formatted' => json_decode($row['hv_labels_formatted']),
 					'event_type' => $row['event_type'],
@@ -869,19 +864,6 @@ class Database_Statistics {
 		        //$i = count($levels);
 		        //$levels = array();
 		        $data = array();
-				$data[] = array(
-					'x' => ($beginInterval->getTimestamp() * 1000),
-					'x2' => ($beginInterval->getTimestamp() * 1000),
-					'y' => 0,
-					'kb_archivid' => '',
-					'hv_labels_formatted' => '',
-					'event_type' => '',
-					'frm_name' => '',
-					'frm_specificid' => '',
-					'event_peaktime' => '',
-					'event_starttime' => '',
-					'event_endtime' => ''
-				);
 
 				foreach($series['data'] as $dk => $event){
 				    //was this event placed in a level already?
@@ -908,42 +890,15 @@ class Database_Statistics {
 				        $i++;
 				    }
 				}
-				$data[] = array(
-					'x' => ($endInterval->getTimestamp() * 1000) - 1000,
-					'x2' => ($endInterval->getTimestamp() * 1000) + 1000,
-					'y' => 0,
-					'kb_archivid' => '',
-					'hv_labels_formatted' => '',
-					'event_type' => '',
-					'frm_name' => '',
-					'frm_specificid' => '',
-					'event_peaktime' => '',
-					'event_starttime' => '',
-					'event_endtime' => ''
-				);
 				$sources[$k]['data'] = $data;
 	        }
 	        
-	        //To avoid Highcharts error we need to create at least one empty row
-	        /*if(count($sources) < 1){
-		        foreach($eventTypes as $e=>$k){
-			        $sources[] = array(
-						'data' => array(
-							array(($beginInterval->getTimestamp() * 1000),($beginInterval->getTimestamp() * 1000) + 1000,0),
-							array(($endInterval->getTimestamp() * 1000) - 1000,($endInterval->getTimestamp() * 1000),0),
-						),
-						'event_type' => $e,
-						'res' => $resolution
-					);
-		        }
-	        }*/
-	        
         }
-        
+
         //Remove not visible events
         foreach($dbVisibleData as $k => $isVisible){
-	        if(!$isVisible){
-		        $sources[$k]['showInLegend'] = false;
+	        if($isVisible){
+		        $sources[$k]['showInLegend'] = ture;
 	        }
         }
         
