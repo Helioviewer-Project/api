@@ -402,7 +402,6 @@ class Database_MovieDatabase {
 		    if($response == 'Not Found' || $response == 'Unauthorized'){
 		        $this->_dbConnection->query('UPDATE youtube SET shared = 0 WHERE id = '.$row['id'].'');
 		    } else {
-		        $this->_dbConnection->query('UPDATE youtube SET shared = 1 WHERE id = '.$row['id'].'');
 		        $data = json_decode($response, true);
 		        $row['thumbnail'] = $data['thumbnail_url'];
 		        array_push($videos, $row);

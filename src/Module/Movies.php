@@ -1109,24 +1109,39 @@ class Module_Movies implements Module {
 <head>
     <title>Helioviewer.org - <?php echo $filename?></title>
     <!-- player skin -->
-    <link rel="stylesheet" type="text/css" href="<?php echo HV_WEB_ROOT_URL; ?>/lib/mediaelement-2.20.1/build/mediaelementplayer.min.css">
+    <link rel="stylesheet" type="text/css" href="<?php echo HV_WEB_ROOT_URL; ?>/lib/mediaelement-2.22.0/build/mediaelementplayer.min.css">
     <!-- flowplayer depends on jQuery 1.7.1+ (for now) -->
     <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
     <!-- include flowplayer -->
-    <script type="text/javascript" src="<?php echo HV_WEB_ROOT_URL; ?>/lib/mediaelement-2.20.1/build/mediaelement-and-player.min.js"></script>
+    <script type="text/javascript" src="<?php echo HV_WEB_ROOT_URL; ?>/lib/mediaelement-2.22.0/build/mediaelement-and-player.min.js"></script>
+    <style>
+		html, body{background: #000;}
+		.mejs-container .mejs-controls {
+		  /* Move the controls into the space below the player. */
+		  bottom: -20px;
+		}
+    </style>
 </head>
 <body>
 
-	<video width="<?=$options['width']?>" height="<?=$options['height']?>" poster="<?=$urlFolder?>/preview-full.png" controls="controls" preload="none">
+	<video width="<?=($options['width'] - 15)?>" height="<?=($options['height'] - 20)?>" poster="<?=$urlFolder?>/preview-full.png" controls="controls" preload="none">
 	    <source type="video/mp4" src="<?=$urlFolder?>/<?=$filename?>.mp4" />
 	    <source type="video/webm" src="<?=$urlFolder?>/<?=$filename?>.webm" />
 	    <!--<source type="video/ogg" src="myvideo.ogv" />-->
-	    <object width="<?=$options['width']?>" height="<?=$options['height']?>" type="application/x-shockwave-flash" data="<?php echo HV_WEB_ROOT_URL; ?>/lib/mediaelement-2.20.1/build/flashmediaelement.swf">
-	        <param name="movie" value="<?php echo HV_WEB_ROOT_URL; ?>/lib/mediaelement-2.20.1/build/flashmediaelement.swf" /> 
+	    <object width="<?=$options['width']?>" height="<?=($options['height'] - 20)?>" type="application/x-shockwave-flash" data="<?php echo HV_WEB_ROOT_URL; ?>/lib/mediaelement-2.22.0/build/flashmediaelement.swf">
+	        <param name="movie" value="<?php echo HV_WEB_ROOT_URL; ?>/lib/mediaelement-2.22.0/build/flashmediaelement.swf" /> 
 	        <param name="flashvars" value="controls=true&amp;poster=<?=$urlFolder?>/preview-full.png&amp;file=<?=$urlFolder?>/<?=$filename?>.mp4" />        
 	        <img src="<?=$urlFolder?>/preview-full.png" width="<?=$options['width']?>" height="<?=$options['height']?>" title="No video playback capabilities" />
 	    </object>
 	</video>
+	<script>
+	// using jQuery
+	$('video,audio').mediaelementplayer({
+		enableAutosize: true,
+		features: ['playpause','progress','current','duration'],
+		alwaysShowControls: true
+	});
+	</script>
 </body>
 </html>
 <?php
