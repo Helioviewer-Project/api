@@ -611,7 +611,9 @@ def create_youtube_table(cursor):
       `title`       VARCHAR(100) NOT NULL,
       `description` VARCHAR(5000) NOT NULL,
       `keywords`    VARCHAR(500) NOT NULL,
+      `thumbnail`   VARCHAR(512) DEFAULT NULL,
       `shared`      TINYINT(1) UNSIGNED NOT NULL,
+      `checked`     datetime DEFAULT NULL,
        PRIMARY KEY (`id`),
        UNIQUE INDEX movieid_idx(movieId)
     ) DEFAULT CHARSET=utf8;""")

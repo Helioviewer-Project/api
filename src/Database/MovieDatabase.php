@@ -280,7 +280,7 @@ class Database_MovieDatabase {
      * @return arr Array containing movieId, youtubeId, timestamp for each
      *             of the matched movies or boolean false.
      */
-    public function getSharedVideos($num, $since, $force=false) {
+    public function getSharedVideos($num, $skip, $since, $force=false) {
 
         include_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
 
@@ -321,8 +321,9 @@ class Database_MovieDatabase {
                  .     'youtube.youtubeId IS NOT NULL AND '
                  .     'youtube.timestamp > "%s" '
                  . 'ORDER BY youtube.timestamp DESC '
-                 . 'LIMIT %d;',
+                 . 'LIMIT %d,%d;',
                  mysqli_real_escape_string($this->_dbConnection->link, $date),
+                 (int)$skip,
                  (int)$num
                );
             try {
@@ -358,7 +359,7 @@ class Database_MovieDatabase {
      * @return arr Array containing movieId, youtubeId, timestamp for each
      *             of the matched movies or boolean false.
      */
-    public function getSharedVideosByTime($num, $date) {
+    public function getSharedVideosByTime($num, $skip, $date) {
         include_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
 	    include_once HV_ROOT_DIR.'/../src/Net/Proxy.php';
 
@@ -369,7 +370,7 @@ class Database_MovieDatabase {
 
         $sql = sprintf(
                    'SELECT youtube.id, youtube.movieId, youtube.youtubeId, youtube.timestamp, youtube.title, youtube.description, '
-                 . 'youtube.keywords, youtube.shared, youtube.checked, movies.imageScale, movies.dataSourceString, movies.eventSourceString, '
+                 . 'youtube.keywords, youtube.thumbnail, youtube.shared, youtube.checked, movies.imageScale, movies.dataSourceString, movies.eventSourceString, '
                  . 'movies.movieLength, movies.width, movies.height, movies.startDate, movies.endDate '
                  . 'FROM youtube '
                  . 'LEFT JOIN movies '
@@ -379,8 +380,9 @@ class Database_MovieDatabase {
                  .     'youtube.youtubeId IS NOT NULL AND '
                  .     '("%s" BETWEEN movies.startDate AND movies.endDate) '
                  . 'ORDER BY movies.startDate DESC '
-                 . 'LIMIT %d;',
+                 . 'LIMIT %d,%d;',
                  mysqli_real_escape_string($this->_dbConnection->link, $date),
+                 (int)$skip,
                  (int)$num
                );
         try {
@@ -393,18 +395,23 @@ class Database_MovieDatabase {
         $videos = array();
         $timestamp = time();
         while ($row = $result->fetch_array(MYSQLI_ASSOC)) {
-			//Check if Video is still exist/shared on YouTube
-			$videoID = $row['youtubeId'];
-			$theURL = "http://www.youtube.com/oembed?url=http://www.youtube.com/watch?v=$videoID&format=json";
-	        $proxy = new Net_Proxy($theURL);
-		    $response = $proxy->query(array(), true);
-	
-		    if($response == 'Not Found' || $response == 'Unauthorized'){
-		        $this->_dbConnection->query('UPDATE youtube SET shared = 0 WHERE id = '.$row['id'].'');
-		    } else {
-		        $data = json_decode($response, true);
-		        $row['thumbnail'] = $data['thumbnail_url'];
-		        array_push($videos, $row);
+			if(strtotime($row['checked']) < (time() - 30*24*60*60)){
+				//Check if Video is still exist/shared on YouTube
+				$videoID = $row['youtubeId'];
+				$theURL = "http://www.youtube.com/oembed?url=http://www.youtube.com/watch?v=$videoID&format=json";
+		        $proxy = new Net_Proxy($theURL);
+			    $response = $proxy->query(array(), true);
+		
+			    if($response == 'Not Found' || $response == 'Unauthorized'){
+			        $this->_dbConnection->query('UPDATE youtube SET shared = 0 WHERE id = '.$row['id'].'');
+			    } else {
+			        $data = json_decode($response, true);
+			        $row['thumbnail'] = $data['thumbnail_url'];
+			        $this->_dbConnection->query('UPDATE youtube SET thumbnail = "'.$data['thumbnail_url'].'", checked=NOW() WHERE id = '.$row['id'].'');
+			        array_push($videos, $row);
+			    }
+		    }else{
+			    array_push($videos, $row);
 		    }
         }
 
