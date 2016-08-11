@@ -395,7 +395,7 @@ class Database_MovieDatabase {
         $videos = array();
         $timestamp = time();
         while ($row = $result->fetch_array(MYSQLI_ASSOC)) {
-			if(strtotime($row['checked']) < (time() - 30*24*60*60)){
+			if(strtotime($row['checked']) < (time() - 30*24*60*60) || empty($row['thumbnail'])){
 				//Check if Video is still exist/shared on YouTube
 				$videoID = $row['youtubeId'];
 				$theURL = "http://www.youtube.com/oembed?url=http://www.youtube.com/watch?v=$videoID&format=json";
