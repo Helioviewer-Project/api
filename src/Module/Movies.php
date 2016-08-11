@@ -869,6 +869,7 @@ class Module_Movies implements Module {
         // Default options
         $defaults = array(
             'num'   => 10,
+            'skip'   => 0,
             'since' => '2000/01/01T00:00:00.000Z',
             'force' => false
         );
@@ -877,7 +878,7 @@ class Module_Movies implements Module {
         // Get a list of recent videos
         $videos = array();
 
-        foreach( $movies->getSharedVideos($opts['num'], $opts['since'], $opts['force']) as $video) {
+        foreach( $movies->getSharedVideos($opts['num'], $opts['skip'], $opts['since'], $opts['force']) as $video) {
 
             $youtubeId = $video['youtubeId'];
             $movieId   = (int)$video['movieId'];
@@ -940,6 +941,7 @@ class Module_Movies implements Module {
         // Default options
         $defaults = array(
             'num'   => 10,
+            'skip'   => 0,
             'date' => getUTCDateString()//'2000/01/01T00:00:00.000Z'
         );
         $opts = array_replace($defaults, $this->_options);
@@ -947,7 +949,7 @@ class Module_Movies implements Module {
         // Get a list of recent videos
         $videos = array();
 
-        foreach( $movies->getSharedVideosByTime($opts['num'], $opts['date']) as $video) {
+        foreach( $movies->getSharedVideosByTime($opts['num'], $opts['skip'], $opts['date']) as $video) {
 
             $youtubeId = $video['youtubeId'];
             $movieId   = (int)$video['movieId'];
@@ -1255,18 +1257,18 @@ class Module_Movies implements Module {
             break;
         case 'getUserVideos':
             $expected = array(
-                'optional' => array('num', 'since', 'force', 'callback'),
+                'optional' => array('num', 'skip', 'since', 'force', 'callback'),
                 'alphanum' => array('callback'),
-                'ints'     => array('num'),
+                'ints'     => array('num', 'skip'),
                 'dates'    => array('since'),
                 'bools'    => array('force')
             );
             break;
         case 'getObservationDateVideos':
             $expected = array(
-                'optional' => array('num', 'date', 'callback'),
+                'optional' => array('num', 'skip', 'date', 'callback'),
                 'alphanum' => array('callback'),
-                'ints'     => array('num'),
+                'ints'     => array('num', 'skip'),
                 'dates'    => array('date')
             );
             break;
