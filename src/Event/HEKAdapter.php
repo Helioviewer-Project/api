@@ -1045,7 +1045,7 @@ class Event_HEKAdapter {
             if ( $event['frm_name']=='CACTus (Computer Aided CME Tracking)' ) {
 
                 $labelArray['Radial Lin. Vel.'] =
-                    $event['cme_radiallinvel'] . ' ±' .
+                    $event['cme_radiallinvel'] . ' ± ' .
                     $event['cme_radiallinvelstddev'] . ' ' .
                     $event['cme_radiallinvelunit'];
 
