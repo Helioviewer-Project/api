@@ -355,15 +355,17 @@ class ImageRetrievalDaemon:
             # print image_params['date']
             date_str = image_params['date'].strftime('%Y/%m/%d')
 
-            # Transcode
+            # The files must be transcoded in order to work with JHelioviewer.
+            # Therefore, any problem with the transcoding process must raise
+            # an error. 
             try:
                 if image_params['instrument'] == "AIA":
                     self._transcode(filepath, cprecincts=[128, 128])
                 else:
                     self._transcode(filepath)
             except KduTranscodeError, e:
-                logging.warning("kdu_transcode: " + e.get_message())
-                continue
+                logging.error("kdu_transcode: " + e.get_message())
+
 
             # Move to archive
             directory = os.path.join(self.image_archive,
@@ -469,12 +471,15 @@ class ImageRetrievalDaemon:
 
         # If transcode failed, raise an exception
         if not os.path.isfile(tmp):
+            logging.info('File %s reported as not found.' % tmp)
             raise KduTranscodeError(filepath)
 
         # Remove old version and replace with transcoded one
         # OSError
         os.remove(filepath)
+        logging.info('Removed %s ' % filepath)
         os.rename(tmp, filepath)
+        logging.info('Renamed %s to %s' % (tmp, filepath))
 
     def _check_free_space(self):
         """Checks the amount of free space on the data volume and emails admins
