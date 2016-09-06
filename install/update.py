@@ -15,7 +15,7 @@ import sys
 import os
 import shutil
 import sunpy
-from helioviewer.jp2 import find_images, process_jp2_images
+from helioviewer.jp2 import find_images, process_jp2_images, create_image_data
 from helioviewer.db  import get_db_cursor
 from helioviewer import init_logger
 from optparse import OptionParser, IndentedHelpFormatter
@@ -42,7 +42,7 @@ def main(argv):
                             os.path.relpath(filepath, options.source))
         
         # Parse image header
-        image_params = sunpy.read_header(filepath)
+        image_params = create_image_data(filepath)
         image_params['filepath'] = dest
         
         images.append(image_params)
@@ -55,7 +55,7 @@ def main(argv):
         shutil.move(filepath, dest)
     
     # Add images to the database
-    cursor = get_db_cursor(options.dbname, options.dbuser, options.dbpass)
+    db, cursor = get_db_cursor(options.dbhost, options.dbname, options.dbuser, options.dbpass)
     process_jp2_images(images, options.destination, cursor, True)    
     cursor.close()
     
@@ -63,10 +63,10 @@ def main(argv):
         
 def get_options():
     '''Gets command-line parameters'''
-    parser = OptionParser('%prog [options]', 
-                          formatter=IndentedHelpFormatter(4,100))
+    parser = OptionParser('%prog [options]', formatter=IndentedHelpFormatter(4,100), add_help_option=False)
     
     params = [
+        ('-h', '--database-host', 'dbhost', 'Host to insert images into'),
         ('-d', '--database-name', 'dbname', 'Database to insert images into'),
         ('-u', '--database-user', 'dbuser', 'Helioviewer.org database user'),
         ('-p', '--database-pass', 'dbpass', 'Helioviewer.org database password'),
@@ -83,21 +83,21 @@ def get_options():
         for param in params:
             if getattr(options, param[2]) is None:
                 raise Exception("ERROR: missing required parameter %s.\n" % param[2])
-    except Exception, e:
+    except Exception as e:
         print_help(parser)
-        print e
+        print(e)
         sys.exit(2)
             
     return options
 
 def print_help(parser):
     '''Prints program usage description'''
-    print ""
+    print ("")
     parser.print_help()
-    print "\nRequired: \n"
-    print "\tdbname, dbuser, dbpass, input-dir and output-dir must all be specified.\n"
-    print "Example: \n"
-    print "\tupdate.py -d dbname -u user -p pass -i /home/user/incoming -o /var/www/jp2\n"
+    print ("\nRequired: \n")
+    print ("\tdbhost, dbname, dbuser, dbpass, input-dir and output-dir must all be specified.\n")
+    print ("Example: \n")
+    print ("\tupdate.py -h localhost -d dbname -u user -p pass -i /home/user/incoming -o /var/www/jp2\n")
 
 if __name__ == '__main__':
     main(sys.argv)

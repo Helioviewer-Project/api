@@ -3,11 +3,44 @@
 import os
 import logging
 import sunpy
+from sunpy.io.header import FileHeader
+from sunpy.io.jp2 import get_header
+from sunpy.map import Map
 from helioviewer.db import get_datasources, enable_datasource
+import traceback
+import sys
 
 __INSERTS_PER_QUERY__ = 500
 __STEP_FXN_THROTTLE__ = 50
 
+def create_image_data(filepath):
+    '''Create data object of JPEG 2000 image.
+
+    Get image observatory, instrument, detector, measurement, date from image metadata
+    and create an object
+    '''
+    imageData = Map(filepath)
+    image = {}
+    image['nickname'] = imageData.nickname
+    image['observatory'] = imageData.observatory.replace(" ","_")
+    image['instrument'] = imageData.instrument.split(" ")[0]
+    image['detector'] = imageData.detector
+    measurement = str(imageData.measurement).replace(".0 Angstrom","").replace(".0","")
+    #Convert Yohkoh measurements to helioviewer compatible
+    if image['observatory'] == "Yohkoh":
+        if measurement == "AlMg":
+            image['measurement'] = "AlMgMn"
+        elif measurement == "Al01":
+            image['measurement'] = "thin-Al"
+        else:
+            image['measurement'] = measurement
+    else:
+        image['measurement'] = measurement
+    image['date'] = imageData.date
+    image['filepath'] = filepath
+
+    return image
+    
 def find_images(path):
     '''Searches a directory for JPEG 2000 images.
 
@@ -25,10 +58,10 @@ def find_images(path):
 
 def process_jp2_images (images, root_dir, cursor, mysql=True, step_fxn=None, cursor_v2=None):
     '''Processes a collection of JPEG 2000 Images'''
-    if mysql:
-        import MySQLdb
-    else:
-        import pgdb
+    #if mysql:
+    #    import mysql.connector
+    #else:
+    #    import pgdb
 
     # Return tree of known data-sources
     sources = get_datasources(cursor)

@@ -9,9 +9,10 @@
 # Python imports
 import sys
 import os
+import errno
 import datetime
 import getpass
-import MySQLdb
+import mysql.connector
 from matplotlib import pyplot
 from numpy import std, median
 
@@ -19,10 +20,9 @@ def main(argv):
     """Main application"""
     printGreeting()
 
-    dbname, dbuser, dbpass = getDatabaseInfo()
+    dbhost, dbname, dbuser, dbpass = getDatabaseInfo()
 
-    db = MySQLdb.connect(use_unicode=True, charset = "utf8", host="localhost", 
-                         db=dbname, user=dbuser, passwd=dbpass)
+    db = mysql.connector.connect(use_unicode=True, charset = "utf8", host=dbhost, database=dbname, user=dbuser, password=dbpass)
     cursor = db.cursor()
 
     sources = getDataSources(cursor)
@@ -34,13 +34,13 @@ def main(argv):
         print("Unable to create directories.")
         sys.exit()
  
-    numDays = int(raw_input("How many days per graph? "))
+    numDays = int(input("How many days per graph? "))
     timeIncrement = datetime.timedelta(days=numDays)
     
     now  = datetime.datetime.now()
     
     # For each data source
-    for name,sourceId in sources.iteritems():
+    for name,sourceId in sources.items():
         print("Processing: " + name)
         date = getDataSourceStartDate(sourceId, cursor)
         
@@ -64,32 +64,45 @@ def main(argv):
 def createDirectories(sources):
     """Creates a directory structure to use for storing the coverage graphs."""
     dir = "Helioviewer_Coverage_" + datetime.datetime.now().strftime("%Y%m%d")
-    os.mkdir(dir)
+
+    try:
+        os.mkdir(dir)
+    except OSError as exc:
+        if exc.errno != errno.EEXIST:
+            raise exc
+        pass
+
     os.chdir(dir)
-    
-    for name,sourceId in sources.iteritems():
-        os.mkdir(name.replace(" ", "_"))
+
+    for name,sourceId in sources.items():
+        try:
+            os.mkdir(name.replace(" ", "_"))
+        except OSError as exc:
+            if exc.errno != errno.EEXIST:
+                raise exc
+            pass
 
 def getDatabaseInfo():
     """Prompts the user for database information"""
     while True:
-        print ("Please enter database information")
-        dbname = raw_input("Database: ")
-        dbuser = raw_input("User: ")
-        dbpass = getpass.getpass("Password: ")
+        print ("Please enter database information:")
+        dbhost = input("    Hostname [localhost]: ") or "localhost"
+        dbname = input("    Database [helioviewer]: ") or "helioviewer"
+        dbuser = input("    Username [helioviewer]: ") or "helioviewer"
+        dbpass = getpass.getpass("    Password: ")
         
-        if not checkDBInfo(dbname, dbuser, dbpass):
+        if not checkDBInfo(dbhost, dbname, dbuser, dbpass):
             print ("Unable to connect to the database. "
                    "Please check your login information and try again.")
         else:
-            return dbname, dbuser,dbpass
+            return dbhost, dbname, dbuser,dbpass
                 
-def checkDBInfo(dbname, dbuser, dbpass):
+def checkDBInfo(dbhost, dbname, dbuser, dbpass):
     """Validates database login information"""
     try:
-        db = MySQLdb.connect(db=dbname, user=dbuser, passwd=dbpass)
-    except MySQLdb.Error, e:
-        print e
+        db = mysql.connector.connect(host=dbhost, database=dbname, user=dbuser, password=dbpass)
+    except mysql.connector.Error as e:
+        print(e)
         return False
 
     db.close()
@@ -99,7 +112,7 @@ def getDataSourceStartDate(sourceId, cursor):
     """Returns a datetime object for the beginning of the first day 
        where data was available for a given source id
     """
-    cursor.execute("""SELECT date FROM images 
+    cursor.execute("""SELECT date FROM data 
                       WHERE sourceId = %d 
                       ORDER BY date ASC LIMIT 1;""" % sourceId)
     
@@ -116,7 +129,7 @@ def getDataSources(cursor):
         sourceId   = int(ds[1])
         
         # Only include datasources which for images exist in the database
-        cursor.execute("""SELECT COUNT(*) FROM images 
+        cursor.execute("""SELECT COUNT(*) FROM data 
                           WHERE sourceId=%d""" % sourceId)
         count = cursor.fetchone()[0]
         
@@ -137,7 +150,7 @@ def getFrequencies(cursor, sourceId, startDate, endDate):
     date = startDate
 
     while date <= endDate:
-        sql = """SELECT COUNT(*) FROM images
+        sql = """SELECT COUNT(*) FROM data
                  WHERE date BETWEEN '%s' AND '%s' 
                  AND sourceId = %d;""" % (date, date + day, sourceId)
         cursor.execute(sql)

@@ -16,7 +16,7 @@ Oct 26, 2011
 import sys
 import getpass
 import csv
-import MySQLdb
+import mysql.connector
 
 def main():
     """Main"""
@@ -28,7 +28,7 @@ def main():
         inst = source[3]
         meas = source[5]
 
-        print "Processing %s %s" % (inst, meas)
+        print ("Processing %s %s" % (inst, meas))
         
         if meas == "4500":
             gap_size = 3601
@@ -92,37 +92,37 @@ def get_datasources(cursor, obs="SDO"):
             ON datasources.measurementId=measurements.id
         WHERE observatories.name='%s';""" % obs
 
+    print(sql)
     cursor.execute(sql)
     return cursor.fetchall()
             
 def get_dbcursor():
     """Prompts the user for database info and returns a database cursor"""
     print("Please enter existing database login information:")
-    dbname, dbuser, dbpass = get_dbinfo()
+    dbhost, dbname, dbuser, dbpass = get_dbinfo()
 
-    db = MySQLdb.connect(host="localhost", db=dbname, user=dbuser, 
-                         passwd=dbpass)
+    db = mysql.connector.connect(autocommit = True, host=dbhost, database=dbname, user=dbuser, password=dbpass)
 
-    db.autocommit(True)
     return db.cursor()
     
 def get_dbinfo():
     """Gets database type and administrator login information"""
     while True:
-        dbname = raw_input("    Database [helioviewer]: ") or "helioviewer"
-        dbuser = raw_input("    Username [helioviewer]: ") or "helioviewer"
+        dbhost = input("    Hostname [localhost]: ") or "localhost"
+        dbname = input("    Database [helioviewer]: ") or "helioviewer"
+        dbuser = input("    Username [helioviewer]: ") or "helioviewer"
         dbpass = getpass.getpass("    Password: ")
 
-        if not check_db_info(dbname, dbuser, dbpass):
+        if not check_db_info(dbhost, dbname, dbuser, dbpass):
             print("Unable to connect to the database. Please check your "
                   "login information and try again.")
         else:
-            return dbname, dbuser,dbpass
+            return dbhost, dbname, dbuser,dbpass
 
-def check_db_info(dbname, dbuser, dbpass):
+def check_db_info(dbhost, dbname, dbuser, dbpass):
     """Validate database login information"""
     try:
-        db = MySQLdb.connect(db=dbname, user=dbuser, passwd=dbpass)
+        db = mysql.connector.connect(host=dbhost, db=dbname, user=dbuser, passwd=dbpass)
     except MySQLdb.Error as e:
         print(e)
         return False

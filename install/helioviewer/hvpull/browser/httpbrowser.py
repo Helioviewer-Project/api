@@ -1,8 +1,8 @@
 """HTTP data browser"""
 import os
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import socket
-from sgmllib import SGMLParser
+from html.parser import HTMLParser
 from helioviewer.hvpull.browser.basebrowser import BaseDataBrowser, NetworkError
 
 class HTTPDataBrowser(BaseDataBrowser):
@@ -27,9 +27,8 @@ class HTTPDataBrowser(BaseDataBrowser):
         # and retry up to 10 times.
         while files is None and num_retries <= 10:
             try:
-                files = filter(lambda url: url.endswith("." + extension), 
-                               self._query(location))
-            except IOError, e:
+                files = filter(lambda url: url.endswith("." + extension), self._query(location))
+            except IOError as e:
                 if isinstance(e.strerror, socket.error):
                     # if server is unreachable, raise an exception
                     raise NetworkError()
@@ -51,34 +50,33 @@ class HTTPDataBrowser(BaseDataBrowser):
         url_lister.close()
 
         urls = filter(lambda url: url[0] != "/" and url[0] != "?", result)
-        
+
         return [os.path.join(location, url) for url in urls]
     
-class URLLister(SGMLParser):
+class URLLister(HTMLParser):
     '''
     Created on Nov 1, 2011
     @author: Jack Ireland <jack.ireland@nasa.gov>
     copied from the original version of the download code.
     '''
     def __init__(self):
-        """Create a new URLLister"""
-        SGMLParser.__init__(self)
+        HTMLParser.__init__(self)
         self.urls = []
 
     def read(self, uri):
         """Read a URI and return a list of files/directories"""
-        usock = urllib.urlopen(uri)
-        self.feed(usock.read())
+        usock = urllib.request.urlopen(uri)
+        self.feed(usock.read().decode(usock.headers.get_content_charset()))
         usock.close()
         
         return self.urls
         
     def reset(self):
         """Reset state of URLLister"""
-        SGMLParser.reset(self)
+        HTMLParser.reset(self)
         self.urls = []
 
-    def start_a(self, attrs):
+    def handle_starttag(self, tag, attrs):
         href = [v for k, v in attrs if k == 'href']
         if href:
             self.urls.extend(href)
