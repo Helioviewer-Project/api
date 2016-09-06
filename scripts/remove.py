@@ -23,7 +23,7 @@ def main(argv):
     
     # Make sure at least one file was specified
     if len(argv) < 2:
-        print "Incorrect number of arguments. Please specify the names of the files you wish to remove."
+        print ("Incorrect number of arguments. Please specify the names of the files you wish to remove.")
         sys.exit()
         
     # Connect to database
@@ -33,10 +33,10 @@ def main(argv):
         filepath = remove_from_db(cursor, rootdir, filename)
         remove_from_archive(filepath, moveto)    
     
-    print "Done!"
+    print ("Done!")
     
 def remove_from_db(cursor, rootdir, filename):
-    print "Removing %s from the database" % filename
+    print ("Removing %s from the database" % filename)
 
     # First get the filepath    
     sql = "SELECT CONCAT('%s', filepath, '/', filename) FROM images WHERE filename = '%s'" % (rootdir, filename)
@@ -44,7 +44,7 @@ def remove_from_db(cursor, rootdir, filename):
     if cursor.execute(sql):
         filepath = cursor.fetchone()[0]
     else:
-        print "File not found in database. Stopping execution."
+        print ("File not found in database. Stopping execution.")
         sys.exit()
     
     # Then remove from the database
@@ -54,7 +54,7 @@ def remove_from_db(cursor, rootdir, filename):
     return filepath
 
 def remove_from_archive(filepath, moveto):
-    print "Moving %s to %s" % (filepath.split("/").pop(), moveto)
+    print ("Moving %s to %s" % (filepath.split("/").pop(), moveto))
     
     if not os.path.isdir(moveto):
         os.mkdir(moveto, 0755)

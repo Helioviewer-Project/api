@@ -25,7 +25,7 @@ import sys
 import signal
 import logging
 import argparse
-import ConfigParser
+import configparser
 from helioviewer import init_logger
 from helioviewer.hvpull.net.daemon import ImageRetrievalDaemon
 
@@ -50,8 +50,7 @@ def main():
     init_logger(logfile)
     
     # Initialize daemon
-    daemon = ImageRetrievalDaemon(args.servers, args.browse_method,
-                                  args.download_method, conf)
+    daemon = ImageRetrievalDaemon(args.servers, args.browse_method, args.download_method, conf)
 
     # Signal handlers
     def on_quit(signum, frame=None): # pylint: disable=W0613
@@ -69,7 +68,7 @@ def main():
 
 def get_config(filepath):
     """Load configuration file"""
-    config = ConfigParser.ConfigParser()
+    config = configparser.ConfigParser()
     
     basedir = os.path.dirname(os.path.realpath(__file__))
     default_userconfig = os.path.join(basedir, 'settings/settings.cfg')
@@ -79,9 +78,8 @@ def get_config(filepath):
     elif os.path.isfile(default_userconfig):
         config.readfp(open(default_userconfig))
     else:
-        config.readfp(open(os.path.join(basedir, 
-                                        'settings/settings.example.cfg')))
-        
+        config.readfp(open(os.path.join(basedir, 'settings/settings.example.cfg')))
+    print(config)
     return config
 
 def get_args():
@@ -124,19 +122,19 @@ def validate_args(args, servers, browsers, downloaders):
     """Validate arguments"""
     for server in args.servers:
         if server not in servers:
-            print "Invalid data server specified. Valid server choices include:"
+            print ("Invalid data server specified. Valid server choices include:")
             for i in servers.keys():
-                print i
+                print (i)
             sys.exit()
     if args.browse_method not in browsers:
-        print "Invalid browse method specified. Valid browse methods include:"
+        print ("Invalid browse method specified. Valid browse methods include:")
         for i in browsers.keys():
-            print i
+            print (i)
         sys.exit()
     elif args.download_method not in downloaders:
-        print "Invalid download method specified. Valid download methods include:"
+        print ("Invalid download method specified. Valid download methods include:")
         for i in downloaders.keys():
-            print i
+            print (i)
         sys.exit()
 
 def print_help(parser):

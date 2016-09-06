@@ -16,7 +16,7 @@ def main():
     cursor = database.get_dbcursor()
     
     # Decide how many days back to scan
-    num_days = int(raw_input("How many days back would you like to scan? [7]") or 7)
+    num_days = int(input("How many days back would you like to scan? [7]") or 7)
     start_date = datetime.datetime.utcnow() - datetime.timedelta(num_days)
     
     # Get list of Youtube ids to check
@@ -41,12 +41,12 @@ def main():
     # Confirm with user before removing
     print("Videos to be removed: ")
     for x in to_remove:
-        print x
+        print (x)
     print("Total: %d" % len(to_remove))
     
-    choice = raw_input("Are you sure you want to remove these videos from the database? ")
+    choice = input("Are you sure you want to remove these videos from the database? ")
     while choice.lower() not in ["yes", "y", "no", "n"]:
-        choice = raw_input("Please enter yes or no ")
+        choice = input("Please enter yes or no ")
         
     if choice in ["n", "no"]:
         sys.exit("Exiting without making any changes.")

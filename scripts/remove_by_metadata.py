@@ -15,18 +15,19 @@ def main():
     cursor = database.get_dbcursor()
     
     # Get search path
-    input_ = raw_input("Enter a directory or path to a list of files to check: ")
+    input_ = input("Enter a directory or path to a list of files to check: ")
+    #corrupt_dir = "/var/www/jp2/Corrupted"
     corrupt_dir = "/var/www/jp2/Corrupted"
     
     # Get search criterion (e.g. CDELT < 0.01 or IMG_TYPE = DARK)
-    filter_key = raw_input("Header key: ")
-    filter_op = raw_input("Operator [=, ~=, <, <=, >, >=, or CONTAINS]: ").lower()
+    filter_key = input("Header key: ")
+    filter_op = input("Operator [=, ~=, <, <=, >, >=, or CONTAINS]: ").lower()
     
     while filter_op not in ["=", "<", ">", "<=", ">=", "contains"]:
         print ("Invalid operator specified. Please try again.")
-        filter_op = raw_input("Operator [=, ~=, <, <=, >, >=, or CONTAINS]: ")
+        filter_op = input("Operator [=, ~=, <, <=, >, >=, or CONTAINS]: ")
 
-    filter_val = raw_input("Value: ")
+    filter_val = input("Value: ")
 
     # Get a list of files to search
     if os.path.isdir(input_):
@@ -45,11 +46,11 @@ def main():
     # Remove quarantined images
     print ("Found %d images matching the criterion. " % len(quarantine))
     
-    choice = raw_input("Are you sure you want to remove them? [y/n] ")
+    choice = input("Are you sure you want to remove them? [y/n] ")
     
     while choice not in ["y", "n"]:
         print ("Invalid choice. Please choice y or n")
-        choice = raw_input("\nAre you sure you want to remove them? [y/n] ")
+        choice = input("\nAre you sure you want to remove them? [y/n] ")
     
     for file_ in quarantine:
         filepath = remove.remove_from_db(cursor, root_dir, os.path.basename(file_))
