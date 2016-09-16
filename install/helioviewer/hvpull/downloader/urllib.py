@@ -1,9 +1,15 @@
 """urllib2-based file downloader"""
+import sys
 import os
 import logging
 import threading
 import time
-from urllib2 import urlopen, Request, URLError, HTTPError
+if (sys.version_info >= (3, 0)):
+    from urllib.request import urlopen, Request
+    from urllib.error import URLError, HTTPError
+else:
+    from urllib2 import urlopen, Request, URLError, HTTPError
+    
 
 class URLLibDownloader(threading.Thread):
     def __init__(self, incoming, queue):

@@ -121,7 +121,7 @@ If this is correct, please press "Start" to begin processing.
 
         self.ui.statusMsg.setText("Creating database schema")
 
-        cursor = setup_database_schema(admin, adminpass, "localhost",  hvdb, hvuser, hvpass, mysql)
+        db, cursor = setup_database_schema(admin, adminpass, "localhost",  hvdb, hvuser, hvpass, mysql)
         
         # Extract image parameters, 10,000 at a time
         while len(self.filepaths) > 0:
@@ -132,7 +132,7 @@ If this is correct, please press "Start" to begin processing.
             
             for filepath in subset:
                 try:
-                    image = sunpy.read_header(filepath)
+                    image = create_image_data(filepath)
                     image['filepath'] = filepath
                     images.append(image)
                 except:

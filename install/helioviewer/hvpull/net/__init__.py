@@ -1,1 +1,1 @@
-import daemon
+from . import daemon

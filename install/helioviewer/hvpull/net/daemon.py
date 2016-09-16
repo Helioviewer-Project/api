@@ -10,14 +10,17 @@ import logging
 import os
 import shutil
 import sunpy
-import Queue
-import MySQLdb
+import mysql.connector
 from random import shuffle
-from helioviewer.jp2 import process_jp2_images, BadImage
+from helioviewer.jp2 import process_jp2_images, BadImage, create_image_data
 from helioviewer.db  import get_db_cursor, mark_as_corrupt
 from helioviewer.hvpull.browser.basebrowser import NetworkError
 from sunpy.time import is_time
 
+if (sys.version_info >= (3, 0)):
+    import queue
+else:
+    import Queue as queue
 
 class ImageRetrievalDaemon:
     """Retrieves images from the server as specified"""
@@ -37,8 +40,8 @@ class ImageRetrievalDaemon:
         self.downloaders = []
 
         try:
-            self._db = get_db_cursor(self.dbhost, self.dbname, self.dbuser, self.dbpass)
-        except MySQLdb.OperationalError:
+            self._db, self._cursor = get_db_cursor(self.dbhost, self.dbname, self.dbuser, self.dbpass)
+        except mysql.connector.OperationalError:
             logging.error("Unable to access MySQL. Is the database daemon running?")
             self.shutdown()
             self.stop()
@@ -46,13 +49,14 @@ class ImageRetrievalDaemon:
         # v2 database  
         if self.dbhost_v2 != "" and self.dbname_v2 != "":
             try:
-                self._db_v2 = get_db_cursor(self.dbhost_v2, self.dbname_v2, self.dbuser_v2, self.dbpass_v2)
-            except MySQLdb.OperationalError:
+                self._db_v2, self._cursor_v2 = get_db_cursor(self.dbhost_v2, self.dbname_v2, self.dbuser_v2, self.dbpass_v2)
+            except mysql.connector.OperationalError:
                 logging.error("Unable to access MySQL. Is the database daemon running (v2)?")
                 self.shutdown()
                 self.stop()
         else:
             self._db_v2 = None
+            self._cursor_v2 = None
 
         # Email notification
         self.email_server = conf.get('notifications', 'server')
@@ -84,7 +88,8 @@ class ImageRetrievalDaemon:
         # For each server instantiate a browser and one or more downloaders
         for server in self.servers:
             self.browsers.append(self._load_browser(browse_method, server))
-            queue = Queue.Queue()
+            global queue
+            queue = queue.Queue()
             self.queues.append(queue)
             self.downloaders.append([self._load_downloader(download_method, queue)
                                      for i in range(self.max_downloads)])
@@ -198,11 +203,10 @@ class ImageRetrievalDaemon:
 
             while filtered is None:
                 try:
-                    filtered = filter(self._filter_new, url_list)
-                except MySQLdb.OperationalError:
+                    filtered = list(filter(self._filter_new, url_list))
+                except mysql.connector.OperationalError:
                     # MySQL has gone away -- try again in 5s
-                    logging.warning(("Unable to access database to check for file"
-                                   " existence. Will try again in 5 seconds."))
+                    logging.warning(("Unable to access database to check for file existence. Will try again in 5 seconds."))
                     time.sleep(5)
 
                     # Try and reconnect
@@ -211,7 +215,7 @@ class ImageRetrievalDaemon:
                     # functionality to the db module and have it occur
                     # for all queries.
                     try:
-                        self._db = get_db_cursor(self.dbhost, self.dbname, self.dbuser, self.dbpass)
+                        self._db, self._cursor = get_db_cursor(self.dbhost, self.dbname, self.dbuser, self.dbpass)
                     except:
                         pass
 
@@ -275,7 +279,7 @@ class ImageRetrievalDaemon:
         if not urls:
             logging.info("Found no new files.")
             return
-
+        
         n = sum(len(x) for x in urls)
 
         # Keep track of progress
@@ -290,16 +294,16 @@ class ImageRetrievalDaemon:
 
             # Download files 100 at a time to avoid blocking shutdown requests
             # and to allow images to be added to database sooner
-            for i, server in enumerate(urls):
+            for i, server in enumerate(list(urls)):
                 for j in range(100): #pylint: disable=W0612
-                    if len(server) > 0:
+                    if len(list(server)) > 0:
                         url = server.pop()
+                        
                         finished.append(url)
 
                         counter += 1.
 
-                        self.queues[i].put([self.servers[i].name,
-                                            (counter / total) * 100, url])
+                        self.queues[i].put([self.servers[i].name, (counter / total) * 100, url])
 
                         n -= 1
 
@@ -338,16 +342,16 @@ class ImageRetrievalDaemon:
             # Parse header and validate metadata
             try:
                 try:
-                    image_params = sunpy.read_header(filepath)
+                    image_params = create_image_data(filepath)
                 except:
                     raise BadImage("HEADER")
                     logging.warn('BadImage("HEADER") error raised')
                 self._validate(image_params)
-            except BadImage, e:
+            except BadImage as e:
                 logging.warn("Quarantining invalid image: %s", filename)
                 logging.warn("BadImage found; error message= %s", e.get_message())
                 shutil.move(filepath, os.path.join(self.quarantine, filename))
-                mark_as_corrupt(self._db, filename, e.get_message())
+                mark_as_corrupt(self._cursor, filename, e.get_message())
                 corrupt.append(filename)
                 continue
 
@@ -365,7 +369,6 @@ class ImageRetrievalDaemon:
                     self._transcode(filepath)
             except KduTranscodeError, e:
                 logging.error("kdu_transcode: " + e.get_message())
-
 
             # Move to archive
             directory = os.path.join(self.image_archive,
@@ -395,7 +398,7 @@ class ImageRetrievalDaemon:
             images.append(image_params)
 
         # Add valid images to main Database
-        process_jp2_images(images, self.image_archive, self._db, True, None, self._db_v2)
+        process_jp2_images(images, self.image_archive, self._cursor, True, None, self._cursor_v2)
 
         logging.info("Added %d images to database", len(images))
 
@@ -632,16 +635,14 @@ class ImageRetrievalDaemon:
         filename = os.path.basename(url)
 
         # Check to see if image is in `data` table
-        self._db.execute("SELECT COUNT(*) FROM data WHERE filename='%s'" %
-                         filename)
-        if self._db.fetchone()[0] != 0:
+        self._cursor.execute("SELECT COUNT(*) FROM data WHERE filename='%s'" % filename)
+        if self._cursor.fetchone()[0] != 0:
             return False
 
         # Check to see if image is in `corrupt` table
         #print('Remove comments characters to reactivate the code beneath when in production!!!')
-        self._db.execute("SELECT COUNT(*) FROM corrupt WHERE filename='%s'" %
-                 filename)
-        if self._db.fetchone()[0] != 0:
+        self._cursor.execute("SELECT COUNT(*) FROM corrupt WHERE filename='%s'" % filename)
+        if self._cursor.fetchone()[0] != 0:
             return False
 
         return True
