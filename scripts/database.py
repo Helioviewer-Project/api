@@ -1,13 +1,20 @@
 """Shared database functions"""
+import sys
 import getpass
 import mysql.connector
 
 def get_dbinfo():
     """Gets database type and administrator login information"""
     while True:
-        dbhost = input("    Hostname [localhost]: ") or "localhost"
-        dbname = input("    Database [helioviewer]: ") or "helioviewer"
-        dbuser = input("    Username [helioviewer]: ") or "helioviewer"
+        if (sys.version_info >= (3, 0)):
+            dbhost = input("    Hostname [localhost]: ") or "localhost"
+            dbname = input("    Database [helioviewer]: ") or "helioviewer"
+            dbuser = input("    Username [helioviewer]: ") or "helioviewer"
+        else:
+            dbhost = raw_input("    Hostname [localhost]: ") or "localhost"
+            dbname = raw_input("    Database [helioviewer]: ") or "helioviewer"
+            dbuser = raw_input("    Username [helioviewer]: ") or "helioviewer"
+        
         dbpass = getpass.getpass("    Password: ")
 
         if not check_db_info(dbuser, dbpass, dbhost, dbname):

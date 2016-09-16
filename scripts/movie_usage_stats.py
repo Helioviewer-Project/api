@@ -71,11 +71,18 @@ def getDatabaseInfo():
     """Prompts the user for database information"""
     while True:
         print ("Please enter database information:")
-        dbhost = input("    Hostname [localhost]: ") or "localhost"
-        dbname = input("    Database [helioviewer]: ") or "helioviewer"
-        dbuser = input("    Username [helioviewer]: ") or "helioviewer"
-        dbpass = getpass.getpass("    Password: ")
-        dbtable = input("    Table [movies]: ") or "movies"
+        if (sys.version_info >= (3, 0)):
+            dbhost = input("    Hostname [localhost]: ") or "localhost"
+            dbname = input("    Database [helioviewer]: ") or "helioviewer"
+            dbuser = input("    Username [helioviewer]: ") or "helioviewer"
+            dbpass = getpass.getpass("    Password: ")
+            dbtable = input("    Table [movies]: ") or "movies"
+        else:
+            dbhost = raw_input("    Hostname [localhost]: ") or "localhost"
+            dbname = raw_input("    Database [helioviewer]: ") or "helioviewer"
+            dbuser = raw_input("    Username [helioviewer]: ") or "helioviewer"
+            dbpass = getpass.getpass("    Password: ")
+            dbtable = raw_input("    Table [movies]: ") or "movies"
         
         if not checkDBInfo(dbhost, dbname, dbuser, dbpass):
             print ("Unable to connect to the database. "

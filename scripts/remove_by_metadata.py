@@ -13,21 +13,34 @@ from itertools import islice
 def main():
     # Connect to database
     cursor = database.get_dbcursor()
-    
-    # Get search path
-    input_ = input("Enter a directory or path to a list of files to check: ")
-    #corrupt_dir = "/var/www/jp2/Corrupted"
     corrupt_dir = "/var/www/jp2/Corrupted"
     
-    # Get search criterion (e.g. CDELT < 0.01 or IMG_TYPE = DARK)
-    filter_key = input("Header key: ")
-    filter_op = input("Operator [=, ~=, <, <=, >, >=, or CONTAINS]: ").lower()
+    if (sys.version_info >= (3, 0)):
+        # Get search path
+        input_ = input("Enter a directory or path to a list of files to check: ")
     
-    while filter_op not in ["=", "<", ">", "<=", ">=", "contains"]:
-        print ("Invalid operator specified. Please try again.")
-        filter_op = input("Operator [=, ~=, <, <=, >, >=, or CONTAINS]: ")
+        # Get search criterion (e.g. CDELT < 0.01 or IMG_TYPE = DARK)
+        filter_key = input("Header key: ")
+        filter_op = input("Operator [=, ~=, <, <=, >, >=, or CONTAINS]: ").lower()
+    
+        while filter_op not in ["=", "<", ">", "<=", ">=", "contains"]:
+            print ("Invalid operator specified. Please try again.")
+            filter_op = input("Operator [=, ~=, <, <=, >, >=, or CONTAINS]: ")
 
-    filter_val = input("Value: ")
+        filter_val = input("Value: ")
+    else:
+        # Get search path
+        input_ = raw_input("Enter a directory or path to a list of files to check: ")
+    
+        # Get search criterion (e.g. CDELT < 0.01 or IMG_TYPE = DARK)
+        filter_key = raw_input("Header key: ")
+        filter_op = raw_input("Operator [=, ~=, <, <=, >, >=, or CONTAINS]: ").lower()
+    
+        while filter_op not in ["=", "<", ">", "<=", ">=", "contains"]:
+            print ("Invalid operator specified. Please try again.")
+            filter_op = raw_input("Operator [=, ~=, <, <=, >, >=, or CONTAINS]: ")
+
+        filter_val = raw_input("Value: ")
 
     # Get a list of files to search
     if os.path.isdir(input_):
@@ -46,11 +59,17 @@ def main():
     # Remove quarantined images
     print ("Found %d images matching the criterion. " % len(quarantine))
     
-    choice = input("Are you sure you want to remove them? [y/n] ")
+    if (sys.version_info >= (3, 0)):
+        choice = input("Are you sure you want to remove them? [y/n] ")
+    else:
+        choice = raw_input("Are you sure you want to remove them? [y/n] ")
     
     while choice not in ["y", "n"]:
         print ("Invalid choice. Please choice y or n")
-        choice = input("\nAre you sure you want to remove them? [y/n] ")
+        if (sys.version_info >= (3, 0)):
+            choice = input("\nAre you sure you want to remove them? [y/n] ")
+        else:
+            choice = raw_input("\nAre you sure you want to remove them? [y/n] ")
     
     for file_ in quarantine:
         filepath = remove.remove_from_db(cursor, root_dir, os.path.basename(file_))

@@ -34,7 +34,10 @@ def main(argv):
         print("Unable to create directories.")
         sys.exit()
  
-    numDays = int(input("How many days per graph? "))
+    if (sys.version_info >= (3, 0)):
+        numDays = int(input("How many days per graph? "))
+    else:
+        numDays = int(raw_input("How many days per graph? "))
     timeIncrement = datetime.timedelta(days=numDays)
     
     now  = datetime.datetime.now()
@@ -86,9 +89,15 @@ def getDatabaseInfo():
     """Prompts the user for database information"""
     while True:
         print ("Please enter database information:")
-        dbhost = input("    Hostname [localhost]: ") or "localhost"
-        dbname = input("    Database [helioviewer]: ") or "helioviewer"
-        dbuser = input("    Username [helioviewer]: ") or "helioviewer"
+        if (sys.version_info >= (3, 0)):
+            dbhost = input("    Hostname [localhost]: ") or "localhost"
+            dbname = input("    Database [helioviewer]: ") or "helioviewer"
+            dbuser = input("    Username [helioviewer]: ") or "helioviewer"
+        else:
+            dbhost = raw_input("    Hostname [localhost]: ") or "localhost"
+            dbname = raw_input("    Database [helioviewer]: ") or "helioviewer"
+            dbuser = raw_input("    Username [helioviewer]: ") or "helioviewer"
+        
         dbpass = getpass.getpass("    Password: ")
         
         if not checkDBInfo(dbhost, dbname, dbuser, dbpass):
