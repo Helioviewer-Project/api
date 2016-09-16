@@ -146,8 +146,7 @@ def loadTextInstaller(options):
         dbuser, dbpass, mysql = app.getDatabaseInfo()
 
         # Setup database schema
-        cursor = setup_database_schema(dbuser, dbpass, dbname, hvuser, hvpass, 
-                                       mysql)
+        db, cursor = setup_database_schema(hvuser, hvpass, "localhost", dbname, dbuser, dbpass, mysql)
     
     else:
         # Get database information
@@ -156,7 +155,7 @@ def loadTextInstaller(options):
         
         print("Please enter Helioviewer.org database user information")
         dbuser, dbpass, mysql = app.getDatabaseInfo()
-        cursor = get_db_cursor(dbname, dbuser, dbpass, mysql)
+        cursor = get_db_cursor("localhost", dbname, dbuser, dbpass, mysql)
 
     print("Processing Images...")
 
@@ -173,7 +172,7 @@ def loadUpdater(options):
     # MySQL?
     mysql = options.dbtype == "mysql"
         
-    cursor = get_db_cursor(options.dbname, options.dbuser, options.dbpass, mysql)
+    cursor = get_db_cursor("localhost", options.dbname, options.dbuser, options.dbpass, mysql)
 
     print("Processing Images...")
 

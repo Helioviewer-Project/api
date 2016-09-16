@@ -6,16 +6,16 @@ import os
 def setup_database_schema(adminuser, adminpass, dbhost, dbname, dbuser, dbpass, mysql):
     """Sets up Helioviewer.org database schema"""
     if mysql:
-        import MySQLdb
-        adaptor = MySQLdb
+        import mysql.connector
+        adaptor = mysql.connector
     else:
         import pgdb
         adaptor = pgdb
-
+    
     create_db(adminuser, adminpass, dbhost, dbname, dbuser, dbpass, mysql, adaptor)
 
     # connect to helioviewer database
-    cursor = get_db_cursor(dbhost, dbname, dbuser, dbpass, mysql)
+    db, cursor = get_db_cursor(dbhost, dbname, dbuser, dbpass, mysql)
 
     create_datasource_table(cursor)
     create_datasource_property_table(cursor)
@@ -31,41 +31,38 @@ def setup_database_schema(adminuser, adminpass, dbhost, dbname, dbuser, dbpass, 
     create_events_table(cursor)
     create_events_coverage_table(cursor)
 
-    return cursor
+    return db, cursor
 
 def get_db_cursor(dbhost, dbname, dbuser, dbpass, mysql=True):
     """Creates a database connection"""
     if mysql:
-        import MySQLdb
+        import mysql.connector
     else:
         import pgdb
 
     if mysql:
-        db = MySQLdb.connect(use_unicode=True, charset="utf8",
-                             host=dbhost, db=dbname, user=dbuser,
-                             passwd=dbpass)
+        db = mysql.connector.connect(buffered=True, autocommit= True, use_unicode=True, charset="utf8", host=dbhost, database=dbname, user=dbuser, password=dbpass)
     else:
-        db = pgdb.connect(use_unicode=True, charset="utf8", database=dbname,
-                          user=dbuser, password=dbpass)
-
-    db.autocommit(True)
-    return db.cursor()
+        db = pgdb.connect(use_unicode=True, charset="utf8", database=dbname, user=dbuser, password=dbpass)
+        db.autocommit(True)
+    
+    cursor = db.cursor()
+    return db, cursor
 
 def check_db_info(adminuser, adminpass, mysql):
     """Validate database login information"""
     try:
         if mysql:
             try:
-                import MySQLdb
+                import mysql.connector
             except ImportError as e:
                 print(e)
                 return False
-            db = MySQLdb.connect(user=adminuser, passwd=adminpass)
+            db = mysql.connector.connect(user=adminuser, password=adminpass)
         else:
             import pgdb
-            db = pgdb.connect(database="postgres", user=adminuser,
-                              password=adminpass)
-    except MySQLdb.Error as e:
+            db = pgdb.connect(database="postgres", user=adminuser, password=adminpass)
+    except mysql.connector.Error as e:
         print(e)
         return False
 
@@ -79,22 +76,21 @@ def create_db(adminuser, adminpass, dbhost, dbname, dbuser, dbpass, mysql, adapt
     """
 
     create_str = "CREATE DATABASE IF NOT EXISTS %s;" % dbname
-    grant_str = "GRANT ALL ON %s.* TO '%s'@'localhost' IDENTIFIED BY '%s';" % (
-                dbname, dbuser, dbpass)
+    grant_str = "GRANT ALL ON %s.* TO '%s'@'localhost' IDENTIFIED BY '%s';" % (dbname, dbuser, dbpass)
 
     if mysql:
         try:
-           db = adaptor.connect(user=adminuser, passwd=adminpass)
+           db = adaptor.connect(autocommit= True, use_unicode=True, charset="utf8", host=dbhost, user=adminuser, passwd=adminpass)
            cursor = db.cursor()
            cursor.execute(create_str)
            cursor.execute(grant_str)
+           cursor.execute("FLUSH PRIVILEGES;")
         except adaptor.Error as e:
             print("Error: " + e.args[1])
             sys.exit(2)
     else:
         try:
-            db = adaptor.connect(database="postgres", user=adminuser,
-                                 password=adminpass)
+            db = adaptor.connect(database="postgres", user=adminuser, password=adminpass)
             cursor = db.cursor()
             cursor.execute(create_str)
             cursor.execute(grant_str)
@@ -136,8 +132,8 @@ def create_corrupt_table(cursor):
 
 def create_datasource_table(cursor):
     """Creates a table with the known datasources"""
-    cursor.execute(
-    """CREATE TABLE `datasources` (
+    cursor.execute("""
+    CREATE TABLE `datasources` (
       `id`            smallint(5) unsigned NOT NULL,
       `name`          varchar(127) NOT NULL,
       `description`   varchar(255) DEFAULT NULL,
@@ -375,152 +371,115 @@ def create_datasource_property_table(cursor):
         (35,'Measurement','white-light','white-light','No filter',3),
         (38,'Observatory','Hinode','Hinode','',1),
         (38,'Instrument','XRT','XRT','',2),
-        (38,'Filter Wheel 1','Al_med','Al_med','',3),
-        (38,'Filter Wheel 2','Al_mesh','Al_mesh','',4),
+        (38,'measurement','Al med-Al mesh','Al med-Al mesh','',3),
         (39,'Observatory','Hinode','Hinode','',1),
         (39,'Instrument','XRT','XRT','',2),
-        (39,'Filter Wheel 1','Al_med','Al_med','',3),
-        (39,'Filter Wheel 2','Al_thick','Al_thick','',4),
+        (39,'measurement','Al med-Al thick','Al med-Al thick','',3),
         (40,'Observatory','Hinode','Hinode','',1),
         (40,'Instrument','XRT','XRT','',2),
-        (40,'Filter Wheel 1','Al_med','Al_med','',3),
-        (40,'Filter Wheel 2','Be_thick','Be_thick','',4),
+        (40,'measurement','Al med-Be thick','Al med-Be thick','',3),
         (41,'Observatory','Hinode','Hinode','',1),
         (41,'Instrument','XRT','XRT','',2),
-        (41,'Filter Wheel 1','Al_med','Al_med','',3),
-        (41,'Filter Wheel 2','Gband','Gband','',4),
+        (41,'measurement','Al med-Gband','Al med-Gband','',3),
         (42,'Observatory','Hinode','Hinode','',1),
         (42,'Instrument','XRT','XRT','',2),
-        (42,'Filter Wheel 1','Al_med','Al_med','',3),
-        (42,'Filter Wheel 2','Open','Open','',4),
+        (42,'measurement','Al med-Open','Al med-Open','',3),
         (43,'Observatory','Hinode','Hinode','',1),
         (43,'Instrument','XRT','XRT','',2),
-        (43,'Filter Wheel 1','Al_med','Al_med','',3),
-        (43,'Filter Wheel 2','Ti_poly','Ti_poly','',4),
+        (43,'measurement','Al med-Ti poly','Al med-Ti poly','',3),
         (44,'Observatory','Hinode','Hinode','',1),
         (44,'Instrument','XRT','XRT','',2),
-        (44,'Filter Wheel 1','Al_poly','Al_poly','',3),
-        (44,'Filter Wheel 2','Al_mesh','Al_mesh','',4),
+        (44,'measurement','Al poly-Al mesh','Al poly-Al mesh','',3),
         (45,'Observatory','Hinode','Hinode','',1),
         (45,'Instrument','XRT','XRT','',2),
-        (45,'Filter Wheel 1','Al_poly','Al_poly','',3),
-        (45,'Filter Wheel 2','Al_thick','Al_thick','',4),
+        (45,'measurement','Al poly-Al thick','Al poly-Al thick','',3),
         (46,'Observatory','Hinode','Hinode','',1),
         (46,'Instrument','XRT','XRT','',2),
-        (46,'Filter Wheel 1','Al_poly','Al_poly','',3),
-        (46,'Filter Wheel 2','Be_thick','Be_thick','',4),
+        (46,'measurement','Al poly-Be thick','Al poly-Be thick','',3),
         (47,'Observatory','Hinode','Hinode','',1),
         (47,'Instrument','XRT','XRT','',2),
-        (47,'Filter Wheel 1','Al_poly','Al_poly','',3),
-        (47,'Filter Wheel 2','Gband','Gband','',4),
+        (47,'measurement','Al poly-Gband','Al poly-Gband','',3),
         (48,'Observatory','Hinode','Hinode','',1),
         (48,'Instrument','XRT','XRT','',2),
-        (48,'Filter Wheel 1','Al_poly','Al_poly','',3),
-        (48,'Filter Wheel 2','Open','Open','',4),
+        (48,'measurement','Al poly-Open','Al poly-Open','',3),
         (49,'Observatory','Hinode','Hinode','',1),
         (49,'Instrument','XRT','XRT','',2),
-        (49,'Filter Wheel 1','Al_poly','Al_poly','',3),
-        (49,'Filter Wheel 2','Ti_poly','Ti_poly','',4),
+        (49,'measurement','Al poly-Ti poly','Al poly-Ti poly','',3),
         (50,'Observatory','Hinode','Hinode','',1),
         (50,'Instrument','XRT','XRT','',2),
-        (50,'Filter Wheel 1','Be_med','Be_med','',3),
-        (50,'Filter Wheel 2','Al_mesh','Al_mesh','',4),
+        (50,'measurement','Be med-Al mesh','Be med-Al mesh','',3),
         (51,'Observatory','Hinode','Hinode','',1),
         (51,'Instrument','XRT','XRT','',2),
-        (51,'Filter Wheel 1','Be_med','Be_med','',3),
-        (51,'Filter Wheel 2','Al_thick','Al_thick','',4),
+        (51,'measurement','Be med-Al thick','Be med-Al thick','',3),
         (52,'Observatory','Hinode','Hinode','',1),
         (52,'Instrument','XRT','XRT','',2),
-        (52,'Filter Wheel 1','Be_med','Be_med','',3),
-        (52,'Filter Wheel 2','Be_thick','Be_thick','',4),
+        (52,'measurement','Be med-Be thick','Be med-Be thick','',3),
         (53,'Observatory','Hinode','Hinode','',1),
         (53,'Instrument','XRT','XRT','',2),
-        (53,'Filter Wheel 1','Be_med','Be_med','',3),
-        (53,'Filter Wheel 2','Gband','Gband','',4),
+        (53,'measurement','Be med-Gband','Be med-Gband','',3),
         (54,'Observatory','Hinode','Hinode','',1),
         (54,'Instrument','XRT','XRT','',2),
-        (54,'Filter Wheel 1','Be_med','Be_med','',3),
-        (54,'Filter Wheel 2','Open','Open','',4),
+        (54,'measurement','Be med-Open','Be med-Open','',3),
         (55,'Observatory','Hinode','Hinode','',1),
         (55,'Instrument','XRT','XRT','',2),
-        (55,'Filter Wheel 1','Be_med','Be_med','',3),
-        (55,'Filter Wheel 2','Ti_poly','Ti_poly','',4),
+        (55,'measurement','Be med-Ti poly','Be med-Ti poly','',3),
         (56,'Observatory','Hinode','Hinode','',1),
         (56,'Instrument','XRT','XRT','',2),
-        (56,'Filter Wheel 1','Be_thin','Be_thin','',3),
-        (56,'Filter Wheel 2','Al_mesh','Al_mesh','',4),
+        (56,'measurement','Be thin-Al mesh','Be thin-Al mesh','',3),
         (57,'Observatory','Hinode','Hinode','',1),
         (57,'Instrument','XRT','XRT','',2),
-        (57,'Filter Wheel 1','Be_thin','Be_thin','',3),
-        (57,'Filter Wheel 2','Al_thick','Al_thick','',4),
+        (57,'measurement','Be thin-Al thick','Be thin-Al thick','',3),
         (58,'Observatory','Hinode','Hinode','',1),
         (58,'Instrument','XRT','XRT','',2),
-        (58,'Filter Wheel 1','Be_thin','Be_thin','',3),
-        (58,'Filter Wheel 2','Be_thick','Be_thick','',4),
+        (58,'measurement','Be thin-Be thick','Be thin-Be thick','',3),
         (59,'Observatory','Hinode','Hinode','',1),
         (59,'Instrument','XRT','XRT','',2),
-        (59,'Filter Wheel 1','Be_thin','Be_thin','',3),
-        (59,'Filter Wheel 2','Gband','Gband','',4),
+        (59,'measurement','Be thin-Gband','Be thin-Gband','',3),
         (60,'Observatory','Hinode','Hinode','',1),
         (60,'Instrument','XRT','XRT','',2),
-        (60,'Filter Wheel 1','Be_thin','Be_thin','',3),
-        (60,'Filter Wheel 2','Open','Open','',4),
+        (60,'measurement','Be thin-Open','Be thin-Open','',3),
         (61,'Observatory','Hinode','Hinode','',1),
         (61,'Instrument','XRT','XRT','',2),
-        (61,'Filter Wheel 1','Be_thin','Be_thin','',3),
-        (61,'Filter Wheel 2','Ti_poly','Ti_poly','',4),
+        (61,'measurement','Be thin-Ti poly','Be thin-Ti poly','',3),
         (62,'Observatory','Hinode','Hinode','',1),
         (62,'Instrument','XRT','XRT','',2),
-        (62,'Filter Wheel 1','C_poly','C_poly','',3),
-        (62,'Filter Wheel 2','Al_mesh','Al_mesh','',4),
+        (62,'measurement','C poly-Al mesh','C poly-Al mesh','',3),
         (63,'Observatory','Hinode','Hinode','',1),
         (63,'Instrument','XRT','XRT','',2),
-        (63,'Filter Wheel 1','C_poly','C_poly','',3),
-        (63,'Filter Wheel 2','Al_thick','Al_thick','',4),
+        (63,'measurement','C poly-Al thick','C poly-Al thick','',3),
         (64,'Observatory','Hinode','Hinode','',1),
         (64,'Instrument','XRT','XRT','',2),
-        (64,'Filter Wheel 1','C_poly','C_poly','',3),
-        (64,'Filter Wheel 2','Be_thick','Be_thick','',4),
+        (64,'measurement','C poly-Be thick','C poly-Be thick','',3),
         (65,'Observatory','Hinode','Hinode','',1),
         (65,'Instrument','XRT','XRT','',2),
-        (65,'Filter Wheel 1','C_poly','C_poly','',3),
-        (65,'Filter Wheel 2','Gband','Gband','',4),
+        (65,'measurement','C poly-Gband','C poly-Gband','',3),
         (66,'Observatory','Hinode','Hinode','',1),
         (66,'Instrument','XRT','XRT','',2),
-        (66,'Filter Wheel 1','C_poly','C_poly','',3),
-        (66,'Filter Wheel 2','Open','Open','',4),
+        (66,'measurement','C poly-Open','C poly-Open','',3),
         (67,'Observatory','Hinode','Hinode','',1),
         (67,'Instrument','XRT','XRT','',2),
-        (67,'Filter Wheel 1','C_poly','C_poly','',3),
-        (67,'Filter Wheel 2','Ti_poly','Ti_poly','',4),
+        (67,'measurement','C poly-Ti poly','C poly-Ti poly','',3),
         (68,'Observatory','Hinode','Hinode','',1),
         (68,'Instrument','XRT','XRT','',2),
-        (68,'Filter Wheel 1','Mispositioned','Mispositioned','',3),
-        (68,'Filter Wheel 2','Mispositioned','Mispositioned','',4),
+        (68,'measurement','Mispositioned-Mispositioned','Mispositioned-Mispositioned','',3),
         (69,'Observatory','Hinode','Hinode','',1),
         (69,'Instrument','XRT','XRT','',2),
-        (69,'Filter Wheel 1','Open','Open','',3),
-        (69,'Filter Wheel 2','Al_mesh','Al_mesh','',4),
+        (69,'measurement','Open-Al mesh','Open-Al mesh','',3),
         (70,'Observatory','Hinode','Hinode','',1),
         (70,'Instrument','XRT','XRT','',2),
-        (70,'Filter Wheel 1','Open','Open','',3),
-        (70,'Filter Wheel 2','Al_thick','Al_thick','',4),
+        (70,'measurement','Open-Al thick','Open-Al thick','',3),
         (71,'Observatory','Hinode','Hinode','',1),
         (71,'Instrument','XRT','XRT','',2),
-        (71,'Filter Wheel 1','Open','Open','',3),
-        (71,'Filter Wheel 2','Be_thick','Be_thick','',4),
+        (71,'measurement','Open-Be thick','Open-Be thick','',3),
         (72,'Observatory','Hinode','Hinode','',1),
         (72,'Instrument','XRT','XRT','',2),
-        (72,'Filter Wheel 1','Open','Open','',3),
-        (72,'Filter Wheel 2','Gband','Gband','',4),
+        (72,'measurement','Open-Gband','Open-Gband','',3),
         (73,'Observatory','Hinode','Hinode','',1),
         (73,'Instrument','XRT','XRT','',2),
-        (73,'Filter Wheel 1','Open','Open','',3),
-        (73,'Filter Wheel 2','Open','Open','',4),
+        (73,'measurement','Open-Open','Open-Open','',3),
         (74,'Observatory','Hinode','Hinode','',1),
         (74,'Instrument','XRT','XRT','',2),
-        (74,'Filter Wheel 1','Open','Open','',3),
-        (74,'Filter Wheel 2','Ti_poly','Ti_poly','',4),
+        (74,'measurement','Open-Ti poly','Open-Ti poly','',3),
         (75,'Observatory','TRACE','TRACE','Transition Region and Coronal Explorer',1),
         (75,'Measurement','171','171','TRACE 171',2),
         (76,'Observatory','TRACE','TRACE','Transition Region and Coronal Explorer',1),
@@ -682,80 +641,76 @@ def create_data_coverage_table(cursor):
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
     
 def create_events_table(cursor):
-    """Creates a table to keep data coverage statistics
+    """Creates a table to keep events data
 
-    Creates a simple table for storing data coverage statistics
+    Creates a simple table for storing events
     """
     cursor.execute("""
     CREATE TABLE `events` (
-	  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-	  `kb_archivid` varchar(128) DEFAULT NULL,
-	  `frm_name` varchar(128) DEFAULT NULL,
-	  `concept` varchar(128) DEFAULT NULL,
-	  `frm_specificid` varchar(128) DEFAULT NULL,
-	  `event_starttime` datetime DEFAULT NULL,
-	  `event_endtime` datetime DEFAULT NULL,
-	  `event_peaktime` datetime DEFAULT NULL,
-	  `event_type` varchar(32) DEFAULT NULL,
-	  `event_before` varchar(128) DEFAULT NULL,
-	  `event_after` varchar(128) DEFAULT NULL,
-	  `hpc_boundcc` text,
-	  `hv_labels_formatted` text,
-	  `hv_poly_url` varchar(256) DEFAULT NULL,
-	  `hv_event_starttime` datetime DEFAULT NULL,
-	  `hv_event_endtime` datetime DEFAULT NULL,
-	  `hv_rot_hpc_time_base` datetime DEFAULT NULL,
-	  `hv_rot_hpc_time_targ` datetime DEFAULT NULL,
-	  `hv_hpc_x_notscaled_rot` decimal(20,16) DEFAULT NULL,
-	  `hv_hpc_y_notscaled_rot` decimal(20,16) DEFAULT NULL,
-	  `hv_hpc_x_rot_delta_notscaled` decimal(20,16) DEFAULT NULL,
-	  `hv_hpc_y_rot_delta_notscaled` decimal(20,16) DEFAULT NULL,
-	  `hv_hpc_x_scaled_rot` decimal(20,16) DEFAULT NULL,
-	  `hv_hpc_y_scaled_rot` decimal(20,16) DEFAULT NULL,
-	  `hv_hpc_y_final` decimal(20,16) DEFAULT NULL,
-	  `hv_hpc_x_final` decimal(20,16) DEFAULT NULL,
-	  `hv_hpc_r_scaled` decimal(20,16) DEFAULT NULL,
-	  `hv_poly_hpc_x_final` decimal(20,16) DEFAULT NULL,
-	  `hv_poly_hpc_y_final` decimal(20,16) DEFAULT NULL,
-	  `hv_poly_hpc_x_ul_scaled_rot` decimal(20,16) DEFAULT NULL,
-	  `hv_poly_hpc_y_ul_scaled_rot` decimal(20,16) DEFAULT NULL,
-	  `hv_poly_hpc_x_ul_scaled_norot` decimal(20,16) DEFAULT NULL,
-	  `hv_poly_hpc_y_ul_scaled_norot` decimal(20,16) DEFAULT NULL,
-	  `hv_poly_width_max_zoom_pixels` decimal(20,16) DEFAULT NULL,
-	  `hv_poly_height_max_zoom_pixels` decimal(20,16) DEFAULT NULL,
-	  `event_json` text
-	) ENGINE=MyISAM DEFAULT CHARSET=utf8;""")
-	
-    cursor.execute("""
-    ALTER TABLE `events`
-	  ADD PRIMARY KEY (`id`),
-	  ADD UNIQUE KEY `kb_archivid` (`kb_archivid`) USING BTREE,
-	  ADD KEY `concept` (`concept`),
-	  ADD KEY `event_type` (`event_type`),
-	  ADD KEY `event_starttime` (`event_starttime`),
-	  ADD KEY `event_endtime` (`event_endtime`),
-	  ADD KEY `event_starttime_2` (`event_starttime`,`event_endtime`),
-	  ADD KEY `frm_name` (`frm_name`),
-	  ADD KEY `frm_name_2` (`frm_name`,`event_type`);
-	;""")
+      `id` bigint(20) NOT NULL AUTO_INCREMENT,
+      `kb_archivid` varchar(128) DEFAULT NULL,
+      `frm_name` varchar(128) DEFAULT NULL,
+      `concept` varchar(128) DEFAULT NULL,
+      `frm_specificid` varchar(128) DEFAULT NULL,
+      `event_starttime` datetime DEFAULT NULL,
+      `event_endtime` datetime DEFAULT NULL,
+      `event_peaktime` datetime DEFAULT NULL,
+      `event_type` varchar(32) DEFAULT NULL,
+      `event_before` varchar(128) DEFAULT NULL,
+      `event_after` varchar(128) DEFAULT NULL,
+      `hpc_boundcc` text,
+      `hv_labels_formatted` text,
+      `hv_poly_url` varchar(256) DEFAULT NULL,
+      `hv_event_starttime` datetime DEFAULT NULL,
+      `hv_event_endtime` datetime DEFAULT NULL,
+      `hv_rot_hpc_time_base` datetime DEFAULT NULL,
+      `hv_rot_hpc_time_targ` datetime DEFAULT NULL,
+      `hv_hpc_x_notscaled_rot` decimal(20,16) DEFAULT NULL,
+      `hv_hpc_y_notscaled_rot` decimal(20,16) DEFAULT NULL,
+      `hv_hpc_x_rot_delta_notscaled` decimal(20,16) DEFAULT NULL,
+      `hv_hpc_y_rot_delta_notscaled` decimal(20,16) DEFAULT NULL,
+      `hv_hpc_x_scaled_rot` decimal(20,16) DEFAULT NULL,
+      `hv_hpc_y_scaled_rot` decimal(20,16) DEFAULT NULL,
+      `hv_hpc_y_final` decimal(20,16) DEFAULT NULL,
+      `hv_hpc_x_final` decimal(20,16) DEFAULT NULL,
+      `hv_hpc_r_scaled` decimal(20,16) DEFAULT NULL,
+      `hv_poly_hpc_x_final` decimal(20,16) DEFAULT NULL,
+      `hv_poly_hpc_y_final` decimal(20,16) DEFAULT NULL,
+      `hv_poly_hpc_x_ul_scaled_rot` decimal(20,16) DEFAULT NULL,
+      `hv_poly_hpc_y_ul_scaled_rot` decimal(20,16) DEFAULT NULL,
+      `hv_poly_hpc_x_ul_scaled_norot` decimal(20,16) DEFAULT NULL,
+      `hv_poly_hpc_y_ul_scaled_norot` decimal(20,16) DEFAULT NULL,
+      `hv_poly_width_max_zoom_pixels` decimal(20,16) DEFAULT NULL,
+      `hv_poly_height_max_zoom_pixels` decimal(20,16) DEFAULT NULL,
+      `event_json` text,
+      PRIMARY KEY (`id`),
+      UNIQUE KEY `kb_archivid` (`kb_archivid`) USING BTREE,
+      KEY `concept` (`concept`),
+      KEY `event_type` (`event_type`),
+      KEY `event_starttime` (`event_starttime`),
+      KEY `event_endtime` (`event_endtime`),
+      KEY `event_starttime_2` (`event_starttime`,`event_endtime`),
+      KEY `frm_name` (`frm_name`),
+      KEY `frm_name_2` (`frm_name`,`event_type`)
+    ) ENGINE=MyISAM DEFAULT CHARSET=utf8;""")
     
 def create_events_coverage_table(cursor):
-    """Creates a table to keep data coverage statistics
+    """Creates a table to keep events coverage statistics
 
-    Creates a simple table for storing data coverage statistics
+    Creates a simple table for storing events coverage statistics
     """
     cursor.execute("""
     CREATE TABLE `events_coverage` (
-	  `date` datetime NOT NULL,
-	  `period` varchar(4) NOT NULL DEFAULT '30m',
-	  `event_type` varchar(32) NOT NULL,
-	  `frm_name` varchar(128) NOT NULL DEFAULT '',
-	  `count` int(11) NOT NULL DEFAULT '0',
-	  PRIMARY KEY (`date`,`period`,`event_type`,`frm_name`),
-	  KEY `event_type` (`event_type`),
-	  KEY `period` (`period`,`event_type`),
-	  KEY `date` (`date`,`period`,`event_type`)
-	) ENGINE=MyISAM DEFAULT CHARSET=utf8;""")        
+      `date` datetime NOT NULL,
+      `period` varchar(4) NOT NULL DEFAULT '30m',
+      `event_type` varchar(32) NOT NULL,
+      `frm_name` varchar(128) NOT NULL DEFAULT '',
+      `count` int(11) NOT NULL DEFAULT '0',
+      PRIMARY KEY (`date`,`period`,`event_type`,`frm_name`),
+      KEY `event_type` (`event_type`),
+      KEY `period` (`period`,`event_type`),
+      KEY `date` (`date`,`period`,`event_type`)
+    ) ENGINE=MyISAM DEFAULT CHARSET=utf8;""")
 
 
 def enable_datasource(cursor, sourceId):
@@ -789,13 +744,13 @@ def get_datasources(cursor):
             s.id AS id,
             s.enabled AS enabled"""
 
-    for i,letter in letters.iteritems():
+    for i,letter in letters.items():
         sql += ', '
         sql += letter+'.name AS '+letter+'_name'
 
     sql += ' FROM datasources s '
 
-    for i,letter in letters.iteritems():
+    for i,letter in letters.items():
         sql += 'LEFT JOIN datasource_property '+letter+' '
         sql += 'ON s.id='+letter+'.sourceId '
         sql += 'AND '+letter+'.uiOrder='+str(i+1)+' '

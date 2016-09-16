@@ -4,7 +4,6 @@ import sys
 import os
 import gc
 import getpass
-import sunpy
 from helioviewer.jp2 import *
 from helioviewer.db  import *
 
@@ -24,7 +23,7 @@ class HelioviewerConsoleInstaller:
             sys.exit(2)
 
         # Setup database schema if needed
-        cursor, mysql = self.get_db_cursor()
+        db, cursor, mysql = self.get_db_cursor()
 
         print("Processing Images...")
 
@@ -37,13 +36,12 @@ class HelioviewerConsoleInstaller:
 
             for filepath in subset:
                 try:
-                    image = sunpy.read_header(filepath)
-                    image['filepath'] = filepath
+                    image = create_image_data(filepath)
                     images.append(image)
                 except:
                     #raise BadImage("HEADER")
-                    print("Skipping corrupt image: %s" %
-                          os.path.basename(filepath))
+                    print("Skipping corrupt image: %s" % os.path.basename(filepath))
+                    print(sys.exc_info())
                     continue
 
             # Insert image information into database
@@ -71,7 +69,7 @@ class HelioviewerConsoleInstaller:
         a cursor to that database."""
 
         print("Please enter Helioviewer.org database host")
-        dbname = self.get_database_host()
+        dbhost = self.get_database_host()
 
         print("Please enter Helioviewer.org database name")
         dbname = self.get_database_name()
@@ -79,9 +77,9 @@ class HelioviewerConsoleInstaller:
         print("Please enter Helioviewer.org database user information")
         dbuser, dbpass, mysql = self.get_database_info()
 
-        cursor = get_db_cursor(dbuser, dbname, dbuser, dbpass, mysql)
+        db, cursor = get_db_cursor(dbhost, dbname, dbuser, dbpass, mysql)
 
-        return cursor, mysql
+        return db, cursor, mysql
 
     def create_db(self):
         """Sets up the database tables needed for Helioviewer"""
@@ -91,15 +89,21 @@ class HelioviewerConsoleInstaller:
 
         # Get database information
         print("\nPlease enter existing database admin information:")
+        dbhost = self.get_database_host()
         dbuser, dbpass, mysql = self.get_database_info()
 
         # Setup database schema
         try:
-            cursor = setup_database_schema(dbhost, dbuser, dbpass, dbname, hvuser,
-                                           hvpass, mysql)
-            return cursor, mysql
+            db, cursor = setup_database_schema(dbuser, dbpass, dbhost, dbname, hvuser, hvpass, mysql)
+            return db, cursor, mysql
+        except OSError as err:
+            print("OS error: {0}".format(err))
+            sys.exit()
+        except ReferenceError as err:
+            print("ReferenceError:", err)
+            sys.exit()
         except:
-            print("Specified database already exists! Exiting installer.")
+            print("Specified database already exists! Exiting installer. Error:", sys.exc_info()[0])
             sys.exit()
 
     def get_filepath(self):
@@ -130,12 +134,12 @@ class HelioviewerConsoleInstaller:
     def get_database_host(self):
         ''' Prompts the user for the database host '''
 
-        dbname = get_input("\tDatabase host [localhost]: ")
+        dbhost = get_input("\tDatabase host [localhost]: ")
 
         # Default values
-        if not dbname: dbname = "localhost"
+        if not dbhost: dbhost = "localhost"
 
-        return dbname
+        return dbhost
 
     def get_database_name(self):
         ''' Prompts the user for the database name '''
@@ -152,8 +156,7 @@ class HelioviewerConsoleInstaller:
         options = {1: True, 2: False}
 
         while True:
-            print("Would you like to create the database schema used by "
-                  "Helioviewer.org?:")
+            print("Would you like to create the database schema used by Helioviewer.org?:")
             print("\t[1] Yes")
             print("\t[2] No")
             choice = get_input("Choice: ")
@@ -180,8 +183,7 @@ class HelioviewerConsoleInstaller:
             mysql = dbtype is "mysql"
 
             if not check_db_info(dbuser, dbpass, mysql):
-                print("Unable to connect to the database. Please check your "
-                      "login information and try again.")
+                print("Unable to connect to the database. Please check your login information and try again.")
             else:
                 return dbuser,dbpass,mysql
 

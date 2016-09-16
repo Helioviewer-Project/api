@@ -18,12 +18,10 @@ class LocalDataBrowser(BaseDataBrowser):
         # ensure the location exists
         full_path = os.path.expanduser(location)
         if os.path.exists(full_path):
-            filenames = filter(lambda f: f.endswith("." + extension), 
-                           os.listdir(full_path))
+            filenames = filter(lambda f: f.endswith("." + extension), os.listdir(full_path))
             files = [os.path.join(full_path,f) for f in filenames]
 
-        files = filter(lambda location: location.endswith("." + extension),
-                       self._query(location))
+        files = filter(lambda location: location.endswith("." + extension), self._query(location))
         return files
     
     def _query(self, location):

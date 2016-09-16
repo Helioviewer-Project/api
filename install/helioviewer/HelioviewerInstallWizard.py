@@ -120,7 +120,7 @@ If this is correct, please press "Start" to begin processing.
 
         self.ui.statusMsg.setText("Creating database schema")
 
-        cursor = setup_database_schema(admin, adminpass, hvdb, hvuser, hvpass, mysql)
+        db, cursor = setup_database_schema(admin, adminpass, "localhost", hvdb, hvuser, hvpass, mysql)
 
         process_jp2_images(self.images, jp2dir, cursor, mysql, self.updateProgress)
     
