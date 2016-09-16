@@ -807,9 +807,19 @@ class Database_Statistics {
 					$timeEnd = ($endInterval->getTimestamp() * 1000);
 				}
 				
+				$modifier = 0;
+				if($timeStart == $timeEnd){
+					$modifier = round(($endTimestamp - $startTimestamp) / (3*60)) * 100;
+					$startTimeToDisplay = $timeStart - $modifier;
+					$timeEndToDisplay = $timeEnd + $modifier;
+				}else{
+					$startTimeToDisplay = $timeStart;
+					$timeEndToDisplay = $timeEnd;
+				}
+				
 				$sources[$eventKey]['data'][$j] = array(
-					'x' => $timeStart,
-					'x2' => $timeEnd,
+					'x' => $startTimeToDisplay,
+					'x2' => $timeEndToDisplay,
 					'y' => $j,
 					'kb_archivid' => $row['kb_archivid'],
 					'hv_labels_formatted' => json_decode($row['hv_labels_formatted']),
@@ -818,9 +828,14 @@ class Database_Statistics {
 					'frm_specificid' => $row['frm_specificid'],
 					'event_peaktime' => $row['event_peaktime'],
 					'event_starttime' => $row['event_starttime'],
-					'event_endtime' => $row['event_endtime']
+					'event_endtime' => $row['event_endtime'],
+					'modifier' => $modifier
 				);
-
+				
+				if($timeStart == $timeEnd){
+					$sources[$eventKey]['data'][$j]['zeroSeconds'] = true;
+				}
+				
 				if($currentTimestamp >= $timeStart && $currentTimestamp <= $timeEnd){
 					$sources[$eventKey]['data'][$j]['borderColor'] = '#ffffff';
 				}else{
@@ -898,7 +913,7 @@ class Database_Statistics {
         //Remove not visible events
         foreach($dbVisibleData as $k => $isVisible){
 	        if($isVisible){
-		        $sources[$k]['showInLegend'] = ture;
+		        $sources[$k]['showInLegend'] = true;
 	        }
         }
         
