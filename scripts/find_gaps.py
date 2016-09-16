@@ -20,7 +20,7 @@ import mysql.connector
 
 def main():
     """Main"""
-    cursor = get_dbcursor()
+    db, cursor = get_dbcursor()
     datasources = get_datasources(cursor)
     
     for source in datasources:
@@ -92,7 +92,6 @@ def get_datasources(cursor, obs="SDO"):
             ON datasources.measurementId=measurements.id
         WHERE observatories.name='%s';""" % obs
 
-    print(sql)
     cursor.execute(sql)
     return cursor.fetchall()
             
@@ -103,14 +102,19 @@ def get_dbcursor():
 
     db = mysql.connector.connect(autocommit = True, host=dbhost, database=dbname, user=dbuser, password=dbpass)
 
-    return db.cursor()
+    return db, db.cursor()
     
 def get_dbinfo():
     """Gets database type and administrator login information"""
     while True:
-        dbhost = input("    Hostname [localhost]: ") or "localhost"
-        dbname = input("    Database [helioviewer]: ") or "helioviewer"
-        dbuser = input("    Username [helioviewer]: ") or "helioviewer"
+        if (sys.version_info >= (3, 0)):
+            dbhost = input("    Hostname [localhost]: ") or "localhost"
+            dbname = input("    Database [helioviewer]: ") or "helioviewer"
+            dbuser = input("    Username [helioviewer]: ") or "helioviewer"
+        else:
+            dbhost = raw_input("    Hostname [localhost]: ") or "localhost"
+            dbname = raw_input("    Database [helioviewer]: ") or "helioviewer"
+            dbuser = raw_input("    Username [helioviewer]: ") or "helioviewer"
         dbpass = getpass.getpass("    Password: ")
 
         if not check_db_info(dbhost, dbname, dbuser, dbpass):

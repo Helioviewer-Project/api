@@ -10,7 +10,6 @@ import logging
 import os
 import shutil
 import sunpy
-import queue
 import mysql.connector
 from random import shuffle
 from helioviewer.jp2 import process_jp2_images, BadImage, create_image_data
@@ -18,6 +17,10 @@ from helioviewer.db  import get_db_cursor, mark_as_corrupt
 from helioviewer.hvpull.browser.basebrowser import NetworkError
 from sunpy.time import is_time
 
+if (sys.version_info >= (3, 0)):
+    import queue
+else:
+    import Queue as queue
 
 class ImageRetrievalDaemon:
     """Retrieves images from the server as specified"""
