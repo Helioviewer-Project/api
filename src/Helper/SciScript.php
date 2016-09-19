@@ -93,8 +93,8 @@ class Helper_SciScript {
         }
 
         // Enforce minimum cut-out size
-        $fovx = (($fovx < 240) ? 240 : $fovx);
-        $fovy = (($fovy < 240) ? 240 : $fovy);
+        //$fovx = (($fovx < 240) ? 240 : $fovx);
+        //$fovy = (($fovy < 240) ? 240 : $fovy);
 
         return Array($xcen,$ycen,$fovx,$fovy);
     }
