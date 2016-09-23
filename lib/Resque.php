@@ -6,13 +6,12 @@ require_once dirname(__FILE__) . '/Resque/Exception.php';
  * Base Resque class.
  *
  * @package		Resque
- * @author		Chris Boulton <chris.boulton@interspire.com>
- * @copyright	(c) 2010 Chris Boulton
+ * @author		Chris Boulton <chris@bigcommerce.com>
  * @license		http://www.opensource.org/licenses/mit-license.php
  */
 class Resque
 {
-	const VERSION = '1.0';
+	const VERSION = '1.2';
 
 	/**
 	 * @var Resque_Redis Instance of Resque_Redis that talks to redis.
@@ -20,25 +19,35 @@ class Resque
 	public static $redis = null;
 
 	/**
+	 * @var mixed Host/port conbination separated by a colon, or a nested
+	 * array of server swith host/port pairs
+	 */
+	protected static $redisServer = null;
+
+	/**
+	 * @var int ID of Redis database to select.
+	 */
+	protected static $redisDatabase = 0;
+
+	/**
+	 * @var int PID of current process. Used to detect changes when forking
+	 *  and implement "thread" safety to avoid race conditions.
+	 */
+	 protected static $pid = null;
+
+	/**
 	 * Given a host/port combination separated by a colon, set it as
 	 * the redis server that Resque will talk to.
 	 *
 	 * @param mixed $server Host/port combination separated by a colon, or
-	 * a nested array of servers with host/port pairs.
+	 *                      a nested array of servers with host/port pairs.
+	 * @param int $database
 	 */
 	public static function setBackend($server, $database = 0)
 	{
-		if(is_array($server)) {
-			require_once dirname(__FILE__) . '/Resque/RedisCluster.php';
-			self::$redis = new Resque_RedisCluster($server);
-		}
-		else {
-			list($host, $port) = explode(':', $server);
-			require_once dirname(__FILE__) . '/Resque/Redis.php';
-			self::$redis = new Resque_Redis($host, $port);
-		}
-
-        self::redis()->select($database);
+		self::$redisServer   = $server;
+		self::$redisDatabase = $database;
+		self::$redis         = null;
 	}
 
 	/**
@@ -48,10 +57,40 @@ class Resque
 	 */
 	public static function redis()
 	{
-		if(is_null(self::$redis)) {
-			self::setBackend('localhost:6379');
+		// Detect when the PID of the current process has changed (from a fork, etc)
+		// and force a reconnect to redis.
+		$pid = getmypid();
+		if (self::$pid !== $pid) {
+			self::$redis = null;
+			self::$pid   = $pid;
 		}
 
+		if(!is_null(self::$redis)) {
+			return self::$redis;
+		}
+
+		$server = self::$redisServer;
+		if (empty($server)) {
+			$server = 'localhost:6379';
+		}
+
+		if(is_array($server)) {
+			require_once dirname(__FILE__) . '/Resque/RedisCluster.php';
+			self::$redis = new Resque_RedisCluster($server);
+		}
+		else {
+			if (strpos($server, 'unix:') === false) {
+				list($host, $port) = explode(':', $server);
+			}
+			else {
+				$host = $server;
+				$port = null;
+			}
+			require_once dirname(__FILE__) . '/Resque/Redis.php';
+			self::$redis = new Resque_Redis($host, $port);
+		}
+
+		self::$redis->select(self::$redisDatabase);
 		return self::$redis;
 	}
 
@@ -88,6 +127,8 @@ class Resque
 	/**
 	 * Return the size (number of pending jobs) of the specified queue.
 	 *
+	 * @param $queue name of the queue to be checked for pending jobs
+	 *
 	 * @return int The size of the queue.
 	 */
 	public static function size($queue)
@@ -101,7 +142,9 @@ class Resque
 	 * @param string $queue The name of the queue to place the job in.
 	 * @param string $class The name of the class that contains the code to execute the job.
 	 * @param array $args Any optional arguments that should be passed when the job is executed.
-	 * @param boolean $monitor Set to true to be able to monitor the status of a job.
+	 * @param boolean $trackStatus Set to true to be able to monitor the status of a job.
+	 *
+	 * @return string
 	 */
 	public static function enqueue($queue, $class, $args = null, $trackStatus = false)
 	{
@@ -110,7 +153,8 @@ class Resque
 		if ($result) {
 			Resque_Event::trigger('afterEnqueue', array(
 				'class' => $class,
-				'args' => $args,
+				'args'  => $args,
+				'queue' => $queue,
 			));
 		}
 

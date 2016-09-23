@@ -246,8 +246,7 @@ class Module_Movies implements Module {
         $movieId = intval($movieId);
 
         if ( $movieId <= 0 ) {
-            throw new Exception(
-                'Value of movie "id" parameter is invalid.', 25);
+            throw new Exception('Value of movie "id" parameter is invalid.', 25);
         }
 
         // Check if movie exists on disk before re-queueing
@@ -263,8 +262,7 @@ class Module_Movies implements Module {
                 $path = str_replace($extension, $ext, $filepath);
                 if ( @file_exists($path) ) {
                     $url = str_replace(HV_CACHE_DIR, HV_CACHE_URL, $path);
-                    throw new Exception(
-                        'Movie file already exists: '.$url, 44);
+                    throw new Exception('Movie file already exists: '.$url, 44);
                 }
             }
         }
@@ -288,14 +286,8 @@ class Module_Movies implements Module {
             $seconds_ago = time() - strtotime($movieFormat['modified']);
             $stale = 60 * 60 * 2;  // 2 hours
 
-            if ( $movieFormat['status'] == 0
-                && $seconds_ago < $stale ) {
-
-                return;
-            }
-            else if ( $movieFormat['status'] == 1
-                &&  $seconds_ago < $stale ) {
-
+            if ( $movieFormat['status'] < 2 && $seconds_ago < $stale ) {
+				throw new Exception('Movie can be regenerated only once every 2 hours', 44);
                 return;
             }
         }
@@ -351,8 +343,8 @@ class Module_Movies implements Module {
             'format'  => $options['format'],
             'counter' => $updateCounter
         );
-        $token = Resque::enqueue(HV_MOVIE_QUEUE, 'Job_MovieBuilder',
-            $args, true);
+        $token = Resque::enqueue(HV_MOVIE_QUEUE, 'Job_MovieBuilder', $args, true);
+		
 
         // Create entries for each version of the movie in the movieFormats
         // table
@@ -672,23 +664,29 @@ class Module_Movies implements Module {
     public function getMovieStatus() {
         include_once HV_ROOT_DIR.'/../src/Movie/HelioviewerMovie.php';
         require_once HV_ROOT_DIR.'/../lib/Resque.php';
-        $queueNum = $this->_getQueueNum(HV_MOVIE_QUEUE,
-            $this->_params['id']) + 1;
+        require_once HV_ROOT_DIR.'/../lib/Resque/Job.php';
+        $queueNum = $this->_getQueueNum(HV_MOVIE_QUEUE, $this->_params['id']) + 1;
 
         // Process request
-        $movie = new Movie_HelioviewerMovie($this->_params['id'],
-            $this->_params['format']);
-        $verbose = isset($this->_options['verbose']) ?
-            $this->_options['verbose'] : false;
+        $movie = new Movie_HelioviewerMovie($this->_params['id'], $this->_params['format']);
+        $verbose = isset($this->_options['verbose']) ? $this->_options['verbose'] : false;
 
 
         if ($movie->status == 0) {
             // QUEUED
+            $jobStatus = '';
+            if(isset($this->_params['token']) && $this->_params['token'] != '0'){
+	            $status = new Resque_Job_Status($this->_params['token']);
+	            $jobStatus = $status->get();
+            }
+            $status = new Resque_Job_Status($this->_params['token']);
+		
             $response = array(
                 'status'   => $movie->status,
                 'statusLabel' => $this->getStatusLabel($movie->status),
                 'queuePosition' => $queueNum,
-                'currentFrame' => 0
+                'currentFrame' => 0,
+                'jobStatus' => $jobStatus
             );
         }
         else if ($movie->status == 1) {

@@ -97,6 +97,7 @@ class Movie_HelioviewerMovie {
 
         if ( $this->_cached !== true ) {
             $info = $this->_loadFromDB($publicId, $format);
+            $info['regionOfInterest'] = $info['roi'];
             if ( HV_DISABLE_CACHE !== true ) {
                 if ( $cache->writeCache($info) ) {
                     $this->_cached = true;
