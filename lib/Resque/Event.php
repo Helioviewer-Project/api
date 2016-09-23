@@ -3,8 +3,7 @@
  * Resque event/plugin system class
  *
  * @package		Resque/Event
- * @author		Chris Boulton <chris.boulton@interspire.com>
- * @copyright	(c) 2010 Chris Boulton
+ * @author		Chris Boulton <chris@bigcommerce.com>
  * @license		http://www.opensource.org/licenses/mit-license.php
  */
 class Resque_Event
@@ -73,7 +72,7 @@ class Resque_Event
 		
 		$key = array_search($callback, self::$events[$event]);
 		if ($key !== false) {
-			unset(self::$events[$key]);
+			unset(self::$events[$event][$key]);
 		}
 		
 		return true;

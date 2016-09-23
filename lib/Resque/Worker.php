@@ -9,8 +9,7 @@ require_once dirname(__FILE__) . '/Job/DirtyExitException.php';
  * off the queues, running them and handling the result.
  *
  * @package		Resque/Worker
- * @author		Chris Boulton <chris.boulton@interspire.com>
- * @copyright	(c) 2010 Chris Boulton
+ * @author		Chris Boulton <chris@bigcommerce.com>
  * @license		http://www.opensource.org/licenses/mit-license.php
  */
 class Resque_Worker
@@ -61,6 +60,7 @@ class Resque_Worker
 
 	/**
 	 * Return all workers known to Resque as instantiated instances.
+	 * @return array
 	 */
 	public static function all()
 	{
@@ -95,7 +95,7 @@ class Resque_Worker
 	 */
 	public static function find($workerId)
 	{
-		if(!self::exists($workerId)) {
+	  if(!self::exists($workerId) || false === strpos($workerId, ":")) {
 			return false;
 		}
 
@@ -192,12 +192,12 @@ class Resque_Worker
 			$this->child = $this->fork();
 
 			// Forked and we're the child. Run the job.
-			if($this->child === 0 || $this->child === false) {
+			if ($this->child === 0 || $this->child === false) {
 				$status = 'Processing ' . $job->queue . ' since ' . strftime('%F %T');
 				$this->updateProcLine($status);
 				$this->log($status, self::LOG_VERBOSE);
 				$this->perform($job);
-				if($this->child === 0) {
+				if ($this->child === 0) {
 					exit(0);
 				}
 			}
@@ -228,7 +228,7 @@ class Resque_Worker
 	/**
 	 * Process a single job.
 	 *
-	 * @param object|null $job The job to be processed.
+	 * @param Resque_Job $job The job to be processed.
 	 */
 	public function perform(Resque_Job $job)
 	{
@@ -447,12 +447,14 @@ class Resque_Worker
 		$workerPids = $this->workerPids();
 		$workers = self::all();
 		foreach($workers as $worker) {
-			list($host, $pid, $queues) = explode(':', (string)$worker, 3);
-			if($host != $this->hostname || in_array($pid, $workerPids) || $pid == getmypid()) {
-				continue;
-			}
-			$this->log('Pruning dead worker: ' . (string)$worker, self::LOG_VERBOSE);
-			$worker->unregisterWorker();
+		  if (is_object($worker)) {
+  			list($host, $pid, $queues) = explode(':', (string)$worker, 3);
+  			if($host != $this->hostname || in_array($pid, $workerPids) || $pid == getmypid()) {
+  				continue;
+  			}
+  			$this->log('Pruning dead worker: ' . (string)$worker, self::LOG_VERBOSE);
+  			$worker->unregisterWorker();
+		  }
 		}
 	}
 
@@ -508,13 +510,11 @@ class Resque_Worker
 		$job->worker = $this;
 		$this->currentJob = $job;
 		$job->updateStatus(Resque_Job_Status::STATUS_RUNNING);
-		$data = json_encode(
-			array(
-				'queue' => $job->queue,
-				'run_at' => strftime('%a %b %d %H:%M:%S %Z %Y'),
-				'payload' => $job->payload
-			)
-		);
+		$data = json_encode(array(
+			'queue' => $job->queue,
+			'run_at' => strftime('%a %b %d %H:%M:%S %Z %Y'),
+			'payload' => $job->payload
+		));
 		Resque::redis()->set('worker:' . $job->worker, $data);
 	}
 

@@ -5,8 +5,7 @@ require_once dirname(__FILE__) . '/Failure/Interface.php';
  * Failed Resque job.
  *
  * @package		Resque/Failure
- * @author		Chris Boulton <chris.boulton@interspire.com>
- * @copyright	(c) 2010 Chris Boulton
+ * @author		Chris Boulton <chris@bigcommerce.com>
  * @license		http://www.opensource.org/licenses/mit-license.php
  */
 class Resque_Failure
@@ -19,10 +18,10 @@ class Resque_Failure
 	/**
 	 * Create a new failed job on the backend.
 	 *
-	 * @param object $payload The contents of the job that has just failed.
-	 * @param object $exception The exception generated when the job failed to run.
-	 * @param object $worker Instance of Resque_Worker that was running this job when it failed.
-	 * @param string $queue The name of the queue that this job was fetched from.
+	 * @param object $payload        The contents of the job that has just failed.
+	 * @param \Exception $exception  The exception generated when the job failed to run.
+	 * @param \Resque_Worker $worker Instance of Resque_Worker that was running this job when it failed.
+	 * @param string $queue          The name of the queue that this job was fetched from.
 	 */
 	public static function create($payload, Exception $exception, Resque_Worker $worker, $queue)
 	{
