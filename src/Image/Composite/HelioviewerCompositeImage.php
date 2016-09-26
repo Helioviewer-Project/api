@@ -449,8 +449,7 @@ class Image_Composite_HelioviewerCompositeImage {
             $y = ((-$event['hv_hpc_y_final'] - $this->roi->top() )
                  / $this->roi->imageScale()) - $markerPinPixelOffsetY;
 
-            $imagickImage->compositeImage(
-                $marker, IMagick::COMPOSITE_DISSOLVE, $x, $y);
+            $imagickImage->compositeImage($marker, IMagick::COMPOSITE_DISSOLVE, $x, $y);
 
             if ( $this->eventsLabels == true ) {
                 $x = (( $event['hv_hpc_x_final'] - $this->roi->left())
@@ -462,36 +461,37 @@ class Image_Composite_HelioviewerCompositeImage {
                 if ( !array_key_exists('hv_labels_formatted', $event) ||
                      count($event['hv_labels_formatted']) < 1 ) {
 
-                    $event['hv_labels_formatted'] = Array(
-                        'Event Type' => $event['concept'] );
+                    $event['hv_labels_formatted'] = Array('Event Type' => $event['concept'] );
                 }
 
                 foreach( $event['hv_labels_formatted'] as $key => $value ) {
-
+					//Fix unicode 
+					$value = str_replace(
+						array('u03b1', 'u03b2', 'u03b3', 'u00b1', 'u00b2'), 
+						array('α', 'β', 'γ', '±', '²'), 
+						$value
+					);
+					
                     // Outline words in black
                     $text = new IMagickDraw();
                     $text->setTextEncoding('utf-8');
-                    $text->setFont('/usr/share/fonts/truetype/ttf-dejavu/' .
-                                   'DejaVuSans.ttf');
+                    $text->setFont('/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf');
                     $text->setFontSize(10);
                     $text->setStrokeColor('#000C');
                     $text->setStrokeAntialias(true);
                     $text->setStrokeWidth(3);
                     $text->setStrokeOpacity(0.3);
-                    $imagickImage->annotateImage(
-                        $text, $x, $y+($count*12), 0, $value );
+                    $imagickImage->annotateImage($text, $x, $y+($count*12), 0, $value );
 
                     // Write words in white over outline
                     $text = new IMagickDraw();
                     $text->setTextEncoding('utf-8');
-                    $text->setFont('/usr/share/fonts/truetype/ttf-dejavu/' .
-                                   'DejaVuSans.ttf');
+                    $text->setFont('/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf');
                     $text->setFontSize(10);
                     $text->setFillColor('#ffff');
                     $text->setTextAntialias(true);
                     $text->setStrokeWidth(0);
-                    $imagickImage->annotateImage(
-                        $text, $x, $y+($count*12), 0, $value );
+                    $imagickImage->annotateImage($text, $x, $y+($count*12), 0, $value );
 
                     $count++;
                 }
