@@ -287,8 +287,8 @@ class Module_Movies implements Module {
             $stale = 60 * 60 * 2;  // 2 hours
 
             if ( $movieFormat['status'] < 2 && $seconds_ago < $stale ) {
-				throw new Exception('Movie can be regenerated only once every 2 hours', 44);
-                return;
+				//throw new Exception('Movie can be regenerated only once every 2 hours', 47);
+                //return;
             }
         }
 

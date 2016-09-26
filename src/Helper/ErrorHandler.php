@@ -35,6 +35,7 @@
  *   44 MOVIE       Attempt to rebuild processed movie
  *   45 MOVIE       Attempt to upload without authorizing
  *   46 MOVIE       Attempt to upload movie more than once
+ *   47 MOVIE       Movie Already Exist
  *   50 SYSTEM      Permissions error
  *   60 JHV         Failed to create JPX
  *   61 JHV         JPX creation taking too long
