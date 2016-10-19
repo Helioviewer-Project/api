@@ -34,10 +34,14 @@ def create_image_data(filepath):
             image['measurement'] = "thin-Al"
         else:
             image['measurement'] = measurement
+    elif image['observatory'] == "Hinode":
+        image['filter1'] = measurement.split("-")[0].replace(" ","_")
+        image['filter2'] = measurement.split("-")[1].replace(" ","_")
     else:
         image['measurement'] = measurement
     image['date'] = imageData.date
     image['filepath'] = filepath
+    image['header'] = imageData.meta
 
     return image
     
@@ -110,7 +114,13 @@ def insert_images(images, sources, rootdir, cursor, mysql, step_function=None, c
 
         prev = ""
         source = sources
-        for leaf in ["observatory", "instrument", "detector", "measurement"]:
+        
+        if img['observatory'] == "Hinode":
+            leafs = ["observatory", "instrument", "detector", "filter1", "filter2"]
+        else:
+            leafs = ["observatory", "instrument", "detector", "measurement"]
+            
+        for leaf in leafs:
 
             if img[leaf] != prev:
                 source = source[str(img[leaf])]

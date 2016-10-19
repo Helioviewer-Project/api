@@ -4,7 +4,7 @@ import datetime
 from helioviewer.hvpull.servers import DataServer
 
 class ROBDataServer(DataServer):
-    """LMSAL Datasource definition"""
+    """Royal Observatory of Belgium Datasource definition"""
     def __init__(self):
         """Defines the root directory of where the data is kept at ROB."""
         DataServer.__init__(self, "http://proba2.sidc.be/swap/data/qlk", "ROB")
