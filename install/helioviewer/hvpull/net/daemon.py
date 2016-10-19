@@ -371,9 +371,11 @@ class ImageRetrievalDaemon:
                 logging.error("kdu_transcode: " + e.get_message())
 
             # Move to archive
-            directory = os.path.join(self.image_archive,
-                                     image_params['nickname'], date_str,
-                                     str(image_params['measurement']))
+            if image_params['observatory'] == "Hinode":
+                directory = os.path.join(self.image_archive, image_params['nickname'], date_str, str(image_params['filter1']), str(image_params['filter2']))
+            else:
+                directory = os.path.join(self.image_archive, image_params['nickname'], date_str, str(image_params['measurement']))
+            
             dest = os.path.join(directory, filename)
 
             image_params['filepath'] = dest
@@ -657,7 +659,8 @@ class ImageRetrievalDaemon:
             "jsoc": "JSOCDataServer",
             "rob": "ROBDataServer",
             "uio": "UIODataServer",
-            "trace": "TRACEDataServer"
+            "trace": "TRACEDataServer",
+            "xrt": "XRTDataServer"
         }
 
     @classmethod
