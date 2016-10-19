@@ -9,7 +9,7 @@
     <meta charset="utf-8" />
     <title>Helioviewer.org - Data Monitor</title>
     <link rel="stylesheet" href="status.css" />
-    <script src="http://code.jquery.com/jquery.min.js" type="text/javascript"></script>
+    <script src="//code.jquery.com/jquery.min.js" type="text/javascript"></script>
     <script src="status.js" type="text/javascript"></script>
 </head>
 <body>
@@ -44,8 +44,8 @@
         <th width='50' align='center'>Status <span id='info'>(?)</span></th>
     </tr>
     <?php
-        include_once "../../src/Database/ImgIndex.php";
-        include_once "../../src/Config.php";
+        include_once "../../api.helioviewer.org/src/Database/ImgIndex.php";
+        include_once "../../api.helioviewer.org/src/Config.php";
 
         /**
          * computeStatusLevel
@@ -114,7 +114,7 @@
             return sprintf($icon, $levels[$level], $levels[$level]);
         }
 
-        $config = new Config("../../settings/Config.ini");
+        $config = new Config("../../api.helioviewer.org/settings/Config.ini");
 
         // Current time
         $now = time();
@@ -196,36 +196,12 @@
                 }
 
                 $datetime = $oldest['datetime'];
-                printf($tableRow, "instrument", $name, $datetime->format('M j Y H:i:s'), $attribution, $oldest['icon']);
+                printf($tableRow, "instrument", $name, $datetime->format('M j H:i:s'), $attribution, $oldest['icon']);
                 print($subTableHTML);
             }
         }
     ?>
     </table>
-    
-    <br /><br />
-    
-    <h3>Data Injection</h3>
-    <table id='statuses'>
-    <tr id='status-headers'>
-        <th width='120'>Source</th>
-        <th width='50' align='center'>Status <span id='info'>(?)</span></th>
-    </tr>
-    <?php
-	    $commands = unserialize(TERMINAL_COMMANDS);
-		$output = shell_exec('ps -ef | grep python');
-		
-		foreach($commands as $cmd => $name){
-	        if (strpos($output, $cmd) !== false) {
-		        echo '<tr><td>'.$name.'</td><td align="center"><img class="status-icon" src="icons/status_icon_green.png" alt="Data Injection script running" /></td></tr>';
-	        }else{
-		        echo '<tr><td>'.$name.'</td><td align="center""><img class="status-icon" src="icons/status_icon_red.png" alt="Data Injection script not running" /></td></tr>';
-	        }
-	    }
-	    
-    ?>
-    </table>
-    
     <br />
     <div id='footer'><strong>Upstream: </strong>
         <a class='provider-link' href='http://aia.lmsal.com/public/SDOcalendar.html'>SDO Calendar</a>,
