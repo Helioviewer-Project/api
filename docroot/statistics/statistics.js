@@ -13,7 +13,7 @@
 colors = ["#d82641", "#9bd927", "#27d9be", "#6527d9"];
 
 var getUsageStatistics = function(timeInterval) {
-    $.getJSON("../index.php", {action: "getUsageStatistics", resolution: timeInterval}, function (response) {
+    $.getJSON("//api.helioviewer.org/index.php", {action: "getUsageStatistics", resolution: timeInterval}, function (response) {
         displayUsageStatistics(response, timeInterval);
     });
 };
