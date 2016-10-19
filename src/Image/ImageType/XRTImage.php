@@ -37,8 +37,7 @@ class Image_ImageType_XRTImage extends Image_HelioviewerImage {
 
         $this->uiLabels = $uiLabels;
 
-        $colorTable = HV_ROOT_DIR.'/api/resources/images/color-tables/'
-                                 .'Hinode_XRT.png';
+        $colorTable = HV_ROOT_DIR.'/resources/images/color-tables/Hinode_XRT.png';
 
         if (file_exists($colorTable)) {
             $this->setColorTable($colorTable);
@@ -47,18 +46,7 @@ class Image_ImageType_XRTImage extends Image_HelioviewerImage {
             $this->setColorTable(false);
         }
 
-        // Apply Sun center offset
-        $offsetX = -(    $sunCenterOffsetParams["XCEN"]
-                      + ($sunCenterOffsetParams["CDELT1"] * -$offsetX)
-                    )
-                    / $sunCenterOffsetParams["CDELT1"];
-        $offsetY =  (    $sunCenterOffsetParams["YCEN"]
-                      + ($sunCenterOffsetParams["CDELT2"] * -$offsetY)
-                    )
-                    / $sunCenterOffsetParams["CDELT2"];
-
-        parent::__construct($jp2, $filepath, $roi, $uiLabels, $offsetX,
-            $offsetY, $options);
+        parent::__construct($jp2, $filepath, $roi, $uiLabels, $offsetX, $offsetY, $options);
     }
 
     /**
@@ -67,7 +55,7 @@ class Image_ImageType_XRTImage extends Image_HelioviewerImage {
      * @return string watermark name
      */
     public function getWaterMarkName() {
-        return 'XRT '.$this->uiLabels[3]['name']
-                     .$this->uiLabels[4]['name']."\n";
+        return 'XRT '.$this->uiLabels[2]['name'].' '
+                     .$this->uiLabels[3]['name']."\n";
     }
 }

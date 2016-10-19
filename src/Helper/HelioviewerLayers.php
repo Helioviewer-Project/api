@@ -139,7 +139,7 @@ class Helper_HelioviewerLayers {
         $layerString = '';
 
         foreach ($this->_layers as $layer) {
-            $layerString .= str_replace(' ', '_', $layer['name']) . '__';
+            $layerString .= str_replace(array(' ', '/'), '_', $layer['name']) . '__';
         }
 
         // remove trailing __
