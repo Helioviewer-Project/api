@@ -57,12 +57,16 @@ class Movie_FFMPEGEncoder
     /**
      * Creates a medium quality video
      */
-    public function createVideo()
+    public function createVideo($convertHQ = false)
     {
         $outputFile = $this->_directory . $this->_filename;
 
         if ($this->_format == "mp4") {
-            $this->_createH264Video($outputFile);
+            if($convertHQ){
+	            $this->_convertVideotoNormal($outputFile);
+            }else{
+	            $this->_createH264Video($outputFile);
+            }
         } else if ($this->_format == "webm") {
             $this->_createWebMVideo($outputFile);
         }
@@ -93,6 +97,28 @@ class Movie_FFMPEGEncoder
             throw new Exception("FFmpeg error encountered.", 43);
 
         return $outputFile;
+    }
+    
+    /**
+     * Convert Hi-Quality video to regular quality.
+     */
+    private function _convertVideotoNormal($outputFile, $preset=HV_X264_PRESET, $crf=18)
+    {
+        $baseFilename = substr($this->_filename, 0, -strlen($this->_format) - 1);
+        $inputFile = sprintf("%s%s-hq.%s", $this->_directory, $baseFilename, $this->_format);
+        
+        // Include x264 FFpreset if specified
+        if ($preset) {
+            $ffpreset = "-preset $preset ";
+        } else {
+            $ffpreset = "";
+        }
+        $cmd = HV_FFMPEG." -i ".$inputFile." ".$ffpreset." -threads ".HV_FFMPEG_MAX_THREADS." -crf $crf $outputFile 2>/dev/null";
+            
+        $this->_logCommand($cmd);
+            
+        // Run FFmpeg
+        $output = shell_exec($cmd);
     }
     
     /**

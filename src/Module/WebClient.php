@@ -255,6 +255,9 @@ class Module_WebClient implements Module {
         else if ($image['uiLabels'][0]['name'] == 'TRACE') {
             $type = strtoupper($image['uiLabels'][0]['name']).'Image';
         }
+        else if ($image['uiLabels'][0]['name'] == 'Hinode') {
+            $type = 'XRTImage';
+        }
         else if (count($image['uiLabels']) >=2) {
             $type = strtoupper($image['uiLabels'][1]['name']).'Image';
         }

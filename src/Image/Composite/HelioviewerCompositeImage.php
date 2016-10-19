@@ -166,6 +166,9 @@ class Image_Composite_HelioviewerCompositeImage {
         else if ($layer['uiLabels'][0]['name'] == 'TRACE') {
             $type = strtoupper($layer['uiLabels'][0]['name']).'Image';
         }
+        else if ($layer['uiLabels'][0]['name'] == 'Hinode') {
+            $type = 'XRTImage';
+        }
         else {
             $type = strtoupper($layer['uiLabels'][1]['name']).'Image';
         }
@@ -268,7 +271,7 @@ class Image_Composite_HelioviewerCompositeImage {
         $imagickImage->setImageAlphaChannel(11);
 		$imagickImage->mergeImageLayers(imagick::LAYERMETHOD_FLATTEN);
         $imagickImage->setImageType(imagick::IMGTYPE_TRUECOLOR);
-        $imagickImage = $imagickImage->flattenImages();
+        //$imagickImage = $imagickImage->flattenImages();
         $imagickImage->writeImage($output);
     }
 
@@ -475,7 +478,7 @@ class Image_Composite_HelioviewerCompositeImage {
                     // Outline words in black
                     $text = new IMagickDraw();
                     $text->setTextEncoding('utf-8');
-                    $text->setFont('/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf');
+                    $text->setFont(HV_ROOT_DIR.'/../resources/fonts/DejaVuSans.ttf');
                     $text->setFontSize(10);
                     $text->setStrokeColor('#000C');
                     $text->setStrokeAntialias(true);
@@ -486,7 +489,7 @@ class Image_Composite_HelioviewerCompositeImage {
                     // Write words in white over outline
                     $text = new IMagickDraw();
                     $text->setTextEncoding('utf-8');
-                    $text->setFont('/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf');
+                    $text->setFont(HV_ROOT_DIR.'/../resources/fonts/DejaVuSans.ttf');
                     $text->setFontSize(10);
                     $text->setFillColor('#ffff');
                     $text->setTextAntialias(true);
@@ -567,7 +570,7 @@ class Image_Composite_HelioviewerCompositeImage {
         // Write 'Earth Scale' label in white
         $text = new IMagickDraw();
         $text->setTextEncoding('utf-8');
-        $text->setFont('/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf');
+        $text->setFont(HV_ROOT_DIR.'/../resources/fonts/DejaVuSans.ttf');
         $text->setFontSize(10);
         $text->setFillColor('#ffff');
         $text->setTextAntialias(true);
@@ -647,7 +650,7 @@ class Image_Composite_HelioviewerCompositeImage {
         // Write 'Earth Scale' label in white
         $text = new IMagickDraw();
         $text->setTextEncoding('utf-8');
-        $text->setFont('/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf');
+        $text->setFont(HV_ROOT_DIR.'/../resources/fonts/DejaVuSans.ttf');
         $text->setFontSize(10);
         $text->setFillColor('#ffff');
         $text->setTextAntialias(true);
@@ -659,7 +662,7 @@ class Image_Composite_HelioviewerCompositeImage {
         // Write 'Scale in km' label in white
         $text2 = new IMagickDraw();
         $text2->setTextEncoding('utf-8');
-        $text2->setFont('/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf');
+        $text2->setFont(HV_ROOT_DIR.'/../resources/fonts/DejaVuSans.ttf');
         $text2->setFontSize(8);
         $text2->setFillColor('#ffff');
         $text2->setTextAntialias(true);
@@ -778,23 +781,25 @@ class Image_Composite_HelioviewerCompositeImage {
 
         // Outline words in black
         $underText = new IMagickDraw();
+        $underText->setTextEncoding('utf-8');
+        $underText->setFont(HV_ROOT_DIR.'/../resources/fonts/DejaVuSans.ttf');
+        $underText->setFontSize(12);
         $underText->setStrokeColor($black);
         $underText->setStrokeAntialias(true);
         $underText->setStrokeWidth(2);
-        $imagickImage->annotateImage($underText,     $leftPad, $lowerPad, 0,
-            $nameCmd);
-        $imagickImage->annotateImage($underText, 100+$leftPad, $lowerPad, 0,
-            $timeCmd);
+        $imagickImage->annotateImage($underText,     $leftPad, $lowerPad, 0, $nameCmd);
+        $imagickImage->annotateImage($underText, 120+$leftPad, $lowerPad, 0, $timeCmd);
 
         // Write words in white over outline
         $text = new IMagickDraw();
+        $text->setTextEncoding('utf-8');
+        $text->setFont(HV_ROOT_DIR.'/../resources/fonts/DejaVuSans.ttf');
+        $text->setFontSize(12);
         $text->setFillColor($white);
         $text->setTextAntialias(true);
         $text->setStrokeWidth(0);
-        $imagickImage->annotateImage($text,     $leftPad, $lowerPad, 0,
-            $nameCmd);
-        $imagickImage->annotateImage($text, 100+$leftPad, $lowerPad, 0,
-            $timeCmd);
+        $imagickImage->annotateImage($text,     $leftPad, $lowerPad, 0, $nameCmd);
+        $imagickImage->annotateImage($text, 120+$leftPad, $lowerPad, 0, $timeCmd);
 
         // Cleanup
         $black->destroy();

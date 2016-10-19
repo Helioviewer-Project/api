@@ -87,8 +87,7 @@ class Image_SubFieldImage {
         $jp2Scale  = $jp2->getScale();
 
         // Convert region of interest from arc-seconds to pixels
-        $this->imageSubRegion = $roi->getImageSubRegion($jp2Width, $jp2Height,
-            $jp2Scale, $offsetX, $offsetY);
+        $this->imageSubRegion = $roi->getImageSubRegion($jp2Width, $jp2Height, $jp2Scale, $offsetX, $offsetY);
 
         // Desired image scale (normalized to 1au)
         $this->desiredScale    = $roi->imageScale();
@@ -97,15 +96,11 @@ class Image_SubFieldImage {
         $this->scaleFactor     = log($this->desiredToActual, 2);
         $this->reduce          = max(0, floor($this->scaleFactor));
 
-        $this->subfieldWidth   = $this->imageSubRegion['right']
-                               - $this->imageSubRegion['left'];
-        $this->subfieldHeight  = $this->imageSubRegion['bottom']
-                               - $this->imageSubRegion['top'];
+        $this->subfieldWidth   = $this->imageSubRegion['right'] - $this->imageSubRegion['left'];
+        $this->subfieldHeight  = $this->imageSubRegion['bottom'] - $this->imageSubRegion['top'];
 
-        $this->subfieldRelWidth  = $this->subfieldWidth
-                                 / $this->desiredToActual;
-        $this->subfieldRelHeight = $this->subfieldHeight
-                                 / $this->desiredToActual;
+        $this->subfieldRelWidth  = $this->subfieldWidth / $this->desiredToActual;
+        $this->subfieldRelHeight = $this->subfieldHeight / $this->desiredToActual;
 
         $this->jp2RelWidth  = $jp2Width  / $this->desiredToActual;
         $this->jp2RelHeight = $jp2Height / $this->desiredToActual;
@@ -244,8 +239,7 @@ class Image_SubFieldImage {
             $input = substr($this->outputFile, 0, -4).rand().$extension;
 
             // Extract region (PGM)
-            $this->jp2->extractRegion($input, $this->imageSubRegion,
-                $this->reduce);
+            $this->jp2->extractRegion($input, $this->imageSubRegion, $this->reduce);
 
             // Apply colormap if needed
             if ( !$this->options['palettedJP2'] ) {
@@ -265,20 +259,14 @@ class Image_SubFieldImage {
                 // Fastest PNG compression setting
                 $grayscale->setImageCompressionQuality(10);
 
-                $grayscaleString = $grayscale->getimageblob();
-
                 // Assume that no color table is needed
                 $coloredImage = $grayscale;
 
                 // Apply color table if one exists
                 if ($this->colorTable) {
-                    $grayscale->destroy();
-                    $coloredImageString =
-                    $this->setColorPalette($grayscaleString);
-
-                    $coloredImage = new IMagick();
-                    $coloredImage->readimageblob($coloredImageString);
-                }
+                    $clut = new IMagick($this->colorTable); 
+                    $coloredImage->clutImage($clut);
+                }                
             }
             else {
                 $coloredImage = new IMagick($input);
@@ -305,10 +293,8 @@ class Image_SubFieldImage {
             // image is larger than this one
             $imagickVersion = $coloredImage->getVersion();
 
-            if ( $imagickVersion['versionNumber'] >
-                    IMAGE_MAGICK_662_VERSION_NUM) {
-
-                // ImageMagick 6.6.2-6 and higher
+            if ( $imagickVersion['versionNumber'] > IMAGE_MAGICK_662_VERSION_NUM) {
+				// ImageMagick 6.6.2-6 and higher
                 // Problematic change occurred in revision 6.6.4-2
                 // See: http://www.imagemagick.org/script/changelog.php
                 $coloredImage->extentImage(

@@ -561,8 +561,8 @@ class Movie_HelioviewerMovie {
         // Create H.264 videos
         $t1 = time();
         $ffmpeg->setFormat('mp4');
-        $ffmpeg->createVideo();
         $ffmpeg->createHQVideo();
+        $ffmpeg->createVideo(true);
         $ffmpeg->createFlashVideo();
         //$ffmpeg->createGifVideo();
 
@@ -760,8 +760,8 @@ class Movie_HelioviewerMovie {
 <html>
 <head>
     <title>Helioviewer.org - <?php echo $this -> filename; ?></title>
-    <script type="text/javascript" src="http://html5.kaltura.org/js"></script>
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.js" type="text/javascript"></script>
+    <script type="text/javascript" src="//html5.kaltura.org/js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.js" type="text/javascript"></script>
 </head>
 <body>
 <div style="text-align: center;">

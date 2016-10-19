@@ -1111,7 +1111,7 @@ class Module_Movies implements Module {
     <!-- player skin -->
     <link rel="stylesheet" type="text/css" href="<?php echo HV_WEB_ROOT_URL; ?>/lib/mediaelement-2.22.0/build/mediaelementplayer.min.css">
     <!-- flowplayer depends on jQuery 1.7.1+ (for now) -->
-    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
     <!-- include flowplayer -->
     <script type="text/javascript" src="<?php echo HV_WEB_ROOT_URL; ?>/lib/mediaelement-2.22.0/build/mediaelement-and-player.min.js"></script>
     <style>
