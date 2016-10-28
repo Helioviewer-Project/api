@@ -2,6 +2,7 @@
 """A text-based installer for Helioviewer.org"""
 import sys
 import os
+import subprocess
 import math
 import getpass
 from datetime import datetime
@@ -103,7 +104,7 @@ class HelioviewerConsoleInstaller:
 
     def printGreeting(self):
         ''' Prints a greeting to the user'''
-        os.system("clear")
+        subprocess.call("clear", shell=True)
         
         print("""\
 ====================================================================

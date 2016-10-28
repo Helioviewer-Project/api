@@ -25,9 +25,13 @@ import sys
 import signal
 import logging
 import argparse
-import configparser
 from helioviewer import init_logger
 from helioviewer.hvpull.net.daemon import ImageRetrievalDaemon
+
+if (sys.version_info >= (3, 0)):
+    import configparser
+else:
+    import ConfigParser
 
 def main():
     """Main application"""
@@ -68,7 +72,10 @@ def main():
 
 def get_config(filepath):
     """Load configuration file"""
-    config = configparser.ConfigParser()
+    if (sys.version_info >= (3, 0)):
+        config = configparser.ConfigParser()
+    else:
+        config = ConfigParser.ConfigParser()
     
     basedir = os.path.dirname(os.path.realpath(__file__))
     default_userconfig = os.path.join(basedir, 'settings/settings.cfg')
@@ -79,7 +86,7 @@ def get_config(filepath):
         config.readfp(open(default_userconfig))
     else:
         config.readfp(open(os.path.join(basedir, 'settings/settings.example.cfg')))
-    print(config)
+
     return config
 
 def get_args():
