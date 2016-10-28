@@ -38,7 +38,7 @@ if (sys.version_info >= (3, 0)):
 else:
     import urllib
     from sgmllib import SGMLParser
-    class URLLister27(SGMLParser):
+    class URLLister(SGMLParser):
         '''
         Created on Nov 1, 2011
         @author: Jack Ireland <jack.ireland@nasa.gov>
@@ -50,10 +50,13 @@ else:
 
         def read(self, uri):
             """Read a URI and return a list of files/directories"""
-            usock = urllib.urlopen(uri)
-            self.feed(usock.read())
-            usock.close()
-        
+            try:
+                usock = urllib.urlopen(uri)
+                self.feed(usock.read())
+                usock.close()
+            except Exception as e:
+                print (e)
+
             return self.urls
         
         def reset(self):
@@ -110,7 +113,7 @@ class HTTPDataBrowser(BaseDataBrowser):
         if (sys.version_info >= (3, 0)):
             url_lister = URLLister()
         else:
-            url_lister = URLLister27()
+            url_lister = URLLister()
 
         result = url_lister.read(location)
         url_lister.close()

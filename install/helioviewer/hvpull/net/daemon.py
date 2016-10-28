@@ -8,6 +8,7 @@ import datetime
 import time
 import logging
 import os
+import subprocess
 import shutil
 import sunpy
 import mysql.connector
@@ -471,7 +472,7 @@ class ImageRetrievalDaemon:
         num_retries = 0
 
         while not os.path.isfile(tmp) and num_retries <= 5:
-            os.system(command)
+            subprocess.call(command, shell=True)
             num_retries += 1
 
         # If transcode failed, raise an exception
