@@ -415,7 +415,11 @@
    */
    
       if ( $z === null ) {
-         $z = sqrt( pow($rsun,2) - pow($x,2) - pow($y,2) );
+         $distance = pow($rsun,2) - pow($x,2) - pow($y,2);
+	      if($distance < 0){
+		      $distance = $distance * -1;
+	      }
+         $z = sqrt( $distance );
       }
       
       $b0   = deg2rad($b0);
@@ -513,7 +517,10 @@
       if ( $distance == null ) {
          $q = $dsun * $cosy * $cosx;
          $distance = pow($q,2) - pow($dsun,2) + pow($rsun,2);
-         # distance[np.where(distance < 0)] = np.sqrt(-1)
+
+         if($distance < 0){
+	         $distance = $distance * -1;
+         }
          $distance = $q - sqrt($distance);
       }
 
