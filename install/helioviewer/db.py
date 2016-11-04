@@ -107,7 +107,7 @@ def create_data_table(cursor):
       `id`       int(10) unsigned NOT NULL AUTO_INCREMENT,
       `filepath` varchar(255) NOT NULL,
       `filename` varchar(255) NOT NULL,
-      `date`     datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+      `date`     datetime DEFAULT NULL,
       `date_end` datetime DEFAULT NULL,
       `sourceId` smallint(5) unsigned NOT NULL,
       PRIMARY KEY (`id`),
