@@ -869,7 +869,7 @@ class Event_HEKAdapter {
                     $event['hv_hpc_y_scaled_rot'] = $event['hv_hpc_y_notscaled_rot'] * $au_scalar;
 
                     $event['hv_rot_hpc_time_base'] = $event['event_starttime'];
-                    $event['hv_rot_hpc_time_targ'] = $event['event_starttime'].'.000Z';//$startTime;
+                    $event['hv_rot_hpc_time_targ'] = $event['event_starttime'];//$startTime;
 
                     // These values will be used to place the event marker
                     // in the viewport, screenshots, and movies.
@@ -959,19 +959,19 @@ class Event_HEKAdapter {
 	            		'".(isset($event['frm_name']) ? $event['frm_name'] : '')."', 
 	            		'".(isset($event['concept']) ? $event['concept'] : '')."', 
 	            		'".(isset($event['frm_specificid']) ? $event['frm_specificid'] : '')."', 
-	            		'".(isset($event['event_starttime']) ? $event['event_starttime'] : 'null')."', 
-	            		'".(isset($event['event_endtime']) ? $event['event_endtime'] : 'null')."', 
-	            		'".(isset($event['event_peaktime']) ? $event['event_peaktime'] : 'null')."', 
+	            		".(isset($event['event_starttime']) ? "'".$event['event_starttime']."'" : 'null').", 
+	            		".(isset($event['event_endtime']) ? "'".$event['event_endtime']."'" : 'null').", 
+	            		".(isset($event['event_peaktime']) && !empty($event['event_peaktime']) ? "'".$event['event_peaktime']."'" : 'null').", 
 	            		'".(isset($event['event_type']) ? $event['event_type'] : '')."', 
 	            		'".(isset($event['event_before']) ? $event['event_before'] : '')."', 
 	            		'".(isset($event['event_after']) ? $event['event_after'] : '')."', 
 	            		'".(isset($event['hpc_boundcc']) ? $event['hpc_boundcc'] : '')."', 
 	            		'".json_encode($event['hv_labels_formatted'])."', 
 	            		'".(isset($event['hv_poly_url']) ? $event['hv_poly_url'] : '')."', 
-	            		'".(isset($event['hv_event_starttime']) ? $event['hv_event_starttime'] : 'null')."', 
-	            		'".(isset($event['hv_event_endtime']) ? $event['hv_event_endtime'] : 'null')."', 
-	            		'".(isset($event['hv_rot_hpc_time_base']) ? $event['hv_rot_hpc_time_base'] : 'null')."', 
-	            		'".(isset($event['hv_rot_hpc_time_targ']) ? $event['hv_rot_hpc_time_targ'] : 'null')."', 
+	            		".(isset($event['hv_event_starttime']) ? "'".$event['hv_event_starttime']."'" : 'null').", 
+	            		".(isset($event['hv_event_endtime']) ? "'".$event['hv_event_endtime']."'" : 'null').", 
+	            		".(isset($event['hv_rot_hpc_time_base']) ? "'".$event['hv_rot_hpc_time_base']."'" : 'null').", 
+	            		".(isset($event['hv_rot_hpc_time_targ']) ? "'".$event['hv_rot_hpc_time_targ']."'" : 'null').", 
 	            		".(isset($event['hv_hpc_x_notscaled_rot']) ? $event['hv_hpc_x_notscaled_rot'] : 'null').", 
 	            		".(isset($event['hv_hpc_y_notscaled_rot']) ? $event['hv_hpc_y_notscaled_rot'] : 'null').", 
 	            		".(isset($event['hv_hpc_x_rot_delta_notscaled']) ? $event['hv_hpc_x_rot_delta_notscaled'] : 'null').", 
