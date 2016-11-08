@@ -109,7 +109,7 @@ class Database_ImgIndex {
         $this->_dbConnect();
 
         $sql = sprintf(
-                   "SELECT *, AsText(regionOfInterest) AS roi "
+                   "SELECT movies.*, movieFormats.movieId, movieFormats.format, movieFormats.status, movieFormats.procTime, movieFormats.modified, AsText(regionOfInterest) AS roi "
                  . "FROM movies "
                  . "LEFT JOIN "
                  .     "movieFormats ON movies.id = movieFormats.movieId "
@@ -408,7 +408,8 @@ class Database_ImgIndex {
         $datestr = isoDateToMySQL($date);
 
         $sql = sprintf(
-                   "( SELECT "
+                   "SELECT id, filepath, filename, date FROM ("
+                 . "( SELECT "
                  .        "id, filepath, filename, date "
                  .   "FROM data "
                  .   "WHERE "
@@ -425,6 +426,7 @@ class Database_ImgIndex {
                  .       "date "     . ">='%s' "
                  .   "ORDER BY date ASC "
                  .   "LIMIT 1 ) "
+                 . ")t "
                  . "ORDER BY "
                  .     "ABS(TIMESTAMPDIFF(MICROSECOND, date, '%s') "
                  . ") LIMIT 1;",
@@ -436,7 +438,7 @@ class Database_ImgIndex {
                     $datestr),
                  $this->_dbConnection->link->real_escape_string(
                     $datestr)
-               );
+               ); 
         try {
             $result = $this->_dbConnection->query($sql);
         }

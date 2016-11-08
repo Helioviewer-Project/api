@@ -21,7 +21,7 @@ class XRTDataServer(DataServer):
             "H2000", "H2100", "H2200", "H2300" 
         ]
         
-        for date in self.get_dates(start_date, end_date):
+        for date in self.get_dates((start_date - datetime.timedelta(days=21)), end_date):
             for hour in hours:
                 dirs.append(os.path.join(self.uri, date, str(hour))) 
 
