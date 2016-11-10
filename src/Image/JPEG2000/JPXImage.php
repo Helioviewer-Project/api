@@ -84,19 +84,14 @@ class Image_JPEG2000_JPXImage
     {
         ini_set('memory_limit', '2048M');
         if(file_exists($this->outputFile)){
-            $fp   = fopen($this->outputFile, 'r');
-	        $stat = stat($this->outputFile);
-	
-	        $filename = basename($this->outputFile);
-	
-	        header("Content-Length: " . $stat['size']);
-	        header("Content-Type: "   . image_type_to_mime_type(IMAGETYPE_JPX));
-	        header("Content-Disposition: attachment; filename=\"$filename\"");
-	
-	        $contents = fread($fp, $stat['size']);
-	
-	        echo $contents;
-	        fclose($fp);
+            header('Content-Type: '  .image_type_to_mime_type(IMAGETYPE_JPX));
+		    header('Content-Disposition: attachment; filename="'.basename($this->outputFile).'"');
+		    header('Expires: 0');
+		    header('Cache-Control: must-revalidate');
+		    header('Pragma: public');
+		    header("Content-Encoding: none");
+		    header('Content-Length: ' . filesize($this->outputFile));
+		    @readfile($this->outputFile) or die("");
         }else{
 			$filename = basename($this->outputFile);
 
