@@ -333,21 +333,15 @@ class Module_JHelioviewer implements Module {
      * @return void
      */
     private function _displayJP2($filepath) {
-
-        $fp   = @fopen($filepath, 'r');
-        $stat = stat($filepath);
-
-        $filename = basename($filepath);
-
-        header('Content-Length: '.$stat['size']);
-        header('Content-Type: '  .image_type_to_mime_type(IMAGETYPE_JP2));
-        header('Content-Disposition: attachment; filename="'.$filename.'"');
-
-        $contents = @fread($fp, $stat['size']);
-
-        echo $contents;
-
-        @fclose($fp);
+	    header('Content-Type: '  .image_type_to_mime_type(IMAGETYPE_JP2));
+	    header('Content-Disposition: attachment; filename="'.basename($filepath).'"');
+	    header('Expires: 0');
+	    header('Cache-Control: must-revalidate');
+	    header('Pragma: public');
+	    header("Content-Encoding: none");
+	    header('Content-Length: ' . filesize($filepath));
+	    @readfile($filepath) or die("File not found.");
+	    exit;
     }
 
     /**
