@@ -9,7 +9,7 @@ class XRTDataServer(DataServer):
     def __init__(self):
         """Defines the root directory of where the data is kept at XRT."""
         DataServer.__init__(self, "http://xrt.cfa.harvard.edu/jp2", "XRT")
-        self.pause = datetime.timedelta(minutes=15)
+        self.pause = datetime.timedelta(minutes=60)
         
     def compute_directories(self, start_date, end_date):
         """Computes a list of remote directories expected to contain files"""
