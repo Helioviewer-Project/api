@@ -235,10 +235,16 @@ def insert_images(images, sources, rootdir, cursor, mysql, step_function=None, c
     query_v2 = query_v2[:-1] + ";"
 
     # Execute query
-    cursor.execute(query)
+    try:
+        cursor.execute(query)
+    except Exception as e:
+        print("Error: " + e.args[1])
     
     if cursor_v2:
-        cursor_v2.execute(query_v2)
+        try:
+            cursor_v2.execute(query_v2)
+        except Exception as e:
+            print("Error: " + e.args[1])
 
 
 class BadImage(ValueError):
