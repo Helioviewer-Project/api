@@ -44,8 +44,8 @@
         <th width='50' align='center'>Status <span id='info'>(?)</span></th>
     </tr>
     <?php
-        include_once "../../api.helioviewer.org/src/Database/ImgIndex.php";
-        include_once "../../api.helioviewer.org/src/Config.php";
+        include_once "../../src/Database/ImgIndex.php";
+        include_once "../../src/Config.php";
 
         /**
          * computeStatusLevel
@@ -80,6 +80,10 @@
                 $t1 = 4  * 3600;
                 $t2 = 8  * 3600;
                 $t3 = 12 * 3600;
+            } else if ($inst == "XRT") {
+                $t1 = 21 * 24 * 3600;
+                $t2 = 28 * 24  * 3600;
+                $t3 = 35 * 24 * 3600;
             }
 
             if ($elapsed <= $t1) {
@@ -114,7 +118,7 @@
             return sprintf($icon, $levels[$level], $levels[$level]);
         }
 
-        $config = new Config("../../api.helioviewer.org/settings/Config.ini");
+        $config = new Config("../../settings/Config.ini");
 
         // Current time
         $now = time();
@@ -158,7 +162,7 @@
                 $classes = "datasource $name";
 
                 // create HTML for subtable row
-                $subTableHTML .= sprintf($tableRow, $classes, "&nbsp;&nbsp;&nbsp;&nbsp;" . $ds['name'], $datetime->format('M j H:i:s'), "", $icon);
+                $subTableHTML .= sprintf($tableRow, $classes, "&nbsp;&nbsp;&nbsp;&nbsp;" . $ds['name'], $datetime->format('M j Y H:i:s'), "", $icon);
 
                 // If the elapsed time is greater than previous max store it
                 if ($datetime < $oldest['datetime']) {
@@ -196,12 +200,36 @@
                 }
 
                 $datetime = $oldest['datetime'];
-                printf($tableRow, "instrument", $name, $datetime->format('M j H:i:s'), $attribution, $oldest['icon']);
+                printf($tableRow, "instrument", $name, $datetime->format('M j Y H:i:s'), $attribution, $oldest['icon']);
                 print($subTableHTML);
             }
         }
     ?>
     </table>
+    
+    <br /><br />
+    
+    <h3>Data Injection</h3>
+    <table id='statuses'>
+    <tr id='status-headers'>
+        <th width='120'>Source</th>
+        <th width='50' align='center'>Status <span id='info'>(?)</span></th>
+    </tr>
+    <?php
+	    $commands = unserialize(TERMINAL_COMMANDS);
+		$output = shell_exec('ps -ef | grep python');
+		
+		foreach($commands as $cmd => $name){
+	        if (strpos($output, $cmd) !== false) {
+		        echo '<tr><td>'.$name.'</td><td align="center"><img class="status-icon" src="icons/status_icon_green.png" alt="Data Injection script running" /></td></tr>';
+	        }else{
+		        echo '<tr><td>'.$name.'</td><td align="center""><img class="status-icon" src="icons/status_icon_red.png" alt="Data Injection script not running" /></td></tr>';
+	        }
+	    }
+	    
+    ?>
+    </table>
+    
     <br />
     <div id='footer'><strong>Upstream: </strong>
         <a class='provider-link' href='http://aia.lmsal.com/public/SDOcalendar.html'>SDO Calendar</a>,
