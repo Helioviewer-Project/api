@@ -47,7 +47,7 @@ class Database_MovieDatabase {
     public function insertMovie($startTime, $endTime, $imageScale, $roi,
         $maxFrames, $watermark, $layerString, $layerBitMask, $eventString,
         $eventsLabels, $scale, $scaleType, $scaleX, $scaleY, $numLayers,
-        $queueNum, $frameRate, $movieLength) {
+        $queueNum, $frameRate, $movieLength, $size) {
 
         $this->_dbConnect();
 
@@ -83,7 +83,8 @@ class Database_MovieDatabase {
                  .     'width '             . ' = NULL, '
                  .     'height '            . ' = NULL, '
                  .     'buildTimeStart '    . ' = NULL, '
-                 .     'buildTimeEnd '      . ' = NULL;',
+                 .     'buildTimeEnd '      . ' = NULL, '
+                 .     'size '              . ' = %d;',
                  $this->_dbConnection->link->real_escape_string($startTime),
                  $this->_dbConnection->link->real_escape_string($endTime),
                  (float)$imageScale,
@@ -104,7 +105,8 @@ class Database_MovieDatabase {
                  (int)$numLayers,
                  (int)$queueNum,
                  (float)$frameRate,
-                 (float)$movieLength
+                 (float)$movieLength,
+                 (int)$size
                );
 
         try {

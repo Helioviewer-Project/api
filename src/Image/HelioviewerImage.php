@@ -39,14 +39,20 @@ class Image_HelioviewerImage extends Image_SubFieldImage {
             'compress'      => true,
             'layeringOrder' => 1,
             'opacity'       => 100,
-            'palettedJP2'   => false
+            'palettedJP2'   => false,
+            'movie' 	    => false,
+            'size' 	        => 0
         );
         $this->options = array_replace($defaults, $options);
 
         $this->uiLabels = $uiLabels;
         $this->filepath    = $filepath;
 
-        $imageSettings = array('opacity' => $this->options['opacity']);
+        $imageSettings = array(
+        	'opacity' => $this->options['opacity'],
+        	'movie'   => $this->options['movie'],
+        	'size'    => $this->options['size']
+        );
 
         parent::__construct($jp2, $roi, $this->filepath, $offsetX, $offsetY,
             $imageSettings);
