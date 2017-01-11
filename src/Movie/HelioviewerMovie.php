@@ -60,6 +60,7 @@ class Movie_HelioviewerMovie {
     public $scaleType;
     public $scaleX;
     public $scaleY;
+    public $size;
 
     private $_db;
     private $_layers;
@@ -128,6 +129,7 @@ class Movie_HelioviewerMovie {
         $this->scaleX       = (float)$info['scaleX'];
         $this->scaleY       = (float)$info['scaleY'];
         $this->maxFrames    = min((int)$info['maxFrames'],HV_MAX_MOVIE_FRAMES);
+        $this->size       = (int)$info['size'];
 
         // Data Layers
         $this->_layers = new Helper_HelioviewerLayers(
@@ -396,7 +398,9 @@ class Movie_HelioviewerMovie {
             'database'  => $this->_db,
             'compress'  => false,
             'interlace' => false,
-            'watermark' => $watermark
+            'watermark' => $watermark,
+            'movie' 	=> true,
+            'size' 	    => $this->size
         );
 
         // Index of preview frame
@@ -548,7 +552,21 @@ class Movie_HelioviewerMovie {
         // Limit frame-rate floating-point precision
         // https://bugs.launchpad.net/helioviewer.org/+bug/979231
         $frameRate = round($this->frameRate, 1);
-
+		
+		if($this->size == 1){
+	        $this->width = 1280;
+	        $this->height = 720;
+        }else if($this->size == 2){
+	        $this->width = 1920;
+	        $this->height = 1080;
+        }else if($this->size == 3){
+	        $this->width = 2560;
+	        $this->height = 1440;
+        }else if($this->size == 4){
+	        $this->width = 3840;
+	        $this->height = 2160;
+        }
+		
         // Create and FFmpeg encoder instance
         $ffmpeg = new Movie_FFMPEGEncoder(
             $this->directory, $filename, $frameRate, $this->width,
@@ -711,11 +729,28 @@ class Movie_HelioviewerMovie {
         }
 
         $this->_setMovieDimensions();
-
+		
+		if($this->size == 1){
+	        $width = 1280;
+	        $height = 720;
+        }else if($this->size == 2){
+	        $width = 1920;
+	        $height = 1080;
+        }else if($this->size == 3){
+	        $width = 2560;
+	        $height = 1440;
+        }else if($this->size == 4){
+	        $width = 3840;
+	        $height = 2160;
+        }else{
+	        $width = $this->width;
+	        $height = $this->height;
+        }
+		
         // Update movie entry in database with new details
         $this->_db->storeMovieProperties(
             $this->id, $this->startDate, $this->endDate, $this->numFrames,
-            $this->frameRate, $this->movieLength, $this->width, $this->height
+            $this->frameRate, $this->movieLength, $width, $height
         );
     }
 

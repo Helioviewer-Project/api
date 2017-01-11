@@ -84,7 +84,8 @@ class Module_Movies implements Module {
             "scale"       => false,
             "scaleType"   => 'earth',
             "scaleX"      => 0,
-            "scaleY"      => 0
+            "scaleY"      => 0,
+            "size"        => 0
         );
         $options = array_replace($defaults, $this->_options);
 
@@ -172,7 +173,8 @@ class Module_Movies implements Module {
             $layers->length(),
             $queueSize,
             $options['frameRate'],
-            $options['movieLength'] );
+            $options['movieLength'],
+            $options['size'] );
 
         // Convert id
         $publicId = alphaID($dbId, false, 5, HV_MOVIE_ID_PASS);
@@ -1226,14 +1228,14 @@ class Module_Movies implements Module {
                                     'scale', 'scaleType', 'scaleX', 'scaleY',
                                     'movieLength', 'watermark', 'width',
                                     'height', 'x0', 'y0', 'x1', 'x2',
-                                    'y1', 'y2', 'callback'),
+                                    'y1', 'y2', 'callback', 'size'),
                 'alphanum' => array('format', 'scaleType', 'callback'),
                 'bools'    => array('watermark', 'eventsLabels', 'scale'),
                 'dates'    => array('startTime', 'endTime'),
                 'floats'   => array('imageScale', 'frameRate', 'movieLength',
                                     'x0', 'y0', 'x1', 'x2', 'y1', 'y2',
                                     'scaleX', 'scaleY'),
-                'ints'     => array('maxFrames', 'width', 'height')
+                'ints'     => array('maxFrames', 'width', 'height', 'size')
             );
             break;
         case 'reQueueMovie':

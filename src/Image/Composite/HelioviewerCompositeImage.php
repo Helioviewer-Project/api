@@ -41,6 +41,8 @@ class Image_Composite_HelioviewerCompositeImage {
     protected $imageScale;
     protected $watermark;
     protected $width;
+    protected $movie;
+    protected $size;
 
     /**
      * Creates a new HelioviewerCompositeImage instance
@@ -66,7 +68,9 @@ class Image_Composite_HelioviewerCompositeImage {
             'database'  => false,
             'watermark' => true,
             'compress'  => true,
-            'interlace' => true
+            'interlace' => true,
+            'movie' 	=> false,
+            'size' 	    => 0
         );
 
         $options = array_replace($defaults, $options);
@@ -89,6 +93,8 @@ class Image_Composite_HelioviewerCompositeImage {
         $this->compress  = $options['compress'];
         $this->interlace = $options['interlace'];
         $this->watermark = $options['watermark'];
+        $this->movie     = $options['movie'];
+        $this->size      = $options['size'];
 
         $this->maxPixelScale = 0.60511022;  // arcseconds per pixel
     }
@@ -145,7 +151,9 @@ class Image_Composite_HelioviewerCompositeImage {
             'date'          => $image['date'],
             'layeringOrder' => $layer['layeringOrder'],
             'opacity'       => $layer['opacity'],
-            'compress'      => false
+            'compress'      => false,
+            'movie'         => $this->movie,
+            'size'          => $this->size
         );
 
         // For layers with transparent regions use PNG
@@ -272,6 +280,17 @@ class Image_Composite_HelioviewerCompositeImage {
 		$imagickImage->mergeImageLayers(imagick::LAYERMETHOD_FLATTEN);
         $imagickImage->setImageType(imagick::IMGTYPE_TRUECOLOR);
         //$imagickImage = $imagickImage->flattenImages();
+        if($this->movie){
+	        if($this->size == 1){
+		        $imagickImage->thumbnailImage(1280, 720, true, true);
+	        }else if($this->size == 2){
+		        $imagickImage->thumbnailImage(1920, 1080, true, true);
+	        }else if($this->size == 3){
+		        $imagickImage->thumbnailImage(2560, 1440, true, true);
+	        }else if($this->size == 4){
+		        $imagickImage->thumbnailImage(3840, 2160, true, true);
+	        }
+        }
         $imagickImage->writeImage($output);
     }
 
@@ -530,15 +549,15 @@ class Image_Composite_HelioviewerCompositeImage {
 
         // Convert x,y position of top left of EarthScale rectangle
         // from arcseconds to pixels
-        if ( $this->scaleX != 0 && $this->scaleY != 0 ) {
+        if ( $this->scaleX != 0 && $this->scaleY != 0 && $this->size == 0) {
             $topLeftX = (( $this->scaleX - $this->roi->left())
                 / $this->roi->imageScale());
             $topLeftY = ((-$this->scaleY - $this->roi->top() )
                 / $this->roi->imageScale());
         }
         else {
-            $topLeftX = -1;
-            $topLeftY = $imagickImage->getImageHeight() - $rect_height;
+            $topLeftX = $imagickImage->getImageWidth() - $rect_width - 20;
+            $topLeftY = 20;
         }
 
         // Draw black rectangle background for indicator and label

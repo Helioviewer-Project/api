@@ -76,7 +76,9 @@ class Image_SubFieldImage {
             'compress'    => true,
             'interlace'   => true,
             'opacity'     => 100,
-            'rescale'     => IMagick::FILTER_TRIANGLE
+            'rescale'     => IMagick::FILTER_TRIANGLE,
+            'movie'       => false,
+            'size'        => 0
         );
 
         $this->imageOptions = array_replace($defaults, $options);
@@ -280,14 +282,19 @@ class Image_SubFieldImage {
 
             // Resize extracted image to correct size before padding.
             $rescaleBlurFactor = 0.6;
-
-            $coloredImage->resizeImage(
-                round($this->subfieldRelWidth),
-                round($this->subfieldRelHeight),
-                $this->imageOptions['rescale'],
-                $rescaleBlurFactor
-            );
-            $coloredImage->setImageBackgroundColor('transparent');
+			
+			if($this->imageOptions['movie']){
+				$coloredImage->scaleImage(round($this->subfieldRelWidth), round($this->subfieldRelHeight));
+				$coloredImage->setImageBackgroundColor('transparent');
+			}else{
+				$coloredImage->resizeImage(
+                	round($this->subfieldRelWidth),
+                	round($this->subfieldRelHeight),
+                	$this->imageOptions['rescale'],
+                	$rescaleBlurFactor
+				);
+	            $coloredImage->setImageBackgroundColor('transparent');
+			}
 
             // Places the current image on a larger field of black if the final
             // image is larger than this one
