@@ -6,8 +6,16 @@ import os
 def setup_database_schema(adminuser, adminpass, dbhost, dbname, dbuser, dbpass, mysql):
     """Sets up Helioviewer.org database schema"""
     if mysql:
-        import mysql.connector
-        adaptor = mysql.connector
+        try:
+            import mysql.connector as mysqld
+            adaptor = mysqld
+        except ImportError:
+            try:
+                import MySQLdb as mysqld
+                adaptor = mysqld
+            except ImportError:
+                print(e)
+                exit()
     else:
         import pgdb
         adaptor = pgdb
@@ -36,13 +44,18 @@ def setup_database_schema(adminuser, adminpass, dbhost, dbname, dbuser, dbpass, 
 def get_db_cursor(dbhost, dbname, dbuser, dbpass, mysql=True):
     """Creates a database connection"""
     if mysql:
-        import mysql.connector
+        try:
+            import mysql.connector as mysqld
+            db = mysqld.connect(buffered=True, autocommit= True, use_unicode=True, charset="utf8", host=dbhost, database=dbname, user=dbuser, password=dbpass)
+        except ImportError:
+            try:
+                import MySQLdb as mysqld
+                db = mysqld.connect(charset="utf8", host=dbhost, db=dbname, user=dbuser, passwd=dbpass)
+            except ImportError:
+                print(e)
+                exit()
     else:
         import pgdb
-
-    if mysql:
-        db = mysql.connector.connect(buffered=True, autocommit= True, use_unicode=True, charset="utf8", host=dbhost, database=dbname, user=dbuser, password=dbpass)
-    else:
         db = pgdb.connect(use_unicode=True, charset="utf8", database=dbname, user=dbuser, password=dbpass)
         db.autocommit(True)
     
@@ -54,15 +67,19 @@ def check_db_info(adminuser, adminpass, mysql):
     try:
         if mysql:
             try:
-                import mysql.connector
-            except ImportError as e:
-                print(e)
-                return False
-            db = mysql.connector.connect(user=adminuser, password=adminpass)
+                import mysql.connector as mysqld
+                db = mysqld.connect(user=adminuser, password=adminpass)
+            except ImportError:
+                try:
+                    import MySQLdb as mysqld
+                    db = mysqld.connect(user=adminuser, passwd=adminpass)
+                except ImportError:
+                    print(e)
+                    return False
         else:
             import pgdb
             db = pgdb.connect(database="postgres", user=adminuser, password=adminpass)
-    except mysql.connector.Error as e:
+    except mysqld.Error as e:
         print(e)
         return False
 

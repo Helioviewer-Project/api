@@ -223,7 +223,7 @@ def insert_images(images, sources, rootdir, cursor, mysql, step_function=None, c
             enable_datasource(cursor, source['id'])
 
         # insert into database
-        query += "(NULL, '%s', '%s', '%s', NULL, %d)," % (path, filename, img["date"], source['id'])
+        query += "(NULL, '%s', '%s', '%s', NULL, %d, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0)," % (path, filename, img["date"], source['id'])
         query_v2 += "(NULL, '%s', '%s', '%s', %d)," % (path, filename, img["date"], source['id'])
 
         # Progressbar
