@@ -11,12 +11,20 @@ import os
 import subprocess
 import shutil
 import sunpy
-import mysql.connector
 from random import shuffle
 from helioviewer.jp2 import process_jp2_images, BadImage, create_image_data
 from helioviewer.db  import get_db_cursor, mark_as_corrupt
 from helioviewer.hvpull.browser.basebrowser import NetworkError
 from sunpy.time import is_time
+
+try:
+    import mysql.connector as mysqld
+except ImportError:
+    try:
+        import MySQLdb as mysqld
+    except ImportError:
+        print("There is no such module installed")
+        exit(0)
 
 if (sys.version_info >= (3, 0)):
     import queue
@@ -42,7 +50,7 @@ class ImageRetrievalDaemon:
 
         try:
             self._db, self._cursor = get_db_cursor(self.dbhost, self.dbname, self.dbuser, self.dbpass)
-        except mysql.connector.OperationalError:
+        except mysqld.OperationalError:
             logging.error("Unable to access MySQL. Is the database daemon running?")
             self.shutdown()
             self.stop()
@@ -51,7 +59,7 @@ class ImageRetrievalDaemon:
         if self.dbhost_v2 != "" and self.dbname_v2 != "":
             try:
                 self._db_v2, self._cursor_v2 = get_db_cursor(self.dbhost_v2, self.dbname_v2, self.dbuser_v2, self.dbpass_v2)
-            except mysql.connector.OperationalError:
+            except mysqld.OperationalError:
                 logging.error("Unable to access MySQL. Is the database daemon running (v2)?")
                 self.shutdown()
                 self.stop()
@@ -75,6 +83,7 @@ class ImageRetrievalDaemon:
         self.image_archive = os.path.expanduser(conf.get('directories', 'image_archive'))
         self.incoming = os.path.join(self.working_dir, 'incoming')
         self.quarantine = os.path.join(self.working_dir, 'quarantine')
+        self.kdu_transcode = os.path.expanduser(conf.get('kakadu', 'kdu_transcode'))
 
         # Check directory permission
         self._init_directories()
@@ -205,7 +214,7 @@ class ImageRetrievalDaemon:
             while filtered is None:
                 try:
                     filtered = list(filter(self._filter_new, url_list))
-                except mysql.connector.OperationalError:
+                except mysqld.OperationalError:
                     # MySQL has gone away -- try again in 5s
                     logging.warning(("Unable to access database to check for file existence. Will try again in 5 seconds."))
                     time.sleep(5)
@@ -451,7 +460,7 @@ class ImageRetrievalDaemon:
 
         # Base command
 
-        command ='kdu_transcode -i %s -o %s' % (filepath, tmp)
+        command ='%s -i %s -o %s' % (self.kdu_transcode, filepath, tmp)
 
         # Corder
         if corder is not None:
