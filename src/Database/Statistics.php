@@ -829,6 +829,7 @@ class Database_Statistics {
 					'event_peaktime' => $row['event_peaktime'],
 					'event_starttime' => $row['event_starttime'],
 					'event_endtime' => $row['event_endtime'],
+					'concept' => $row['concept'],
 					'modifier' => $modifier
 				);
 				
