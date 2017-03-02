@@ -33,10 +33,11 @@ class Image_ImageType_XRTImage extends Image_HelioviewerImage {
      * @return void
      */
     public function __construct($jp2, $filepath, $roi, $uiLabels, $offsetX,
-        $offsetY, $options, $sunCenterOffsetParams) {
+        $offsetY, $options, $sunCenterOffsetParams, $name) {
 
         $this->uiLabels = $uiLabels;
-
+		$this->name = $name;
+		
         $colorTable = HV_ROOT_DIR.'/resources/images/color-tables/Hinode_XRT.png';
 
         if (file_exists($colorTable)) {
@@ -55,7 +56,7 @@ class Image_ImageType_XRTImage extends Image_HelioviewerImage {
      * @return string watermark name
      */
     public function getWaterMarkName() {
-        return 'XRT '.$this->uiLabels[2]['name'].' '
-                     .$this->uiLabels[3]['name']."\n";
+        //return 'XRT '.$this->uiLabels[2]['name'].' ' .(isset($this->uiLabels[3]['name']) ? $this->uiLabels[3]['name'] : '')."\n";
+        return $this->name ."\n";
     }
 }

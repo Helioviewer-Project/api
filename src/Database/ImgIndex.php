@@ -365,8 +365,7 @@ class Database_ImgIndex {
         $xmlBox = $this->extractJP2MetaInfo($image_filepath);
 
         // Fetch metadata from the `datasources` table
-        $datasource = $this->getDatasourceInformationFromSourceId(
-            $image['sourceId']);
+        $datasource = $this->getDatasourceInformationFromSourceId($image['sourceId']);
 
         return array_merge($image, $xmlBox, $datasource);
     }
@@ -406,23 +405,23 @@ class Database_ImgIndex {
         $this->_dbConnect();
 
         $datestr = isoDateToMySQL($date);
-
+		
         $sql = sprintf(
-                   "SELECT id, filepath, filename, date FROM ("
+                   "SELECT id, sourceId, filepath, filename, date FROM ("
                  . "( SELECT "
-                 .        "id, filepath, filename, date "
+                 .        "id, sourceId, filepath, filename, date "
                  .   "FROM data "
                  .   "WHERE "
-                 .       "sourceId " . " = %d AND "
+                 .       "".$this->getDatasourceIDsString($sourceId)." AND "
                  .       "date "     . " <'%s' "
                  .   "ORDER BY date DESC "
                  .   "LIMIT 1 ) "
                  . "UNION ALL "
                  . "( SELECT "
-                 .        "id, filepath, filename, date "
+                 .        "id, sourceId, filepath, filename, date "
                  .   "FROM data "
                  .   "WHERE "
-                 .       "sourceId " . " = %d AND "
+                 .       "".$this->getDatasourceIDsString($sourceId)." AND "
                  .       "date "     . ">='%s' "
                  .   "ORDER BY date ASC "
                  .   "LIMIT 1 ) "
@@ -430,14 +429,9 @@ class Database_ImgIndex {
                  . "ORDER BY "
                  .     "ABS(TIMESTAMPDIFF(MICROSECOND, date, '%s') "
                  . ") LIMIT 1;",
-                 (int)$sourceId,
-                 $this->_dbConnection->link->real_escape_string(
-                    $datestr),
-                 (int)$sourceId,
-                 $this->_dbConnection->link->real_escape_string(
-                    $datestr),
-                 $this->_dbConnection->link->real_escape_string(
-                    $datestr)
+                 $this->_dbConnection->link->real_escape_string($datestr),
+                 $this->_dbConnection->link->real_escape_string($datestr),
+                 $this->_dbConnection->link->real_escape_string($datestr)
                ); 
         try {
             $result = $this->_dbConnection->query($sql);
@@ -449,10 +443,13 @@ class Database_ImgIndex {
         $data = $result->fetch_array(MYSQLI_ASSOC);
         if ( $data === null ) {
             $source = $this->_getDataSourceName($sourceId);
-            throw new Exception("No data of the requested type ("
-                               .$source.") are currently available.", 10);
+            throw new Exception("No data of the requested type (".$source.") are currently available.", 10);
+        }else{
+	        $source = $this->_getDataSourceName($data['sourceId']);
+	        $data['name'] = $source;
         }
-
+		
+		
         return $data;
     }
 
@@ -587,19 +584,11 @@ class Database_ImgIndex {
 
         $startDate = isoDateToMySQL($start);
         $endDate   = isoDateToMySQL($end);
-
+		
         $sql = sprintf(
-                   "SELECT COUNT(id) as count "
-                 . "FROM data "
-                 . "WHERE "
-                 .     "sourceId " . " = %d AND "
-                 .     "date BETWEEN '%s' AND '%s' "
-                 . "LIMIT 1;",
-                 (int)$sourceId,
-                 $this->_dbConnection->link->real_escape_string(
-                    $startDate),
-                 $this->_dbConnection->link->real_escape_string(
-                    $endDate)
+                   "SELECT COUNT(id) as count FROM data WHERE ".$this->getDatasourceIDsString($sourceId)." AND date BETWEEN '%s' AND '%s' LIMIT 1;",
+                 $this->_dbConnection->link->real_escape_string($startDate),
+                 $this->_dbConnection->link->real_escape_string($endDate)
                );
         try {
             $result = $this->_dbConnection->query($sql);
@@ -630,19 +619,11 @@ class Database_ImgIndex {
         $data      = array();
         $startDate = isoDateToMySQL($start);
         $endDate   = isoDateToMySQL($end);
-
+		
         $sql = sprintf(
-                   "SELECT * "
-                 . "FROM data "
-                 . "WHERE "
-                 .     "sourceId = %d AND "
-                 .     "date BETWEEN '%s' AND '%s' "
-                 . "ORDER BY date ASC;",
-                 (int)$sourceId,
-                 $this->_dbConnection->link->real_escape_string(
-                    $startDate),
-                 $this->_dbConnection->link->real_escape_string(
-                    $endDate)
+                   "SELECT * FROM data WHERE ".$this->getDatasourceIDsString($sourceId)." AND date BETWEEN '%s' AND '%s' ORDER BY date ASC;",
+                 $this->_dbConnection->link->real_escape_string($startDate),
+                 $this->_dbConnection->link->real_escape_string($endDate)
                );
         try {
             $result = $this->_dbConnection->query($sql);
@@ -678,17 +659,16 @@ class Database_ImgIndex {
         $startDate = date("Y-m-d H:i:s", $start);
         $endDate   = date("Y-m-d H:i:s", $end);
         $midDate   = date("Y-m-d H:i:s", $mid);
-
-        $sql = sprintf("
-	        SELECT * FROM
+		
+        $sql = sprintf("SELECT * FROM
 				(
 				  ( SELECT *, TIMESTAMPDIFF(SECOND, '%s', `date`) as diff
-				    FROM `data` WHERE `date` >= '%s' AND `date` < '%s' AND sourceId = %d
+				    FROM `data` WHERE `date` >= '%s' AND `date` < '%s' AND ".$this->getDatasourceIDsString($sourceId)."
 				    ORDER BY `date` asc  limit 1
 				  )
 				  union
 				  ( SELECT *, TIMESTAMPDIFF(SECOND, `date`, '%s') as diff
-				    FROM `data` WHERE `date` < '%s' AND `date` > '%s' AND sourceId = %d
+				    FROM `data` WHERE `date` < '%s' AND `date` > '%s' AND ".$this->getDatasourceIDsString($sourceId)."
 				    ORDER BY `date` desc limit 1
 				  )
 				) x
@@ -697,11 +677,9 @@ class Database_ImgIndex {
                  $this->_dbConnection->link->real_escape_string($midDate),
                  $this->_dbConnection->link->real_escape_string($midDate),
                  $this->_dbConnection->link->real_escape_string($endDate),
-                 (int)$sourceId,
                  $this->_dbConnection->link->real_escape_string($midDate),
                  $this->_dbConnection->link->real_escape_string($midDate),
-                 $this->_dbConnection->link->real_escape_string($startDate),
-                 (int)$sourceId
+                 $this->_dbConnection->link->real_escape_string($startDate)
                );
         try {
             $result = $this->_dbConnection->query($sql);
@@ -978,15 +956,9 @@ class Database_ImgIndex {
      */
     public function getOldestData($sourceId) {
         $this->_dbConnect();
+		
+		$sql = 'SELECT date FROM data WHERE '.$this->getDatasourceIDsString($sourceId).' ORDER BY date ASC LIMIT 1;';
 
-        $sql = sprintf(
-                   'SELECT date '
-                 . 'FROM data '
-                 . 'WHERE sourceId = %d '
-                 . 'ORDER BY date ASC '
-                 . 'LIMIT 1;',
-                 (int)$sourceId
-               );
         try {
             $result = $this->_dbConnection->query($sql);
         }
@@ -1008,15 +980,9 @@ class Database_ImgIndex {
      */
     public function getNewestData($sourceId) {
         $this->_dbConnect();
-
-        $sql = sprintf(
-                   'SELECT date '
-                 . 'FROM data '
-                 . 'WHERE sourceId = %d '
-                 . 'ORDER BY date DESC '
-                 . 'LIMIT 1;',
-                 (int)$sourceId
-               );
+		
+		$sql = 'SELECT date FROM data WHERE '.$this->getDatasourceIDsString($sourceId).' ORDER BY date DESC LIMIT 1;';
+		
         try {
             $result = $this->_dbConnection->query($sql);
         }
@@ -1128,8 +1094,7 @@ class Database_ImgIndex {
             // Prepare include list for "IN" clause
             $included = "(";
             foreach ($include_arr as $show) {
-                $show = $this->_dbConnection->link->real_escape_string(
-                    $show);
+                $show = $this->_dbConnection->link->real_escape_string($show);
                 $included .= "'$show',";
             }
             $included = substr($included, 0, -1).")";
@@ -1142,6 +1107,8 @@ class Database_ImgIndex {
 
             $sql .= ' ORDER BY a.name DESC;';
 
+        }else{
+	        $sql .= ' ORDER BY s.displayOrder ASC, a.name ASC;';
         }
 
         // Use UTF-8 for responses
@@ -1160,13 +1127,22 @@ class Database_ImgIndex {
 
             // Only include if data is available for the specified source
             // as flagged in the `datasources` table
-            if ( !(bool)$source["enabled"] ) {
-                continue;
-            }
+            $serverRef = $_SERVER['HTTP_REFERER'];
+            if($serverRef != 'https://beta3.helioviewer.org/' || $source['id'] < 10000){
+	            if ( !(bool)$source["enabled"] ) {
+	                continue;
+	            }
+			}
 
             // Data Availability
-            $newest = $this->getNewestData($source['id']);
-            $oldest = $this->getOldestData($source['id']);
+            if($source['id'] < 10000){
+	            $newest = $this->getNewestData($source['id']);
+				$oldest = $this->getOldestData($source['id']);
+            }else{
+	            $newest = date('Y-m-d H:i:s');
+	            //currently oldest image in database
+				$oldest = '1991-09-11 00:00:00';
+            }
 
             // Determine depth of tree for this data source
             // And populate uiLabel array
@@ -1190,8 +1166,7 @@ class Database_ImgIndex {
                     if ( ++$index == $depth ) {
                         $r[$key]['sourceId']      = (int)$source["id"];
                         $r[$key]['nickname']      = $source["nickname"];
-                        $r[$key]['layeringOrder'] =
-                            (int)$source["layeringOrder"];
+                        $r[$key]['layeringOrder'] = (int)$source["layeringOrder"];
                         $r[$key]['start']         = $oldest;
                         $r[$key]['end']           = $newest;
                         $r[$key]['uiLabels']      = $uiLabels;
@@ -1228,8 +1203,7 @@ class Database_ImgIndex {
                         $r[$key]['description']   = $desc;
                         $r[$key]['nickname']      = $source["nickname"];
                         $r[$key]['sourceId']      = (int)$source["id"];
-                        $r[$key]['layeringOrder'] =
-                            (int)$source["layeringOrder"];
+                        $r[$key]['layeringOrder'] = (int)$source["layeringOrder"];
                         $r[$key]['start']         = $oldest;
                         $r[$key]['end']           = $newest;
                         $r[$key]['label']         = $label;
@@ -1319,6 +1293,35 @@ class Database_ImgIndex {
         }
 
         return $result->fetch_array(MYSQLI_ASSOC);
+    }
+
+    /**
+     * Return an subID's for grouped datasets.
+     *
+     * @param int SourceId
+     *
+     * @return array set of Sources ID
+     */
+    public function getDatasourceIDsString($sourceId) {
+        if((int)$sourceId > 10000){
+	        $sql = sprintf('SELECT * FROM datasources WHERE id = %d LIMIT 1;', (int)$sourceId);
+	        $result = $this->_dbConnection->query($sql);
+	        $source = $result->fetch_array(MYSQLI_ASSOC);
+
+	        //Determinate source group
+	        if($source['groupOne'] == 1){
+		        $layersString = ' groupOne = '.(int)$sourceId.' ' ;
+	        }else if($source['groupTwo'] == 1){
+		        $layersString = ' groupTwo = '.(int)$sourceId.' ' ;
+	        }else if($source['groupThree'] == 1){
+		        $layersString = ' groupThree = '.(int)$sourceId.' ' ;
+	        }else{
+		        $layersString = ' sourceId IN ('.$source['sourceIdGroup'].') ' ;// general group
+	        }
+		}else{
+			$layersString = sprintf(' sourceId = %d ', (int)$sourceId);
+		}
+        return $layersString;
     }
 }
 ?>
