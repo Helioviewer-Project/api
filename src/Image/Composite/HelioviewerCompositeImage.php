@@ -187,7 +187,7 @@ class Image_Composite_HelioviewerCompositeImage {
 
         return new $classname(
             $jp2, $tmpFile, $this->roi, $layer['uiLabels'],
-            $offsetX, $offsetY, $options, $image['sunCenterOffsetParams'] );
+            $offsetX, $offsetY, $options, $image['sunCenterOffsetParams'], $image['name'] );
     }
 
     /**

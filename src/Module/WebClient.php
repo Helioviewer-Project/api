@@ -130,7 +130,8 @@ class Module_WebClient implements Module {
         // Return date and id
         $response = array_merge(array(
             'id'   => $image['id'],
-            'date' => $image['date']
+            'date' => $image['date'],
+            'name' => $image['name']
         ), $xmlBox);
 
         // Print result

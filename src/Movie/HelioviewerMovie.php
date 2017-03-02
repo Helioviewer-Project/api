@@ -746,7 +746,7 @@ class Movie_HelioviewerMovie {
 	        $width = $this->width;
 	        $height = $this->height;
         }
-		
+
         // Update movie entry in database with new details
         $this->_db->storeMovieProperties(
             $this->id, $this->startDate, $this->endDate, $this->numFrames,

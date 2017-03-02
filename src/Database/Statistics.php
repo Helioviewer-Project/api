@@ -151,12 +151,11 @@ class Database_Statistics {
      *
      * @return string  Date format string
      */
-    public function getDataCoverageTimeline($resolution, $endDate, $interval,
-        $stepSize, $steps) {
+    public function getDataCoverageTimeline($resolution, $endDate, $interval, $stepSize, $steps) {
 
         require_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
 
-        $sql = 'SELECT id, name, description FROM datasources ORDER BY description';
+        $sql = 'SELECT id, name, description FROM datasources WHERE id < 10000 ORDER BY description';
         $result = $this->_dbConnection->query($sql);
 
         $output = array();
@@ -265,6 +264,7 @@ class Database_Statistics {
 		
 		$layersArray = array();
 		$layersKeys = array();
+		$layersKeysSelect = array();
 		$layersCount = 0;
 		foreach($layers->toArray() as $layer){
 			$sourceId = $layer['sourceId'];
@@ -280,12 +280,27 @@ class Database_Statistics {
             
 	        //$sources[$layersCount]->data[] = array($startDate->getTimestamp()*1000, null);
             
-            $layersArray[] = $sourceId;
             $layersKeys[$sourceId] = $layersCount;
+            
+            if($sourceId < 10000){
+	           $layersArray[] = $sourceId; 
+	           $layersKeysSelect[$sourceId] = $layersCount;
+            }else{
+	            $sql = sprintf('SELECT sourceIdGroup FROM datasources WHERE id = %d LIMIT 1;', (int)$sourceId);
+
+	        	$result = $this->_dbConnection->query($sql);
+	        	$resultIds = $result->fetch_array(MYSQLI_ASSOC);
+	        	$layersSubArray = explode(',', $resultIds['sourceIdGroup']);   
+	        	foreach($layersSubArray as $k=>$v){
+		        	$layersArray[] = $v;
+		        	$layersKeysSelect[$v] = $layersCount;
+	        	}
+            }
+            
             $layersCount++;
         }
-		
-		$layersString = implode(' OR sourceId = ', $layersArray);
+
+		$layersString = ' sourceId IN ('.implode(',', $layersArray).') ';
 		
 		switch ($resolution) {
 	        case 'm':
@@ -293,7 +308,7 @@ class Database_Statistics {
 				       COUNT(*) AS count,
 				       sourceId
 				FROM data
-				WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
+				WHERE '.$layersString.' AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
 				GROUP BY sourceId, time
 				ORDER BY time;';
 				
@@ -304,7 +319,7 @@ class Database_Statistics {
 						COUNT(*) AS count,
 						sourceId
 				FROM data
-				WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
+				WHERE '.$layersString.' AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
 				GROUP BY sourceId, time
 				ORDER BY time;';
 				
@@ -323,7 +338,7 @@ class Database_Statistics {
 						COUNT(*) AS count,
 						sourceId
 				FROM data
-				WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
+				WHERE '.$layersString.' AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
 				GROUP BY sourceId, time
 				ORDER BY time;';
 				
@@ -342,7 +357,7 @@ class Database_Statistics {
 						COUNT(*) AS count,
 						sourceId
 				FROM data
-				WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
+				WHERE '.$layersString.' AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
 				GROUP BY sourceId, time
 				ORDER BY time;';
 				
@@ -360,7 +375,7 @@ class Database_Statistics {
 				       COUNT(*) AS count,
 				       sourceId
 				FROM data
-				WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
+				WHERE '.$layersString.' AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
 				GROUP BY sourceId, time
 				ORDER BY time;';
 				
@@ -376,7 +391,7 @@ class Database_Statistics {
 				       SUM(count) AS count,
 				       sourceId
 				FROM data_coverage_30_min
-				WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
+				WHERE '.$layersString.' AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
 				GROUP BY sourceId, DATE(time)
 				ORDER BY DATE(time);';
 				
@@ -394,7 +409,7 @@ class Database_Statistics {
 						COUNT(*) AS count,
 						sourceId
 				FROM data_coverage_30_min
-				WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
+				WHERE '.$layersString.' AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
 				GROUP BY sourceId, time
 				ORDER BY time;';
 				//DATE(DATE_FORMAT(DATE_SUB(`date`, INTERVAL DAYOFWEEK(`date`)-1 DAY), "%Y-%m-%d")) as time,
@@ -412,7 +427,7 @@ class Database_Statistics {
 				       SUM(count) AS count,
 				       sourceId
 				FROM data_coverage_30_min
-				WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
+				WHERE '.$layersString.' AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
 				GROUP BY sourceId, DATE(DATE_FORMAT(date, "%Y-%m-01"))
 				ORDER BY DATE(DATE_FORMAT(date, "%Y-%m-01"));';
 				
@@ -428,7 +443,7 @@ class Database_Statistics {
 				       SUM(count) AS count,
 				       sourceId
 				FROM data_coverage_30_min
-				WHERE (sourceId = '.$layersString.') AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
+				WHERE '.$layersString.' AND `date` BETWEEN "'.$dateStart.'" AND "'.$dateEnd.'"
 				GROUP BY sourceId, DATE(DATE_FORMAT(date, "%Y-01-01"))
 				ORDER BY DATE(DATE_FORMAT(date, "%Y-01-01"));';
 				
@@ -458,11 +473,16 @@ class Database_Statistics {
 		while ($row = $result->fetch_array(MYSQLI_ASSOC)) {
             $num = (int) $row['count'];
             $sourceId = $row['sourceId'];
-            $key = $layersKeys[$sourceId];
+            $key = $layersKeysSelect[$sourceId];//echo $key.' | ';
             if($resolution == 'm'){
 	            $sources[$key]->data[] = array( (strtotime($row['time'])* 1000) + $key , $key+1);
             }else{
-	            $dbData[$key][strtotime($row['time'])] = $num;
+	            if(!isset($dbData[$key][strtotime($row['time'])])){
+		            $dbData[$key][strtotime($row['time'])] = $num;
+	            }else{
+		            $dbData[$key][strtotime($row['time'])] += $num;
+	            }
+	            
             }
         }
         
