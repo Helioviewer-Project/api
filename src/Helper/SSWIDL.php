@@ -27,6 +27,7 @@ class Helper_SSWIDL extends Helper_SciScript {
         $DataSnippet .= $this->_getSTEREOSnippet();
         $DataSnippet .= $this->_getSWAPSnippet();
         $DataSnippet .= $this->_getYohkohSnippet();
+        $DataSnippet .= $this->_getXRTSnippet();
 
         $code = <<<EOD
 ;
@@ -618,6 +619,47 @@ EOD;
         }
 
         $string .= "\nendif\n\n";
+        return $string;
+    }
+    
+        private function _getXRTSnippet() {
+        $string = <<<EOD
+
+;
+; Hinode XRT data - downloadable via the VSO
+;
+
+EOD;
+        $count = 0;
+        foreach ( $this->_imageLayers as $i=>$layer) {
+            if ( $layer['uiLabels'][1]['name'] == 'XRT' ) {
+                $count++;
+
+                if ( is_null($this->_end) ) {
+                    $tstart = $tend = str_replace('/','-',$layer['subDate']) .' '.$layer['subTime'];
+                    $string .= <<<EOD
+
+tstart = '{$tstart}'
+tend   = '{$tend}'
+
+EOD;
+                }
+
+
+                break;
+            }
+        }
+        if ($count > 0) {
+            $string .= <<<EOD
+
+a_xrt = vso_search(tstart, tend, instrument='XRT')
+b_xrt= vso_get( a_XRT )
+
+EOD;
+        }else{
+	        $string = '';
+        }
+
         return $string;
     }
 
