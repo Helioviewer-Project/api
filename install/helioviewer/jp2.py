@@ -1,105 +1,12 @@
 # -*- coding: utf-8 -*-
 """Helioviewer.org JPEG 2000 processing functions"""
 import os
-from xml.etree import cElementTree as ET
-import numpy as np
-from sunpy.io.jp2 import get_header
-from sunpy.map import Map
-from sunpy.util.xml import xml_to_dict
-from sunpy.io.header import FileHeader
-from glymur import Jp2k
+import sys
 from helioviewer.db import get_datasources, enable_datasource
-
+from helioviewer.jp2parser import JP2parser
 
 __INSERTS_PER_QUERY__ = 500
 __STEP_FXN_THROTTLE__ = 50
-
-
-def read_header_only_but_still_use_sunpy_map(filepath):
-    """
-    Reads the header for a JPEG200 file and returns some dummy data.
-    Why does this function exist?  SunPy map objects perform some important
-    homogenization steps that we would like to take advantage of in
-    Helioviewer.  The homogenization steps occur on the creation of the sunpy
-    map object.  All SunPy maps have the same properties, some of which are
-    useful for Helioviewer to use in order to ingest JPEG2000 data.  The SunPy
-    map properties are based on the header information in the JPEG2000 file,
-    which is a copy of the source FITS header (with some modifications in
-    some cases - see JP2Gen).  So by using SunPy's maps, Helioviewer does not
-    have to implement these homogenization steps.
-
-    So what's the problem?  Why not use SunPy's JPEG2000 file reading
-    capability?  Well let's explain. SunPy's JPEG2000 file reading reads
-    both the file header and the image data.  The image data is then decoded
-    ultimately creating a numpy array.  The decoding step is computationally
-    expensive for the 4k by 4k images provided by AIA and HMI.  It takes long
-    enough that the ingestion of AIA and HMI data would be severely impacted,
-    possibly to the point that we would never catch up if we fell behind in
-    ingesting the latest data.
-
-    The solution is to not decode the image data, but to pass along only the
-    minimal amount of information required to create the SunPy map.  This
-    function implements this solution tactic, admittedly in an unsatisfying
-    manner.  The actual image data is replaced by a 1 by 1 numpy array.  This
-    is sufficient to create a SunPy map with the properties required by the
-    Helioviewer Project.
-
-    Parameters
-    ----------
-    filepath : `str`
-        The file to be read.
-
-    Returns
-    -------
-    pairs : `list`
-        A (data, header) tuple
-    """
-    header = get_header(filepath)
-
-    return [(np.zeros([1, 1]), header[0])]
-
-
-def get_header(filepath):
-    """
-    Reads the header from the file
-
-    Parameters
-    ----------
-    filepath : `str`
-        The file to be read
-
-    Returns
-    -------
-    headers : list
-        A list of headers read from the file
-    """
-    jp2 = Jp2k(filepath)
-    xml_box = [box for box in jp2.box if box.box_id == 'xml ']
-    xmlstring = ET.tostring(xml_box[0].xml.find('fits'))
-    pydict = xml_to_dict(xmlstring)["fits"]
-
-    # Fix types
-    for k, v in pydict.items():
-        if v.isdigit():
-            pydict[k] = int(v)
-        elif _is_float(v):
-            pydict[k] = float(v)
-
-    # Remove newlines from comment
-    if 'comment' in pydict:
-        pydict['comment'] = pydict['comment'].replace("\n", "")
-
-    return [FileHeader(pydict)]
-
-
-def _is_float(s):
-    """Check to see if a string value is a valid float"""
-    try:
-        float(s)
-        return True
-    except ValueError:
-        return False
-
 
 def create_image_data(filepath):
     """Create data object of JPEG 2000 image.
@@ -107,32 +14,10 @@ def create_image_data(filepath):
     Get image observatory, instrument, detector, measurement, date from image
     metadata and create an object.
     """
-    imageData = Map(read_header_only_but_still_use_sunpy_map(filepath))
-    image = dict()
-    image['nickname'] = imageData.nickname
-    image['observatory'] = imageData.observatory.replace(" ","_")
-    image['instrument'] = imageData.instrument.split(" ")[0]
-    image['detector'] = imageData.detector
-    measurement = str(imageData.measurement).replace(".0 Angstrom", "").replace(".0", "")
-    # Convert Yohkoh measurements to be helioviewer compatible
-    if image['observatory'] == "Yohkoh":
-        if measurement == "AlMg":
-            image['measurement'] = "AlMgMn"
-        elif measurement == "Al01":
-            image['measurement'] = "thin-Al"
-        else:
-            image['measurement'] = measurement
-    elif image['observatory'] == "Hinode":
-        image['filter1'] = measurement.split("-")[0].replace(" ", "_")
-        image['filter2'] = measurement.split("-")[1].replace(" ", "_")
-    else:
-        image['measurement'] = measurement
-    image['date'] = imageData.date
-    image['filepath'] = filepath
-    image['header'] = imageData.meta
+    JP2data = JP2parser(filepath)
+    image = JP2data.getData()
 
     return image
-
 
 def find_images(path):
     """Searches a directory for JPEG 2000 images.
@@ -219,11 +104,19 @@ def insert_images(images, sources, rootdir, cursor, mysql, step_function=None, c
 
         # Enable datasource if it has not already been
         if (not source['enabled']):
-            # sources[img["observatory"]][img["instrument"]][img["detector"]][img["measurement"]]["enabled"] = True
             enable_datasource(cursor, source['id'])
 
+        groups = getImageGroup(source['id'])
+
         # insert into database
-        query += "(NULL, '%s', '%s', '%s', NULL, %d, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0)," % (path, filename, img["date"], source['id'])
+        queryStr = "(NULL, '%s', '%s', '%s', NULL, %d, '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', 1, %d, %d, %d),"  
+                
+        query += queryStr % (path, filename, img["date"], source['id'],
+                  img["scale"], img["width"], img["height"], img["refPixelX"], img["refPixelY"], img["layeringOrder"],
+                  img["DSUN_OBS"], img["SOLAR_R"], img["RADIUS"], img["CDELT1"], img["CDELT2"],
+                  img["CRVAL1"], img["CRVAL2"], img["CRPIX1"], img["CRPIX2"], img["XCEN"], img["YCEN"],
+                  img["CROTA1"], groups["groupOne"], groups["groupTwo"], groups["groupThree"])
+        
         query_v2 += "(NULL, '%s', '%s', '%s', %d)," % (path, filename, img["date"], source['id'])
 
         # Progressbar
@@ -255,3 +148,133 @@ class BadImage(ValueError):
 
     def get_message(self):
         return self.message
+
+
+def getImageGroup(sourceId):
+    """Create data object of XRT groups
+    
+    TODO: move groupId definition to the database
+    """
+    groups = dict()
+    
+    if sourceId > 37 and sourceId < 75:
+        groups["groupOne"] = 10001
+    else:
+        groups["groupOne"] = 0
+        
+    if sourceId == 38:
+        groups["groupTwo"] = 10002
+        groups["groupThree"] = 10008
+    elif sourceId == 38:
+        groups["groupTwo"] = 10003
+        groups["groupThree"] = 10008
+    elif sourceId == 38:
+        groups["groupTwo"] = 10004
+        groups["groupThree"] = 10008
+    elif sourceId == 38:
+        groups["groupTwo"] = 10005
+        groups["groupThree"] = 10008
+    elif sourceId == 38:
+        groups["groupTwo"] = 10006
+        groups["groupThree"] = 10008
+    elif sourceId == 38:
+        groups["groupTwo"] = 10007
+        groups["groupThree"] = 10008
+    elif sourceId == 38:
+        groups["groupTwo"] = 10002
+        groups["groupThree"] = 10009
+    elif sourceId == 38:
+        groups["groupTwo"] = 10003
+        groups["groupThree"] = 10009
+    elif sourceId == 38:
+        groups["groupTwo"] = 10004
+        groups["groupThree"] = 10009
+    elif sourceId == 38:
+        groups["groupTwo"] = 10005
+        groups["groupThree"] = 10009
+    elif sourceId == 38:
+        groups["groupTwo"] = 10006
+        groups["groupThree"] = 10009
+    elif sourceId == 38:
+        groups["groupTwo"] = 10007
+        groups["groupThree"] = 10009
+    elif sourceId == 38:
+        groups["groupTwo"] = 10002
+        groups["groupThree"] = 10010
+    elif sourceId == 38:
+        groups["groupTwo"] = 10003
+        groups["groupThree"] = 10010
+    elif sourceId == 38:
+        groups["groupTwo"] = 10004
+        groups["groupThree"] = 10010
+    elif sourceId == 38:
+        groups["groupTwo"] = 10005
+        groups["groupThree"] = 10010
+    elif sourceId == 38:
+        groups["groupTwo"] = 10006
+        groups["groupThree"] = 10010
+    elif sourceId == 38:
+        groups["groupTwo"] = 10007
+        groups["groupThree"] = 10010
+    elif sourceId == 38:
+        groups["groupTwo"] = 10002
+        groups["groupThree"] = 10011
+    elif sourceId == 38:
+        groups["groupTwo"] = 10003
+        groups["groupThree"] = 10011
+    elif sourceId == 38:
+        groups["groupTwo"] = 10004
+        groups["groupThree"] = 10011
+    elif sourceId == 38:
+        groups["groupTwo"] = 10005
+        groups["groupThree"] = 10011
+    elif sourceId == 38:
+        groups["groupTwo"] = 10006
+        groups["groupThree"] = 10011
+    elif sourceId == 38:
+        groups["groupTwo"] = 10007
+        groups["groupThree"] = 10011
+    elif sourceId == 38:
+        groups["groupTwo"] = 10002
+        groups["groupThree"] = 10012
+    elif sourceId == 38:
+        groups["groupTwo"] = 10003
+        groups["groupThree"] = 10012
+    elif sourceId == 38:
+        groups["groupTwo"] = 10004
+        groups["groupThree"] = 10012
+    elif sourceId == 38:
+        groups["groupTwo"] = 10005
+        groups["groupThree"] = 10012
+    elif sourceId == 38:
+        groups["groupTwo"] = 10006
+        groups["groupThree"] = 10012
+    elif sourceId == 38:
+        groups["groupTwo"] = 10007
+        groups["groupThree"] = 10012
+    elif sourceId == 38:
+        groups["groupTwo"] = 0
+        groups["groupThree"] = 0
+    elif sourceId == 38:
+        groups["groupTwo"] = 10002
+        groups["groupThree"] = 10013
+    elif sourceId == 38:
+        groups["groupTwo"] = 10003
+        groups["groupThree"] = 10013
+    elif sourceId == 38:
+        groups["groupTwo"] = 10004
+        groups["groupThree"] = 10013
+    elif sourceId == 38:
+        groups["groupTwo"] = 10005
+        groups["groupThree"] = 10013
+    elif sourceId == 38:
+        groups["groupTwo"] = 10006
+        groups["groupThree"] = 10013
+    elif sourceId == 38:
+        groups["groupTwo"] = 10007
+        groups["groupThree"] = 10013
+    else:
+        groups["groupTwo"] = 0
+        groups["groupThree"] = 0
+
+    return groups
