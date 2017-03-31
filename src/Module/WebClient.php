@@ -310,6 +310,12 @@ class Module_WebClient implements Module {
         if ( array_key_exists('eventLabels', $this->_params) ) {
             $eventLabels = $this->_params['eventLabels'];
         }
+        
+        // Event Labels
+        $movieIcons = false;
+        if ( array_key_exists('movieIcons', $this->_params) ) {
+            $movieIcons = $this->_params['movieIcons'];
+        }
 
         // Scale
         $scale     = false;
@@ -328,7 +334,7 @@ class Module_WebClient implements Module {
 
         // Create the screenshot
         $screenshot = new Image_Composite_HelioviewerScreenshot(
-            $layers, $events, $eventLabels, $scale, $scaleType, $scaleX,
+            $layers, $events, $eventLabels, $movieIcons, $scale, $scaleType, $scaleX,
             $scaleY, $this->_params['date'], $roi, $this->_options
         );
 
@@ -419,7 +425,7 @@ class Module_WebClient implements Module {
 
         // Create the screenshot
         $screenshot = new Image_Composite_HelioviewerScreenshot(
-            $layers, $events, (bool)$metaData['eventsLabels'],
+            $layers, $events, (bool)$metaData['eventsLabels'], (bool)$metaData['movieIcons'],
             (bool)$metaData['scale'], $metaData['scaleType'],
             $metaData['scaleX'], $metaData['scaleY'],
             $metaData['observationDate'], $roi, $options

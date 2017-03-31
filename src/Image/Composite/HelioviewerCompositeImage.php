@@ -32,6 +32,7 @@ class Image_Composite_HelioviewerCompositeImage {
     protected $layers;
     protected $events;
     protected $eventsLabels;
+    protected $movieIcons;
     protected $scale;
     protected $scaleType;
     protected $scaleX;
@@ -58,7 +59,7 @@ class Image_Composite_HelioviewerCompositeImage {
      *
      * @return void
      */
-    public function __construct($layers, $events, $eventLabels, $scale,
+    public function __construct($layers, $events, $eventLabels, $movieIcons, $scale,
         $scaleType, $scaleX, $scaleY, $obsDate, $roi, $options) {
 
         set_time_limit(90); // Extend time limit to avoid timeouts
@@ -83,6 +84,7 @@ class Image_Composite_HelioviewerCompositeImage {
         $this->layers = $layers;
         $this->events = $events;
         $this->eventsLabels = $eventLabels;
+        $this->movieIcons = $movieIcons;
         $this->scale  = $scale;
         $this->scaleType = $scaleType;
         $this->scaleX = $scaleX;
@@ -227,6 +229,11 @@ class Image_Composite_HelioviewerCompositeImage {
              $this->date != '2999-01-01T00:00:00.000Z') {
 
             $this->_addEventLayer($image);
+        }
+        
+        if ( $this->movieIcons) {
+
+            $this->_addMovieIcons($image);
         }
 
         if ( $this->scale && $this->scaleType == 'earth' ) {
@@ -527,6 +534,98 @@ class Image_Composite_HelioviewerCompositeImage {
         }
     }
 
+    /**
+     * Composites Shared YouTube movies markers and labels onto
+     * image.
+     *
+     * @param object $imagickImage An Imagick object
+     *
+     * @return void
+     */
+    private function _addMovieIcons($imagickImage) {
+        if ( $this->width < 200 || $this->height < 200 ) {
+            return;
+        }
+        
+        if ( $this->movieIcons === false ) {
+            return false;
+        }
+
+        $markerPinPixelOffsetX = 12;
+        $markerPinPixelOffsetY = 38;
+		
+		include_once HV_ROOT_DIR.'/../src/Database/MovieDatabase.php';
+		include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerLayers.php';
+		include_once HV_ROOT_DIR.'/../src/Helper/RegionOfInterest.php';
+		
+        $movies = new Database_MovieDatabase();
+
+        // Get a list of recent videos
+        $videos = array();
+
+        foreach( $movies->getSharedVideosByTime(0, 0, $this->date) as $video) { //date = '2000/01/01T00:00:00.000Z'
+	            
+            $layers = new Helper_HelioviewerLayers($video['dataSourceString']);
+			$layersArray = $layers->toArray();
+			$name = '';
+			if(count($layersArray) > 0){
+				foreach($layersArray as $layer){
+					$name .= $layer['name'].', ';
+				}
+			}
+			$name = substr($name, 0, -2);
+			
+			// Regon of interest
+			$roiObject = Helper_RegionOfInterest::parsePolygonString($video['roi'], $video['imageScale']);
+			
+			//Prepare coordinates
+			$top = round($roiObject->top() / (float)$video['imageScale']);
+			$left = round($roiObject->left() / (float)$video['imageScale']);
+			$bottom = round($roiObject->bottom() / (float)$video['imageScale']);
+			$right = round($roiObject->right() / (float)$video['imageScale']);
+			
+			$xCenter = $this->width / 2;
+			$yCenter = $this->height / 2;
+			
+			//Icon and Label location
+			$y = $yCenter + (($top + $bottom)/2) / $this->roi->imageScale() * (float)$video['imageScale'];
+			$x = $xCenter + (($right + $left)/2) / $this->roi->imageScale() * (float)$video['imageScale'];
+			
+			$marker = new IMagick(  HV_ROOT_DIR.'/resources/images/eventMarkers/movie.png' );
+			
+			$imagickImage->compositeImage($marker, IMagick::COMPOSITE_DISSOLVE, $x - 10, $y);//$x - 12, $y - 38
+			
+			//Label
+			// Outline words in black
+            $text = new IMagickDraw();
+            $text->setTextEncoding('utf-8');
+            $text->setFont(HV_ROOT_DIR.'/../resources/fonts/DejaVuSans.ttf');
+            $text->setFontSize(10);
+            $text->setStrokeColor('#000C');
+            $text->setStrokeAntialias(true);
+            $text->setStrokeWidth(3);
+            $text->setStrokeOpacity(0.3);
+            $imagickImage->annotateImage($text, $x + 12, $y + 14, 0, $name );
+
+            // Write words in white over outline
+            $text = new IMagickDraw();
+            $text->setTextEncoding('utf-8');
+            $text->setFont(HV_ROOT_DIR.'/../resources/fonts/DejaVuSans.ttf');
+            $text->setFontSize(10);
+            $text->setFillColor('#ffff');
+            $text->setTextAntialias(true);
+            $text->setStrokeWidth(0);
+            $imagickImage->annotateImage($text, $x + 12, $y + 14, 0, $name );
+			
+            // Cleanup
+            $text->destroy();
+            
+	        if ( isset($marker) ) {
+	            $marker->destroy();
+	        }
+            
+        }
+	}
 
 
     /**

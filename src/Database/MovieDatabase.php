@@ -46,7 +46,7 @@ class Database_MovieDatabase {
      */
     public function insertMovie($startTime, $endTime, $imageScale, $roi,
         $maxFrames, $watermark, $layerString, $layerBitMask, $eventString,
-        $eventsLabels, $scale, $scaleType, $scaleX, $scaleY, $numLayers,
+        $eventsLabels, $movieIcons, $scale, $scaleType, $scaleX, $scaleY, $numLayers,
         $queueNum, $frameRate, $movieLength, $size) {
 
         $this->_dbConnect();
@@ -69,6 +69,7 @@ class Database_MovieDatabase {
                  .     'dataSourceBitMask ' . ' = %d, '
                  .     'eventSourceString ' . ' ="%s", '
                  .     'eventsLabels '      . ' = %b, '
+                 .     'movieIcons '        . ' = %b, '
                  .     'scale '             . ' = %b, '
                  .     'scaleType '         . ' ="%s",'
                  .     'scaleX '            . ' = %f, '
@@ -97,6 +98,7 @@ class Database_MovieDatabase {
                     (binary)$layerBitMask ) ),
                  $this->_dbConnection->link->real_escape_string($eventString),
                  (bool)$eventsLabels,
+                 (bool)$movieIcons,
                  (bool)$scale,
                  $this->_dbConnection->link->real_escape_string(
                     $scaleType ),
@@ -373,7 +375,7 @@ class Database_MovieDatabase {
         $sql = sprintf(
                    'SELECT youtube.id, youtube.movieId, youtube.youtubeId, youtube.timestamp, youtube.title, youtube.description, '
                  . 'youtube.keywords, youtube.thumbnail, youtube.shared, youtube.checked, movies.imageScale, movies.dataSourceString, movies.eventSourceString, '
-                 . 'movies.movieLength, movies.width, movies.height, movies.startDate, movies.endDate '
+                 . 'movies.movieLength, movies.width, movies.height, movies.startDate, movies.endDate, AsText(regionOfInterest) as roi '
                  . 'FROM youtube '
                  . 'LEFT JOIN movies '
                  . 'ON movies.id = youtube.movieId '
@@ -381,12 +383,16 @@ class Database_MovieDatabase {
                  .     'youtube.shared>0 AND '
                  .     'youtube.youtubeId IS NOT NULL AND '
                  .     '("%s" BETWEEN movies.startDate AND movies.endDate) '
-                 . 'ORDER BY movies.startDate DESC '
-                 . 'LIMIT %d,%d;',
-                 mysqli_real_escape_string($this->_dbConnection->link, $date),
+                 . 'ORDER BY movies.startDate DESC ',
+                 mysqli_real_escape_string($this->_dbConnection->link, $date)
+               );
+        if((int)$num > 0){
+	        $sql .= sprintf(' LIMIT %d,%d;',
                  (int)$skip,
                  (int)$num
                );
+        }
+        
         try {
             $result = $this->_dbConnection->query($sql);
         }

@@ -43,7 +43,7 @@ class Database_ImgIndex {
      * @return int Identifier in the `screenshots` table
      */
     public function insertScreenshot($date, $imageScale, $roi, $watermark,
-        $layers, $bitmask, $events, $eventsLabels, $scale, $scaleType,
+        $layers, $bitmask, $events, $eventsLabels, $movieIcons, $scale, $scaleType,
         $scaleX, $scaleY, $numLayers) {
 
         include_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
@@ -63,6 +63,7 @@ class Database_ImgIndex {
                 .     "dataSourceBitMask " . " = %d, "
                 .     "eventSourceString " . " ='%s', "
                 .     "eventsLabels "      . " = %b, "
+                .     "movieIcons "      . " = %b, "
                 .     "scale "             . " = %b, "
                 .     "scaleType "         . " ='%s', "
                 .     "scaleX "            . " = %f, "
@@ -81,6 +82,7 @@ class Database_ImgIndex {
                 $this->_dbConnection->link->real_escape_string(
                     $events ),
                 (bool)$eventsLabels,
+                (bool)$movieIcons,
                 (bool)$scale,
                 $this->_dbConnection->link->real_escape_string(
                     $scaleType ),
