@@ -56,6 +56,7 @@ class Movie_HelioviewerMovie {
     public $modified;
     public $watermark;
     public $eventsLabels;
+    public $movieIcons;
     public $scale;
     public $scaleType;
     public $scaleX;
@@ -124,6 +125,7 @@ class Movie_HelioviewerMovie {
         $this->height       = (int)$info['height'];
         $this->watermark    = (bool)$info['watermark'];
         $this->eventsLabels = (bool)$info['eventsLabels'];
+        $this->movieIcons   = (bool)$info['movieIcons'];
         $this->scale        = (bool)$info['scale'];
         $this->scaleType    = $info['scaleType'];
         $this->scaleX       = (float)$info['scaleX'];
@@ -418,7 +420,7 @@ class Movie_HelioviewerMovie {
             try {
                 $screenshot = new Image_Composite_HelioviewerMovieFrame(
                     $filepath, $this->_layers, $this->_events,
-                    $this->eventsLabels, $this->scale, $this->scaleType,
+                    $this->eventsLabels, $this->movieIcons, $this->scale, $this->scaleType,
                     $this->scaleX, $this->scaleY, $time, $this->_roi,
                     $options);
 

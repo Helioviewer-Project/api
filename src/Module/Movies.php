@@ -85,7 +85,8 @@ class Module_Movies implements Module {
             "scaleType"   => 'earth',
             "scaleX"      => 0,
             "scaleY"      => 0,
-            "size"        => 0
+            "size"        => 0,
+            "movieIcons"  => 0
         );
         $options = array_replace($defaults, $this->_options);
 
@@ -166,6 +167,7 @@ class Module_Movies implements Module {
             $bitmask,
             $this->_params['events'],
             $this->_params['eventsLabels'],
+            $this->_params['movieIcons'],
             $options['scale'],
             $options['scaleType'],
             $options['scaleX'],
@@ -935,12 +937,13 @@ class Module_Movies implements Module {
         include_once HV_ROOT_DIR.'/../src/Movie/HelioviewerMovie.php';
         include_once HV_ROOT_DIR.'/../lib/alphaID/alphaID.php';
 		include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerLayers.php';
+		include_once HV_ROOT_DIR.'/../src/Helper/RegionOfInterest.php';
 		
         $movies = new Database_MovieDatabase();
 
         // Default options
         $defaults = array(
-            'num'   => 10,
+            'num'   => 0,
             'skip'   => 0,
             'date' => getUTCDateString()//'2000/01/01T00:00:00.000Z'
         );
@@ -970,27 +973,40 @@ class Module_Movies implements Module {
 			}
 			$name = substr($name, 0, -2);
 			
+			// Regon of interest
+			$roiObject = Helper_RegionOfInterest::parsePolygonString($video['roi'], $video['imageScale']);
+			
             array_push($videos, array(
-                'id'  => $publicId,
-                'url' => 'http://www.youtube.com/watch?v='.$youtubeId,
-                'thumbnails' => array(
-	                'small' => $video['thumbnail'],
-	                'medium' => $video['thumbnail']
-                ),
-                'published'  => $video['timestamp'],
-                'title'  => $name.' ('.$video['startDate'].' - '.$video['endDate'].' UTC)',
-                'description'  => $video['description'],
-                'keywords'  => $video['keywords'],
-                'imageScale'  => $video['imageScale'],
-                'dataSourceString'  => $video['dataSourceString'],
-                'eventSourceString'  => $video['eventSourceString'],
-                'movieLength'  => $video['movieLength'],
-                'width'  => $video['width'],
-                'height'  => $video['height'],
-                'startDate'  => $video['startDate'],
-                'endDate'  => $video['endDate']
+	                'id'  => $publicId,
+	                'url' => 'http://www.youtube.com/watch?v='.$youtubeId,
+	                'thumbnails' => array(
+		                'small' => $video['thumbnail'],
+		                'medium' => $video['thumbnail']
+	                ),
+	                'published'  => $video['timestamp'],
+	                'title'  => $name.' ('.$video['startDate'].' - '.$video['endDate'].' UTC)',
+	                'description'  => $video['description'],
+	                'keywords'  => $video['keywords'],
+	                'imageScale'  => (float)$video['imageScale'],
+	                'dataSourceString'  => $video['dataSourceString'],
+	                'eventSourceString'  => $video['eventSourceString'],
+	                'movieLength'  => $video['movieLength'],
+	                'width'  => (int)$video['width'],
+	                'height'  => (int)$video['height'],
+	                'startDate'  => $video['startDate'],
+	                'endDate'  => $video['endDate'],
+	                'roi'  => array(
+						'top' => round($roiObject->top() / $roiObject->imageScale()),
+						'left' => round($roiObject->left() / $roiObject->imageScale()),
+						'bottom' => round($roiObject->bottom() / $roiObject->imageScale()),
+						'right' => round($roiObject->right() / $roiObject->imageScale()),
+						'imageScale' => $roiObject->imageScale(),
+						'width' => round($roiObject->getPixelWidth()),
+						'height' => round($roiObject->getPixelHeight())
+					)
                 )
             );
+            
         }
 
         $this->_printJSON(json_encode($videos));
@@ -1228,9 +1244,9 @@ class Module_Movies implements Module {
                                     'scale', 'scaleType', 'scaleX', 'scaleY',
                                     'movieLength', 'watermark', 'width',
                                     'height', 'x0', 'y0', 'x1', 'x2',
-                                    'y1', 'y2', 'callback', 'size'),
+                                    'y1', 'y2', 'callback', 'size', 'movieIcons'),
                 'alphanum' => array('format', 'scaleType', 'callback'),
-                'bools'    => array('watermark', 'eventsLabels', 'scale'),
+                'bools'    => array('watermark', 'eventsLabels', 'scale', 'movieIcons'),
                 'dates'    => array('startTime', 'endTime'),
                 'floats'   => array('imageScale', 'frameRate', 'movieLength',
                                     'x0', 'y0', 'x1', 'x2', 'y1', 'y2',

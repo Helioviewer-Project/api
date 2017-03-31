@@ -20,10 +20,10 @@ class Image_Composite_HelioviewerScreenshot
     /**
      * Creates a new screenshot
      */
-    public function __construct($layers, $events, $eventLabels, $scale,
+    public function __construct($layers, $events, $eventLabels, $movieIcons, $scale,
         $scaleType, $scaleX, $scaleY, $obsDate, $roi, $options) {
 
-        parent::__construct($layers, $events, $eventLabels, $scale,
+        parent::__construct($layers, $events, $eventLabels, $movieIcons, $scale,
             $scaleType, $scaleX, $scaleY, $obsDate, $roi, $options);
 
         if ( array_key_exists('action', $options) &&
