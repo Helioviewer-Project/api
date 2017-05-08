@@ -9,6 +9,7 @@
  * @author   Jeff Stys <jeff.stys@nasa.gov>
  * @author   Keith Hughitt <keith.hughitt@nasa.gov>
  * @author   Jaclyn Beck <jaclyn.r.beck@gmail.com>
+ * @author   Serge Zahniy <serge.zahniy@nasa.gov>
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     https://github.com/Helioviewer-Project
  */
@@ -86,15 +87,14 @@ class Module_Movies implements Module {
             "scaleX"      => 0,
             "scaleY"      => 0,
             "size"        => 0,
-            "movieIcons"  => 0
+            "movieIcons"  => 0,
+            "followViewport"  => 0
         );
         $options = array_replace($defaults, $this->_options);
 
         // Default to 15fps if no frame-rate or length was specified
-        if ( is_null($options['frameRate']) &&
-             is_null($options['movieLength'])) {
-
-            $options['frameRate'] = 15;
+        if ( is_null($options['frameRate']) && is_null($options['movieLength'])) {
+			$options['frameRate'] = 15;
         }
 
         // Limit movies to three layers
@@ -122,23 +122,20 @@ class Module_Movies implements Module {
         $imageScale = $roi->imageScale();
 
         // Max number of frames
-        $maxFrames = min($this->_getMaxFrames($queueSize),
-            $options['maxFrames']);
+        $maxFrames = min($this->_getMaxFrames($queueSize), $options['maxFrames']);
 
         // Create a connection to the database
         $db = new Database_ImgIndex();
         $movieDb = new Database_MovieDatabase();
 
         // Estimate the number of frames
-        $numFrames = $this->_estimateNumFrames($db, $layers,
-            $this->_params['startTime'], $this->_params['endTime']);
+        $numFrames = $this->_estimateNumFrames($db, $layers, $this->_params['startTime'], $this->_params['endTime']);
         $numFrames = min($numFrames, $maxFrames);
 
         // Estimate the time to create movie frames
         // @TODO 06/2012: Factor in total number of workers and number of
         //                workers that are currently available?
-        $estBuildTime = $this->_estimateMovieBuildTime($movieDb, $numFrames,
-            $numPixels, $options['format']);
+        $estBuildTime = $this->_estimateMovieBuildTime($movieDb, $numFrames, $numPixels, $options['format']);
 
         // If all workers are in use, increment and use estimated wait counter
         if ( $queueSize +1 >= sizeOf($movieWorkers) ) {
@@ -167,7 +164,8 @@ class Module_Movies implements Module {
             $bitmask,
             $this->_params['events'],
             $this->_params['eventsLabels'],
-            $this->_params['movieIcons'],
+            (isset($this->_params['movieIcons']) ? $this->_params['movieIcons'] : false),
+            (isset($this->_params['followViewport']) ? $this->_params['followViewport'] : false),
             $options['scale'],
             $options['scaleType'],
             $options['scaleX'],
@@ -683,7 +681,6 @@ class Module_Movies implements Module {
 	            $status = new Resque_Job_Status($this->_params['token']);
 	            $jobStatus = $status->get();
             }
-            $status = new Resque_Job_Status($this->_params['token']);
 		
             $response = array(
                 'status'   => $movie->status,
@@ -1244,9 +1241,9 @@ class Module_Movies implements Module {
                                     'scale', 'scaleType', 'scaleX', 'scaleY',
                                     'movieLength', 'watermark', 'width',
                                     'height', 'x0', 'y0', 'x1', 'x2',
-                                    'y1', 'y2', 'callback', 'size', 'movieIcons'),
+                                    'y1', 'y2', 'callback', 'size', 'movieIcons', 'followViewport'),
                 'alphanum' => array('format', 'scaleType', 'callback'),
-                'bools'    => array('watermark', 'eventsLabels', 'scale', 'movieIcons'),
+                'bools'    => array('watermark', 'eventsLabels', 'scale', 'movieIcons', 'followViewport'),
                 'dates'    => array('startTime', 'endTime'),
                 'floats'   => array('imageScale', 'frameRate', 'movieLength',
                                     'x0', 'y0', 'x1', 'x2', 'y1', 'y2',

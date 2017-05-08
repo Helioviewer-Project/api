@@ -8,6 +8,7 @@
  * @author   Jeff Stys <jeff.stys@nasa.gov>
  * @author   Keith Hughitt <keith.hughitt@nasa.gov>
  * @author   Patrick Schmiedel <patrick.schmiedel@gmx.net>
+ * @author   Serge Zahniy <serge.zahniy@nasa.gov>
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     https://github.com/Helioviewer-Project/
  */
@@ -808,8 +809,7 @@ class Database_ImgIndex {
         foreach ($property_array as $i=>$property) {
             if($previousAttr != $property){
 	            $i = intval($i);
-	            $property = $this->_dbConnection->link->real_escape_string(
-	                $property);
+	            $property = $this->_dbConnection->link->real_escape_string($property);
 	
 	            $select_clause[] = $letters[$i].'.label AS '.$letters[$i].'_label';
 	            $from_clause[]  = 'datasource_property '.$letters[$i];
@@ -843,9 +843,11 @@ class Database_ImgIndex {
         $result_array['uiLabels']      = Array();
 
         foreach ($property_array as $i=>$property) {
-            $result_array['uiLabels'][] = Array(
+            if(isset($row[$letters[$i].'_label'])){
+	            $result_array['uiLabels'][] = Array(
                 'label' => $row[$letters[$i].'_label'],
                 'name'  => $property);
+            }
         }
 
         return $result_array;
@@ -1129,12 +1131,9 @@ class Database_ImgIndex {
 
             // Only include if data is available for the specified source
             // as flagged in the `datasources` table
-            $serverRef = $_SERVER['HTTP_REFERER'];
-            if($serverRef != 'https://beta3.helioviewer.org/' || $source['id'] < 10000){
-	            if ( !(bool)$source["enabled"] ) {
-	                continue;
-	            }
-			}
+            if ( !(bool)$source["enabled"] ) {
+                continue;
+            }
 
             // Data Availability
             if($source['id'] < 10000){

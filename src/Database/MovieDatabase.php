@@ -9,6 +9,7 @@
  * @package  Helioviewer
  * @author   Jeff Stys <jeff.stys@nasa.gov>
  * @author   Keith Hughitt <keith.hughitt@nasa.gov>
+ * @author   Serge Zahniy <serge.zahniy@nasa.gov>
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     https://github.com/Helioviewer-Project
  */
@@ -46,7 +47,7 @@ class Database_MovieDatabase {
      */
     public function insertMovie($startTime, $endTime, $imageScale, $roi,
         $maxFrames, $watermark, $layerString, $layerBitMask, $eventString,
-        $eventsLabels, $movieIcons, $scale, $scaleType, $scaleX, $scaleY, $numLayers,
+        $eventsLabels, $movieIcons, $followViewport, $scale, $scaleType, $scaleX, $scaleY, $numLayers,
         $queueNum, $frameRate, $movieLength, $size) {
 
         $this->_dbConnect();
@@ -70,6 +71,7 @@ class Database_MovieDatabase {
                  .     'eventSourceString ' . ' ="%s", '
                  .     'eventsLabels '      . ' = %b, '
                  .     'movieIcons '        . ' = %b, '
+                 .     'followViewport '    . ' = %b, '
                  .     'scale '             . ' = %b, '
                  .     'scaleType '         . ' ="%s",'
                  .     'scaleX '            . ' = %f, '
@@ -99,6 +101,7 @@ class Database_MovieDatabase {
                  $this->_dbConnection->link->real_escape_string($eventString),
                  (bool)$eventsLabels,
                  (bool)$movieIcons,
+                 (bool)$followViewport,
                  (bool)$scale,
                  $this->_dbConnection->link->real_escape_string(
                     $scaleType ),

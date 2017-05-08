@@ -10,6 +10,7 @@
  * @category Helper
  * @package  Helioviewer
  * @author   Keith Hughitt <keith.hughitt@nasa.gov>
+ * @author   Serge Zahniy <serge.zahniy@nasa.gov>
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     https://github.com/Helioviewer-Project
  * @see      http://www.lmsal.com/helio-informatics/hpkb/
@@ -55,6 +56,46 @@ class Helper_RegionOfInterest
         }
 
         $this->_limitToMaximumDimensions();
+    }
+    
+    /**
+     * Sets the top coordinate (y1) of the region of interest
+     * 
+     * @param float $val coordinate in arc-seconds
+     */
+    public function setTop($val)
+    {
+        $this->_top = (float) $val;
+    }
+
+    /**
+     * Sets the left coordinate (x1) of the region of interest
+     * 
+     * @param float $val coordinate in arc-second
+     */
+    public function setLeft($val)
+    {
+        $this->_left = (float) $val;
+    }
+    
+    /**
+     * Sets the bottom coordinate (y2) of the region of interest
+     * 
+     * @param float $val coordinate in arc-second
+     */
+    public function setBottom($val)
+    {
+        $this->_bottom = (float) $val;
+    }
+
+    /**
+     * Sets the right coordinate (x2) of the region of interest
+     * 
+     * @param float $val coordinate in arc-second
+     */
+    public function setRight($val)
+    {
+        $this->_right = (float) $val;
     }
     
     /**

@@ -11,6 +11,7 @@
  * @author   Jeff Stys <jeff.stys@nasa.gov>
  * @author   Keith Hughitt <keith.hughitt@nasa.gov>
  * @author   Jaclyn Beck <jaclyn.r.beck@gmail.com>
+ * @author   Serge Zahniy <serge.zahniy@nasa.gov>
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     https://github.com/Helioviewer-Project
  */
@@ -24,6 +25,8 @@ class Image_Composite_HelioviewerCompositeImage {
     private   $_imageLayers;
     private   $_filepath;
     private   $_filename;
+    private   $_timeOffsetX = 0;
+    private   $_timeOffsetY = 0;
     protected $compress;
     protected $date;
     protected $db;
@@ -44,6 +47,8 @@ class Image_Composite_HelioviewerCompositeImage {
     protected $width;
     protected $movie;
     protected $size;
+    protected $followViewport;
+    protected $startDate;
 
     /**
      * Creates a new HelioviewerCompositeImage instance
@@ -71,7 +76,9 @@ class Image_Composite_HelioviewerCompositeImage {
             'compress'  => true,
             'interlace' => true,
             'movie' 	=> false,
-            'size' 	    => 0
+            'size' 	    => 0,
+            'followViewport' => 0,
+            'startDate' => false
         );
 
         $options = array_replace($defaults, $options);
@@ -97,6 +104,8 @@ class Image_Composite_HelioviewerCompositeImage {
         $this->watermark = $options['watermark'];
         $this->movie     = $options['movie'];
         $this->size      = $options['size'];
+        $this->followViewport = $options['followViewport'];
+        $this->startDate = $options['startDate'];
 
         $this->maxPixelScale = 0.60511022;  // arcseconds per pixel
     }
@@ -142,12 +151,30 @@ class Image_Composite_HelioviewerCompositeImage {
         // Instantiate a JP2Image
         $jp2Filepath = HV_JP2_DIR.$image['filepath'].'/'.$image['filename'];
 
-        $jp2 = new Image_JPEG2000_JP2Image(
-            $jp2Filepath, $image['width'], $image['height'], $image['scale']);
+        $jp2 = new Image_JPEG2000_JP2Image($jp2Filepath, $image['width'], $image['height'], $image['scale']);
 
         $offsetX =   $image['refPixelX'] - ($image['width']  / 2);
         $offsetY = -($image['refPixelY'] - ($image['height'] / 2));
-
+        
+        $originalOffsetX = $offsetX;
+        $originalOffsetY = $offsetY;
+		
+		if($this->followViewport){
+			
+			$timeOffset = $this->_calculateSunOffset();
+            
+            $x = $timeOffset['hv_hpc_x_rot_delta_notscaled'] * $timeOffset['au_scalar'];
+            $y = $timeOffset['hv_hpc_y_rot_delta_notscaled'] * $timeOffset['au_scalar'];
+                 
+            $this->_timeOffsetX = $x / $this->roi->imageScale();
+			$this->_timeOffsetY = $y / $this->roi->imageScale();
+			
+			$multi = $this->roi->imageScale() / $jp2->getScale();
+			
+			$offsetX = $offsetX + ($x*$multi) / $this->roi->imageScale();
+			$offsetY = $offsetY + ($y*$multi) / $this->roi->imageScale();
+		}
+		
         // Options for individual layers
         $options = array(
             'date'          => $image['date'],
@@ -155,7 +182,9 @@ class Image_Composite_HelioviewerCompositeImage {
             'opacity'       => $layer['opacity'],
             'compress'      => false,
             'movie'         => $this->movie,
-            'size'          => $this->size
+            'size'          => $this->size,
+            'originalOffsetX' => $originalOffsetX,
+            'originalOffsetY' => $originalOffsetY
         );
 
         // For layers with transparent regions use PNG
@@ -190,6 +219,80 @@ class Image_Composite_HelioviewerCompositeImage {
         return new $classname(
             $jp2, $tmpFile, $this->roi, $layer['uiLabels'],
             $offsetX, $offsetY, $options, $image['sunCenterOffsetParams'], $image['name'] );
+    }
+    
+    private function _calculateSunOffset() {
+	    include_once HV_ROOT_DIR.'/../scripts/rot_hpc.php';
+	    
+	    $startDateArr = explode(' ',$this->startDate);
+	    $imageDateArr = explode(' ',$this->date);
+	    
+	    $startTime = $startDateArr[0].'T'.$startDateArr[1].'.000Z';
+		$imageTime = $imageDateArr[0].'T'.$imageDateArr[1].'.000Z';
+		
+		$imageTime = $startDateArr[0].'T'.$startDateArr[1].'.000Z';
+		$startTime = $imageDateArr[0].'T'.$imageDateArr[1].'.000Z';
+		
+		$x = (($this->roi->left() + $this->roi->right()) / 2);
+		$y = (-($this->roi->top() + $this->roi->bottom()) / 2);
+
+		// Scalar for normalizing HEK hpc_x and hpc_y coordinates based on the
+		// apparent size of the Sun as seen from Earth at the specified
+		// timestamp.
+		// A reasonable approximation in the absence of the appropriate
+		// spacecraft's position at the timestamp of the image(s) used for F/E
+		// detection.
+		$au_scalar = sunearth_distance($startTime);
+		
+		// Calculate radial distance for determining whether or not to
+		// apply differential rotation.
+		$hv_hpc_r_scaled = sqrt( pow($x,2) + pow($y,2) ) * $au_scalar;
+		
+		//if ( $hv_hpc_r_scaled <= 961.07064 ) {
+		
+		    // Differential rotation of the event marker's X,Y position
+		    $rotateFromTime = $imageTime;
+		    $rotateToTime   = $startTime;
+		
+		    list( $hv_hpc_x_notscaled_rot, $hv_hpc_y_notscaled_rot) =
+		        rot_hpc( $x, $y,
+		                 $rotateFromTime, $rotateToTime,
+		                 $spacecraft=null, $vstart=null, $vend=null);
+		
+		    $hv_hpc_x_rot_delta_notscaled = $hv_hpc_x_notscaled_rot - $x;// !
+		    $hv_hpc_y_rot_delta_notscaled = $hv_hpc_y_notscaled_rot - $y;// !
+		
+		    $hv_hpc_x_scaled_rot = $hv_hpc_x_notscaled_rot * $au_scalar;
+		    $hv_hpc_y_scaled_rot = $hv_hpc_y_notscaled_rot * $au_scalar;
+		
+		    // These values will be used to place the event marker
+		    // in the viewport, screenshots, and movies.
+		    $hv_hpc_x_final = $hv_hpc_x_scaled_rot;
+		    $hv_hpc_y_final = $hv_hpc_y_scaled_rot;
+		//} else {
+		    // Don't apply differential rotation to objects beyond
+		    // the disk but do normalize them with the $au_scalar.
+		//    $hv_hpc_x_final = $x * $au_scalar;
+		//    $hv_hpc_y_final = $y * $au_scalar;
+		    
+		//    $hv_hpc_x_rot_delta_notscaled = 0;// !
+		//    $hv_hpc_y_rot_delta_notscaled = 0;// !
+		//}
+		
+		return array(
+			'originalX' => $x,
+			'originalY' => $y,
+			'x' => ($hv_hpc_x_final - $x),
+			'y' => ($hv_hpc_y_final - $y),
+			'tx' => $hv_hpc_x_final,
+			'ty' => $hv_hpc_y_final,
+			'au_scalar' => $au_scalar,
+			'startTime' => $startTime,
+			'imageTime' => $imageTime,
+			'hv_hpc_r_scaled' => $hv_hpc_r_scaled,
+			'hv_hpc_x_rot_delta_notscaled' => $hv_hpc_x_rot_delta_notscaled,
+			'hv_hpc_y_rot_delta_notscaled' => $hv_hpc_y_rot_delta_notscaled
+		);
     }
 
     /**
@@ -431,7 +534,10 @@ class Image_Composite_HelioviewerCompositeImage {
                           - $this->roi->left()) / $this->roi->imageScale());
                     $y = (( $event['hv_poly_hpc_y_final']
                           - $this->roi->top() ) / $this->roi->imageScale());
-
+					
+					$x = $x - $this->_timeOffsetX;
+					$y = $y - $this->_timeOffsetY;
+					
                     $region_polygon->resizeImage(
                         $width, $height, Imagick::FILTER_LANCZOS,1);
                     $imagickImage->compositeImage(
@@ -477,7 +583,10 @@ class Image_Composite_HelioviewerCompositeImage {
                  / $this->roi->imageScale()) - $markerPinPixelOffsetX;
             $y = ((-$event['hv_hpc_y_final'] - $this->roi->top() )
                  / $this->roi->imageScale()) - $markerPinPixelOffsetY;
-
+			
+			$x = $x - $this->_timeOffsetX;
+			$y = $y - $this->_timeOffsetY;
+			
             $imagickImage->compositeImage($marker, IMagick::COMPOSITE_DISSOLVE, $x, $y);
 
             if ( $this->eventsLabels == true ) {
@@ -486,6 +595,9 @@ class Image_Composite_HelioviewerCompositeImage {
                 $y = ((-$event['hv_hpc_y_final'] - $this->roi->top() )
                      / $this->roi->imageScale()) - 24;
 
+				$x = $x - $this->_timeOffsetX;
+				$y = $y - $this->_timeOffsetY;
+				
                 $count = 0;
                 if ( !array_key_exists('hv_labels_formatted', $event) ||
                      count($event['hv_labels_formatted']) < 1 ) {
@@ -579,17 +691,23 @@ class Image_Composite_HelioviewerCompositeImage {
 			$roiObject = Helper_RegionOfInterest::parsePolygonString($video['roi'], $video['imageScale']);
 			
 			//Prepare coordinates
-			$top = round($roiObject->top() / (float)$video['imageScale']);
-			$left = round($roiObject->left() / (float)$video['imageScale']);
-			$bottom = round($roiObject->bottom() / (float)$video['imageScale']);
-			$right = round($roiObject->right() / (float)$video['imageScale']);
+			$top = round($roiObject->top() / $roiObject->imageScale());
+			$left = round($roiObject->left() / $roiObject->imageScale());
+			$bottom = round($roiObject->bottom() / $roiObject->imageScale());
+			$right = round($roiObject->right() / $roiObject->imageScale());
 			
 			$xCenter = $this->width / 2;
 			$yCenter = $this->height / 2;
 			
 			//Icon and Label location
-			$y = $yCenter + (($top + $bottom)/2) / $this->roi->imageScale() * (float)$video['imageScale'];
-			$x = $xCenter + (($right + $left)/2) / $this->roi->imageScale() * (float)$video['imageScale'];
+			$xCenterOffset = ($this->roi->left() + $this->roi->right()) / 2 / $this->roi->imageScale();
+			$yCenterOffset = ($this->roi->top() + $this->roi->bottom()) / 2 / $this->roi->imageScale();
+			
+			$x = -$xCenterOffset + $xCenter + (($right + $left)/2) / $this->roi->imageScale() * (float)$video['imageScale'];
+			$y = -$yCenterOffset + $yCenter + (($top + $bottom)/2) / $this->roi->imageScale() * (float)$video['imageScale'];
+			
+			$x = $x - $this->_timeOffsetX;
+			$y = $y - $this->_timeOffsetY;
 			
 			$marker = new IMagick(  HV_ROOT_DIR.'/resources/images/eventMarkers/movie.png' );
 			

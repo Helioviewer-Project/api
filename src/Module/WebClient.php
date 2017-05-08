@@ -8,6 +8,7 @@
  * @package  Helioviewer
  * @author   Jeff Stys <jeff.stys@nasa.gov>
  * @author   Keith Hughitt <keith.hughitt@nasa.gov>
+ * @author   Serge Zahniy <serge.zahniy@nasa.gov>
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     https://github.com/Helioviewer-Project
  */
@@ -1223,7 +1224,7 @@ class Module_WebClient implements Module {
                 'required' => array('date', 'imageScale', 'layers'),
                 'optional' => array('display', 'watermark', 'x1', 'x2',
                                     'y1', 'y2', 'x0', 'y0', 'width', 'height',
-                                    'events', 'eventLabels', 'scale',
+                                    'events', 'eventLabels', 'movieIcons', 'scale',
                                     'scaleType', 'scaleX', 'scaleY',
                                     'callback'),
                 'floats'   => array('imageScale', 'x1', 'x2', 'y1', 'y2',
@@ -1231,7 +1232,7 @@ class Module_WebClient implements Module {
                 'ints'     => array('width', 'height'),
                 'dates'    => array('date'),
                 'bools'    => array('display', 'watermark', 'eventLabels',
-                                    'scale'),
+                                    'scale', 'movieIcons'),
                 'alphanum' => array('scaleType', 'callback')
             );
             break;

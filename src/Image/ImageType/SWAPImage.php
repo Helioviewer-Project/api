@@ -8,6 +8,7 @@
  * @package  Helioviewer
  * @author   Jeff Stys <jeff.stys@nasa.gov>
  * @author   Keith Hughitt <keith.hughitt@nasa.gov>
+ * @author   Serge Zahniy <serge.zahniy@nasa.gov>
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     https://github.com/Helioviewer-Project
  */
@@ -28,8 +29,7 @@ class Image_ImageType_SWAPImage extends Image_HelioviewerImage {
      *
      * @return void
      */
-    public function __construct($jp2, $filepath, $roi, $uiLabels, $offsetX,
-        $offsetY, $options) {
+    public function __construct($jp2, $filepath, $roi, $uiLabels, $offsetX, $offsetY, $options) {
 
         $colorTable = HV_ROOT_DIR
                     . '/resources/images/color-tables'
@@ -60,8 +60,7 @@ class Image_ImageType_SWAPImage extends Image_HelioviewerImage {
             $options['palettedJP2'] = true;
         }
 
-        parent::__construct($jp2, $filepath, $roi, $uiLabels, $offsetX,
-            $offsetY, $options);
+        parent::__construct($jp2, $filepath, $roi, $uiLabels, $offsetX, $offsetY, $options);
     }
 
     /**

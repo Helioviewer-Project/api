@@ -8,6 +8,7 @@
  * @package  Helioviewer
  * @author   Jeff Stys <jeff.stys@nasa.gov>
  * @author   Keith Hughitt <keith.hughitt@nasa.gov>
+ * @author   Serge Zahniy <serge.zahniy@nasa.gov>
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     https://github.com/Helioviewer-Project
  */
@@ -32,8 +33,7 @@ class Image_ImageType_XRTImage extends Image_HelioviewerImage {
      *
      * @return void
      */
-    public function __construct($jp2, $filepath, $roi, $uiLabels, $offsetX,
-        $offsetY, $options, $sunCenterOffsetParams, $name) {
+    public function __construct($jp2, $filepath, $roi, $uiLabels, $offsetX, $offsetY, $options, $sunCenterOffsetParams, $name = '') {
 
         $this->uiLabels = $uiLabels;
 		$this->name = $name;

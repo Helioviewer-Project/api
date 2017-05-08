@@ -10,6 +10,7 @@
  * @package  Helioviewer
  * @author   Jeff Stys <jeff.stys@nasa.gov>
  * @author   Jaclyn Beck <jaclyn.r.beck@gmail.com>
+ * @author   Serge Zahniy <serge.zahniy@nasa.gov>
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     https://github.com/Helioviewer-Project
  */
@@ -27,11 +28,9 @@ class Image_ImageType_BlankImage extends Image_SubFieldImage {
      * @param int    $offsetY  Offset of the sun center from the iamge center
      * @param array  $options  Optional parameters
      */
-    public function __construct($jp2, $filepath, $roi, $uiLabels, $offsetX,
-        $offsetY, $options) {
+    public function __construct($jp2, $filepath, $roi, $uiLabels, $offsetX, $offsetY, $options) {
 
-        parent::__construct($jp2, $filepath, $roi, $uiLabels, $offsetX,
-            $offsetY, $options);
+        parent::__construct($jp2, $filepath, $roi, $uiLabels, $offsetX, $offsetY, $options);
     }
 
     /**
