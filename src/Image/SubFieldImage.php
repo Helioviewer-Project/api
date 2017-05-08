@@ -16,6 +16,7 @@
  * @author   Jeff Stys <jeff.stys@nasa.gov>
  * @author   Keith Hughitt <keith.hughitt@nasa.gov>
  * @author   Jaclyn Beck <jaclyn.r.beck@gmail.com>
+ * @author   Serge Zahniy <serge.zahniy@nasa.gov>
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     https://github.com/Helioviewer-Project
  */
@@ -41,6 +42,8 @@ class Image_SubFieldImage {
     protected $offsetX;
     protected $offsetY;
     protected $options;
+    protected $originalOffsetX;
+    protected $originalOffsetY;
 
     /**
      * Creates an Image_SubFieldImage instance
@@ -63,8 +66,7 @@ class Image_SubFieldImage {
      *        JP2-specific terminology
      *        ("desiredScale" -> "desiredImageScale" or "requestedImageScale")
      */
-    public function __construct($jp2, $roi, $outputFile, $offsetX, $offsetY,
-        $options) {
+    public function __construct($jp2, $roi, $outputFile, $offsetX, $offsetY, $options) {
 
         $this->outputFile  = $outputFile;
         $this->jp2         = $jp2;
@@ -78,7 +80,9 @@ class Image_SubFieldImage {
             'opacity'     => 100,
             'rescale'     => IMagick::FILTER_TRIANGLE,
             'movie'       => false,
-            'size'        => 0
+            'size'        => 0,
+            'originalOffsetX' => 0,
+            'originalOffsetY' => 0
         );
 
         $this->imageOptions = array_replace($defaults, $options);
@@ -109,6 +113,8 @@ class Image_SubFieldImage {
 
         $this->offsetX = $offsetX;
         $this->offsetY = $offsetY;
+        $this->originalOffsetX = $this->imageOptions['originalOffsetX'];
+        $this->originalOffsetY = $this->imageOptions['originalOffsetY'];
     }
 
     /**
@@ -343,10 +349,8 @@ class Image_SubFieldImage {
      * Saves the file using the specified output filename
      */
     public function save() {
-        if ( !@file_exists($this->outputFile) &&
-             !is_null($this->image) ) {
-
-            $this->image->writeImage($this->outputFile);
+        if ( !@file_exists($this->outputFile) && !is_null($this->image) ) {
+			$this->image->writeImage($this->outputFile);
         }
     }
 
@@ -369,8 +373,7 @@ class Image_SubFieldImage {
             $imagickImage->setImageCompression(IMagick::COMPRESSION_LZW);
 
             // Compression quality
-            $quality = $this->imageOptions['compress'] ?
-                PNG_HIGH_COMPRESSION : PNG_LOW_COMPRESSION;
+            $quality = $this->imageOptions['compress'] ? PNG_HIGH_COMPRESSION : PNG_LOW_COMPRESSION;
             $imagickImage->setImageCompressionQuality($quality);
 
             // Interlacing
@@ -383,8 +386,7 @@ class Image_SubFieldImage {
             $imagickImage->setImageCompression(IMagick::COMPRESSION_JPEG);
 
             // Compression quality
-            $quality = $this->imageOptions['compress'] ?
-                JPG_HIGH_COMPRESSION : JPG_LOW_COMPRESSION;
+            $quality = $this->imageOptions['compress'] ? JPG_HIGH_COMPRESSION : JPG_LOW_COMPRESSION;
             $imagickImage->setImageCompressionQuality($quality);
 
             // Interlacing
@@ -493,8 +495,7 @@ class Image_SubFieldImage {
         $gd = imagecreatefromstring($input);
 
         if (!$gd) {
-            throw new Exception('Unable to apply color-table: ' . $input
-                . ' is not a valid image.', 32);
+            throw new Exception('Unable to apply color-table: ' . $input . ' is not a valid image.', 32);
         }
 
         $ctable = imagecreatefrompng($clut);
@@ -577,8 +578,7 @@ class Image_SubFieldImage {
 
             // If the image fails to load after 3 tries, display an error
             // message
-            throw new Exception(
-                'Unable to read image from cache: '.$filename, 33 );
+            throw new Exception('Unable to read image from cache: '.$filename, 33 );
         }
     }
 

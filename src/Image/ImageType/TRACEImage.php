@@ -9,6 +9,7 @@
  * @author   Jeff Stys <jeff.stys@nasa.gov>
  * @author   Keith Hughitt <keith.hughitt@nasa.gov>
  * @author   Jaclyn Beck <jaclyn.r.beck@gmail.com>
+ * @author   Serge Zahniy <serge.zahniy@nasa.gov>
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     https://github.com/Helioviewer-Project
  */
@@ -28,8 +29,7 @@ class Image_ImageType_TRACEImage extends Image_HelioviewerImage {
      *
      * @return void
      */
-    public function __construct($jp2, $filepath, $roi, $uiLabels, $offsetX,
-        $offsetY, $options) {
+    public function __construct($jp2, $filepath, $roi, $uiLabels, $offsetX, $offsetY, $options) {
 
         // TRACE has no color table
         $colorTable = HV_ROOT_DIR
@@ -37,8 +37,7 @@ class Image_ImageType_TRACEImage extends Image_HelioviewerImage {
                     . 'TRACE_'.$uiLabels[1]['name'].'.png';
         $this->setColorTable($colorTable);
 
-        parent::__construct($jp2, $filepath, $roi, $uiLabels, $offsetX,
-            $offsetY, $options);
+        parent::__construct($jp2, $filepath, $roi, $uiLabels, $offsetX, $offsetY, $options);
     }
 
     /**

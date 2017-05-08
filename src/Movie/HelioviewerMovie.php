@@ -24,6 +24,7 @@
  * @author   Jeff Stys <jeff.stys@nasa.gov>
  * @author   Keith Hughitt <keith.hughitt@nasa.gov>
  * @author   Jaclyn Beck <jaclyn.r.beck@gmail.com>
+ * @author   Serge Zahniy <serge.zahniy@nasa.gov>
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     https://github.com/Helioviewer-Project
  */
@@ -57,6 +58,7 @@ class Movie_HelioviewerMovie {
     public $watermark;
     public $eventsLabels;
     public $movieIcons;
+    public $followViewport;
     public $scale;
     public $scaleType;
     public $scaleX;
@@ -89,8 +91,7 @@ class Movie_HelioviewerMovie {
         $this->_filepath = $this->_cachedir.'/'.$this->_filename;
 
         if ( HV_DISABLE_CACHE !== true ) {
-            $cache = new Helper_Serialize($this->_cachedir,
-                $this->_filename, 60);
+            $cache = new Helper_Serialize($this->_cachedir, $this->_filename, 60);
             $info = $cache->readCache($verifyAge=true);
             if ( $info !== false ) {
                 $this->_cached = true;
@@ -126,6 +127,7 @@ class Movie_HelioviewerMovie {
         $this->watermark    = (bool)$info['watermark'];
         $this->eventsLabels = (bool)$info['eventsLabels'];
         $this->movieIcons   = (bool)$info['movieIcons'];
+        $this->followViewport   = (bool)$info['followViewport'];
         $this->scale        = (bool)$info['scale'];
         $this->scaleType    = $info['scaleType'];
         $this->scaleX       = (float)$info['scaleX'];
@@ -134,14 +136,11 @@ class Movie_HelioviewerMovie {
         $this->size       = (int)$info['size'];
 
         // Data Layers
-        $this->_layers = new Helper_HelioviewerLayers(
-            $info['dataSourceString']);
-        $this->_events = new Helper_HelioviewerEvents(
-            $info['eventSourceString']);
+        $this->_layers = new Helper_HelioviewerLayers($info['dataSourceString']);
+        $this->_events = new Helper_HelioviewerEvents($info['eventSourceString']);
 
         // Regon of interest
-        $this->_roi = Helper_RegionOfInterest::parsePolygonString(
-            $info['roi'], $info['imageScale']);
+        $this->_roi = Helper_RegionOfInterest::parsePolygonString($info['roi'], $info['imageScale']);
     }
 
     private function _dbSetup() {
@@ -209,8 +208,7 @@ class Movie_HelioviewerMovie {
             }
         }
         catch (Exception $e) {
-            $this->_abort('Error encountered during movie frame compilation: '
-                . $e->getMessage() );
+            $this->_abort('Error encountered during movie frame compilation: ' . $e->getMessage() );
         }
 
         $t3 = time();
@@ -302,8 +300,7 @@ class Movie_HelioviewerMovie {
     }
 
     public function getURL() {
-        return str_replace(HV_CACHE_DIR, HV_CACHE_URL, $this->_buildDir()) .
-            $this->_buildFilename();
+        return str_replace(HV_CACHE_DIR, HV_CACHE_URL, $this->_buildDir()) . $this->_buildFilename();
     }
 
     public function getCurrentFrame() {
@@ -402,7 +399,9 @@ class Movie_HelioviewerMovie {
             'interlace' => false,
             'watermark' => $watermark,
             'movie' 	=> true,
-            'size' 	    => $this->size
+            'size' 	    => $this->size,
+            'followViewport' => $this->followViewport,
+            'startDate' => $this->startDate
         );
 
         // Index of preview frame
@@ -414,8 +413,7 @@ class Movie_HelioviewerMovie {
         // Compile frames
         foreach ($this->_timestamps as $time) {
 
-            $filepath =  sprintf('%sframes/frame%d.bmp', $this->directory,
-                $frameNum);
+            $filepath =  sprintf('%sframes/frame%d.bmp', $this->directory, $frameNum);
 
             try {
                 $screenshot = new Image_Composite_HelioviewerMovieFrame(
@@ -646,8 +644,7 @@ class Movie_HelioviewerMovie {
         // Determine the number of images that are available for the request
         // duration for each layer
         foreach ($this->_layers->toArray() as $layer) {
-            $n = $this->_db->getDataCount($this->reqStartDate,
-                $this->reqEndDate, $layer['sourceId']);
+            $n = $this->_db->getDataCount($this->reqStartDate, $this->reqEndDate, $layer['sourceId']);
 
             $layerCounts[$layer['sourceId']] = $n;
         }
@@ -673,8 +670,7 @@ class Movie_HelioviewerMovie {
 
         // Get the entire range of available images between the movie start
         // and end time
-        $entireRange = $this->_db->getDataRange($this->reqStartDate,
-            $this->reqEndDate, $dataSource);
+        $entireRange = $this->_db->getDataRange($this->reqStartDate, $this->reqEndDate, $dataSource);
 
         // Sub-sample range so that only $numFrames timestamps are returned
         for ($i = 0; $i < $numFrames; $i++) {
@@ -726,8 +722,7 @@ class Movie_HelioviewerMovie {
             $this->movieLength = $this->numFrames / $this->frameRate;
         }
         else {
-            $this->frameRate = min(30, max(1,
-                $this->numFrames / $this->movieLength) );
+            $this->frameRate = min(30, max(1, $this->numFrames / $this->movieLength) );
         }
 
         $this->_setMovieDimensions();

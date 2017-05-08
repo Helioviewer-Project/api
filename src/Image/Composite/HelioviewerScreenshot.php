@@ -7,6 +7,7 @@
  * @package  Helioviewer
  * @author   Jeff Stys <jeff.stys@nasa.gov>
  * @author   Keith Hughitt <keith.hughitt@nasa.gov>
+ * @author   Serge Zahniy <serge.zahniy@nasa.gov>
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     https://github.com/Helioviewer-Project
  */
@@ -80,6 +81,7 @@ class Image_Composite_HelioviewerScreenshot
             $this->layers->getBitMask(),
             $this->events->serialize(),
             $this->eventsLabels,
+            $this->movieIcons,
             $this->scale,
             $this->scaleType,
             $this->scaleX,

@@ -7,6 +7,7 @@
  * @category Helper
  * @package  Helioviewer
  * @author   Jeff Stys <jeffrey.stys@nasa.gov>
+ * @author   Serge Zahniy <serge.zahniy@nasa.gov>
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     https://github.com/Helioviewer-Project
  */

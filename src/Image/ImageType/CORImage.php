@@ -9,6 +9,7 @@
  * @author   Jeff Stys <jeff.stys@nasa.gov>
  * @author   Jaclyn Beck <jaclyn.r.beck@gmail.com>
  * @author   Keith Hughitt <keith.hughitt@nasa.gov>
+ * @author   Serge Zahniy <serge.zahniy@nasa.gov>
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     https://github.com/Helioviewer-Project
  */
@@ -29,8 +30,7 @@ class Image_ImageType_CORImage extends Image_HelioviewerImage {
      *
      * @return void
      */
-    public function __construct($jp2, $filepath, $roi, $uiLabels, $offsetX,
-        $offsetY, $options) {
+    public function __construct($jp2, $filepath, $roi, $uiLabels, $offsetX, $offsetY, $options) {
 
         if ($uiLabels[2]['name'] == 'COR1') {
             $colorTable = HV_ROOT_DIR
@@ -49,8 +49,7 @@ class Image_ImageType_CORImage extends Image_HelioviewerImage {
 
         $filepath = substr($filepath, 0, -3) . 'png';
 
-        parent::__construct($jp2, $filepath, $roi, $uiLabels, $offsetX,
-            $offsetY, $options);
+        parent::__construct($jp2, $filepath, $roi, $uiLabels, $offsetX, $offsetY, $options);
     }
 
     /**
@@ -162,19 +161,15 @@ class Image_ImageType_CORImage extends Image_HelioviewerImage {
         $width  = round($width);
         $height = round($height);
 
-        $mask->scaleImage(
-                $maskWidth * $maskScaleFactor, $maskHeight * $maskScaleFactor);
-        $mask->cropImage($cropWidth, $cropHeight, max($maskTopLeftX, 0),
-            max($maskTopLeftY, 0));
+        $mask->scaleImage( $maskWidth * $maskScaleFactor, $maskHeight * $maskScaleFactor);
+        $mask->cropImage($cropWidth, $cropHeight, max($maskTopLeftX, 0), max($maskTopLeftY, 0));
         $mask->resetImagePage('{'.$width.'}x{'.$height.'}+0+0');
 
         $mask->setImageBackgroundColor('black');
-        $mask->extentImage($width, $height, $width-$cropWidth,
-            $height-$cropHeight);
+        $mask->extentImage($width, $height, $width-$cropWidth, $height-$cropHeight);
 
         $imagickImage->setImageExtent($width, $height);
-        $imagickImage->compositeImage(
-            $mask, IMagick::COMPOSITE_COPYOPACITY, 0, 0);
+        $imagickImage->compositeImage( $mask, IMagick::COMPOSITE_COPYOPACITY, 0, 0);
 
         if ($this->options['opacity'] < 100) {
             $mask->negateImage(true);
