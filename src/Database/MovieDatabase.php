@@ -45,7 +45,7 @@ class Database_MovieDatabase {
      *
      * @return int  Identifier in the `movies` table or boolean false
      */
-    public function insertMovie($startTime, $endTime, $imageScale, $roi,
+    public function insertMovie($startTime, $endTime, $reqObservationDate, $imageScale, $roi,
         $maxFrames, $watermark, $layerString, $layerBitMask, $eventString,
         $eventsLabels, $movieIcons, $followViewport, $scale, $scaleType, $scaleX, $scaleY, $numLayers,
         $queueNum, $frameRate, $movieLength, $size) {
@@ -54,6 +54,11 @@ class Database_MovieDatabase {
 
         $startTime = isoDateToMySQL($startTime);
         $endTime   = isoDateToMySQL($endTime);
+        if($reqObservationDate != false){
+	        $reqObservationDate   = '"'.$this->_dbConnection->link->real_escape_string(isoDateToMySQL($reqObservationDate)).'"';
+        }else{
+	        $reqObservationDate   = "NULL";
+        }
 
         $sql = sprintf(
                    'INSERT INTO movies '
@@ -62,6 +67,7 @@ class Database_MovieDatabase {
                  .     'timestamp '         . ' = NULL, '
                  .     'reqStartDate '      . ' ="%s", '
                  .     'reqEndDate '        . ' ="%s", '
+                 .     'reqObservationDate '. ' ='.$reqObservationDate.', '
                  .     'imageScale '        . ' = %f, '
                  .     'regionOfInterest '  . ' = PolygonFromText("%s"), '
                  .     'maxFrames '         . ' = %d, '
@@ -91,20 +97,17 @@ class Database_MovieDatabase {
                  $this->_dbConnection->link->real_escape_string($startTime),
                  $this->_dbConnection->link->real_escape_string($endTime),
                  (float)$imageScale,
-                 $this->_dbConnection->link->real_escape_string(
-                    $roi ),
+                 $this->_dbConnection->link->real_escape_string($roi ),
                  (int)$maxFrames,
                  (bool)$watermark,
                  $this->_dbConnection->link->real_escape_string($layerString),
-                 bindec($this->_dbConnection->link->real_escape_string(
-                    (binary)$layerBitMask ) ),
+                 bindec($this->_dbConnection->link->real_escape_string((binary)$layerBitMask ) ),
                  $this->_dbConnection->link->real_escape_string($eventString),
                  (bool)$eventsLabels,
                  (bool)$movieIcons,
                  (bool)$followViewport,
                  (bool)$scale,
-                 $this->_dbConnection->link->real_escape_string(
-                    $scaleType ),
+                 $this->_dbConnection->link->real_escape_string($scaleType ),
                  (float)$scaleX,
                  (float)$scaleY,
                  (int)$numLayers,
