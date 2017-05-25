@@ -49,6 +49,9 @@ class Image_Composite_HelioviewerCompositeImage {
     protected $size;
     protected $followViewport;
     protected $startDate;
+    protected $reqStartDate;
+    protected $reqEndDate;
+    protected $reqObservationDate;
 
     /**
      * Creates a new HelioviewerCompositeImage instance
@@ -78,7 +81,10 @@ class Image_Composite_HelioviewerCompositeImage {
             'movie' 	=> false,
             'size' 	    => 0,
             'followViewport' => 0,
-            'startDate' => false
+            'startDate' => false,
+            'reqStartDate' => false,
+            'reqEndDate' => false,
+            'reqObservationDate' => false
         );
 
         $options = array_replace($defaults, $options);
@@ -106,6 +112,9 @@ class Image_Composite_HelioviewerCompositeImage {
         $this->size      = $options['size'];
         $this->followViewport = $options['followViewport'];
         $this->startDate = $options['startDate'];
+        $this->reqStartDate = $options['reqStartDate'];
+        $this->reqEndDate = $options['reqEndDate'];
+        $this->reqObservationDate = $options['reqObservationDate'];
 
         $this->maxPixelScale = 0.60511022;  // arcseconds per pixel
     }
@@ -137,7 +146,7 @@ class Image_Composite_HelioviewerCompositeImage {
 
         return $imageLayers;
     }
-
+    
     /**
      * Builds a single layer image
      *
@@ -159,9 +168,18 @@ class Image_Composite_HelioviewerCompositeImage {
         $originalOffsetX = $offsetX;
         $originalOffsetY = $offsetY;
 		
-		if($this->followViewport){
+        
+		
+		if($this->followViewport){error_log('4: HERE');
 			
-			$timeOffset = $this->_calculateSunOffset();
+			$timeOffset = $this->_calculateSunOffset($this->startDate, $this->date);
+            
+            if($this->reqObservationDate && $this->check_in_range($this->reqStartDate, $this->reqEndDate, $this->reqObservationDate)){
+				$timeOffsetStart = $this->_calculateSunOffset($this->reqStartDate, $this->reqObservationDate);
+				
+				$timeOffset['hv_hpc_x_rot_delta_notscaled'] =  -$timeOffsetStart['hv_hpc_x_rot_delta_notscaled'] + $timeOffset['hv_hpc_x_rot_delta_notscaled'];
+				$timeOffset['hv_hpc_y_rot_delta_notscaled'] =  -$timeOffsetStart['hv_hpc_y_rot_delta_notscaled'] + $timeOffset['hv_hpc_y_rot_delta_notscaled'];
+			}
             
             $x = $timeOffset['hv_hpc_x_rot_delta_notscaled'] * $timeOffset['au_scalar'];
             $y = $timeOffset['hv_hpc_y_rot_delta_notscaled'] * $timeOffset['au_scalar'];
@@ -173,8 +191,7 @@ class Image_Composite_HelioviewerCompositeImage {
 			
 			$offsetX = $offsetX + ($x*$multi) / $this->roi->imageScale();
 			$offsetY = $offsetY + ($y*$multi) / $this->roi->imageScale();
-		}
-		
+		}	
         // Options for individual layers
         $options = array(
             'date'          => $image['date'],
@@ -221,11 +238,21 @@ class Image_Composite_HelioviewerCompositeImage {
             $offsetX, $offsetY, $options, $image['sunCenterOffsetParams'], $image['name'] );
     }
     
-    private function _calculateSunOffset() {
+	private function check_in_range($start_date, $end_date, $date_from_user){
+		// Convert to timestamp
+		$start_ts = strtotime($start_date);
+		$end_ts = strtotime($end_date);
+		$user_ts = strtotime($date_from_user);
+		
+		// Check that user date is between start & end
+		return (($user_ts >= $start_ts) && ($user_ts <= $end_ts));
+	}
+    
+    private function _calculateSunOffset($sDate, $cDate) {
 	    include_once HV_ROOT_DIR.'/../scripts/rot_hpc.php';
 	    
-	    $startDateArr = explode(' ',$this->startDate);
-	    $imageDateArr = explode(' ',$this->date);
+	    $startDateArr = explode(' ',$sDate);
+	    $imageDateArr = explode(' ',$cDate);
 	    
 	    $startTime = $startDateArr[0].'T'.$startDateArr[1].'.000Z';
 		$imageTime = $imageDateArr[0].'T'.$imageDateArr[1].'.000Z';
@@ -234,7 +261,7 @@ class Image_Composite_HelioviewerCompositeImage {
 		$startTime = $imageDateArr[0].'T'.$imageDateArr[1].'.000Z';
 		
 		$x = (($this->roi->left() + $this->roi->right()) / 2);
-		$y = (-($this->roi->top() + $this->roi->bottom()) / 2);
+		$y = (($this->roi->top() + $this->roi->bottom()) / 2);
 
 		// Scalar for normalizing HEK hpc_x and hpc_y coordinates based on the
 		// apparent size of the Sun as seen from Earth at the specified

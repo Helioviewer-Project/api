@@ -45,6 +45,7 @@ class Movie_HelioviewerMovie {
     public $numFrames;
     public $reqStartDate;
     public $reqEndDate;
+    public $reqObservationDate;
     public $startDate;
     public $endDate;
     public $width;
@@ -112,6 +113,7 @@ class Movie_HelioviewerMovie {
         $this->format       = $format;
         $this->reqStartDate = $info['reqStartDate'];
         $this->reqEndDate   = $info['reqEndDate'];
+        $this->reqObservationDate   = $info['reqObservationDate'];
         $this->startDate    = $info['startDate'];
         $this->endDate      = $info['endDate'];
         $this->timestamp    = $info['timestamp'];
@@ -401,7 +403,10 @@ class Movie_HelioviewerMovie {
             'movie' 	=> true,
             'size' 	    => $this->size,
             'followViewport' => $this->followViewport,
-            'startDate' => $this->startDate
+            'startDate' => $this->startDate,
+            'reqStartDate' => $this->reqStartDate,
+            'reqEndDate' => $this->reqEndDate,
+            'reqObservationDate' => $this->reqObservationDate
         );
 
         // Index of preview frame

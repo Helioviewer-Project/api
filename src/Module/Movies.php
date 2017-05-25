@@ -88,7 +88,10 @@ class Module_Movies implements Module {
             "scaleY"      => 0,
             "size"        => 0,
             "movieIcons"  => 0,
-            "followViewport"  => 0
+            "followViewport"  => 0,
+            "reqStartTime"  => $this->_params['startTime'],
+            "reqEndTime"  => $this->_params['endTime'],
+            "reqObservationDate"  => null
         );
         $options = array_replace($defaults, $this->_options);
 
@@ -139,8 +142,7 @@ class Module_Movies implements Module {
 
         // If all workers are in use, increment and use estimated wait counter
         if ( $queueSize +1 >= sizeOf($movieWorkers) ) {
-            $eta = $redis->incrby('helioviewer:movie_queue_wait',
-                $estBuildTime);
+            $eta = $redis->incrby('helioviewer:movie_queue_wait', $estBuildTime);
             $updateCounter = true;
         }
         else {
@@ -156,6 +158,7 @@ class Module_Movies implements Module {
         $dbId = $movieDb->insertMovie(
             $this->_params['startTime'],
             $this->_params['endTime'],
+            (isset($this->_params['reqObservationDate']) ? $this->_params['reqObservationDate'] : false),
             $imageScale,
             $roiString,
             $maxFrames,
@@ -186,8 +189,7 @@ class Module_Movies implements Module {
             'format'  => $options['format'],
             'counter' => $updateCounter
         );
-        $token = Resque::enqueue(HV_MOVIE_QUEUE, 'Job_MovieBuilder',
-            $args, true);
+        $token = Resque::enqueue(HV_MOVIE_QUEUE, 'Job_MovieBuilder', $args, true);
 
         // Create entries for each version of the movie in the movieFormats
         // table
@@ -1241,10 +1243,10 @@ class Module_Movies implements Module {
                                     'scale', 'scaleType', 'scaleX', 'scaleY',
                                     'movieLength', 'watermark', 'width',
                                     'height', 'x0', 'y0', 'x1', 'x2',
-                                    'y1', 'y2', 'callback', 'size', 'movieIcons', 'followViewport'),
+                                    'y1', 'y2', 'callback', 'size', 'movieIcons', 'followViewport', 'reqObservationDate'),
                 'alphanum' => array('format', 'scaleType', 'callback'),
                 'bools'    => array('watermark', 'eventsLabels', 'scale', 'movieIcons', 'followViewport'),
-                'dates'    => array('startTime', 'endTime'),
+                'dates'    => array('startTime', 'endTime', 'reqObservationDate'),
                 'floats'   => array('imageScale', 'frameRate', 'movieLength',
                                     'x0', 'y0', 'x1', 'x2', 'y1', 'y2',
                                     'scaleX', 'scaleY'),
