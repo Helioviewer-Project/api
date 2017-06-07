@@ -1052,6 +1052,29 @@ class Database_Statistics {
                     'sourceId;';
         $result = $this->_dbConnection->query($sql);
         
+        // Update Image Data coverage for XRT
+        // Require longer period to update
+        $sql = 'REPLACE INTO ' .
+                    'data_coverage_30_min ' .
+                '(date, sourceId, count) ' .
+                'SELECT ' .
+                    'SQL_BIG_RESULT SQL_BUFFER_RESULT SQL_NO_CACHE ' .
+                    'CONCAT( ' .
+                        'DATE_FORMAT(date, "%Y-%m-%d %H:"), '    .
+                        'LPAD((MINUTE(date) DIV 30)*30, 2, "0"), ' .
+                        '":00") AS "bin", ' .
+                    'sourceId, ' .
+                    'COUNT(id) ' .
+                'FROM ' .
+                    'data ' .
+                'WHERE ' .
+                    'date >= DATE_SUB(NOW(), INTERVAL 6 MONTH) ' .
+                    ' AND sourceId >=38 AND sourceId <=74' .
+                'GROUP BY ' .
+                    'bin, ' .
+                    'sourceId;';
+        $result = $this->_dbConnection->query($sql);
+        
 		// 30m Update Events Data coverage
 		$endDate 	= new DateTime(date("Y-m-d 23:59:59",time()));
 		$startDate 	= new DateTime(date("Y-m-d 00:00:00",time()));

@@ -807,7 +807,7 @@ class Database_ImgIndex {
 		$previousAttr = '';
 		$order = 1;
         foreach ($property_array as $i=>$property) {
-            if($previousAttr != $property){
+            if($previousAttr != $property || $property == 'Any'){
 	            $i = intval($i);
 	            $property = $this->_dbConnection->link->real_escape_string($property);
 	
