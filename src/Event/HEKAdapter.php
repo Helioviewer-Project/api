@@ -395,7 +395,10 @@ class Event_HEKAdapter {
             $data = array();
             while ($event = $result->fetch_array(MYSQLI_ASSOC)) {
                 if(isset($event['event_json']) && !empty($event['event_json'])){
-			        $data[] = json_decode($event['event_json']);
+	                $jsonData = json_decode($event['event_json']);
+	                $jsonData->hv_marker_offset_x = $event['hv_marker_offset_x'];
+	                $jsonData->hv_marker_offset_y = $event['hv_marker_offset_y'];
+			        $data[] = $jsonData;
 		        }
             }
 		}else{
@@ -805,6 +808,7 @@ class Event_HEKAdapter {
     private function _parseEvents($result){
 
         include_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
+        include_once HV_ROOT_DIR.'/../src/Helper/PolygonCenter.php';
         include_once HV_ROOT_DIR.'/../scripts/rot_hpc.php';
 		include_once HV_ROOT_DIR.'/../src/Database/DbConnection.php';
         $dbConnection = new Database_DbConnection();
@@ -829,7 +833,13 @@ class Event_HEKAdapter {
 		        // Generate polygon PNG for events that have a chain code
                 if ( $event['hpc_boundcc'] != '' ) {
                     $this->drawPolygon($event, $au_scalar, $polyOffsetX, $polyOffsetY, $polyURL, $polyWidth, $polyHeight);
-
+					
+					//Calculate event marker offset
+					$polyArray = polygonToArray($row['hpc_boundcc'], $au_scalar);
+					$markerXY = polylabel($polyArray['array']);
+					$event['hv_marker_offset_x'] = round($markerXY['x'] - $polyArray['width']/2);
+					$event['hv_marker_offset_y'] = round($markerXY['y'] - $polyArray['height']/2);
+					
                     // Save polygon info into $data to be cached
                     $event['hv_poly_hpc_x_ul_scaled_norot'] = $polyOffsetX;
                     $event['hv_poly_hpc_y_ul_scaled_norot'] = $polyOffsetY;
@@ -954,7 +964,7 @@ class Event_HEKAdapter {
 	            		`hv_poly_hpc_y_final`, `hv_poly_hpc_x_ul_scaled_rot`, 
 	            		`hv_poly_hpc_y_ul_scaled_rot`, `hv_poly_hpc_x_ul_scaled_norot`, 
 	            		`hv_poly_hpc_y_ul_scaled_norot`, `hv_poly_width_max_zoom_pixels`, 
-	            		`hv_poly_height_max_zoom_pixels`, `event_json`) 
+	            		`hv_poly_height_max_zoom_pixels`, `hv_marker_offset_x`, `hv_marker_offset_y`, `event_json`) 
 	            	VALUES ( 
 	            		'".str_replace("ivo://helio-informatics.org/", "", $event['kb_archivid'])."', 
 	            		'".(isset($event['frm_name']) ? $event['frm_name'] : '')."', 
@@ -990,6 +1000,8 @@ class Event_HEKAdapter {
 	            		".(isset($event['hv_poly_hpc_y_ul_scaled_norot']) ? $event['hv_poly_hpc_y_ul_scaled_norot'] : 'null').", 
 	            		".(isset($event['hv_poly_width_max_zoom_pixels']) ? $event['hv_poly_width_max_zoom_pixels'] : 'null').", 
 	            		".(isset($event['hv_poly_height_max_zoom_pixels']) ? $event['hv_poly_height_max_zoom_pixels'] : 'null').", 
+	            		".(isset($event['hv_marker_offset_x']) ? $event['hv_marker_offset_x'] : '0').",
+	            		".(isset($event['hv_marker_offset_y']) ? $event['hv_marker_offset_y'] : '0').",
 	            		'".str_replace("'", "\'", json_encode($event))."');";
 	            $dbConnection->query($sql);
 				
