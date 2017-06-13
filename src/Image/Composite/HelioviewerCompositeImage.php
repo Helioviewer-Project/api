@@ -606,24 +606,40 @@ class Image_Composite_HelioviewerCompositeImage {
                                   . '/resources/images/eventMarkers/'
                                   . $event['event_type'].'.png' );
 
-            $x = (( $event['hv_hpc_x_final'] - $this->roi->left())
-                 / $this->roi->imageScale()) - $markerPinPixelOffsetX;
-            $y = ((-$event['hv_hpc_y_final'] - $this->roi->top() )
-                 / $this->roi->imageScale()) - $markerPinPixelOffsetY;
+            
+            if ( $event['hpc_boundcc'] != '') {
+		        $polygonCenterX = round($event['hv_poly_width_max_zoom_pixels'] * ($this->maxPixelScale/$this->roi->imageScale())) / 2;
+	            $polygonCenterY = round($event['hv_poly_height_max_zoom_pixels'] * ($this->maxPixelScale/$this->roi->imageScale())) / 2;
+		        
+		        $scaledMarkerX = round($event['hv_marker_offset_x'] * ($this->maxPixelScale/$this->roi->imageScale()));
+	            $scaledMarkerY = round($event['hv_marker_offset_y'] * ($this->maxPixelScale/$this->roi->imageScale()));
+				
+				$polygonPosX = (( $event['hv_poly_hpc_x_final'] - $this->roi->left()) / $this->roi->imageScale());
+                $polygonPosY = (( $event['hv_poly_hpc_y_final'] - $this->roi->top() ) / $this->roi->imageScale());
+
+		        $x = round($polygonPosX + $polygonCenterX + $scaledMarkerX);
+		        $y = round($polygonPosY + $polygonCenterY + $scaledMarkerY);
+	        }else{
+		        $x = round(( $event['hv_hpc_x_final'] - $this->roi->left()) / $this->roi->imageScale());
+				$y = round((-$event['hv_hpc_y_final'] - $this->roi->top() ) / $this->roi->imageScale());
+	        }
 			
 			$x = $x - $this->_timeOffsetX;
 			$y = $y - $this->_timeOffsetY;
 			
-            $imagickImage->compositeImage($marker, IMagick::COMPOSITE_DISSOLVE, $x, $y);
+            $imagickImage->compositeImage($marker, IMagick::COMPOSITE_DISSOLVE, $x - $markerPinPixelOffsetX, $y - $markerPinPixelOffsetY);
 
             if ( $this->eventsLabels == true ) {
-                $x = (( $event['hv_hpc_x_final'] - $this->roi->left())
+                $x = $x + 11;
+                $y = $y - 24;
+                
+                /*$x = (( $event['hv_hpc_x_final'] - $this->roi->left())
                      / $this->roi->imageScale()) + 11;
                 $y = ((-$event['hv_hpc_y_final'] - $this->roi->top() )
                      / $this->roi->imageScale()) - 24;
 
 				$x = $x - $this->_timeOffsetX;
-				$y = $y - $this->_timeOffsetY;
+				$y = $y - $this->_timeOffsetY;*/
 				
                 $count = 0;
                 if ( !array_key_exists('hv_labels_formatted', $event) ||
