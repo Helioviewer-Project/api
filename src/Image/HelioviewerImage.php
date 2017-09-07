@@ -30,8 +30,7 @@ class Image_HelioviewerImage extends Image_SubFieldImage {
      * @param float  $offsetX       Offset of the sun center from image center
      * @param float  $offsetY       Offset of the sun center from image center
      */
-    public function __construct($jp2, $filepath, $roi, $uiLabels, $offsetX,
-        $offsetY, $options) {
+    public function __construct($jp2, $filepath, $roi, $uiLabels, $offsetX, $offsetY, $options) {
 
         // Default options
         $defaults = array(
@@ -41,7 +40,10 @@ class Image_HelioviewerImage extends Image_SubFieldImage {
             'opacity'       => 100,
             'palettedJP2'   => false,
             'movie' 	    => false,
-            'size' 	        => 0
+            'size' 	        => 0,
+            'jp2Difference' => false,
+            'jp2DiffPath'   => '',
+            'jp2DifferenceLabel'   => ''
         );
         $this->options = array_replace($defaults, $options);
 
@@ -49,18 +51,20 @@ class Image_HelioviewerImage extends Image_SubFieldImage {
         $this->filepath    = $filepath;
 
         $imageSettings = array(
-        	'opacity' => $this->options['opacity'],
-        	'movie'   => $this->options['movie'],
-        	'size'    => $this->options['size']
+        	'opacity'      => $this->options['opacity'],
+        	'movie'        => $this->options['movie'],
+        	'size'         => $this->options['size'],
+        	'jp2Difference'=> $this->options['jp2Difference'],
+        	'jp2DiffPath'  => $this->options['jp2DiffPath'],
+        	'jp2DifferenceLabel'  => $this->options['jp2DifferenceLabel']
         );
 
-        parent::__construct($jp2, $roi, $this->filepath, $offsetX, $offsetY,
-            $imageSettings);
+        parent::__construct($jp2, $roi, $this->filepath, $offsetX, $offsetY, $imageSettings);
 
         $padding = $this->computePadding($roi);
         $this->setPadding($padding);
 
-        if ( HV_DISABLE_CACHE || $this->_imageNotInCache() ) {
+        if ( HV_DISABLE_CACHE || $this->_imageNotInCache() || $this->options['jp2Difference'] != false) {
             $this->build();
         }
     }
@@ -95,7 +99,7 @@ class Image_HelioviewerImage extends Image_SubFieldImage {
      */
     public function getWaterMarkDateString() {
         // Add extra spaces between date and time for readability.
-        return str_replace('T', '   ', $this->options['date']) . "\n";
+        return str_replace('T', '   ', $this->options['date']) . $this->options['jp2DifferenceLabel']. "\n";
     }
 
     /**

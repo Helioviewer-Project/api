@@ -118,13 +118,12 @@ class Module_WebClient implements Module {
 
         $imgIndex = new Database_ImgIndex();
 
-        $image = $imgIndex->getDataFromDatabase($this->_params['date'],
-            $this->_params['sourceId']);
+        $image = $imgIndex->getDataFromDatabase($this->_params['date'], $this->_params['sourceId']);
 
         // Read JPEG 2000 header
         $file   = HV_JP2_DIR.$image['filepath'].'/'.$image['filename'];
         $xmlBox = $imgIndex->extractJP2MetaInfo($file);
-
+		
         // Prepare cache for tiles
         $this->_createTileCacheDir($image['filepath']);
 
@@ -213,14 +212,22 @@ class Module_WebClient implements Module {
         // Look up image properties
         $imgIndex = new Database_ImgIndex();
         $image = $imgIndex->getImageInformation($this->_params['id']);
-
-        $this->_options['date'] = $image['date'];
+		
+		//Difference Filepath
+		$difference = '';
+		if(isset($params['difference'])){
+			if($params['difference'] == 1){
+				$difference = '_running';
+			}elseif($params['difference'] == 2){
+				$difference = '_base';
+			}
+		}
+		
+		$this->_options['date'] 		= $image['date'];
 
         // Tile filepath
-        $filepath =  $this->_getTileCacheFilename(
-            $image['filepath'], $image['filename'], $params['imageScale'],
-                $params['x'], $params['y'] );
-
+        $filepath =  $this->_getTileCacheFilename($image['filepath'], $image['filename'], $params['imageScale'], $params['x'], $params['y'], $difference);
+				
         // Create directories in cache
         $this->_createTileCacheDir($image['filepath']);
 
@@ -237,9 +244,7 @@ class Module_WebClient implements Module {
         );
 
         // Region of interest
-        $roi = $this->_tileCoordinatesToROI($params['x'], $params['y'],
-            $params['imageScale'], $image['scale'], $tileSize, $offsetX,
-            $offsetY);
+        $roi = $this->_tileCoordinatesToROI($params['x'], $params['y'], $params['imageScale'], $image['scale'], $tileSize, $offsetX, $offsetY);
 
         // Choose type of tile to create
         // TODO 2011/04/18: Generalize process of choosing class to use
@@ -266,7 +271,36 @@ class Module_WebClient implements Module {
 
         include_once HV_ROOT_DIR.'/../src/Image/ImageType/'.$type.'.php';
         $classname = 'Image_ImageType_'.$type;
+		
+		//Difference JP2 File
+		if(isset($params['difference']) && $params['difference'] > 0){
+			if($params['difference'] == 1){
+				$date = new DateTime($image['date']);
+				
+				if($params['diffTime'] == 6){ $dateDiff = 'year'; }
+				else if($params['diffTime'] == 5){ $dateDiff = 'month'; }
+				else if($params['diffTime'] == 4){ $dateDiff = 'week'; }
+				else if($params['diffTime'] == 3){ $dateDiff = 'day'; }
+				else if($params['diffTime'] == 2){ $dateDiff = 'hour'; }
+				else if($params['diffTime'] == 0){ $dateDiff = 'second'; }
+				else{ $dateDiff = 'minute'; }
+				
+				$date->modify('-'.$params['diffCount'].' '.$dateDiff);
+				$dateStr = $date->format("Y-m-d\TH:i:s.000\Z");
+			}elseif($params['difference'] == 2){
+				$dateStr = $params['baseDiffTime'];
+			}
 
+			//Create difference JP2 image
+	        $imageDifference = $imgIndex->getClosestDataBeforeDate($dateStr, $image['sourceId']);
+	        $fileDifference   = HV_JP2_DIR.$imageDifference['filepath'].'/'.$imageDifference['filename'];
+	        $jp2Difference = new Image_JPEG2000_JP2Image($fileDifference, $image['width'], $image['height'], $image['scale']);
+	        
+			$this->_options['jp2DiffPath']   =  $this->_getTileCacheFilename($image['filepath'], $imageDifference['filename'], $params['imageScale'], $params['x'], $params['y'], $difference);
+	        $this->_options['jp2Difference'] = $jp2Difference;
+	        
+		}
+		
         // Create the tile
         $tile = new $classname(
             $jp2, $filepath, $roi, $image['uiLabels'],
@@ -1055,15 +1089,14 @@ class Module_WebClient implements Module {
      *
      * @return string Filepath to use when locating or creating the tile
      */
-    private function _getTileCacheFilename($directory, $filename, $scale,
-        $x, $y) {
+    private function _getTileCacheFilename($directory, $filename, $scale, $x, $y, $difference='') {
 
         $baseDirectory = HV_CACHE_DIR.'/tiles';
         $baseFilename  = substr($filename, 0, -4);
 
         return sprintf(
-            "%s%s/%s_%s_x%d_y%d.png", $baseDirectory, $directory,
-            $baseFilename, $scale, $x, $y
+            "%s%s/%s_%s_x%d_y%d%s.png", $baseDirectory, $directory,
+            $baseFilename, $scale, $x, $y, $difference
         );
     }
 
@@ -1153,16 +1186,11 @@ class Module_WebClient implements Module {
             break;
         case 'getClosestImage':
             $expected = array(
+               'required' => array('date', 'sourceId'),
                'dates'    => array('date'),
                'optional' => array('callback'),
-               'alphanum' => array('callback')
-            );
-            $expected = array_merge(
-                $expected,
-                array(
-                    'required' => array('date', 'sourceId'),
-                    'ints'     => array('sourceId')
-                )
+               'alphanum' => array('callback'),
+               'ints'     => array('sourceId')
             );
             break;
         case 'getDataSources':
@@ -1175,8 +1203,10 @@ class Module_WebClient implements Module {
         case 'getTile':
             $expected = array(
                 'required' => array('id', 'x', 'y', 'imageScale'),
+                'dates'    => array('baseDiffTime'),
                 'floats'   => array('imageScale'),
-                'ints'     => array('id', 'x', 'y')
+                'optional' => array('difference', 'diffCount', 'diffTime', 'baseDiffTime'),
+                'ints'     => array('id', 'x', 'y', 'difference', 'diffCount', 'diffTime')
             );
             break;
         case 'getJP2Header':
