@@ -33,7 +33,7 @@ class Image_ImageType_SWAPImage extends Image_HelioviewerImage {
 
         $colorTable = HV_ROOT_DIR
                     . '/resources/images/color-tables'
-                    . '/PROBA2_SWAP_$meas.png';
+                    . '/PROBA2_SWAP_174.png';
 
         $imgDate = strtotime($options['date']);
 
@@ -51,6 +51,7 @@ class Image_ImageType_SWAPImage extends Image_HelioviewerImage {
         else {
             $options['palettedJP2'] = false;
         }
+
 
         if ( $options['palettedJP2'] === false && @file_exists($colorTable) ) {
             $this->setColorTable($colorTable);
