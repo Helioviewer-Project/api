@@ -166,7 +166,7 @@ CREATE INDEX "date_index"
 		`id`            INT unsigned NOT NULL auto_increment,
 		`filepath`      VARCHAR(255) NOT NULL,
 		`filename`      VARCHAR(255) NOT NULL,
-		`date`			datetime DEFAULT NULL,
+		`date`			datetime NOT NULL default '0000-00-00 00:00:00',
 		`sourceId`		SMALLINT unsigned NOT NULL,
 		PRIMARY KEY  (`id`), INDEX (`id`)
 	) DEFAULT CHARSET=utf8;

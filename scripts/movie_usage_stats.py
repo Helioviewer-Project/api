@@ -7,8 +7,7 @@ Feb 6, 2012
 import sys
 import math
 import random
-import mysql.connector
-import getpass
+import MySQLdb
 import numpy as np
 from scipy import constants
 from scipy import polyfit
@@ -17,13 +16,10 @@ from matplotlib import pyplot as plt
 from matplotlib import colors
 from matplotlib import mlab
 
-def main(argv):
+def main(dbname, dbtable, dbuser, dbpass):
     """Main script execution"""
-    
-    dbhost, dbname, dbuser, dbpass, dbtable = getDatabaseInfo()
-    
     # Query database
-    result = query_database(dbhost, dbname, dbuser, dbpass, dbtable, 1, 900)
+    result = query_database(dbname, dbtable, dbuser, dbpass, 1, 900)
     
     # Break result up into separate columns
     frame_counts, image_scales, widths, heights, proc_times = zip(*result)
@@ -39,8 +35,8 @@ def main(argv):
     (m1, b1) = polyfit(frame_counts, times, 1)
     (m2, b2) = polyfit(np.sqrt(area_px), times, 1)
     
-    print ("Linear fit for num frames: y = %fx + %f" % (m1, b1))
-    print ("Linear fit for movie size: y = %fx + %f" % (m2, b2))
+    print "Linear fit for num frames: y = %fx + %f" % (m1, b1)
+    print "Linear fit for movie size: y = %fx + %f" % (m2, b2)
     
     # Basic time estimation
     w1 = 0.8
@@ -66,40 +62,6 @@ def main(argv):
     #plt.show()
     
     #return 0
-
-def getDatabaseInfo():
-    """Prompts the user for database information"""
-    while True:
-        print ("Please enter database information:")
-        if (sys.version_info >= (3, 0)):
-            dbhost = input("    Hostname [localhost]: ") or "localhost"
-            dbname = input("    Database [helioviewer]: ") or "helioviewer"
-            dbuser = input("    Username [helioviewer]: ") or "helioviewer"
-            dbpass = getpass.getpass("    Password: ")
-            dbtable = input("    Table [movies]: ") or "movies"
-        else:
-            dbhost = raw_input("    Hostname [localhost]: ") or "localhost"
-            dbname = raw_input("    Database [helioviewer]: ") or "helioviewer"
-            dbuser = raw_input("    Username [helioviewer]: ") or "helioviewer"
-            dbpass = getpass.getpass("    Password: ")
-            dbtable = raw_input("    Table [movies]: ") or "movies"
-        
-        if not checkDBInfo(dbhost, dbname, dbuser, dbpass):
-            print ("Unable to connect to the database. "
-                   "Please check your login information and try again.")
-        else:
-            return dbhost, dbname, dbuser,dbpass, dbtable
-                
-def checkDBInfo(dbhost, dbname, dbuser, dbpass):
-    """Validates database login information"""
-    try:
-        db = mysql.connector.connect(host=dbhost, database=dbname, user=dbuser, password=dbpass)
-    except mysql.connector.Error as e:
-        print(e)
-        return False
-
-    db.close()
-    return True
     
 def plot_aspect_ratio(fig, widths, heights, subplot=111):
     """Plots the frequency of movie aspect ratios"""
@@ -271,12 +233,12 @@ def plot_image_scale_vs_dimensions(fig, area_as, image_scales, subplot=111):
     im = ax.imshow(hist.clip(1), extent=extent, interpolation='nearest', 
                    aspect='auto', norm=colors.LogNorm())
     fig.colorbar(im)
-
-def query_database(dbhost, dbname, dbuser, dbpass, dbtable, min_time, max_time):
+        
+def query_database(dbname, dbtable, dbuser, dbpass, min_time, max_time):
     """Queries the database and returns an ndarray for some of the
     interesting parameters.
     """
-    db = mysql.connector.connect(host=dbhost, database=dbname, user=dbuser, password=dbpass)
+    db = MySQLdb.connect(user=dbuser, passwd=dbpass, db=dbname)
     cur = db.cursor()
     
     # Get movie build data
@@ -350,12 +312,12 @@ def evaluate_estimation_fn(fn, frame_counts, area_px, times, n=1000):
         offsets.append(estimate - times[i])
         
     # Print summary of results
-    print ("SUMMARY:")
-    print ("Average movie processing time (s): %f" % np.mean(times))
-    print ("Sample size: %d" % n)
-    print ("Mean est. error (s): %f" % np.mean(offsets))
-    print ("Mean est. absolute error (s): %f" % np.mean(np.abs(offsets)))
-    print ("Standard deviation est. (s): %f" % np.std(offsets))
+    print "SUMMARY:"
+    print "Average movie processing time (s): %f" % np.mean(times)
+    print "Sample size: %d" % n
+    print "Mean est. error (s): %f" % np.mean(offsets)
+    print "Mean est. absolute error (s): %f" % np.mean(np.abs(offsets))
+    print "Standard deviation est. (s): %f" % np.std(offsets)
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv))
+    sys.exit(main("helioviewer", "movies_dump", "helioviewer", "helioviewer"))
