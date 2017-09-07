@@ -239,12 +239,9 @@ function displayDataCoverage(dataCoverage) {
                   "#abdda4", "#66c2a5", "#3288bd"];
 
     $.each(dataCoverage, function (i, dataSource) {
-        if(dataSource.label != null){
-	        createColumnChart(dataSource.sourceId, dataSource.data,
-            	dataSource.label, barChartHeight, colors[count % colors.length]);
-			count += 1;
-        }
-        
+        createColumnChart(dataSource.sourceId, dataSource.data,
+            dataSource.label, barChartHeight, colors[count % colors.length]);
+        count += 1;
     });
 
     // Now that charts are rendered, scroll to specified anchor tag
@@ -257,7 +254,7 @@ function displayDataCoverage(dataCoverage) {
 function getDataCoverage(timeInterval, endDate) {
     "use strict";
     $.getJSON(
-        "//api.helioviewer.org/index.php",
+        "../index.php",
         {
             action: "getDataCoverageTimeline",
             resolution: timeInterval,
@@ -272,7 +269,7 @@ function getDataCoverage(timeInterval, endDate) {
 
 function redraw(resolution, dateTime) {
     "use strict";
-    var endDate, url = '//'+location.hostname+'/coverage/?';
+    var endDate, url = 'http://'+location.hostname+'/coverage/?';
 
     if (resolution === undefined || typeof resolution == 'object') {
         resolution = qs('resolution');
