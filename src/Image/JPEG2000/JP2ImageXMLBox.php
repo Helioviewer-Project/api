@@ -17,6 +17,7 @@ class Image_JPEG2000_JP2ImageXMLBox {
 
     private $_file;
     private $_xml;
+    private $_array;
 
     /**
      * Create an instance of Image_JPEG2000_JP2Image_XMLBox
@@ -72,9 +73,13 @@ class Image_JPEG2000_JP2ImageXMLBox {
         $this->_xmlString = '<?xml version="1.0" encoding="utf-8"?>'."\n"
                           . $xml;
 
-        $this->_xml = new DOMDocument();
+        //$this->_xml = new DOMDocument();
 
-        $this->_xml->loadXML($this->_xmlString);
+        //$this->_xml->loadXML($this->_xmlString);
+        
+        $this->_xml = simplexml_load_string($this->_xmlString);
+        $json_string = json_encode($this->_xml);    
+		$this->_array = json_decode($json_string, TRUE);
     }
 
     /**
@@ -340,13 +345,21 @@ class Image_JPEG2000_JP2ImageXMLBox {
      * @return string the value for the specified element
      */
     private function _getElementValue($name) {
-        $element = $this->_xml->getElementsByTagName($name);
+
+        if (isset($this->_array[$name])) {
+	        $value = $this->_array[$name];
+            if ( !is_null($value) ) {
+                return $value;
+            }
+        }
+        
+        /*$element = $this->_xml->getElementsByTagName($name);
 
         if ($element) {
             if ( !is_null($element->item(0)) ) {
                 return $element->item(0)->childNodes->item(0)->nodeValue;
             }
-        }
+        }*/
 
         throw new Exception('Element not found', 15);
     }
