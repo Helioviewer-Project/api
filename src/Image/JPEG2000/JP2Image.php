@@ -41,6 +41,15 @@ class Image_JPEG2000_JP2Image {
     }
 
     /**
+     * Returns the JPEG 2000 image path
+     *
+     * @return string image path
+     */
+    public function getFilePath() {
+        return $this->_file;
+    }
+
+    /**
      * Returns the JPEG 2000 image's native plate-scale
      *
      * @return float image scale

@@ -158,11 +158,25 @@ class Helper_HelioviewerLayers {
      */
     private function _decodeSingleLayerString($layerString) {
         // Break up string into individual components
-        $layerArray = explode(',', $layerString);
+        include_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
+        $defaultDiffTime = toISOString(parseUnixTimestamp(time() - 60 * 60));
+        $layerArray 	= explode(',', $layerString);
+		$baseDiffTime	= $defaultDiffTime;//default 5 minutes difference (300 secends)
+		$diffTime 		= 1;
+		$diffCount 		= 60;
+		$difference 	= 0;
 
-        if (sizeOf($layerArray) == 3) {
+        //if (sizeOf($layerArray) == 3) {
+	    if (is_numeric($layerArray[0])) {
             // [sourceId,visible,opacity]
-            list($sourceId, $layeringOrder, $opacity) = $layerArray;
+            $sourceId 		= $layerArray[0];
+            $layeringOrder 	= $layerArray[1];
+            $opacity 		= $layerArray[2];
+            $difference 	= (isset($layerArray[3]) ? $layerArray[3] : 0);
+            $diffCount 		= (isset($layerArray[4]) ? $layerArray[4] : 1);
+            $diffTime 		= (isset($layerArray[5]) ? $layerArray[5] : 1);
+            $baseDiffTime 	= (isset($layerArray[6]) ? $layerArray[6] : $defaultDiffTime);
+            //list($sourceId, $layeringOrder, $opacity, $difference, $diffCount, $diffTime, $baseDiffTime) = $layerArray;
 
             $source = $this->_db->getDatasourceInformationFromSourceId($sourceId);
 
@@ -170,12 +184,20 @@ class Helper_HelioviewerLayers {
             $name          = $source['name'];
             $uiLabels      = $source['uiLabels'];
         }
-        else  {
-            $opacity       = array_pop($layerArray);
-            $layeringOrder = array_pop($layerArray);
+        else  {//print_r($layerArray);echo sizeOf($layerArray);
+	        if (sizeOf($layerArray) >= 8) {
+		        $baseDiffTime       = array_pop($layerArray);
+				$diffTime = array_pop($layerArray);
+				$diffCount = array_pop($layerArray);
+				$difference = array_pop($layerArray);
+				$opacity = array_pop($layerArray);
+				$layeringOrder = array_pop($layerArray);
+	        }else{
+		        $opacity       = array_pop($layerArray);
+				$layeringOrder = array_pop($layerArray);
+	        }
 
-            $info = $this->_db->getDatasourceInformationFromNames(
-                        $layerArray);
+            $info = $this->_db->getDatasourceInformationFromNames($layerArray);
             $sourceId      = $info["id"];
             $name          = $info["name"];
             $layeringOrder = $layeringOrder;
@@ -190,7 +212,11 @@ class Helper_HelioviewerLayers {
             'layeringOrder' => (int)$layeringOrder,
             'uiLabels'      => $uiLabels,
             'visible'       => ($layeringOrder > 0) ? true : false,
-            'opacity'       => (int)$opacity
+            'opacity'       => (int)$opacity,
+            'difference'    => (int)$difference,
+            'diffCount'     => (int)$diffCount,
+            'diffTime'      => (int)$diffTime,
+            'baseDiffTime'  => $baseDiffTime
         );
     }
 }

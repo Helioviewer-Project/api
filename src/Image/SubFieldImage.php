@@ -244,16 +244,32 @@ class Image_SubFieldImage {
             else {
                 $extension = '.pgm';
             }
+            
+            $inputDiff = '';
             $input = substr($this->outputFile, 0, -4).rand().$extension;
 
             // Extract region (PGM)
             $this->jp2->extractRegion($input, $this->imageSubRegion, $this->reduce);
-
+		
             // Apply colormap if needed
             if ( !$this->options['palettedJP2'] ) {
 
                 // Convert to GD-readable format
                 $grayscale = new IMagick($input);
+				
+				$applyColorTable = true;
+				if(isset($this->imageOptions['jp2Difference']) && $this->imageOptions['jp2Difference'] instanceof Image_JPEG2000_JP2Image){
+					$applyColorTable = false;
+					$inputDiff = substr($this->imageOptions['jp2DiffPath'], 0, -4).rand().$extension;
+					$this->imageOptions['jp2Difference']->extractRegion($inputDiff, $this->imageSubRegion, $this->reduce);
+					$grayscaleDiff = new IMagick($inputDiff);
+					
+					$grayscale = $this->runningDifference($grayscaleDiff, $grayscale);
+
+		            if(@file_exists($inputDiff)){
+			            @unlink($inputDiff);
+		            }
+				}
 
                 if ( isset($this->options['verifyGrayscale']) &&
                      $this->options['verifyGrayscale'] &&
@@ -271,13 +287,25 @@ class Image_SubFieldImage {
                 $coloredImage = $grayscale;
 
                 // Apply color table if one exists
-                if ($this->colorTable) {
+                if ($this->colorTable && $applyColorTable) {
                     $clut = new IMagick($this->colorTable); 
-                    $coloredImage->clutImage($clut);
+					$coloredImage->clutImage($clut);
                 }                
             }
             else {
                 $coloredImage = new IMagick($input);
+                if(isset($this->imageOptions['jp2Difference']) && $this->imageOptions['jp2Difference'] instanceof Image_JPEG2000_JP2Image){
+					$inputDiff = substr($this->imageOptions['jp2DiffPath'], 0, -4).rand().$extension;
+					$this->imageOptions['jp2Difference']->extractRegion($inputDiff, $this->imageSubRegion, $this->reduce);
+					$grayscaleDiff = new IMagick($inputDiff);
+					
+					//$coloredImage->modulateImage(100,0,100);
+					$coloredImage = $this->runningDifference($grayscaleDiff, $coloredImage);
+
+		            if(@file_exists($inputDiff)){
+			            @unlink($inputDiff);
+		            }
+				}
             }
 
             // Set alpha channel for images with transparent components
@@ -349,7 +377,7 @@ class Image_SubFieldImage {
      * Saves the file using the specified output filename
      */
     public function save() {
-        if ( !@file_exists($this->outputFile) && !is_null($this->image) ) {
+		if (( !@file_exists($this->outputFile) && !is_null($this->image)) ||  $this->imageOptions['jp2Difference'] != false) {
 			$this->image->writeImage($this->outputFile);
         }
     }
@@ -456,7 +484,57 @@ class Image_SubFieldImage {
     protected function setColorTable($clut) {
         $this->colorTable = $clut;
     }
-
+    
+    /**
+     * Create new difference image from two iMagick images
+     *
+     * @param iMagickObject $oldImage Image to compare
+     * @param iMagickObject $newImage Image to compare
+     *
+     * @return void
+     */
+	protected function runningDifference($oldImage, $newImage){
+		ini_set('memory_limit', '8096M');
+		ini_set('max_execution_time', 0);
+		
+		//Get Size of the image
+		$width = $newImage->getImageWidth();
+		$height = $newImage->getImageHeight();
+		
+		//Create empty IMagick image
+		$resultImage = new Imagick();
+		$resultImage->newImage($width, $height, 'gray');
+		
+		/* Export the image pixels */
+		$pixelsOld = $oldImage->exportImagePixels(0, 0, $width, $height, 'I', Imagick::PIXEL_CHAR);
+		$pixelsNew = $newImage->exportImagePixels(0, 0, $width, $height, 'I', Imagick::PIXEL_CHAR);
+		
+		$pixelsData = array();
+		foreach($pixelsNew as $k => $v){
+			//Subtract pixels
+			if($pixelsNew[$k] != $pixelsOld[$k]){
+				$color = $pixelsNew[$k] - $pixelsOld[$k];
+			
+				//Clip colors
+				if($color < -64){
+					$color = -64;
+				}
+				if($color > 63){
+					$color = 63;
+				}
+				//Map colors
+				$color = ($color + 64) * 2;
+			}else{
+				$color = 128;
+			}
+			//Assign new pixel color
+			$pixelsNew[$k] = $color;
+		}
+		
+		$resultImage->importImagePixels(0, 0, $width, $height, 'I', Imagick::PIXEL_CHAR, $pixelsNew);
+		return $resultImage;
+	}
+	
     /**
      * Handles clean-up in case something goes wrong to avoid mal-formed tiles
      * from being displayed

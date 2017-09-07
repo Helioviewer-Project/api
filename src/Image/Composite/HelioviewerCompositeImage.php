@@ -170,7 +170,7 @@ class Image_Composite_HelioviewerCompositeImage {
 		
         
 		
-		if($this->followViewport){error_log('4: HERE');
+		if($this->followViewport){
 			
 			$timeOffset = $this->_calculateSunOffset($this->startDate, $this->date);
             
@@ -232,7 +232,42 @@ class Image_Composite_HelioviewerCompositeImage {
         include_once HV_ROOT_DIR.'/../src/Image/ImageType/'.$type.'.php';
 
         $classname = 'Image_ImageType_'.$type;
+		
+		//Difference JP2 File
+		if(isset($layer['difference']) && $layer['difference'] > 0){
+			if($layer['difference'] == 1){
+				$date = new DateTime($image['date']);
+				
+				if($layer['diffTime'] == 6){ $dateDiff = 'year'; }
+				else if($layer['diffTime'] == 5){ $dateDiff = 'month'; }
+				else if($layer['diffTime'] == 4){ $dateDiff = 'week'; }
+				else if($layer['diffTime'] == 3){ $dateDiff = 'day'; }
+				else if($layer['diffTime'] == 2){ $dateDiff = 'hour'; }
+				else if($layer['diffTime'] == 0){ $dateDiff = 'second'; }
+				else{ $dateDiff = 'minute'; }
+				
+				$date->modify('-'.$layer['diffCount'].' '.$dateDiff);
+				$dateStr = $date->format("Y-m-d\TH:i:s.000\Z");
+				
+				$jp2DifferenceLabel = ' [RD '.$layer['diffCount'].' '.$dateDiff.($layer['diffCount'] > 1 ? 's' : '').']';
+			}elseif($layer['difference'] == 2){
+				$dateStr = $layer['baseDiffTime'];
+				
+				$date = new DateTime($dateStr);
+				$dateLabelStr = $date->format("Y-m-d H:i:s");
+				$jp2DifferenceLabel = ' [BD '.$dateLabelStr.']';
+			}
 
+			//Create difference JP2 image
+			$imageDifference = $this->db->getClosestDataBeforeDate($dateStr, $image['sourceId']);
+	        $fileDifference   = HV_JP2_DIR.$imageDifference['filepath'].'/'.$imageDifference['filename'];
+	        $jp2Difference = new Image_JPEG2000_JP2Image($fileDifference, $image['width'], $image['height'], $image['scale']);
+
+			$options['jp2DiffPath']   =  $this->_dir . '/' . rand() . '.' . $ext;
+	        $options['jp2Difference'] = $jp2Difference;
+	        $options['jp2DifferenceLabel'] = $jp2DifferenceLabel;
+		}
+		
         return new $classname(
             $jp2, $tmpFile, $this->roi, $layer['uiLabels'],
             $offsetX, $offsetY, $options, $image['sunCenterOffsetParams'], $image['name'] );
