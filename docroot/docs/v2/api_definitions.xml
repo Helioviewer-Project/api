@@ -84,7 +84,7 @@
             </parameter>
             <parameter type="string" optional="false" name="layers">
                 <description><![CDATA[Image datasource layer(s) to include in the movie.]]></description>
-                <example><![CDATA[[3,1,100],[4,1,100]]]></example>
+                <example><![CDATA[[3,1,100],[4,1,100] <br/>or<br/> [3,1,100,2,60,1,2010-03-01T12:12:12.000Z]]]></example>
             </parameter>
             <parameter type="string" optional="false" name="events">
                 <description><![CDATA[List feature/event types and FRMs to use to annoate the movie.  Use the empty string to indicate that no feature/event annotations should be shown.]]></description>
@@ -172,6 +172,22 @@
             <parameter type="string" optional="true" name="callback">
                 <description><![CDATA[Wrap the response object in a function call of your choosing.]]></description>
                 <example></example>
+            </parameter>
+            <parameter type="number" optional="true" name="size">
+                <description><![CDATA[Scale video to preset size:<br/>0 - Original size;<br/>1 - 720p (1280 x 720, HD Ready);<br/>2 - 1080p (1920 x 1080, Full HD);<br/>3 - 1440p (2560 x 1440, Quad HD);<br/>4 - 2160p (3840 x 2160, 4K or Ultra HD).]]></description>
+                <example><![CDATA[0]]></example>
+            </parameter>
+            <parameter type="number" optional="true" name="movieIcons">
+                <description><![CDATA[Display other user generated movies on the video.]]></description>
+                <example><![CDATA[0]]></example>
+            </parameter>
+            <parameter type="number" optional="true" name="followViewport">
+                <description><![CDATA[Rotate field of view of movie with Sun.]]></description>
+                <example><![CDATA[0]]></example>
+            </parameter>
+            <parameter type="string" optional="true" name="reqObservationDate">
+                <description><![CDATA[Viewport time. Used when 'followViewport' enabled to shift viewport area to correct coordinates.]]></description>
+                <example><![CDATA[2017-08-30T14:45:53.000Z]]></example>
             </parameter>
         </parameters>
         <response code="200" type="Queued Movie" subtype="JSON">
@@ -326,7 +342,7 @@
             </parameter>
             <parameter type="string" optional="false" name="layers">
                 <description><![CDATA[Image datasource layer(s) to include in the screenshot.]]></description>
-                <example><![CDATA[[SDO,AIA,AIA,335,1,100]]]></example>
+                <example><![CDATA[[3,1,100] <br/>or<br/> [3,1,100,2,60,1,2010-03-01T12:12:12.000Z]]]></example>
             </parameter>
             <parameter type="string" optional="true" name="events">
                 <description><![CDATA[List feature/event types and FRMs to use to annoate the movie.  Use the empty string to indicate that no feature/event annotations should be shown.]]></description>
@@ -3252,11 +3268,11 @@ Full source code for the entire Helioviewer Project can be found at https://gith
         <description><![CDATA[Generate and (optionally) download a custom JPX movie of the specified datasource with one frame per pair of startTimes/endTimes parameters.]]></description>
         <parameters>
             <parameter type="string" optional="false" name="startTimes">
-                <description><![CDATA[Comma separated Date/Time for the beginning of the JPX movie data. Date and time in Unix timestamps format separated with commas.]]></description>
+                <description><![CDATA[Comma separated Date/Time timestamps for the beginning of the JPX movie data. Date and time in Unix timestamps format separated with commas.]]></description>
                 <example><![CDATA[1306886400,1306887000,1306887600]]></example>
             </parameter>
             <parameter type="string" optional="false" name="endTimes">
-                <description><![CDATA[Comma separated Date/Time for the end of the JPX movie data. Date and time in Unix timestamps format separated with commas.]]></description>
+                <description><![CDATA[Comma separated Date/Time timestamps for the end of the JPX movie data. Date and time in Unix timestamps format separated with commas.]]></description>
                 <example><![CDATA[1306886700,1306887300,1306887900]]></example>
             </parameter>
             <parameter type="number" optional="false" name="sourceId">
@@ -3381,6 +3397,22 @@ Full source code for the entire Helioviewer Project can be found at https://gith
             <parameter type="number" optional="false" name="imageScale">
                 <description><![CDATA[Image scale in arcseconds per pixel.]]></description>
                 <example><![CDATA[2.42044088]]></example>
+            </parameter>
+            <parameter type="number" optional="false" name="difference">
+                <description><![CDATA[Specify image type difference.<br/>0 - Display regular image;<br/>0 - Running difference image;<br/>0 - Base difference image.]]></description>
+                <example><![CDATA[0]]></example>
+            </parameter>
+            <parameter type="number" optional="false" name="diffCount">
+                <description><![CDATA[Used to display Running difference image. Work with "diffTime" parameter and set amount of time to use in tyme period]]></description>
+                <example><![CDATA[60]]></example>
+            </parameter>
+            <parameter type="number" optional="false" name="diffTime">
+                <description><![CDATA[Select Running difference time period:<br/>0 - Seconds;<br/>1 - Minutes;<br/>2 - Hours;<br/>3 - Days;<br/>4 - Weeks;<br/>5 - Month;<br/>6 - Years.]]></description>
+                <example><![CDATA[1]]></example>
+            </parameter>
+            <parameter type="number" optional="false" name="baseDiffTime">
+                <description><![CDATA[Date/Time string for Base difference images.]]></description>
+                <example><![CDATA[string]]></example>
             </parameter>
         </parameters>
         <response code="200" type="binary" subtype="PNG image data">
