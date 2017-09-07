@@ -81,9 +81,10 @@
                 $t2 = 8  * 3600;
                 $t3 = 12 * 3600;
             } else if ($inst == "XRT") {
-                $t1 = 28 * 24 * 3600;
-                $t2 = 35 * 24  * 3600;
-                $t3 = 42 * 24 * 3600;
+                $t1 = 4 * 7 * 24 * 3600;
+                $t2 = 5 * 7 * 24  * 3600;
+                $t3 = 6 * 7 * 24 * 3600;
+                $t4 = 7 * 7 * 24 * 3600;
             }
 
             if ($elapsed <= $t1) {
@@ -143,7 +144,11 @@
 
             // Create table row for a single datasource
             foreach($datasources as $ds) {
-
+				
+				if($ds['id'] >= 10000){
+					continue;
+				}
+				
                 // Determine status icon to use
                 $date = $imgIndex->getNewestData($ds['id']);
                 $elapsed = $now - strtotime($date);
