@@ -16,11 +16,7 @@ def main():
     cursor = database.get_dbcursor()
     
     # Decide how many days back to scan
-    if (sys.version_info >= (3, 0)):
-        num_days = int(input("How many days back would you like to scan? [7]") or 7)
-    else:
-        num_days = int(raw_input("How many days back would you like to scan? [7]") or 7)
-    
+    num_days = int(raw_input("How many days back would you like to scan? [7]") or 7)
     start_date = datetime.datetime.utcnow() - datetime.timedelta(num_days)
     
     # Get list of Youtube ids to check
@@ -35,7 +31,8 @@ def main():
     print("Scan 1 - Found %d candidate missing videos" % len(to_remove))
     for i in range(10):
         to_remove = find_missing_videos(cursor, to_remove)
-        print("Scan %d - Found %d candidate missing videos" % (i + 2, len(to_remove)))
+        print("Scan %d - Found %d candidate missing videos" % (i + 2, 
+                                                               len(to_remove)))
     # Stop if no matches found
     if len(to_remove) is 0:
         print("No missing videos found. Exiting script.")
@@ -44,19 +41,12 @@ def main():
     # Confirm with user before removing
     print("Videos to be removed: ")
     for x in to_remove:
-        print (x)
+        print x
     print("Total: %d" % len(to_remove))
     
-    if (sys.version_info >= (3, 0)):
-        choice = input("Are you sure you want to remove these videos from the database? ")
-    else:
-        choice = raw_input("Are you sure you want to remove these videos from the database? ")
-        
+    choice = raw_input("Are you sure you want to remove these videos from the database? ")
     while choice.lower() not in ["yes", "y", "no", "n"]:
-        if (sys.version_info >= (3, 0)):
-            choice = input("Please enter yes or no ")
-        else:
-            choice = raw_input("Please enter yes or no ")
+        choice = raw_input("Please enter yes or no ")
         
     if choice in ["n", "no"]:
         sys.exit("Exiting without making any changes.")

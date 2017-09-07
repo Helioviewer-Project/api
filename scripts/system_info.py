@@ -47,7 +47,7 @@ def check_platform():
     else:
         print ("Unknown OS (%s)" % proc)
 
-    print ("")
+    print ""
         
 def check_apache():
     """Checks Apache version"""
@@ -60,13 +60,12 @@ def check_apache():
     elif which("httpd") is not None:
         apache_name = "httpd"
     else:
-        print ("Apache: NOT FOUND\n")
+        print "Apache: NOT FOUND\n"
         return
     
     p = subprocess.Popen([apache_name, "-v"], stdout=subprocess.PIPE)
     out, err = p.communicate()
-    
-    print (out.decode("utf-8").split("\n")[0] + "\n")
+    print out.split("\n")[0] + "\n"
     
 def check_mysql():
     """Checks MySQL version"""
@@ -75,7 +74,7 @@ def check_mysql():
     print("###########")
     p = subprocess.Popen(["mysql", "--version"], stdout=subprocess.PIPE)
     out, err = p.communicate()
-    print (out.decode("utf-8").split("\n")[0] + "\n")
+    print p.communicate()
         
 def check_php():
     """Prints PHP support information"""
@@ -85,18 +84,18 @@ def check_php():
     
     p = subprocess.Popen(["php", "-version"], stdout=subprocess.PIPE)
     out, err = p.communicate()
-    print (out.decode("utf-8").split("\n")[0])
+    print out.split("\n")[0]
     
     p = subprocess.Popen(["php", "-i"], stdout=subprocess.PIPE)
     phpinfo, err = p.communicate()
     
     pattern = re.compile("imagick module version => ([\d\.]*)")
-    print ("Imagick: %s" % pattern.search(phpinfo.decode("utf-8")).group(1))
+    print ("Imagick: %s" % pattern.search(phpinfo).group(1))
     
     pattern = re.compile("GD Version => ([\d\.]*)")
-    print ("GD: %s" % pattern.search(phpinfo.decode("utf-8")).group(1))
+    print ("GD: %s" % pattern.search(phpinfo).group(1))
     
-    if phpinfo.decode("utf-8").find('mysqli') != -1:
+    if phpinfo.find('mysqli') != -1:
         print("MySQLi: SUPPORTED\n")
     else:
         print("MySQLi: NOT FOUND\n")
@@ -113,7 +112,7 @@ def check_ffmpeg():
                                                  stderr=open('/dev/null'))
     out, err = p.communicate()
     
-    version = out.decode("utf-8")[:out.decode("utf-8").find(":")]
+    version = out[:out.find(":")]
     print(version)
     
     p = subprocess.Popen(["ffmpeg", "-codecs"], stdout=subprocess.PIPE, 
@@ -121,14 +120,14 @@ def check_ffmpeg():
     out, err = p.communicate()
     
     # H.264
-    libx264 = [i for i in out.decode("utf-8").split('\n') if "libx264" in i]
+    libx264 = [i for i in out.split('\n') if "libx264" in i]
     if len(libx264) > 0 and "E" in libx264[0][:8]:
         print("libx264: SUPPORTED")
     else:
         print("libx264: NOT SUPPORTED")
     
     # VP8
-    libvp8 = [i for i in out.decode("utf-8").split('\n') if "libvpx" in i]
+    libvp8 = [i for i in out.split('\n') if "libvpx" in i]
     if len(libvp8) > 0 and "E" in libvp8[0][:8]:
         print("libvpx: SUPPORTED")
     else:
@@ -195,14 +194,14 @@ def check_kakadu():
     else:
         p = subprocess.Popen([kdu_expand, "-version"], stdout=subprocess.PIPE)
         out, err = p.communicate()
-        kdu_expand_version = pattern.search(out.decode("utf-8")).group(0)
+        kdu_expand_version = pattern.search(out).group(0)
     
     if which(kdu_merge) is None:
         kdu_merge_version = "NOT FOUND"
     else:
         p = subprocess.Popen([kdu_merge, "-version"], stdout=subprocess.PIPE)
         out, err = p.communicate()
-        kdu_merge_version = pattern.search(out.decode("utf-8")).group(0)
+        kdu_merge_version = pattern.search(out).group(0)
 
     print("kdu_expand: %s" % kdu_expand_version)
     print("kdu_merge: %s\n" % kdu_merge_version)
