@@ -395,10 +395,13 @@ class Event_HEKAdapter {
             $data = array();
             while ($event = $result->fetch_array(MYSQLI_ASSOC)) {
                 if(isset($event['event_json']) && !empty($event['event_json'])){
-	                $jsonData = json_decode($event['event_json']);
-	                $jsonData->hv_marker_offset_x = $event['hv_marker_offset_x'];
-	                $jsonData->hv_marker_offset_y = $event['hv_marker_offset_y'];
-			        $data[] = $jsonData;
+	                $event['event_json'] = str_replace('."",', '.",', $event['event_json']);
+	                $jsonData = json_decode($event['event_json'], true);
+	                if(isset($jsonData['event_starttime'])){
+	                	$jsonData['hv_marker_offset_x'] = $event['hv_marker_offset_x'];
+	                	$jsonData['hv_marker_offset_y'] = $event['hv_marker_offset_y'];
+	                	$data[] = $jsonData;
+					}
 		        }
             }
 		}else{
@@ -513,7 +516,7 @@ class Event_HEKAdapter {
             if ( gettype($event) == 'object') {
                 $event = (array) $event;
             }
-
+			
             $event_starttime = new DateTime($event['event_starttime'].'Z');
             $event_endtime   = new DateTime($event['event_endtime']  .'Z');
 
@@ -835,7 +838,7 @@ class Event_HEKAdapter {
                     $this->drawPolygon($event, $au_scalar, $polyOffsetX, $polyOffsetY, $polyURL, $polyWidth, $polyHeight);
 					
 					//Calculate event marker offset
-					$polyArray = polygonToArray($row['hpc_boundcc'], $au_scalar);
+					$polyArray = polygonToArray($event['hpc_boundcc'], $au_scalar);
 					$markerXY = polylabel($polyArray['array']);
 					$event['hv_marker_offset_x'] = round($markerXY['x'] - $polyArray['width']/2);
 					$event['hv_marker_offset_y'] = round($markerXY['y'] - $polyArray['height']/2);
