@@ -1069,7 +1069,7 @@ class Database_Statistics {
                     'data ' .
                 'WHERE ' .
                     'date >= DATE_SUB(NOW(), INTERVAL 6 MONTH) ' .
-                    ' AND sourceId >=38 AND sourceId <=74' .
+                    ' AND sourceId >=38 AND sourceId <=74 ' .
                 'GROUP BY ' .
                     'bin, ' .
                     'sourceId;';
