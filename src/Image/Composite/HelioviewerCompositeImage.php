@@ -201,7 +201,8 @@ class Image_Composite_HelioviewerCompositeImage {
             'movie'         => $this->movie,
             'size'          => $this->size,
             'originalOffsetX' => $originalOffsetX,
-            'originalOffsetY' => $originalOffsetY
+            'originalOffsetY' => $originalOffsetY,
+            'followViewport'  => $this->followViewport
         );
 
         // For layers with transparent regions use PNG

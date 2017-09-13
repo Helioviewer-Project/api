@@ -43,7 +43,8 @@ class Image_HelioviewerImage extends Image_SubFieldImage {
             'size' 	        => 0,
             'jp2Difference' => false,
             'jp2DiffPath'   => '',
-            'jp2DifferenceLabel'   => ''
+            'jp2DifferenceLabel'   => '',
+            'followViewport' => false
         );
         $this->options = array_replace($defaults, $options);
 
@@ -56,7 +57,8 @@ class Image_HelioviewerImage extends Image_SubFieldImage {
         	'size'         => $this->options['size'],
         	'jp2Difference'=> $this->options['jp2Difference'],
         	'jp2DiffPath'  => $this->options['jp2DiffPath'],
-        	'jp2DifferenceLabel'  => $this->options['jp2DifferenceLabel']
+        	'jp2DifferenceLabel'  => $this->options['jp2DifferenceLabel'],
+            'followViewport' => $this->options['followViewport']
         );
 
         parent::__construct($jp2, $roi, $this->filepath, $offsetX, $offsetY, $imageSettings);
