@@ -116,13 +116,21 @@ class Image_ImageType_LASCOImage extends Image_HelioviewerImage {
         else {
             $maskScaleFactor = 1;
         }
+		
+		$offsetX = $this->offsetX;
+		$offsetY = $this->offsetY;
 
+		if($this->followViewport){
+			$offsetX = $this->originalOffsetX;
+			$offsetY = $this->originalOffsetY;
+		}
+		
         $maskTopLeftX = ($this->imageSubRegion['left'] +
                         ($maskWidth  - $this->jp2->getWidth()) /2
-                      - $this->originalOffsetX) * $maskScaleFactor;
+                      - $offsetX) * $maskScaleFactor;
         $maskTopLeftY = ($this->imageSubRegion['top']  +
                         ($maskHeight - $this->jp2->getHeight())/2
-                      - $this->originalOffsetY) * $maskScaleFactor;
+                      - $offsetY) * $maskScaleFactor;
 
         $width  = $this->subfieldWidth  * $maskScaleFactor;
         $height = $this->subfieldHeight * $maskScaleFactor;
@@ -158,7 +166,7 @@ class Image_ImageType_LASCOImage extends Image_HelioviewerImage {
             $imagickImage->setImageClipMask($mask);
             $imagickImage->setImageOpacity($this->options['opacity'] / 100);
         }
-
+		
         $mask->destroy();
     }
 }

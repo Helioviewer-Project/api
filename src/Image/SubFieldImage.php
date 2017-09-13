@@ -44,6 +44,7 @@ class Image_SubFieldImage {
     protected $options;
     protected $originalOffsetX;
     protected $originalOffsetY;
+    protected $followViewport;
 
     /**
      * Creates an Image_SubFieldImage instance
@@ -82,7 +83,8 @@ class Image_SubFieldImage {
             'movie'       => false,
             'size'        => 0,
             'originalOffsetX' => 0,
-            'originalOffsetY' => 0
+            'originalOffsetY' => 0,
+            'followViewport' => false
         );
 
         $this->imageOptions = array_replace($defaults, $options);
@@ -115,6 +117,7 @@ class Image_SubFieldImage {
         $this->offsetY = $offsetY;
         $this->originalOffsetX = $this->imageOptions['originalOffsetX'];
         $this->originalOffsetY = $this->imageOptions['originalOffsetY'];
+        $this->followViewport  = $this->imageOptions['followViewport'];
     }
 
     /**
