@@ -126,7 +126,7 @@ function loadModule($params) {
 
             // Update usage stats
             $actions_to_keep_stats_for = array('getClosestImage',
-                'takeScreenshot', 'getJPX', 'uploadMovieToYouTube');
+                'takeScreenshot', 'getJPX', 'getJPXClosestToMidPoint', 'uploadMovieToYouTube');
 
 			// Note that in addition to the above, buildMovie requests and
 			// addition to getTile when the tile was already in the cache.
@@ -135,6 +135,10 @@ function loadModule($params) {
 
                 include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
                 $statistics = new Database_Statistics();
+                $log_param = $params['action'];
+                if($log_param == 'getJPXClosestToMidPoint'){
+	                $log_param = 'getJPX';
+                }
                 $statistics->log($params['action']);
             }
         }
