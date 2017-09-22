@@ -39,6 +39,12 @@ class Helper_HelioviewerLayers {
         $this->_layerString = $layerString;
 
         $this->_db = new Database_ImgIndex();
+		
+		//Fix Apache double encoding
+		$layerString = str_replace(
+			array('%255B', '%255D', '%255b', '%255d', '%5b', '%5d', '%5B', '%5D', '%25255b', '%25255d', '%25255B', '%25255D'), 
+			array('[', ']', '[', ']', '[', ']', '[', ']', '[', ']', '[', ']'), 
+			$layerString);
 
         $layerStringArray = explode('],[', substr($layerString, 1, -1));
 
