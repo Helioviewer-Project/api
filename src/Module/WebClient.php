@@ -358,10 +358,10 @@ class Module_WebClient implements Module {
         $scaleX    = 0;
         $scaleY    = 0;
         if ( array_key_exists('scale', $this->_params) ) {
-            $scale     = $this->_params['scale'];
-            $scaleType = $this->_params['scaleType'];
-            $scaleX    = $this->_params['scaleX'];
-            $scaleY    = $this->_params['scaleY'];
+            $scale     = (isset($this->_params['scale']) ? $this->_params['scale'] : $scale);
+            $scaleType = (isset($this->_params['scaleType']) ? $this->_params['scaleType'] : $scaleType);
+            $scaleX    = (isset($this->_params['scaleX']) ? $this->_params['scaleX'] : $scaleX);
+            $scaleY    = (isset($this->_params['scaleY']) ? $this->_params['scaleY'] : $scaleY);
         }
 
         // Region of interest

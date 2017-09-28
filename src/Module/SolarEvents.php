@@ -59,7 +59,7 @@ class Module_SolarEvents implements Module {
         $hek = new Event_HEKAdapter();
 
         header('Content-type: application/json');
-        echo $hek->getEvent(intval($this->_params['id']), $this->_params['kb_archivid']);
+        echo $hek->getEvent((isset($this->_params['id']) ? intval($this->_params['id']) : 0), $this->_params['kb_archivid']);
     }
 
     /**
