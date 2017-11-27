@@ -142,6 +142,13 @@ class Module_JHelioviewer implements Module {
                 $this->_params['endTime'], $options['cadence'],
                 $options['linked'], $filename
             );
+            
+            //Build Statistic
+            include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
+            $statistics = new Database_Statistics();
+            $startTime = strtotime($this->_params['startTime']);
+			$endTime = strtotime($this->_params['endTime']);
+            $statistics->logJPX(date('Y-m-d H:i:s', $startTime), date('Y-m-d H:i:s', $endTime), $this->_params['sourceId']);
         }
         catch (Exception $e) {
             // If a problem is encountered, return an error message as JSON
@@ -203,6 +210,16 @@ class Module_JHelioviewer implements Module {
                 $this->_params['endTimes'], $options['cadence'],
                 $options['linked'], $filename, true
             );
+            //Build Statistic
+            include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
+            $statistics = new Database_Statistics();
+            $startArray = explode(",", $this->_params['startTimes']);
+			$endArray = explode(",", $this->_params['endTimes']);
+			$startTime = $startArray[0];
+			$endTime = array_pop($endArray);
+            
+            $statistics->logJPX(date('Y-m-d H:i:s', $startTime), date('Y-m-d H:i:s', $endTime), $this->_params['sourceId']);
+            
         }
         catch (Exception $e) {
             // If a problem is encountered, return an error message as JSON
