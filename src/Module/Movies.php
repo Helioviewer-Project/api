@@ -801,7 +801,12 @@ class Module_Movies implements Module {
 		
 		if(empty($this->_params['id'])){
 			session_start();
-			$this->_params['id'] = $_SESSION['video-id'];
+			if(isset($_SESSION['video-id'])){
+				$this->_params['id'] = $_SESSION['video-id'];
+			}else{
+				throw new Exception('Video ID no found. Please try again.', 41);
+			}
+			
 		}
 
         // Process request
