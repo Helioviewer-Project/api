@@ -53,6 +53,36 @@ class Database_Statistics {
     }
 
     /**
+     * Add a new entry to the `movies_jpx` table
+     *
+     * param $action string The API action to log
+     *
+     * @return boolean
+     */
+    public function logJPX($reqStartDate, $reqEndDate, $sourceId) {
+        $sql = sprintf(
+                  "INSERT INTO movies_jpx "
+                . "SET "
+                .     "id "        . " = NULL, "
+                .     "timestamp " . " = NULL, "
+                .     "reqStartDate " . " = '%s', "
+                .     "reqEndDate " . " = '%s', "
+                .     "sourceId " . " = %d;",
+                $this->_dbConnection->link->real_escape_string($reqStartDate),
+                $this->_dbConnection->link->real_escape_string($reqEndDate),
+                $this->_dbConnection->link->real_escape_string($sourceId)
+               );
+        try {
+            $result = $this->_dbConnection->query($sql);
+        }
+        catch (Exception $e) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Get latest usage statistics as JSON
      *
      * @param  string  Time resolution
