@@ -86,7 +86,8 @@ class Image_Composite_HelioviewerScreenshot
             $this->scaleType,
             $this->scaleX,
             $this->scaleY,
-            $this->layers->length()
+            $this->layers->length(),
+            $this->switchSources
         );
     }
 }
