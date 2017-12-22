@@ -65,6 +65,7 @@ class Movie_HelioviewerMovie {
     public $scaleX;
     public $scaleY;
     public $size;
+    public $switchSources;
 
     private $_db;
     private $_layers;
@@ -136,6 +137,7 @@ class Movie_HelioviewerMovie {
         $this->scaleY       = (float)$info['scaleY'];
         $this->maxFrames    = min((int)$info['maxFrames'],HV_MAX_MOVIE_FRAMES);
         $this->size       = (int)$info['size'];
+        $this->switchSources = (isset($info['switchSources']) ? (bool)$info['switchSources'] : false);
 
         // Data Layers
         $this->_layers = new Helper_HelioviewerLayers($info['dataSourceString']);
@@ -406,7 +408,8 @@ class Movie_HelioviewerMovie {
             'startDate' => $this->startDate,
             'reqStartDate' => $this->reqStartDate,
             'reqEndDate' => $this->reqEndDate,
-            'reqObservationDate' => $this->reqObservationDate
+            'reqObservationDate' => $this->reqObservationDate,
+            'switchSources' => $this->switchSources
         );
 
         // Index of preview frame
@@ -649,7 +652,7 @@ class Movie_HelioviewerMovie {
         // Determine the number of images that are available for the request
         // duration for each layer
         foreach ($this->_layers->toArray() as $layer) {
-            $n = $this->_db->getDataCount($this->reqStartDate, $this->reqEndDate, $layer['sourceId']);
+            $n = $this->_db->getDataCount($this->reqStartDate, $this->reqEndDate, $layer['sourceId'], $this->switchSources);
 
             $layerCounts[$layer['sourceId']] = $n;
         }
@@ -675,7 +678,7 @@ class Movie_HelioviewerMovie {
 
         // Get the entire range of available images between the movie start
         // and end time
-        $entireRange = $this->_db->getDataRange($this->reqStartDate, $this->reqEndDate, $dataSource);
+        $entireRange = $this->_db->getDataRange($this->reqStartDate, $this->reqEndDate, $dataSource, $this->switchSources);
 
         // Sub-sample range so that only $numFrames timestamps are returned
         for ($i = 0; $i < $numFrames; $i++) {

@@ -117,7 +117,15 @@ class Module_WebClient implements Module {
         include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
 
         $imgIndex = new Database_ImgIndex();
-
+		
+		if(isset($this->_params['switchSources']) && $this->_params['switchSources']){
+			if($this->_params['sourceId'] == 13 && strtotime($this->_params['date']) < strtotime('2010-06-02 00:05:39')){$this->_params['sourceId'] = 3;}
+			if($this->_params['sourceId'] == 10 && strtotime($this->_params['date']) < strtotime('2010-06-02 00:05:36')){$this->_params['sourceId'] = 0;}
+			if($this->_params['sourceId'] == 11 && strtotime($this->_params['date']) < strtotime('2010-06-02 00:05:31')){$this->_params['sourceId'] = 1;}
+			if($this->_params['sourceId'] == 18 && strtotime($this->_params['date']) < strtotime('2010-12-06 06:53:41')){$this->_params['sourceId'] = 7;}
+			if($this->_params['sourceId'] == 19 && strtotime($this->_params['date']) < strtotime('2010-12-06 06:53:41')){$this->_params['sourceId'] = 6;}
+		}
+		
         $image = $imgIndex->getDataFromDatabase($this->_params['date'], $this->_params['sourceId']);
 
         // Read JPEG 2000 header
@@ -1188,7 +1196,8 @@ class Module_WebClient implements Module {
             $expected = array(
                'required' => array('date', 'sourceId'),
                'dates'    => array('date'),
-               'optional' => array('callback'),
+               'optional' => array('callback', 'switchSources'),
+               'bools'	  => array('switchSources'),
                'alphanum' => array('callback'),
                'ints'     => array('sourceId')
             );
@@ -1256,13 +1265,13 @@ class Module_WebClient implements Module {
                                     'y1', 'y2', 'x0', 'y0', 'width', 'height',
                                     'events', 'eventLabels', 'movieIcons', 'scale',
                                     'scaleType', 'scaleX', 'scaleY',
-                                    'callback'),
+                                    'callback', 'switchSources'),
                 'floats'   => array('imageScale', 'x1', 'x2', 'y1', 'y2',
                                     'x0', 'y0', 'scaleX', 'scaleY'),
                 'ints'     => array('width', 'height'),
                 'dates'    => array('date'),
                 'bools'    => array('display', 'watermark', 'eventLabels',
-                                    'scale', 'movieIcons'),
+                                    'scale', 'movieIcons', 'switchSources'),
                 'alphanum' => array('scaleType', 'callback')
             );
             break;

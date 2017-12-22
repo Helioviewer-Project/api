@@ -91,7 +91,8 @@ class Module_Movies implements Module {
             "followViewport"  => 0,
             "reqStartTime"  => $this->_params['startTime'],
             "reqEndTime"  => $this->_params['endTime'],
-            "reqObservationDate"  => null
+            "reqObservationDate"  => null, 
+            "switchSources" => false
         );
         $options = array_replace($defaults, $this->_options);
 
@@ -177,7 +178,8 @@ class Module_Movies implements Module {
             $queueSize,
             $options['frameRate'],
             $options['movieLength'],
-            $options['size'] );
+            $options['size'],
+            $options['switchSources'] );
 
         // Convert id
         $publicId = alphaID($dbId, false, 5, HV_MOVIE_ID_PASS);
@@ -1248,9 +1250,9 @@ class Module_Movies implements Module {
                                     'scale', 'scaleType', 'scaleX', 'scaleY',
                                     'movieLength', 'watermark', 'width',
                                     'height', 'x0', 'y0', 'x1', 'x2',
-                                    'y1', 'y2', 'callback', 'size', 'movieIcons', 'followViewport', 'reqObservationDate'),
+                                    'y1', 'y2', 'callback', 'size', 'movieIcons', 'followViewport', 'reqObservationDate', 'switchSources'),
                 'alphanum' => array('format', 'scaleType', 'callback'),
-                'bools'    => array('watermark', 'eventsLabels', 'scale', 'movieIcons', 'followViewport'),
+                'bools'    => array('watermark', 'eventsLabels', 'scale', 'movieIcons', 'followViewport', 'switchSources'),
                 'dates'    => array('startTime', 'endTime', 'reqObservationDate'),
                 'floats'   => array('imageScale', 'frameRate', 'movieLength',
                                     'x0', 'y0', 'x1', 'x2', 'y1', 'y2',

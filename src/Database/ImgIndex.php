@@ -45,7 +45,7 @@ class Database_ImgIndex {
      */
     public function insertScreenshot($date, $imageScale, $roi, $watermark,
         $layers, $bitmask, $events, $eventsLabels, $movieIcons, $scale, $scaleType,
-        $scaleX, $scaleY, $numLayers) {
+        $scaleX, $scaleY, $numLayers, $switchSources) {
 
         include_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
 
@@ -69,7 +69,8 @@ class Database_ImgIndex {
                 .     "scaleType "         . " ='%s', "
                 .     "scaleX "            . " = %f, "
                 .     "scaleY "            . " = %f, "
-                .     "numLayers "         . " = %d;",
+                .     "numLayers "         . " = %d, "
+                .     "switchSources "     . " = %b;",
                 $this->_dbConnection->link->real_escape_string(
                     isoDateToMySQL($date) ),
                 (float)$imageScale,
@@ -89,7 +90,8 @@ class Database_ImgIndex {
                     $scaleType ),
                 (float)$scaleX,
                 (float)$scaleY,
-                (int)$numLayers
+                (int)$numLayers,
+                (bool)$switchSources
                );
         try {
             $result = $this->_dbConnection->query($sql);
@@ -580,19 +582,84 @@ class Database_ImgIndex {
      *
      * @return int The number of `data` rows matching a source and time range
      */
-    public function getDataCount($start, $end, $sourceId) {
+    public function getDataCount($start, $end, $sourceId, $switchSources = false) {
         include_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
 
         $this->_dbConnect();
 
         $startDate = isoDateToMySQL($start);
         $endDate   = isoDateToMySQL($end);
+        $middleDate = '';
+        $sourceId2 = 3;
+        
+        $dataSplit = false;
 		
-        $sql = sprintf(
+		if($switchSources){
+			if($sourceId == 13){
+				if(strtotime($end) < strtotime('2010-06-02 00:05:39')){
+					$sourceId = 3;
+				}else if(strtotime($start) < strtotime('2010-06-02 00:05:39')){
+					$dataSplit = true;
+					$middleDate = '2010-06-02 00:05:39';
+					$sourceId = 3;
+					$sourceId2 = 13;
+				}
+			}else if($sourceId == 10){
+				if(strtotime($end) < strtotime('2010-06-02 00:05:36')){
+					$sourceId = 0;
+				}else if(strtotime($start) < strtotime('2010-06-02 00:05:36')){
+					$dataSplit = true;
+					$middleDate = '2010-06-02 00:05:36';
+					$sourceId = 0;
+					$sourceId2 = 10;
+				}
+			}else if($sourceId == 11){
+				if(strtotime($end) < strtotime('2010-06-02 00:05:31')){
+					$sourceId = 1;
+				}else if(strtotime($start) < strtotime('2010-06-02 00:05:31')){
+					$dataSplit = true;
+					$middleDate = '2010-06-02 00:05:31';
+					$sourceId = 1;
+					$sourceId2 = 11;
+				}
+			}else if($sourceId == 18){
+				if(strtotime($end) < strtotime('2010-12-06 06:53:41')){
+					$sourceId = 7;
+				}else if(strtotime($start) < strtotime('2010-12-06 06:53:41')){
+					$dataSplit = true;
+					$middleDate = '2010-12-06 06:53:41';
+					$sourceId = 7;
+					$sourceId2 = 18;
+				}
+			}else if($sourceId == 19){
+				if(strtotime($end) < strtotime('2010-12-06 06:53:41')){
+					$sourceId = 6;
+				}else if(strtotime($start) < strtotime('2010-12-06 06:53:41')){
+					$dataSplit = true;
+					$middleDate = '2010-12-06 06:53:41';
+					$sourceId = 6;
+					$sourceId2 = 19;
+				}
+			}
+		}
+		
+		if($dataSplit){
+			$sql = sprintf(
+	                   "SELECT COUNT(id) as count FROM data WHERE (".$this->getDatasourceIDsString($sourceId)." AND date BETWEEN '%s' AND '%s') OR (".$this->getDatasourceIDsString($sourceId2)." AND date BETWEEN '%s' AND '%s') LIMIT 1;",
+					   $this->_dbConnection->link->real_escape_string($startDate),
+					   $this->_dbConnection->link->real_escape_string($middleDate),
+					   $this->_dbConnection->link->real_escape_string($middleDate),
+					   $this->_dbConnection->link->real_escape_string($endDate)
+	                );
+		}else{	
+			$sql = sprintf(
                    "SELECT COUNT(id) as count FROM data WHERE ".$this->getDatasourceIDsString($sourceId)." AND date BETWEEN '%s' AND '%s' LIMIT 1;",
-                 $this->_dbConnection->link->real_escape_string($startDate),
-                 $this->_dbConnection->link->real_escape_string($endDate)
-               );
+				   $this->_dbConnection->link->real_escape_string($startDate),
+				   $this->_dbConnection->link->real_escape_string($endDate)
+                );
+		}
+		
+        
         try {
             $result = $this->_dbConnection->query($sql);
         }
@@ -614,7 +681,7 @@ class Database_ImgIndex {
      *
      * @return array Array containing matched rows from the `data` table
      */
-    public function getDataRange($start, $end, $sourceId) {
+    public function getDataRange($start, $end, $sourceId, $switchSources = false) {
         include_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
 
         $this->_dbConnect();
@@ -622,12 +689,77 @@ class Database_ImgIndex {
         $data      = array();
         $startDate = isoDateToMySQL($start);
         $endDate   = isoDateToMySQL($end);
+        $middleDate = '';
+        $sourceId2 = 3;
+        
+        $dataSplit = false;
 		
-        $sql = sprintf(
+		if($switchSources){
+			if($sourceId == 13){
+				if(strtotime($end) < strtotime('2010-06-02 00:05:39')){
+					$sourceId = 3;
+				}else if(strtotime($start) < strtotime('2010-06-02 00:05:39')){
+					$dataSplit = true;
+					$middleDate = '2010-06-02 00:05:39';
+					$sourceId = 3;
+					$sourceId2 = 13;
+				}
+			}else if($sourceId == 10){
+				if(strtotime($end) < strtotime('2010-06-02 00:05:36')){
+					$sourceId = 0;
+				}else if(strtotime($start) < strtotime('2010-06-02 00:05:36')){
+					$dataSplit = true;
+					$middleDate = '2010-06-02 00:05:36';
+					$sourceId = 0;
+					$sourceId2 = 10;
+				}
+			}else if($sourceId == 11){
+				if(strtotime($end) < strtotime('2010-06-02 00:05:31')){
+					$sourceId = 1;
+				}else if(strtotime($start) < strtotime('2010-06-02 00:05:31')){
+					$dataSplit = true;
+					$middleDate = '2010-06-02 00:05:31';
+					$sourceId = 1;
+					$sourceId2 = 11;
+				}
+			}else if($sourceId == 18){
+				if(strtotime($end) < strtotime('2010-12-06 06:53:41')){
+					$sourceId = 7;
+				}else if(strtotime($start) < strtotime('2010-12-06 06:53:41')){
+					$dataSplit = true;
+					$middleDate = '2010-12-06 06:53:41';
+					$sourceId = 7;
+					$sourceId2 = 18;
+				}
+			}else if($sourceId == 19){
+				if(strtotime($end) < strtotime('2010-12-06 06:53:41')){
+					$sourceId = 6;
+				}else if(strtotime($start) < strtotime('2010-12-06 06:53:41')){
+					$dataSplit = true;
+					$middleDate = '2010-12-06 06:53:41';
+					$sourceId = 6;
+					$sourceId2 = 19;
+				}
+			}
+		}
+		
+		
+		if($dataSplit){
+			$sql = sprintf(
+	                   "SELECT * FROM data WHERE (".$this->getDatasourceIDsString($sourceId)." AND date BETWEEN '%s' AND '%s') OR (".$this->getDatasourceIDsString($sourceId2)." AND date BETWEEN '%s' AND '%s') ORDER BY date ASC;",
+					   $this->_dbConnection->link->real_escape_string($startDate),
+					   $this->_dbConnection->link->real_escape_string($middleDate),
+					   $this->_dbConnection->link->real_escape_string($middleDate),
+					   $this->_dbConnection->link->real_escape_string($endDate)
+	                );
+		}else{	
+        	$sql = sprintf(
                    "SELECT * FROM data WHERE ".$this->getDatasourceIDsString($sourceId)." AND date BETWEEN '%s' AND '%s' ORDER BY date ASC;",
                  $this->_dbConnection->link->real_escape_string($startDate),
                  $this->_dbConnection->link->real_escape_string($endDate)
                );
+        }
+        
         try {
             $result = $this->_dbConnection->query($sql);
         }

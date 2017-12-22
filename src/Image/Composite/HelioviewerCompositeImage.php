@@ -52,6 +52,7 @@ class Image_Composite_HelioviewerCompositeImage {
     protected $reqStartDate;
     protected $reqEndDate;
     protected $reqObservationDate;
+    protected $switchSources;
 
     /**
      * Creates a new HelioviewerCompositeImage instance
@@ -84,7 +85,8 @@ class Image_Composite_HelioviewerCompositeImage {
             'startDate' => false,
             'reqStartDate' => false,
             'reqEndDate' => false,
-            'reqObservationDate' => false
+            'reqObservationDate' => false,
+            'switchSources' => false
         );
 
         $options = array_replace($defaults, $options);
@@ -115,6 +117,7 @@ class Image_Composite_HelioviewerCompositeImage {
         $this->reqStartDate = $options['reqStartDate'];
         $this->reqEndDate = $options['reqEndDate'];
         $this->reqObservationDate = $options['reqObservationDate'];
+        $this->switchSources = $options['switchSources'];
 
         $this->maxPixelScale = 0.60511022;  // arcseconds per pixel
     }
@@ -134,6 +137,35 @@ class Image_Composite_HelioviewerCompositeImage {
         // Find the closest image for each layer, add the layer information
         // string to it
         foreach ( $this->layers->toArray() as $layer ) {
+	        if($this->switchSources){
+				if($layer['sourceId'] == 13 && strtotime($this->date) < strtotime('2010-06-02 00:05:39')){
+					$layer['sourceId'] = 3;
+					$source = $this->db->getDatasourceInformationFromSourceId(3);
+					$layer['name'] = $source['name'];
+					$layer['uiLabels'] = $source['uiLabels'];
+				}else if($layer['sourceId'] == 10 && strtotime($this->date) < strtotime('2010-06-02 00:05:36')){
+					$layer['sourceId'] = 0;
+					$source = $this->db->getDatasourceInformationFromSourceId(0);
+					$layer['name'] = $source['name'];
+					$layer['uiLabels'] = $source['uiLabels'];
+				}else if($layer['sourceId'] == 11 && strtotime($this->date) < strtotime('2010-06-02 00:05:31')){
+					$layer['sourceId'] = 1;
+					$source = $this->db->getDatasourceInformationFromSourceId(1);
+					$layer['name'] = $source['name'];
+					$layer['uiLabels'] = $source['uiLabels'];
+				}else if($layer['sourceId'] == 18 && strtotime($this->date) < strtotime('2010-12-06 06:53:41')){
+					$layer['sourceId'] = 7;
+					$source = $this->db->getDatasourceInformationFromSourceId(7);
+					$layer['name'] = $source['name'];
+					$layer['uiLabels'] = $source['uiLabels'];
+				}else if($layer['sourceId'] == 19 && strtotime($this->date) < strtotime('2010-12-06 06:53:41')){
+					$layer['sourceId'] = 6;
+					$source = $this->db->getDatasourceInformationFromSourceId(6);
+					$layer['name'] = $source['name'];
+					$layer['uiLabels'] = $source['uiLabels'];
+				}
+			}
+	        
             $image = $this->_buildImageLayer($layer);
             array_push($imageLayers, $image);
         }
