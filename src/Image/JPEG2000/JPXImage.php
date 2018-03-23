@@ -48,7 +48,7 @@ class Image_JPEG2000_JPXImage
      */
     protected function buildJPXImage($frames, $linked, $kduMerge = HV_KDU_MERGE_BIN)
     {
-        $cmd =  "PATH=\"\" $kduMerge -s -";
+        $cmd = "PATH=\"\" $kduMerge -s /dev/stdin";
         // Input JP2s
         $stdin = '-i ' . implode(',', $frames);
         // Virtual JPX
@@ -64,7 +64,7 @@ class Image_JPEG2000_JPXImage
           $msg = sprintf("Error creating JPX file\n" .
                          "COMMAND:\n%s\nARGUMENTS:\n%s\nRETURN VALUE: %d\nOUTPUT:\n%s",
                          $cmd, $stdin, $return, $output);
-          if(file_exists($this->outputFile)) {
+          if (file_exists($this->outputFile)) {
               unlink($this->outputFile);
           }
           throw new Exception($msg, 14);
