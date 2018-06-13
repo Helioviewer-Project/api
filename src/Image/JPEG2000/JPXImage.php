@@ -77,7 +77,31 @@ class Image_JPEG2000_JPXImage
           1 => array('pipe', 'w'),
           2 => array('pipe', 'w')
         );
-        $proc = proc_open("$cmd 2>&1", $dspec, $pipes);
+	/*
+	**  Check input for any illegal characters.
+	**  Whitelist: 
+	**	$cmd:       A-Z  a-z  0-9  .  -  _  /  "  =  and whitespace
+	**	$stdin:     A-Z  a-z  0-9  .  -  _  /  and whitespace
+	**  Drop the command if invalid. No attempt to remove escape characters.
+	*/
+	//check $cmd for illegal characters
+	if(preg_match('/[^A-Za-z0-9\.\-\_\/\"\=\s]/' , $cmd) === 0){
+	    //$cmd string does NOT contain any illegal characters
+	    //continue to check $stdin for illegal characters
+	    if(preg_match('/[^A-Za-z0-9\.\-\_\/\s]/' , $stdin) === 0){
+		//$stdin string does NOT contain any illegal characters
+		//start the process
+		$proc = proc_open("$cmd 2>&1", $dspec, $pipes);
+	    }else{
+		//$stdin string contains illegal characters DO NOT EXECUTE
+		//exit with error. input params contain illegal character(s)
+		return 3;
+	    }
+	}else{
+	    //$cmd string contains illegal characters DO NOT EXECUTE
+	    //exit with error. command contains illegal character(s)
+	    return 2;
+	}
         if (is_resource($proc)) {
           fwrite($pipes[0], $stdin);
           fclose($pipes[0]);
