@@ -48,31 +48,72 @@ class Image_JPEG2000_JPXImage
      */
     protected function buildJPXImage($frames, $linked, $kduMerge = HV_KDU_MERGE_BIN)
     {
-        //Append filepaths to kdu_merge command
-        $cmd =  "$kduMerge -i ";
-
-        foreach ($frames as $jp2) {
-            if ( @filesize($jp2) === false ) {
-                if(!empty($jp2)){
-	                error_log('File is missing:  '.$jp2);
-                }
-            }else {
-                $cmd .= "$jp2,";
-            }
-        }
-
-        // Drop trailing comma
-        $cmd = substr($cmd, 0, -1);
-
-        // Virtual JPX files
+        $cmd = "PATH=\"\" $kduMerge -s /dev/stdin";
+        // Input JP2s
+        $stdin = '-i ' . implode(',', $frames);
+        // Virtual JPX
         if ($linked) {
-            $cmd .= " -links";
+            $stdin .= ' -links';
         }
-
-        $cmd .= " -o " . $this->outputFile;
-
+        // Output JPX file
+        $stdin .= ' -o ' . $this->outputFile;
         // Execute kdu_merge command
-        exec(escapeshellcmd($cmd), $output, $return);
+        $output = '';
+        $return = $this->p2sc_execute($cmd, $stdin, $output);
+        if ($return != 0) {
+          $msg = sprintf("Error creating JPX file\n" .
+                         "COMMAND:\n%s\nARGUMENTS:\n%s\nRETURN VALUE: %d\nOUTPUT:\n%s",
+                         $cmd, $stdin, $return, $output);
+          if (file_exists($this->outputFile)) {
+              unlink($this->outputFile);
+          }
+          throw new Exception($msg, 14);
+        }
+    }
+
+    private function p2sc_execute($cmd, $stdin, &$output) {
+        $dspec = array(
+          0 => array('pipe', 'r'),
+          1 => array('pipe', 'w'),
+          2 => array('pipe', 'w')
+        );
+	/*
+	**  Check input for any illegal characters.
+	**  Whitelist: 
+	**	$cmd:       A-Z  a-z  0-9  .  -  _  /  "  =  and whitespace
+	**	$stdin:     A-Z  a-z  0-9  .  -  _  /  and whitespace
+	**  Drop the command if invalid. No attempt to remove escape characters.
+	*/
+	//check $cmd for illegal characters
+	if(preg_match('/[^A-Za-z0-9\.\-\_\/\"\=\s]/' , $cmd) === 0){
+	    //$cmd string does NOT contain any illegal characters
+	    //continue to check $stdin for illegal characters
+	    if(preg_match('/[^A-Za-z0-9\.\-\_\/\s]/' , $stdin) === 0){
+		//$stdin string does NOT contain any illegal characters
+		//start the process
+		$proc = proc_open("$cmd 2>&1", $dspec, $pipes);
+	    }else{
+		//$stdin string contains illegal characters DO NOT EXECUTE
+		//exit with error. input params contain illegal character(s)
+		return 3;
+	    }
+	}else{
+	    //$cmd string contains illegal characters DO NOT EXECUTE
+	    //exit with error. command contains illegal character(s)
+	    return 2;
+	}
+        if (is_resource($proc)) {
+          fwrite($pipes[0], $stdin);
+          fclose($pipes[0]);
+
+          $out = stream_get_contents($pipes[1]);
+          fclose($pipes[1]);
+          fclose($pipes[2]);
+
+          $output = $out;
+          return proc_close($proc);
+        } else
+          return 1;
     }
 
     /**
