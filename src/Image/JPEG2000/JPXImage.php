@@ -88,7 +88,7 @@ class Image_JPEG2000_JPXImage
 	if(preg_match('/[^A-Za-z0-9\.\-\_\/\"\=\s]/' , $cmd) === 0){
 	    //$cmd string does NOT contain any illegal characters
 	    //continue to check $stdin for illegal characters
-	    if(preg_match('/[^A-Za-z0-9\.\-\_\/\s]/' , $stdin) === 0){
+	    if(preg_match('/[^A-Za-z0-9\.\,\-\_\/\s]/' , $stdin) === 0){
 		//$stdin string does NOT contain any illegal characters
 		//start the process
 		$proc = proc_open("$cmd 2>&1", $dspec, $pipes);
