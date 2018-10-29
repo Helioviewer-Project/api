@@ -98,7 +98,8 @@ function loadModule($params) {
         'getEvents'              	=> 'SolarEvents',
         'importEvents'           	=> 'SolarEvents',
         'getEventsByEventLayers' 	=> 'SolarEvents',
-        'getEventGlossary'       	=> 'SolarEvents'
+        'getEventGlossary'       	=> 'SolarEvents',
+        'getSolarBodies'            => 'SolarBodies'
     );
 
     include_once HV_ROOT_DIR.'/../src/Validation/InputValidator.php';
