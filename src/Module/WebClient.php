@@ -485,7 +485,7 @@ class Module_WebClient implements Module {
         // Create cache dir if it doesn't already exist
         $cacheDir = HV_CACHE_DIR . '/remote';
         if ( !@file_exists($cacheDir) ) {
-            @mkdir($cacheDir, 0777, true);
+            @mkdir($cacheDir, 0775, true);
         }
 
         // Check for feed in cache
@@ -1082,7 +1082,7 @@ class Module_WebClient implements Module {
         $cacheDir = HV_CACHE_DIR.'/tiles'.$directory;
 
         if ( !@file_exists($cacheDir) ) {
-            @mkdir($cacheDir, 0777, true);
+            @mkdir($cacheDir, 0775, true);
         }
     }
 

@@ -776,6 +776,7 @@ def create_screenshots_table(cursor):
       `scaleX`            FLOAT DEFAULT '0',
       `scaleY`            FLOAT DEFAULT '0',
       `numLayers`         TINYINT UNSIGNED NOT NULL DEFAULT 1,
+      `switchSources`     TINYINT(1),
        PRIMARY KEY (`id`)
     ) DEFAULT CHARSET=utf8;""")
 
