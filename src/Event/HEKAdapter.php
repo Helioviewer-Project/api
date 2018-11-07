@@ -459,8 +459,8 @@ class Event_HEKAdapter {
 	
 	                // Check existence of cache directory
 	                if ( !@file_exists($cache_base_dir) ) {
-	                    @mkdir($cache_base_dir, 0777, true);
-	                    @chmod($cache_base_dir, 0777);
+	                    @mkdir($cache_base_dir, 0775, true);
+	                    @chmod($cache_base_dir, 0775);
 	                }
 	
 	                $count = count($data);
@@ -1371,7 +1371,7 @@ class Event_HEKAdapter {
 
         // Check for existence of cache sub-directory
         if ( !@file_exists($cache_base_dir) ) {
-            @mkdir($cache_base_dir, 0777, true);
+            @mkdir($cache_base_dir, 0775, true);
         }
 
         $cache_file      = rawurlencode($event['kb_archivid']).'.png';

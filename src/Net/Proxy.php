@@ -54,9 +54,9 @@ class Net_Proxy {
             curl_setopt($curl_handle, CURLOPT_CONNECTTIMEOUT, 30);
             curl_setopt($curl_handle, CURLOPT_RETURNTRANSFER, 1);
 			
-			if(!empty(HV_PROXY_HOST)){
+			if( defined('HV_PROXY_HOST') && !((boolean)HV_PROXY_HOST) ){//exists and is not an empty string
 				curl_setopt($curl_handle, CURLOPT_PROXY, HV_PROXY_HOST);
-				if(!empty(HV_PROXY_USER_PASSWORD)){
+				if( defined('HV_PROXY_USER_PASSWORD') && !((boolean)HV_PROXY_USER_PASSWORD) ){//exists and is not an empty string
 					curl_setopt($curl_handle, CURLOPT_PROXYUSERPWD, HV_PROXY_USER_PASSWORD);
 				}
 			}
@@ -90,13 +90,13 @@ class Net_Proxy {
             curl_setopt($curl_handle, CURLOPT_CONNECTTIMEOUT, 30);
             curl_setopt($curl_handle, CURLOPT_RETURNTRANSFER, 1);
 			
-			if(!empty(HV_PROXY_HOST)){
+			if( defined('HV_PROXY_HOST') && !((boolean)HV_PROXY_HOST) ) {//exists and is not an empty string
 				curl_setopt($curl_handle, CURLOPT_PROXY, HV_PROXY_HOST);
-				if(!empty(HV_PROXY_USER_PASSWORD)){
+				if( defined('HV_PROXY_USER_PASSWORD') && !((boolean)HV_PROXY_USER_PASSWORD) ){//exists and is not an empty string
 					curl_setopt($curl_handle, CURLOPT_PROXYUSERPWD, HV_PROXY_USER_PASSWORD);
 				}
 			}
-
+            
             $results = curl_exec($curl_handle);
             curl_close($curl_handle);
             return $results;

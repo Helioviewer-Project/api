@@ -1215,7 +1215,7 @@ class Image_Composite_HelioviewerCompositeImage {
         $this->_format   = $path_parts['extension'];
 
         if ( !@file_exists($this->_dir) ) {
-            if ( !@mkdir($this->_dir, 0777, true) ) {
+            if ( !@mkdir($this->_dir, 0775, true) ) {
                 throw new Exception(
                     'Unable to create directory: '. $this->_dir, 50);
             }

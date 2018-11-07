@@ -36,14 +36,14 @@ class JP2parser:
         image = dict()
         
         #Calculate sun position/size/scale
-        dimensions              = self.getImageDimensions();
-        refPixel                = self.getRefPixelCoords();
-        imageScale              = self.getImagePlateScale();
-        dsun                    = self.getDSun();
-        layeringOrder           = self.getLayeringOrder();
+        dimensions              = self.getImageDimensions()
+        refPixel                = self.getRefPixelCoords()
+        imageScale              = self.getImagePlateScale()
+        dsun                    = self.getDSun()
+        layeringOrder           = self.getLayeringOrder()
 
         # Normalize image scale
-        imageScale = imageScale * (dsun / __HV_CONSTANT_AU__);
+        imageScale = imageScale * (dsun / __HV_CONSTANT_AU__)
         
         image['scale'] = imageScale
         image['width'] = dimensions['width']
