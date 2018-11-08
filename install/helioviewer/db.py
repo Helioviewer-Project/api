@@ -893,7 +893,8 @@ def enable_datasource(cursor, sourceId):
     Marks a single datasource as enabled to signal that there is data for that
     source
     """
-    cursor.execute("UPDATE datasources SET enabled=1 WHERE id=%d;" % sourceId)
+    sql="UPDATE datasources SET enabled=1 WHERE id=%s;" % sourceId
+    cursor.execute(sql)
 
 def update_image_table_index(cursor):
     """Updates index on data table"""

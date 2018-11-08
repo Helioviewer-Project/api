@@ -35,7 +35,7 @@ def find_images(path):
     return images
 
 
-def process_jp2_images(images, root_dir, cursor, mysql=True, step_fxn=None, cursor_v2=None):
+def process_jp2_images(images, root_dir, db, cursor, mysql=True, step_fxn=None, cursor_v2=None):
     """Processes a collection of JPEG 2000 Images"""
     #if mysql:
     #    import mysql.connector
@@ -49,10 +49,10 @@ def process_jp2_images(images, root_dir, cursor, mysql=True, step_fxn=None, curs
     while len(images) > 0:
         subset = images[:__INSERTS_PER_QUERY__]
         images = images[__INSERTS_PER_QUERY__:]
-        insert_images(subset, sources, root_dir, cursor, mysql, step_fxn, cursor_v2)
+        insert_images(subset, sources, root_dir, db, cursor, mysql, step_fxn, cursor_v2)
 
 
-def insert_images(images, sources, rootdir, cursor, mysql, step_function=None, cursor_v2=None):
+def insert_images(images, sources, rootdir, db, cursor, mysql, step_function=None, cursor_v2=None):
     """Inserts multiple images into a database using a single query
 
     Parameters
@@ -126,6 +126,9 @@ def insert_images(images, sources, rootdir, cursor, mysql, step_function=None, c
     # Remove trailing comma
     query = query[:-1] + ";"
     query_v2 = query_v2[:-1] + ";"
+
+    # Commit enabling datasources
+    db.commit()
 
     # Execute query
     try:
