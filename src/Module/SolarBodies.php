@@ -22,7 +22,7 @@ class Module_SolarBodies implements Module {
         $this->_options = array();
 
         // list of observers - add new observers here
-        $this->_observers = array("earth");
+        $this->_observers = array("soho");
         // list of bodies to track - add new celestial bodies or satellites here
         $this->_bodies = array("mercury","venus","jupiter","saturn","uranus","neptune");
     }
