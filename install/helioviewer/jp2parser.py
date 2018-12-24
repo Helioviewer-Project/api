@@ -77,7 +77,8 @@ class JP2parser:
         image['observatory'] = imageData.observatory.replace(" ","_")
         image['instrument'] = imageData.instrument.split(" ")[0]
         image['detector'] = imageData.detector
-        measurement = str(imageData.measurement).replace(".0 Angstrom", "").replace(".0", "")
+        # Remove explicit units from the measurement
+        measurement = str(imageData.measurement).replace(".0 Angstrom", "").replace(".0 nm","").replace(".0", "")
         # Convert Yohkoh measurements to be helioviewer compatible
         if image['observatory'] == "Yohkoh":
             if measurement == "AlMg":

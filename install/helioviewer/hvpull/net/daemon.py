@@ -410,7 +410,7 @@ class ImageRetrievalDaemon:
             images.append(image_params)
 
         # Add valid images to main Database
-        process_jp2_images(images, self.image_archive, self._cursor, True, None, self._cursor_v2)
+        process_jp2_images(images, self.image_archive, self._db, self._cursor, True, None, self._cursor_v2)
 
         logging.info("Added %d images to database", len(images))
 
@@ -670,7 +670,8 @@ class ImageRetrievalDaemon:
             "rob": "ROBDataServer",
             "uio": "UIODataServer",
             "trace": "TRACEDataServer",
-            "xrt": "XRTDataServer"
+            "xrt": "XRTDataServer",
+            "kcor": "KCORDataServer"
         }
 
     @classmethod
