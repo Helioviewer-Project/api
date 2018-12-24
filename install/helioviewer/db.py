@@ -279,6 +279,7 @@ def create_datasource_table(cursor):
 (80, 'TRACE 1600', 'TRACE 1600', 'Å', 1, 0, '', 0, 0, 0, 0),
 (81, 'TRACE 1700', 'TRACE 1700', 'Å', 1, 0, '', 0, 0, 0, 0),
 (82, 'TRACE white-light', 'TRACE white-light', '', 1, 0, '', 0, 0, 0, 0),
+(83, 'COSMO KCor', 'COSMO KCor', 'NM', 1, 0, '', 1, 0, 0, 0),
 (10001, 'XRT Any/Any', NULL, NULL, 1, 0, '38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74', 1, 1, 0, 0),
 (10002, 'XRT Any/Al_mesh', NULL, NULL, 1, 0, '38,44,50,56,62,69', 2, 0, 1, 0),
 (10003, 'XRT Any/Al_thick', NULL, NULL, 1, 0, '39,45,51,57,63,70', 2, 0, 1, 0),
@@ -310,7 +311,16 @@ def create_datasource_property_table(cursor):
       KEY `name` (`name`),
       KEY `fitsName` (`fitsName`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
-
+    
+    """Inserts properties about datasource
+        @sourceId:      unique sidentifier which matches datasource table id
+        @label:         one of the following Observatory/Instrument/Detector/Measurement
+        @name:          the name that is embedded in the jp2 file
+        @fitsName       the name that is embedded in the jp2 file
+        @description:   verbal description of datasource
+        @uiOrder:       the order of property appearance embedded in the jp2 image,
+                        refers to the order of drop-down ui elements for choosing 
+                        image source on helioviewer.org"""
     cursor.execute("""
 INSERT INTO `datasource_property` (`sourceId`, `label`, `name`, `fitsName`, `description`, `uiOrder`) VALUES
 (0, 'Observatory', 'SOHO', 'SOHO', 'Solar and Heliospheric Observatory', 1),
@@ -599,6 +609,10 @@ INSERT INTO `datasource_property` (`sourceId`, `label`, `name`, `fitsName`, `des
 (81, 'Measurement', '1700', '1700', 'TRACE 1700', 2),
 (82, 'Observatory', 'TRACE', 'TRACE', 'Transition Region and Coronal Explorer', 1),
 (82, 'Measurement', 'white-light', 'WL', 'TRACE white-light', 2),
+(83, 'Observatory', 'MLSO', 'MLSO', 'MLSO', '1'),
+(83, 'Instrument', 'COSMO', 'COSMO', 'COSMO', '2'),
+(83, 'Detector', 'KCor', 'KCor', 'KCor', '3'),
+(83, 'Measurement', '735', '735', '735', '4'),
 (10001, 'Observatory', 'Hinode', 'Hinode', '', 1),
 (10001, 'Instrument', 'XRT', 'XRT', '', 2),
 (10001, 'Filter Wheel 1', 'Any', 'Any', '', 3),
