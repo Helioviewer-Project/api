@@ -17,6 +17,7 @@
  */
 require_once HV_ROOT_DIR.'/../src/Image/JPEG2000/JP2Image.php';
 require_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
+require_once HV_ROOT_DIR.'/../src/Module/SolarBodies.php';
 
 class Image_Composite_HelioviewerCompositeImage {
 
@@ -433,6 +434,8 @@ class Image_Composite_HelioviewerCompositeImage {
 
             $this->_addMovieIcons($image);
         }
+
+        $this->_addCelestialBodiesLabels($image);
 
         if ( $this->scale && $this->scaleType == 'earth' ) {
             $this->_addEarthScale($image);
@@ -855,7 +858,78 @@ class Image_Composite_HelioviewerCompositeImage {
             
         }
 	}
+    /**
+     * Composites Celestial Bodies labels
+     * 
+     * @param object $imagickImage An Imagick object
+     * 
+     * @return void
+     */
 
+    private function _addCelestialBodiesLabels($imagickImage) {
+        //converts received date into unix timestamp in miliseconds
+        $unixTimeInteger = (int)(strtotime($this->date)) * 1000;
+        //loads an instance of the solar bodies module
+        $SolarBodiesModule = new Module_SolarBodies();
+        //searches for labels at request time
+        $labels = $SolarBodiesModule->getSolarBodiesLabelsForScreenshot($unixTimeInteger);
+        //create pixel objects
+        $black = new IMagickPixel('#000C');
+        $white = new IMagickPixel('white');
+        //isolate the labels array
+        $coordinates = $labels["labels"];
+        //parse out the observers
+        $observers = array_keys($coordinates);
+        foreach($observers as $observer){
+            //parse out the celestial bodies unde the given observer
+            $bodies = array_keys($coordinates[$observer]);
+            foreach($bodies as $body){
+                //if there is data
+                if($coordinates[$observer][$body]!=NULL){
+                    //Prepare coordinates
+                    $xCenter = $this->width / 2;
+                    $yCenter = $this->height / 2;
+                    
+                    //Calculate offset
+                    $xCenterOffset = ($this->roi->left() + $this->roi->right()) / 2 / $this->roi->imageScale();
+                    $yCenterOffset = ($this->roi->top() + $this->roi->bottom()) / 2 / $this->roi->imageScale();
+                    
+                    //Calculate position of label
+                    $x = -$xCenterOffset + $xCenter + ((int)($coordinates[$observer][$body]->{'x'}) / $this->roi->imageScale()) -2;
+                    $y = -$yCenterOffset + $yCenter + ((((int)($coordinates[$observer][$body]->{'y'}) / $this->roi->imageScale()) - 12 ) * -1);
+                    
+                    // Outline labelss in black
+                    $underText = new IMagickDraw();
+                    $underText->setTextEncoding('utf-8');
+                    $underText->setFont(HV_ROOT_DIR.'/../resources/fonts/DejaVuSans.ttf');
+                    $underText->setFontSize(12);
+                    $underText->setStrokeColor($black);
+                    $underText->setStrokeAntialias(true);
+                    $underText->setStrokeWidth(4);
+                    $underText->setStrokeOpacity(0.6);
+                    $imagickImage->annotateImage($underText, $x, $y, 0, ucfirst($body));
+
+                    // Write labels in white over outline
+                    $text = new IMagickDraw();
+                    $text->setTextEncoding('utf-8');
+                    $text->setFont(HV_ROOT_DIR.'/../resources/fonts/DejaVuSans.ttf');
+                    $text->setFontSize(12);
+                    $text->setFillColor($white);
+                    $text->setTextAntialias(true);
+                    $text->setStrokeWidth(0);
+                    $imagickImage->annotateImage($text, $x, $y, 0, ucfirst($body));
+            
+                    // Cleanup
+                    $underText->destroy();
+                    $text->destroy();
+                }
+            }
+        }
+
+        // Cleanup
+        $black->destroy();
+        $white->destroy();
+    }
 
     /**
      * Composites an Earth-scale indicator

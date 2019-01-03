@@ -97,7 +97,6 @@ class Module_SolarBodies implements Module {
         }
         
         $this->_printJSON(json_encode($solarObservers));
-
     }
 
     public function getSolarBodies() {
@@ -198,6 +197,39 @@ class Module_SolarBodies implements Module {
         );
 
         $this->_printJSON(json_encode($solarObservers));//send the response
+    }
+
+    public function getSolarBodiesLabelsForScreenshot($requestUnixTime){
+        $requestTimeInteger = (int)$requestUnixTime;
+        // --- start generating labels ---
+        $solarObserversLabels = array();//initialize observers array
+
+        foreach($this->_observers as $observer ){//cycle through each observer in the list
+            $solarBodies = array();//init array for bodies
+            foreach($this->_bodies as $body){//cycle through each body in the list
+                $filePath = $this->_findFile($requestTimeInteger, $observer, $body);//generate filename
+                $bodyData = null;
+                if($filePath != null){
+                    try{
+                        $file = json_decode(file_get_contents($filePath));//open, read, and parse the file as an object
+                        $bodyData = $this->_searchNearestTime($requestTimeInteger, $file, $observer, $body);
+                    }catch (Exception $e){
+                        //file does not exit
+                    }    
+                }
+                $newBody = array(//set up a key value pair
+                    $body => $bodyData
+                );
+                $solarBodies = array_merge($solarBodies, $newBody);//add new body coordinates to the existing array
+            }//end foreach bodies
+            $newObserver = array($observer => $solarBodies);//create a key-value pair of observer-bodies 
+            $solarObserversLabels = array_merge($solarObserversLabels,$newObserver);//add to list of all observers
+        }//end foreach observers
+        // --- end generating labels ---
+        $solarObservers = array(
+            "labels"        => $solarObserversLabels
+        );
+        return $solarObservers;
     }
 
     public function getSolarBodiesTrajectories(){
