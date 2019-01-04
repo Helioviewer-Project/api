@@ -54,6 +54,7 @@ class Image_Composite_HelioviewerCompositeImage {
     protected $reqEndDate;
     protected $reqObservationDate;
     protected $switchSources;
+    protected $celestialBodiesLabels;
 
     /**
      * Creates a new HelioviewerCompositeImage instance
@@ -70,7 +71,7 @@ class Image_Composite_HelioviewerCompositeImage {
      * @return void
      */
     public function __construct($layers, $events, $eventLabels, $movieIcons, $scale,
-        $scaleType, $scaleX, $scaleY, $obsDate, $roi, $options) {
+        $scaleType, $scaleX, $scaleY, $obsDate, $roi, $celestialBodiesLabels, $options) {
 
         set_time_limit(90); // Extend time limit to avoid timeouts
 
@@ -119,6 +120,7 @@ class Image_Composite_HelioviewerCompositeImage {
         $this->reqEndDate = $options['reqEndDate'];
         $this->reqObservationDate = $options['reqObservationDate'];
         $this->switchSources = $options['switchSources'];
+        $this->celestialBodiesLabels = $celestialBodiesLabels;
 
         $this->maxPixelScale = 0.60511022;  // arcseconds per pixel
     }
@@ -435,7 +437,9 @@ class Image_Composite_HelioviewerCompositeImage {
             $this->_addMovieIcons($image);
         }
 
-        $this->_addCelestialBodiesLabels($image);
+        if ( $this->celestialBodiesLabels != '[]'){
+            $this->_addCelestialBodiesLabels($image);
+        }
 
         if ( $this->scale && $this->scaleType == 'earth' ) {
             $this->_addEarthScale($image);
@@ -886,42 +890,45 @@ class Image_Composite_HelioviewerCompositeImage {
             foreach($bodies as $body){
                 //if there is data
                 if($coordinates[$observer][$body]!=NULL){
-                    //Prepare coordinates
-                    $xCenter = $this->width / 2;
-                    $yCenter = $this->height / 2;
-                    
-                    //Calculate offset
-                    $xCenterOffset = ($this->roi->left() + $this->roi->right()) / 2 / $this->roi->imageScale();
-                    $yCenterOffset = ($this->roi->top() + $this->roi->bottom()) / 2 / $this->roi->imageScale();
-                    
-                    //Calculate position of label
-                    $x = -$xCenterOffset + $xCenter + ((int)($coordinates[$observer][$body]->{'x'}) / $this->roi->imageScale()) -2;
-                    $y = -$yCenterOffset + $yCenter + ((((int)($coordinates[$observer][$body]->{'y'}) / $this->roi->imageScale()) - 12 ) * -1);
-                    
-                    // Outline labelss in black
-                    $underText = new IMagickDraw();
-                    $underText->setTextEncoding('utf-8');
-                    $underText->setFont(HV_ROOT_DIR.'/../resources/fonts/DejaVuSans.ttf');
-                    $underText->setFontSize(12);
-                    $underText->setStrokeColor($black);
-                    $underText->setStrokeAntialias(true);
-                    $underText->setStrokeWidth(4);
-                    $underText->setStrokeOpacity(0.6);
-                    $imagickImage->annotateImage($underText, $x, $y, 0, ucfirst($body));
+                    //the body matches the ones selected on the front-end
+                    if(strpos($this->celestialBodiesLabels,$body)!== FALSE){
+                        //Prepare coordinates
+                        $xCenter = $this->width / 2;
+                        $yCenter = $this->height / 2;
+                        
+                        //Calculate offset
+                        $xCenterOffset = ($this->roi->left() + $this->roi->right()) / 2 / $this->roi->imageScale();
+                        $yCenterOffset = ($this->roi->top() + $this->roi->bottom()) / 2 / $this->roi->imageScale();
+                        
+                        //Calculate position of label
+                        $x = -$xCenterOffset + $xCenter + ((int)($coordinates[$observer][$body]->{'x'}) / $this->roi->imageScale()) -2;
+                        $y = -$yCenterOffset + $yCenter + ((((int)($coordinates[$observer][$body]->{'y'}) / $this->roi->imageScale()) - 12 ) * -1);
+                        
+                        // Outline labelss in black
+                        $underText = new IMagickDraw();
+                        $underText->setTextEncoding('utf-8');
+                        $underText->setFont(HV_ROOT_DIR.'/../resources/fonts/DejaVuSans.ttf');
+                        $underText->setFontSize(12);
+                        $underText->setStrokeColor($black);
+                        $underText->setStrokeAntialias(true);
+                        $underText->setStrokeWidth(4);
+                        $underText->setStrokeOpacity(0.6);
+                        $imagickImage->annotateImage($underText, $x, $y, 0, ucfirst($body));
 
-                    // Write labels in white over outline
-                    $text = new IMagickDraw();
-                    $text->setTextEncoding('utf-8');
-                    $text->setFont(HV_ROOT_DIR.'/../resources/fonts/DejaVuSans.ttf');
-                    $text->setFontSize(12);
-                    $text->setFillColor($white);
-                    $text->setTextAntialias(true);
-                    $text->setStrokeWidth(0);
-                    $imagickImage->annotateImage($text, $x, $y, 0, ucfirst($body));
-            
-                    // Cleanup
-                    $underText->destroy();
-                    $text->destroy();
+                        // Write labels in white over outline
+                        $text = new IMagickDraw();
+                        $text->setTextEncoding('utf-8');
+                        $text->setFont(HV_ROOT_DIR.'/../resources/fonts/DejaVuSans.ttf');
+                        $text->setFontSize(12);
+                        $text->setFillColor($white);
+                        $text->setTextAntialias(true);
+                        $text->setStrokeWidth(0);
+                        $imagickImage->annotateImage($text, $x, $y, 0, ucfirst($body));
+                
+                        // Cleanup
+                        $underText->destroy();
+                        $text->destroy();
+                    }
                 }
             }
         }

@@ -375,10 +375,13 @@ class Module_WebClient implements Module {
         // Region of interest
         $roi = $this->_getRegionOfInterest();
 
+        // Celestial Bodies
+        $celestialBodiesLabels = $this->_params['celestialBodiesLabels'];
+        
         // Create the screenshot
         $screenshot = new Image_Composite_HelioviewerScreenshot(
             $layers, $events, $eventLabels, $movieIcons, $scale, $scaleType, $scaleX,
-            $scaleY, $this->_params['date'], $roi, $this->_options
+            $scaleY, $this->_params['date'], $roi, $celestialBodiesLabels , $this->_options
         );
 
         // Display screenshot
