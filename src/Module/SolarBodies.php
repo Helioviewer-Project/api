@@ -135,9 +135,9 @@ class Module_SolarBodies implements Module {
             foreach($this->_bodies as $body){//cycle through each body in the list
                 $newBody = array();//initialize array for body
                 $newTimes = array();//initialize array for times
-                //$filePath = $this->_findFile($requestTimeInteger, $observer, $body);
+                $filePath = $this->_findFile($requestTimeInteger, $observer, $body);
                 $bodyData = array();
-                /*
+                
                 if($filePath != null){
                     try{
                         $file = json_decode(file_get_contents($filePath));//open, read, and parse the file as an object
@@ -146,7 +146,7 @@ class Module_SolarBodies implements Module {
                         //file does not exit
                     }    
                 }
-                */
+                
                 $newBody = array(
                     $body => $bodyData
                 );
@@ -200,7 +200,7 @@ class Module_SolarBodies implements Module {
     }
 
     public function getSolarBodiesLabelsForScreenshot($requestUnixTime){
-        $requestTimeInteger = (int)$requestUnixTime;
+        $requestTimeInteger = $requestUnixTime;
         // --- start generating labels ---
         $solarObserversLabels = array();//initialize observers array
 
@@ -229,6 +229,45 @@ class Module_SolarBodies implements Module {
         $solarObservers = array(
             "labels"        => $solarObserversLabels
         );
+        return $solarObservers;
+    }
+
+    public function getSolarBodiesTrajectoriesForScreenshot($requestUnixTime){
+        $requestTimeInteger = $requestUnixTime;
+        
+        // --- start generating trajectories ---
+        $solarObserversTrajectories = array();//initialize observers array
+        foreach($this->_observers as $observer ){//cycle through each observer in the list
+            $solarBodies = array();//init array for bodies
+            foreach($this->_bodies as $body){//cycle through each body in the list
+                $newBody = array();//initialize array for body
+                $newTimes = array();//initialize array for times
+                $filePath = $this->_findFile($requestTimeInteger, $observer, $body);
+                $bodyData = array();
+                
+                if($filePath != null){
+                    try{
+                        $file = json_decode(file_get_contents($filePath));//open, read, and parse the file as an object
+                        $bodyData = $file->{$observer}->{$body};
+                    }catch (Exception $e){
+                        //file does not exit
+                    }    
+                }
+                
+                $newBody = array(
+                    $body => $bodyData
+                );
+                $solarBodies = array_merge($solarBodies, $newBody);//add new body coordinates to the existing array
+            }//end foreach bodies
+            $newObserver = array($observer => $solarBodies);//create a key-value pair of observer-bodies 
+            $solarObserversTrajectories = array_merge($solarObserversTrajectories,$newObserver);//add to list of all observers
+        }//end foreach observers
+        // --- end generating trajectories ---
+        
+        $solarObservers = array(
+            "trajectories"  => $solarObserversTrajectories
+        );
+
         return $solarObservers;
     }
 
