@@ -55,6 +55,7 @@ class Image_Composite_HelioviewerCompositeImage {
     protected $reqObservationDate;
     protected $switchSources;
     protected $celestialBodiesLabels;
+    protected $celestialBodiesTrajectories;
 
     /**
      * Creates a new HelioviewerCompositeImage instance
@@ -71,7 +72,7 @@ class Image_Composite_HelioviewerCompositeImage {
      * @return void
      */
     public function __construct($layers, $events, $eventLabels, $movieIcons, $scale,
-        $scaleType, $scaleX, $scaleY, $obsDate, $roi, $celestialBodiesLabels, $options) {
+        $scaleType, $scaleX, $scaleY, $obsDate, $roi, $celestialBodies, $options) {
 
         set_time_limit(90); // Extend time limit to avoid timeouts
 
@@ -120,7 +121,9 @@ class Image_Composite_HelioviewerCompositeImage {
         $this->reqEndDate = $options['reqEndDate'];
         $this->reqObservationDate = $options['reqObservationDate'];
         $this->switchSources = $options['switchSources'];
-        $this->celestialBodiesLabels = $celestialBodiesLabels;
+
+        $this->celestialBodiesLabels = $celestialBodies['labels'];
+        $this->celestialBodiesTrajectories = $celestialBodies['trajectories'];
 
         $this->maxPixelScale = 0.60511022;  // arcseconds per pixel
     }
@@ -873,67 +876,75 @@ class Image_Composite_HelioviewerCompositeImage {
      */
 
     private function _addCelestialBodiesLabels($imagickImage) {
-        //converts received date into unix timestamp in miliseconds
+        // Converts received date into unix timestamp in miliseconds
         $unixTimeInteger = (int)(strtotime($this->date)) * 1000;
-        //loads an instance of the solar bodies module
+        // Loads an instance of the solar bodies module
         $SolarBodiesModule = new Module_SolarBodies();
-        //searches for labels at request time
+        // Searches for labels at request time
         $labels = $SolarBodiesModule->getSolarBodiesLabelsForScreenshot($unixTimeInteger);
-        //create pixel objects
-        $black = new IMagickPixel('#000C');
+        // Create pixel and text draw objects
+        $black = new IMagickPixel('#000');
         $white = new IMagickPixel('white');
-        //isolate the labels array
+        // Outline text object
+        $underText = new IMagickDraw();
+        $underText->setTextEncoding('utf-8');
+        $underText->setFont('Helvetica');
+        //$underText->setFont(HV_ROOT_DIR.'/../resources/fonts/DejaVuSans.ttf');
+        $underText->setFontSize(12);
+        $underText->setStrokeColor($black);
+        $underText->setStrokeAntialias(true);
+        $underText->setStrokeWidth(4);
+        $underText->setStrokeOpacity(0.7);
+        // Text object
+        $text = new IMagickDraw();
+        $text->setTextEncoding('utf-8');
+        $text->setFont('Helvetica');
+        //$text->setFont(HV_ROOT_DIR.'/../resources/fonts/DejaVuSans.ttf');
+        $text->setFontSize(12);
+        $text->setFillColor($white);
+        $text->setTextAntialias(true);
+        $text->setStrokeWidth(0);
+
+        // Isolate the labels array
         $coordinates = $labels["labels"];
-        //parse out the observers
+        // Parse out the observers
         $observers = array_keys($coordinates);
         foreach($observers as $observer){
-            //parse out the celestial bodies unde the given observer
+            // Parse out the celestial bodies under the given observer
             $bodies = array_keys($coordinates[$observer]);
             foreach($bodies as $body){
-                //if there is data
+                // There is data
                 if($coordinates[$observer][$body]!=NULL){
-                    //the body matches the ones selected on the front-end
+                    // Body matches selection on front-end
                     if(strpos($this->celestialBodiesLabels,$body)!== FALSE){
-                        //Prepare coordinates
+                        // Prepare for coordinates
                         $xCenter = $this->width / 2;
                         $yCenter = $this->height / 2;
                         
-                        //Calculate offset
+                        // Calculate offset
                         $xCenterOffset = ($this->roi->left() + $this->roi->right()) / 2 / $this->roi->imageScale();
                         $yCenterOffset = ($this->roi->top() + $this->roi->bottom()) / 2 / $this->roi->imageScale();
                         
-                        //Calculate position of label
+                        // Calculate position of label
                         $x = -$xCenterOffset + $xCenter + ((int)($coordinates[$observer][$body]->{'x'}) / $this->roi->imageScale()) -2;
                         $y = -$yCenterOffset + $yCenter + ((((int)($coordinates[$observer][$body]->{'y'}) / $this->roi->imageScale()) - 12 ) * -1);
                         
                         // Outline labelss in black
-                        $underText = new IMagickDraw();
-                        $underText->setTextEncoding('utf-8');
-                        $underText->setFont(HV_ROOT_DIR.'/../resources/fonts/DejaVuSans.ttf');
-                        $underText->setFontSize(12);
-                        $underText->setStrokeColor($black);
-                        $underText->setStrokeAntialias(true);
-                        $underText->setStrokeWidth(4);
-                        $underText->setStrokeOpacity(0.6);
+                        
                         $imagickImage->annotateImage($underText, $x, $y, 0, ucfirst($body));
 
                         // Write labels in white over outline
-                        $text = new IMagickDraw();
-                        $text->setTextEncoding('utf-8');
-                        $text->setFont(HV_ROOT_DIR.'/../resources/fonts/DejaVuSans.ttf');
-                        $text->setFontSize(12);
-                        $text->setFillColor($white);
-                        $text->setTextAntialias(true);
-                        $text->setStrokeWidth(0);
+                        
                         $imagickImage->annotateImage($text, $x, $y, 0, ucfirst($body));
                 
-                        // Cleanup
-                        $underText->destroy();
-                        $text->destroy();
+                        
                     }
                 }
             }
         }
+        // Cleanup
+        $underText->destroy();
+        $text->destroy();
 
         // Cleanup
         $black->destroy();
@@ -941,66 +952,100 @@ class Image_Composite_HelioviewerCompositeImage {
     }
 
     /**
-     * Composites Celestial Bodies labels
+     * Composites Celestial Bodies Trajectories
      * 
      * @param object $imagickImage An Imagick object
      * 
      * @return void
      */
     private function _addCelestialBodiesTrajectories($imagickImage){
-        //converts received date into unix timestamp in miliseconds
+        // Converts received date into unix timestamp in miliseconds
         $unixTimeInteger = (int)(strtotime($this->date)) * 1000;
-        //loads an instance of the solar bodies module
+        // Loads an instance of the solar bodies module
         $SolarBodiesModule = new Module_SolarBodies();
-        //searches for labels at request time
+        // Searches for labels at request time
         $trajectories = $SolarBodiesModule->getSolarBodiesTrajectoriesForScreenshot($unixTimeInteger);
-        //create pixel objects
-        $white = new IMagickPixel('white');
-        //isolate the labels array
+        // Create pixel and draw objects
+        $front = new IMagickPixel('#A0A0A0');
+        $behind = new ImagickPixel('#808080');
+        $drawPoints = new IMagickDraw();
+        $drawPoints->setFillColor($behind);
+        $drawTrajectories = new IMagickDraw();
+        $drawTrajectories->setStrokeColor($behind);
+        $drawTrajectories->setFillColor( new ImagickPixel( 'transparent' ) );
+        $r = 2; //radius for circles
+        // Isolate the labels array
         $coordinates = $trajectories["trajectories"];
-        //parse out the observers
+        // Parse out the observers
         $observers = array_keys($coordinates);
         foreach($observers as $observer){
-            //parse out the celestial bodies unde the given observer
+            // Parse out the celestial bodies unde the given observer
             $bodies = array_keys($coordinates[$observer]);
             foreach($bodies as $body){
-                //if there is data
+                // There is data
                 if($coordinates[$observer][$body]!=NULL){
-                    //the body matches the ones selected on the front-end
-                    //if(strpos($this->celestialBodiesLabels,$body)!== FALSE){
-                    $times = array_keys((array)$coordinates[$observer][$body]);
-                    foreach($times as $time){
-                        //Prepare coordinates
-                        $xCenter = $this->width / 2;
-                        $yCenter = $this->height / 2;
-                        
-                        //Calculate offset
-                        $xCenterOffset = ($this->roi->left() + $this->roi->right()) / 2 / $this->roi->imageScale();
-                        $yCenterOffset = ($this->roi->top() + $this->roi->bottom()) / 2 / $this->roi->imageScale();
-                        
-                        //Calculate position of label
-                        $x = -$xCenterOffset + $xCenter + ((int)($coordinates[$observer][$body]->{$time}->{'x'}) / $this->roi->imageScale()) -2;
-                        $y = -$yCenterOffset + $yCenter + ((((int)($coordinates[$observer][$body]->{$time}->{'y'}) / $this->roi->imageScale()) - 12 ) * -1);
-                        
-                        // Write labels in white over outline
-                        $text = new IMagickDraw();
-                        $text->setTextEncoding('utf-8');
-                        $text->setFont(HV_ROOT_DIR.'/../resources/fonts/DejaVuSans.ttf');
-                        $text->setFontSize(20);
-                        $text->setFillColor($white);
-                        $text->setTextAntialias(true);
-                        $text->setStrokeWidth(0);
-                        $imagickImage->annotateImage($text, $x, $y, 0, '.');
-                
-                        // Cleanup
-                        $text->destroy();
+                    // Body matches selection on the front-end
+                    if(strpos($this->celestialBodiesTrajectories,$body)!== FALSE){
+                        $times = array_keys((array)$coordinates[$observer][$body]);
+                        $trajectoryCoords = array();
+                        $lastTime = 0;
+                        $setColor = true;
+                        foreach($times as $time){
+                            // Ensure more than 24 hrs unix timestamp in milliseconds since last point created
+                            if($time - $lastTime > 86400000){
+                                // Set the color based on planet position relative to plane of sun
+                                if($setColor){
+                                    if((boolean)$coordinates[$observer][$body]->{$time}->{'behind_plane_of_sun'}){
+                                        $drawPoints->setFillColor($behind);
+                                        $drawTrajectories->setStrokeColor($behind);
+                                        $drawTrajectories->setStrokeDashArray([3,2]);//add dashes
+                                    }else{
+                                        $drawPoints->setFillColor($front);
+                                        $drawTrajectories->setStrokeColor($front);
+                                        $drawTrajectories->setStrokeDashArray();//clear dashes
+                                    }
+                                    $setColor = false;// Switch to only perform once per body
+                                }
+
+                                // Prepare for coordinates
+                                $xCenter = $this->width / 2;
+                                $yCenter = $this->height / 2;
+                                
+                                // Calculate offset
+                                $xCenterOffset = ($this->roi->left() + $this->roi->right()) / 2 / $this->roi->imageScale();
+                                $yCenterOffset = ($this->roi->top() + $this->roi->bottom()) / 2 / $this->roi->imageScale();
+                                
+                                // Calculate position of point coordinate
+                                $x = -$xCenterOffset + $xCenter + ((int)($coordinates[$observer][$body]->{$time}->{'x'}) / $this->roi->imageScale()) -2;
+                                $y = -$yCenterOffset + $yCenter + ((((int)($coordinates[$observer][$body]->{$time}->{'y'}) / $this->roi->imageScale()) - 12 ) * -1);
+                                
+                                // Assemble array of points for trajectory line
+                                array_push($trajectoryCoords, array(
+                                    'x'=>$x,
+                                    'y'=>$y
+                                ));
+
+                                // Create circles locations of trajectories
+                                $drawPoints->circle($x,$y,$x,$y+$r);
+                                $lastTime = $time;
+                            }
+                        }
+                        // Create the trajectory lines
+                        $drawTrajectories->polyline($trajectoryCoords);
                     }
                 }
             }
         }
-
+        // Composite trajectory lines to image
+        $imagickImage->drawImage($drawTrajectories);
+        // Composite circles to image
+        $imagickImage->drawImage($drawPoints);
+        
         // Cleanup
-        $white->destroy();
+        $front->destroy();
+        $behind->destroy();
+        $drawPoints->destroy();
+        $drawTrajectories->destroy();
     }
 
     /**
