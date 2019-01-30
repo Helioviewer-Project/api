@@ -19,11 +19,11 @@ class Image_Composite_HelioviewerMovieFrame
     /**
      * Helioviewer movie frame
      */
-    public function __construct($filepath, $layers, $events, $eventsLabels, $movieIcons,
+    public function __construct($filepath, $layers, $events, $eventsLabels, $movieIcons, $celestialBodies,
         $scale, $scaleType, $scaleX, $scaleY, $obsDate, $roi, $options) {
 
-        parent::__construct($layers, $events, $eventsLabels, $movieIcons, $scale,
-            $scaleType, $scaleX, $scaleY, $obsDate, $roi, $options);
+        parent::__construct($layers, $events, $eventsLabels, $movieIcons, $celestialBodies,
+            $scale, $scaleType, $scaleX, $scaleY, $obsDate, $roi, $options);
 
         $this->build($filepath);
     }

@@ -379,14 +379,14 @@ class Module_WebClient implements Module {
         $celestialBodiesLabels = $this->_params['celestialBodiesLabels'];
         $celestialBodiesTrajectories = $this->_params['celestialBodiesTrajectories'];
         $celestialBodies = array(
-            'labels'=>$celestialBodiesLabels,
-            'trajectories'=>$celestialBodiesTrajectories
+            'labels'       => $celestialBodiesLabels,
+            'trajectories' => $celestialBodiesTrajectories
         );
         
         // Create the screenshot
         $screenshot = new Image_Composite_HelioviewerScreenshot(
-            $layers, $events, $eventLabels, $movieIcons, $scale, $scaleType, $scaleX,
-            $scaleY, $this->_params['date'], $roi, $celestialBodies , $this->_options
+            $layers, $events, $eventLabels, $movieIcons, $celestialBodies, $scale, $scaleType, $scaleX,
+            $scaleY, $this->_params['date'], $roi, $this->_options
         );
 
         // Display screenshot

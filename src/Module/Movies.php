@@ -57,7 +57,7 @@ class Module_Movies implements Module {
         include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerEvents.php';
         include_once HV_ROOT_DIR.'/../src/Database/MovieDatabase.php';
         include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
-
+        
         // Connect to redis
         $redis = new Redisent('localhost');
 
@@ -92,7 +92,9 @@ class Module_Movies implements Module {
             "reqStartTime"  => $this->_params['startTime'],
             "reqEndTime"  => $this->_params['endTime'],
             "reqObservationDate"  => null, 
-            "switchSources" => false
+            "switchSources" => false,
+            "celestialBodies" => array( "labels" => $this->_params['celestialBodiesLabels'],
+                                        "trajectories" => $this->_params['celestialBodiesTrajectories'])
         );
         $options = array_replace($defaults, $this->_options);
 
@@ -179,7 +181,9 @@ class Module_Movies implements Module {
             $options['frameRate'],
             $options['movieLength'],
             $options['size'],
-            $options['switchSources'] );
+            $options['switchSources'],
+            $options['celestialBodies']
+        );
 
         // Convert id
         $publicId = alphaID($dbId, false, 5, HV_MOVIE_ID_PASS);

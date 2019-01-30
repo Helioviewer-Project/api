@@ -59,6 +59,7 @@ class Movie_HelioviewerMovie {
     public $watermark;
     public $eventsLabels;
     public $movieIcons;
+    public $celestialBodies;
     public $followViewport;
     public $scale;
     public $scaleType;
@@ -130,6 +131,10 @@ class Movie_HelioviewerMovie {
         $this->watermark    = (bool)$info['watermark'];
         $this->eventsLabels = (bool)$info['eventsLabels'];
         $this->movieIcons   = (bool)$info['movieIcons'];
+        $this->celestialBodies = array( 
+            'labels'        => $info['celestialBodiesLabels'],
+            'trajectories'  => $info['celestialBodiesTrajectories']
+        );
         $this->followViewport   = (bool)$info['followViewport'];
         $this->scale        = (bool)$info['scale'];
         $this->scaleType    = $info['scaleType'];
@@ -426,9 +431,9 @@ class Movie_HelioviewerMovie {
             try {
                 $screenshot = new Image_Composite_HelioviewerMovieFrame(
                     $filepath, $this->_layers, $this->_events,
-                    $this->eventsLabels, $this->movieIcons, $this->scale, $this->scaleType,
-                    $this->scaleX, $this->scaleY, $time, $this->_roi,
-                    $options);
+                    $this->eventsLabels, $this->movieIcons, $this->celestialBodies, 
+                    $this->scale, $this->scaleType, $this->scaleX, $this->scaleY,
+                    $time, $this->_roi, $options);
 
                 if ( $frameNum == $previewIndex ) {
                     // Make a copy of frame to be used for preview images
