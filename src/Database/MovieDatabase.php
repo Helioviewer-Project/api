@@ -48,7 +48,7 @@ class Database_MovieDatabase {
     public function insertMovie($startTime, $endTime, $reqObservationDate, $imageScale, $roi,
         $maxFrames, $watermark, $layerString, $layerBitMask, $eventString,
         $eventsLabels, $movieIcons, $followViewport, $scale, $scaleType, $scaleX, $scaleY, $numLayers,
-        $queueNum, $frameRate, $movieLength, $size, $switchSources) {
+        $queueNum, $frameRate, $movieLength, $size, $switchSources, $celestialBodies) {
 
         $this->_dbConnect();
 
@@ -94,7 +94,9 @@ class Database_MovieDatabase {
                  .     'buildTimeStart '    . ' = NULL, '
                  .     'buildTimeEnd '      . ' = NULL, '
                  .     'size '              . ' = %d, '
-                .      'switchSources '     . ' = %b;',
+                 .     'switchSources '     . ' = %b, '
+                 .     'celestialBodiesLabels ' . ' = "%s", '
+                 .     'celestialBodiesTrajectories ' . ' = "%s";',
                  $this->_dbConnection->link->real_escape_string($startTime),
                  $this->_dbConnection->link->real_escape_string($endTime),
                  (float)$imageScale,
@@ -116,7 +118,9 @@ class Database_MovieDatabase {
                  (float)$frameRate,
                  (float)$movieLength,
                  (int)$size,
-                 (bool)$switchSources
+                 (bool)$switchSources,
+                 $this->_dbConnection->link->real_escape_string($celestialBodies['labels']),
+                 $this->_dbConnection->link->real_escape_string($celestialBodies['trajectories'])
                );
 
         try {

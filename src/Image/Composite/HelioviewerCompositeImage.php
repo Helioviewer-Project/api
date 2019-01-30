@@ -71,8 +71,8 @@ class Image_Composite_HelioviewerCompositeImage {
      *
      * @return void
      */
-    public function __construct($layers, $events, $eventLabels, $movieIcons, $scale,
-        $scaleType, $scaleX, $scaleY, $obsDate, $roi, $celestialBodies, $options) {
+    public function __construct($layers, $events, $eventLabels, $movieIcons, $celestialBodies, $scale,
+        $scaleType, $scaleX, $scaleY, $obsDate, $roi, $options) {
 
         set_time_limit(90); // Extend time limit to avoid timeouts
 
@@ -440,9 +440,11 @@ class Image_Composite_HelioviewerCompositeImage {
             $this->_addMovieIcons($image);
         }
 
-        $this->_addCelestialBodiesTrajectories($image);
+        if ( $this->celestialBodiesTrajectories != ''){
+            $this->_addCelestialBodiesTrajectories($image);
+        }
 
-        if ( $this->celestialBodiesLabels != '[]'){
+        if ( $this->celestialBodiesLabels != ''){
             $this->_addCelestialBodiesLabels($image);
         }
 
@@ -879,7 +881,8 @@ class Image_Composite_HelioviewerCompositeImage {
         // Converts received date into unix timestamp in miliseconds
         $unixTimeInteger = (int)(strtotime($this->date)) * 1000;
         // Loads an instance of the solar bodies module
-        $SolarBodiesModule = new Module_SolarBodies();
+        $params = array('time'=>$unixTimeInteger);
+        $SolarBodiesModule = new Module_SolarBodies($params);
         // Searches for labels at request time
         $labels = $SolarBodiesModule->getSolarBodiesLabelsForScreenshot($unixTimeInteger);
         // Create pixel and text draw objects
@@ -909,10 +912,12 @@ class Image_Composite_HelioviewerCompositeImage {
         $coordinates = $labels["labels"];
         // Parse out the observers
         $observers = array_keys($coordinates);
-        foreach($observers as $observer){
+        $backToFrontObservers = array_reverse($observers);
+        foreach($backToFrontObservers as $observer){
             // Parse out the celestial bodies under the given observer
             $bodies = array_keys($coordinates[$observer]);
-            foreach($bodies as $body){
+            $backToFrontBodies = array_reverse($bodies);
+            foreach($backToFrontBodies as $body){
                 // There is data
                 if($coordinates[$observer][$body]!=NULL){
                     // Body matches selection on front-end
@@ -937,7 +942,6 @@ class Image_Composite_HelioviewerCompositeImage {
                         
                         $imagickImage->annotateImage($text, $x, $y, 0, ucfirst($body));
                 
-                        
                     }
                 }
             }
@@ -962,7 +966,8 @@ class Image_Composite_HelioviewerCompositeImage {
         // Converts received date into unix timestamp in miliseconds
         $unixTimeInteger = (int)(strtotime($this->date)) * 1000;
         // Loads an instance of the solar bodies module
-        $SolarBodiesModule = new Module_SolarBodies();
+        $params = array('time'=>$unixTimeInteger);
+        $SolarBodiesModule = new Module_SolarBodies($params);
         // Searches for labels at request time
         $trajectories = $SolarBodiesModule->getSolarBodiesTrajectoriesForScreenshot($unixTimeInteger);
         // Create pixel and draw objects
@@ -978,10 +983,12 @@ class Image_Composite_HelioviewerCompositeImage {
         $coordinates = $trajectories["trajectories"];
         // Parse out the observers
         $observers = array_keys($coordinates);
-        foreach($observers as $observer){
+        $backToFrontObservers = array_reverse($observers);
+        foreach($backToFrontObservers as $observer){
             // Parse out the celestial bodies unde the given observer
             $bodies = array_keys($coordinates[$observer]);
-            foreach($bodies as $body){
+            $backToFrontBodies = array_reverse($bodies);
+            foreach($backToFrontBodies as $body){
                 // There is data
                 if($coordinates[$observer][$body]!=NULL){
                     // Body matches selection on the front-end
@@ -1017,7 +1024,7 @@ class Image_Composite_HelioviewerCompositeImage {
                                 
                                 // Calculate position of point coordinate
                                 $x = -$xCenterOffset + $xCenter + ((int)($coordinates[$observer][$body]->{$time}->{'x'}) / $this->roi->imageScale()) -2;
-                                $y = -$yCenterOffset + $yCenter + ((((int)($coordinates[$observer][$body]->{$time}->{'y'}) / $this->roi->imageScale()) - 12 ) * -1);
+                                $y = -$yCenterOffset + $yCenter + ((((int)($coordinates[$observer][$body]->{$time}->{'y'}) / $this->roi->imageScale()) ) * -1);
                                 
                                 // Assemble array of points for trajectory line
                                 array_push($trajectoryCoords, array(
