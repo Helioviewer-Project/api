@@ -47,7 +47,7 @@ class Image_ImageType_COSMOImage extends Image_HelioviewerImage {
      * @return string Watermark name
      */
     public function getWaterMarkName() {
-        return 'COSMO_K-Coronagraph '.$this->uiLabels[2]['name']."\n";
+        return 'COSMO '.$this->uiLabels[2]['name']."\n";
     }
 
     /**
