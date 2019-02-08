@@ -75,6 +75,14 @@ class Module_Movies implements Module {
             return strpos($elem, HV_MOVIE_QUEUE) !== false;
         });
 
+        if( isset($this->_params['celestialBodiesLabels']) && isset($this->_params['celestialBodiesTrajectories']) ){
+            $celestialBodies = array( "labels" => $this->_params['celestialBodiesLabels'],
+                                "trajectories" => $this->_params['celestialBodiesTrajectories']);
+        }else{
+            $celestialBodies = array( "labels" => "",
+                                "trajectories" => "");
+        }
+
         // Default options
         $defaults = array(
             "format"      => 'mp4',
@@ -93,8 +101,7 @@ class Module_Movies implements Module {
             "reqEndTime"  => $this->_params['endTime'],
             "reqObservationDate"  => null, 
             "switchSources" => false,
-            "celestialBodies" => array( "labels" => $this->_params['celestialBodiesLabels'],
-                                        "trajectories" => $this->_params['celestialBodiesTrajectories'])
+            "celestialBodies" => $celestialBodies
         );
         $options = array_replace($defaults, $this->_options);
 

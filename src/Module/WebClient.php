@@ -376,12 +376,17 @@ class Module_WebClient implements Module {
         $roi = $this->_getRegionOfInterest();
 
         // Celestial Bodies
-        $celestialBodiesLabels = $this->_params['celestialBodiesLabels'];
-        $celestialBodiesTrajectories = $this->_params['celestialBodiesTrajectories'];
-        $celestialBodies = array(
-            'labels'       => $celestialBodiesLabels,
-            'trajectories' => $celestialBodiesTrajectories
-        );
+        if( isset($this->_params['celestialBodiesLabels']) && isset($this->_params['celestialBodiesTrajectories']) ){
+            $celestialBodiesLabels = $this->_params['celestialBodiesLabels'];
+            $celestialBodiesTrajectories = $this->_params['celestialBodiesTrajectories'];
+            $celestialBodies = array(
+                'labels'       => $celestialBodiesLabels,
+                'trajectories' => $celestialBodiesTrajectories
+            );
+        }else{
+            $celestialBodies = array( "labels" => "",
+                                "trajectories" => "");
+        }
         
         // Create the screenshot
         $screenshot = new Image_Composite_HelioviewerScreenshot(
