@@ -103,6 +103,7 @@ function loadModule($params) {
         'getSolarBodies'            => 'SolarBodies',
         'getSolarBodiesLabels'      => 'SolarBodies',
         'getSolarBodiesTrajectories'=> 'SolarBodies',
+        'getTrajectoryTime'         => 'SolarBodies'
     );
 
     include_once HV_ROOT_DIR.'/../src/Validation/InputValidator.php';

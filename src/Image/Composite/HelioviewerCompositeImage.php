@@ -406,11 +406,11 @@ class Image_Composite_HelioviewerCompositeImage {
 
         // Composite images on top of one another if there are multiple layers.
         if ( sizeOf($this->_imageLayers) > 1 ) {
-            $sortedImages = $this->_sortByLayeringOrder($this->_imageLayers);
+            //$sortedImages = $this->_sortByLayeringOrder($this->_imageLayers);
 
             $image = null;
 
-            foreach ($sortedImages as $layer) {
+            foreach ($this->_imageLayers as $layer) {
                 $previous = $image;
                 $image = $layer->getIMagickImage();
 
@@ -868,7 +868,32 @@ class Image_Composite_HelioviewerCompositeImage {
 	        }
             
         }
-	}
+    }
+    
+    /**
+     * Parses Celestial Bodies Selection Strings into an Object of Arrays
+     * with Observer Keys and an Array of Bodies that are selected per Observer.
+     * 
+     * @param string $selectionString
+     * 
+     * @return Object $parsedSelection an Object of Observer Keys with Array of bodies values. 
+     */
+    private function _parseCelestialBodiesSelections($selection) {
+        $parsedSelection = array();
+        $selectionArray = explode(',',$selection);
+        foreach($selectionArray as $observerBodyString){
+            $observerBodyArray = explode('-',$observerBodyString);
+            $observer = $observerBodyArray[0];
+            $body = $observerBodyArray[1];
+            if(!isset($parsedSelection[$observer])){
+                $parsedSelection[$observer]=array();
+            }
+            array_push($parsedSelection[$observer],$body);
+        }
+        return $parsedSelection;
+    }
+
+
     /**
      * Composites Celestial Bodies labels
      * 
@@ -885,24 +910,29 @@ class Image_Composite_HelioviewerCompositeImage {
         $SolarBodiesModule = new Module_SolarBodies($params);
         // Searches for labels at request time
         $labels = $SolarBodiesModule->getSolarBodiesLabelsForScreenshot($unixTimeInteger);
+        $glossary = $SolarBodiesModule->getSolarBodiesGlossaryForScreenshot();
+        $glossaryMods = $glossary['mods'];
+        $glossaryModsKeys = array_keys($glossaryMods);
+        // Parses and prepares front end selections
+        $selectedObserverBodies = $this->_parseCelestialBodiesSelections($this->celestialBodiesLabels);
         // Create pixel and text draw objects
         $black = new IMagickPixel('#000');
         $white = new IMagickPixel('white');
         // Outline text object
         $underText = new IMagickDraw();
         $underText->setTextEncoding('utf-8');
-        $underText->setFont('Helvetica');
-        //$underText->setFont(HV_ROOT_DIR.'/../resources/fonts/DejaVuSans.ttf');
+        //$underText->setFont('Helvetica');
+        $underText->setFont(HV_ROOT_DIR.'/../resources/fonts/DejaVuSans.ttf');
         $underText->setFontSize(12);
         $underText->setStrokeColor($black);
         $underText->setStrokeAntialias(true);
         $underText->setStrokeWidth(4);
-        $underText->setStrokeOpacity(0.7);
+        $underText->setStrokeOpacity(0.6);
         // Text object
         $text = new IMagickDraw();
         $text->setTextEncoding('utf-8');
-        $text->setFont('Helvetica');
-        //$text->setFont(HV_ROOT_DIR.'/../resources/fonts/DejaVuSans.ttf');
+        //$text->setFont('Helvetica');
+        $text->setFont(HV_ROOT_DIR.'/../resources/fonts/DejaVuSans.ttf');
         $text->setFontSize(12);
         $text->setFillColor($white);
         $text->setTextAntialias(true);
@@ -921,7 +951,7 @@ class Image_Composite_HelioviewerCompositeImage {
                 // There is data
                 if($coordinates[$observer][$body]!=NULL){
                     // Body matches selection on front-end
-                    if(strpos($this->celestialBodiesLabels,$body)!== FALSE){
+                    if(in_array($body,$selectedObserverBodies[$observer])){
                         // Prepare for coordinates
                         $xCenter = $this->width / 2;
                         $yCenter = $this->height / 2;
@@ -930,17 +960,26 @@ class Image_Composite_HelioviewerCompositeImage {
                         $xCenterOffset = ($this->roi->left() + $this->roi->right()) / 2 / $this->roi->imageScale();
                         $yCenterOffset = ($this->roi->top() + $this->roi->bottom()) / 2 / $this->roi->imageScale();
                         
+                        $labelPositionHCC = $this->_convertHPCtoHCC($coordinates[$observer][$body],true);
+                        $x = -$xCenterOffset + $xCenter + $labelPositionHCC['x'] - 2;
+                        $y = -$yCenterOffset + $yCenter + ($labelPositionHCC['y'] + 12);
+
                         // Calculate position of label
-                        $x = -$xCenterOffset + $xCenter + ((int)($coordinates[$observer][$body]->{'x'}) / $this->roi->imageScale()) -2;
-                        $y = -$yCenterOffset + $yCenter + ((((int)($coordinates[$observer][$body]->{'y'}) / $this->roi->imageScale()) - 12 ) * -1);
+                        // $x = -$xCenterOffset + $xCenter + ((int)($coordinates[$observer][$body]->{'x'}) / $this->roi->imageScale()) -2;
+                        // $y = -$yCenterOffset + $yCenter + ((((int)($coordinates[$observer][$body]->{'y'}) / $this->roi->imageScale()) - 12 ) * -1);
                         
+                        $bodyDisplayText = $body;
+                        if(in_array($body,$glossaryModsKeys)){
+                            $bodyDisplayText = $glossaryMods[$body]['name'];
+                            if($glossaryMods[$body]['arrow']){
+                                $bodyDisplayText = '↖'.$bodyDisplayText;
+                            }
+                        }
                         // Outline labelss in black
-                        
-                        $imagickImage->annotateImage($underText, $x, $y, 0, ucfirst($body));
+                        $imagickImage->annotateImage($underText, $x-1, $y, 0, ucfirst($bodyDisplayText));
 
                         // Write labels in white over outline
-                        
-                        $imagickImage->annotateImage($text, $x, $y, 0, ucfirst($body));
+                        $imagickImage->annotateImage($text, $x, $y, 0, ucfirst($bodyDisplayText));
                 
                     }
                 }
@@ -970,6 +1009,11 @@ class Image_Composite_HelioviewerCompositeImage {
         $SolarBodiesModule = new Module_SolarBodies($params);
         // Searches for labels at request time
         $trajectories = $SolarBodiesModule->getSolarBodiesTrajectoriesForScreenshot($unixTimeInteger);
+        $glossary = $SolarBodiesModule->getSolarBodiesGlossaryForScreenshot();
+        $glossaryMods = $glossary['mods'];
+        $glossaryModsKeys = array_keys($glossaryMods);
+        // Parses and prepares front end selections
+        $selectedObserverBodies = $this->_parseCelestialBodiesSelections($this->celestialBodiesTrajectories);
         // Create pixel and draw objects
         $front = new IMagickPixel('#A0A0A0');
         $behind = new ImagickPixel('#808080');
@@ -992,28 +1036,31 @@ class Image_Composite_HelioviewerCompositeImage {
                 // There is data
                 if($coordinates[$observer][$body]!=NULL){
                     // Body matches selection on the front-end
-                    if(strpos($this->celestialBodiesTrajectories,$body)!== FALSE){
+                    if(in_array($body,$selectedObserverBodies[$observer])){
                         $times = array_keys((array)$coordinates[$observer][$body]);
                         $trajectoryCoords = array();
                         $lastTime = 0;
-                        $setColor = true;
+                        //$setColor = true;
+                        $temporalCadence = 86400000;
+                        if(in_array($body,$glossaryModsKeys)){
+                            $temporalCadence = (int)$glossaryMods[$body]['cadence'];
+                        }
+                        $lastPlaneState = $coordinates[$observer][$body]->{$times[0]}->{'behind_plane_of_sun'};
+                        // Set the color based on planet position relative to plane of sun
+                        if($lastPlaneState == "True"){
+                            $drawPoints->setFillColor($behind);
+                            $drawTrajectories->setStrokeColor($behind);
+                            $drawTrajectories->setStrokeDashArray( [3,2] );//add dashes
+                        }else if($lastPlaneState == "False"){
+                            $drawPoints->setFillColor($front);
+                            $drawTrajectories->setStrokeColor($front);
+                            $drawTrajectories->setStrokeDashArray( [null] );//clear dashes
+                        }
+                        //process all timestamps
                         foreach($times as $time){
-                            // Ensure more than 24 hrs unix timestamp in milliseconds since last point created
-                            if($time - $lastTime > 86400000){
-                                // Set the color based on planet position relative to plane of sun
-                                if($setColor){
-                                    if((boolean)$coordinates[$observer][$body]->{$time}->{'behind_plane_of_sun'}){
-                                        $drawPoints->setFillColor($behind);
-                                        $drawTrajectories->setStrokeColor($behind);
-                                        $drawTrajectories->setStrokeDashArray([3,2]);//add dashes
-                                    }else{
-                                        $drawPoints->setFillColor($front);
-                                        $drawTrajectories->setStrokeColor($front);
-                                        $drawTrajectories->setStrokeDashArray();//clear dashes
-                                    }
-                                    $setColor = false;// Switch to only perform once per body
-                                }
-
+                            // Ensure more than $temporalCadence elapsed as unix timestamp in milliseconds since last point created
+                            if($time - $lastTime >= $temporalCadence){
+                                
                                 // Prepare for coordinates
                                 $xCenter = $this->width / 2;
                                 $yCenter = $this->height / 2;
@@ -1022,22 +1069,54 @@ class Image_Composite_HelioviewerCompositeImage {
                                 $xCenterOffset = ($this->roi->left() + $this->roi->right()) / 2 / $this->roi->imageScale();
                                 $yCenterOffset = ($this->roi->top() + $this->roi->bottom()) / 2 / $this->roi->imageScale();
                                 
-                                // Calculate position of point coordinate
-                                $x = -$xCenterOffset + $xCenter + ((int)($coordinates[$observer][$body]->{$time}->{'x'}) / $this->roi->imageScale()) -2;
-                                $y = -$yCenterOffset + $yCenter + ((((int)($coordinates[$observer][$body]->{$time}->{'y'}) / $this->roi->imageScale()) ) * -1);
-                                
-                                // Assemble array of points for trajectory line
-                                array_push($trajectoryCoords, array(
-                                    'x'=>$x,
-                                    'y'=>$y
-                                ));
+                                $labelPositionHCC = $this->_convertHPCtoHCC($coordinates[$observer][$body]->{$time},true);
+                                $x = -$xCenterOffset + $xCenter + $labelPositionHCC['x'] - 2;
+                                $y = -$yCenterOffset + $yCenter + ($labelPositionHCC['y']);
 
+                                // Calculate position of point coordinate
+                                // $x = -$xCenterOffset + $xCenter + ((int)($coordinates[$observer][$body]->{$time}->{'x'}) / $this->roi->imageScale()) -2;
+                                // $y = -$yCenterOffset + $yCenter + ((((int)($coordinates[$observer][$body]->{$time}->{'y'}) / $this->roi->imageScale()) ) * -1);
+                                
+                                if($coordinates[$observer][$body]->{$time}->{'behind_plane_of_sun'} != $lastPlaneState){
+                                    // Assemble array of points for trajectory line
+                                    array_push($trajectoryCoords, array(
+                                        'x'=>$x,
+                                        'y'=>$y
+                                    ));
+                                    // Create the trajectory line
+                                    $drawTrajectories->polyline($trajectoryCoords);
+                                    // Clear trajectory line
+                                    $trajectoryCoords = array();
+                                    // Assemble array of points for trajectory line
+                                    array_push($trajectoryCoords, array(
+                                        'x'=>$x,
+                                        'y'=>$y
+                                    ));
+                                    // Set the color based on planet position relative to plane of sun
+                                    if($coordinates[$observer][$body]->{$time}->{'behind_plane_of_sun'} == "True"){
+                                        $drawPoints->setFillColor($behind);
+                                        $drawTrajectories->setStrokeColor($behind);
+                                        $drawTrajectories->setStrokeDashArray( [3,2] );//add dashes
+                                    }else if($coordinates[$observer][$body]->{$time}->{'behind_plane_of_sun'} == "False"){
+                                        $drawPoints->setFillColor($front);
+                                        $drawTrajectories->setStrokeColor($front);
+                                        $drawTrajectories->setStrokeDashArray( [null] );//clear dashes
+                                    }
+                                }else{
+                                    // Assemble array of points for trajectory line
+                                    array_push($trajectoryCoords, array(
+                                        'x'=>$x,
+                                        'y'=>$y
+                                    ));
+                                }
+                                
                                 // Create circles locations of trajectories
                                 $drawPoints->circle($x,$y,$x,$y+$r);
                                 $lastTime = $time;
+                                $lastPlaneState = $coordinates[$observer][$body]->{$time}->{'behind_plane_of_sun'};
                             }
                         }
-                        // Create the trajectory lines
+                        // Create the trajectory line
                         $drawTrajectories->polyline($trajectoryCoords);
                     }
                 }
@@ -1395,6 +1474,32 @@ class Image_Composite_HelioviewerCompositeImage {
         // return the sorted array in order of smallest layering order to
         // largest.
         return $sortedImages;
+    }
+
+    public function _convertHPCtoHCC($inputBody,$useTan){
+        $distanceInMeters = $inputBody->{'distance_sun_to_observer_au'} * 149597000000;
+        $metersPerArcsecond = 724910;  //695500000 / 959.705;
+        $helioprojectiveCartesian = array(
+            'x' => ( $inputBody->{'x'} / 3600 ) * ( pi()/180 ) ,
+            'y' => ( $inputBody->{'y'} / 3600 ) * ( pi()/180 )
+        );
+        if(!$useTan){
+            $heliocentricCartesianReprojection = array(
+                'x' => $distanceInMeters*cos( $helioprojectiveCartesian['y'])*sin( $helioprojectiveCartesian.x ),
+                'y' => $distanceInMeters*sin( $helioprojectiveCartesian['y'] )
+            );
+        }else{
+            $heliocentricCartesianReprojection = array(
+                'x' => $distanceInMeters*tan( $helioprojectiveCartesian['x'] ),
+                'y' => $distanceInMeters*( tan( $helioprojectiveCartesian['y'] ) / cos( $helioprojectiveCartesian['x'] ) )
+            );
+        }
+        // console.log('HCC',heliocentricCartesianReprojection.x,heliocentricCartesianReprojection.y);
+        $correctedCoordinates = array(
+            'x' => ( $heliocentricCartesianReprojection['x'] / $metersPerArcsecond ) / $this->roi->imageScale(),
+            'y' => -( $heliocentricCartesianReprojection['y'] / $metersPerArcsecond ) / $this->roi->imageScale()
+        );
+        return $correctedCoordinates;
     }
 
     /**
