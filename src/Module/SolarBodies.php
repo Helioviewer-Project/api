@@ -22,9 +22,17 @@ class Module_SolarBodies implements Module {
         $this->_options = array();
 
         // list of observers - add new observers here
-        $this->_observers = array("soho");
+        $this->_observers = array("soho","stereo_a","stereo_b");
         // list of bodies to track - add new celestial bodies or satellites here
-        $this->_bodies = array("mercury","venus","jupiter","saturn","uranus","neptune");
+        $this->_bodies = array("mercury","venus","earth","mars","jupiter","saturn","uranus","neptune","psp");
+        // custom parameters and names - add any custom parameters that fall outside the normal dataset for planets
+        // normal dataset: x, y, distance_observer_to_body_au, distance_sun_to_observer_au, distance_sun_to_body_au, behind_plane_of_sun
+        $this->_mods = array("psp" => array( "name" => "Parker Solar Probe", //Name as displayed in the viewport overlay
+                                              "url" => "https://www.nasa.gov/content/goddard/parker-solar-probe",//URL in the more info dialog
+                                            "arrow" => True,//Whether to draw an arrow to the left of the name
+                                          "metrics" => array( "speedkms" => array( "title" => "Speed", "unit" => "km/s" ) ), //Any custom metrics to add to the more info dialog
+                                          "cadence" => 21600000 ) ); //6 hr cadence
+        $this->_enabledTrajectories = array( "psp" ); //list of bodies from $this->_bodies for which trajectories should be sent
     }
 
     /**
@@ -42,50 +50,29 @@ class Module_SolarBodies implements Module {
             }
         }
     }
-    /**
-     * Finds all available object coordinates for a request date
-     * 
-     * Input:   Time as a unix time stamp in milliseconds 
-     * Output:  Array of bodies with position/distance data from perspective of observer for given input time.
-     */
 
-    /*
+    public function getSolarBodiesGlossary($local) {
+        $solarObservers = array();
+        foreach($this->_observers as $observer){
+            $solarBodies = array();
+            foreach($this->_bodies as $body){
+                //exclude "earth" from "soho"
+                if($observer !== "soho" || $body !== "earth"){
+                    array_push($solarBodies, $body);
+                }
+            }
+            $newObserver = array($observer => $solarBodies);
+            $solarObservers = array_merge($solarObservers, $newObserver);
+        }
 
-    public function getSolarBodies() {
-        $requestTime = (int)$this->_params['time'];//url request time parameter
-        $nearestTimes = $this->_nearestTime($requestTime);//use helper function to compute times
-        $nearestDay = $nearestTimes['nearestDay'];//nearest day as unix epoch timestamp
-        $nearest30min = $nearestTimes['nearest30min'];//nearest 30 minute interval as unix epoch timestamp
-        $nearestDate = substr(date("c",$nearestDay/1000),0,10);//convert unix epoch to ISO 8601 date and remove timestamp.
-        $pathToDir = '../docroot/resources/JSON/celestial-objects/';//default json file root dir
-        $solarObservers = array();//initialize observers array
-        foreach($this->_observers as $observer ){//cycle through each observer in the list
-            $solarBodies = array();//init array for bodies
-            foreach($this->_bodies as $body){//cycle through each body in the list
-                $filename = $pathToDir . $observer . '/' . $body . '/' .  $observer . '_' . $body . '_' . $nearestDate . '.json';//generate filename
-                $file = json_decode(file_get_contents($filename));//open, read, and parse the file as an object
-                if($file != NULL){//file exists
-                    $bodyData = $file->{$observer}->{$body}->{$nearest30min};//get the coordinates
-                    if($bodyData != NULL){//data is not null
-                        $newBody = array(//set up a key value pair
-                            $body => $bodyData
-                        );
-                        $solarBodies = array_merge($solarBodies, $newBody);//add new body coordinates to the existing array
-                    }//end if data not null
-                }//end if file exists
-            }//end foreach bodies
-            $newObserver = array($observer => $solarBodies);//create a key-value pair of observer-bodies 
-            $solarObservers = array_merge($solarObservers,$newObserver);//add to list of all observers
-        }//end foreach observers
-        $this->_printJSON(json_encode($solarObservers));//send the response
+        $this->_glossary = array( "observers" => $solarObservers,
+                        "enabledTrajectories" => $this->_enabledTrajectories,
+                                       "mods" => $this->_mods);
+
+        $this->_printJSON(json_encode($this->_glossary));
     }
 
-    */
-
-    public function getSolarBodiesGlossary() {
-
-        $this->_glossary = array();
-
+    public function getSolarBodiesGlossaryForScreenshot() {
         $solarObservers = array();
         foreach($this->_observers as $observer){
             $solarBodies = array();
@@ -95,8 +82,20 @@ class Module_SolarBodies implements Module {
             $newObserver = array($observer => $solarBodies);
             $solarObservers = array_merge($solarObservers, $newObserver);
         }
-        
-        $this->_printJSON(json_encode($solarObservers));
+
+        $this->_glossary = array( "observers" => $solarObservers,
+                        "enabledTrajectories" => $this->_enabledTrajectories,
+                                       "mods" => $this->_mods);
+
+        return $this->_glossary;
+    }
+
+    public function getTrajectoryTime(){
+        $requestTimeInteger = (int)$this->_params['time'];
+        $observer = $this->_params['observer'];
+        $body = $this->_params['body'];
+        $direction = $this->_params['direction'];//'next' or 'last'
+        echo( $this->_findTrajectoryTime($requestTimeInteger, $observer, $body, $direction) );
     }
 
     public function getSolarBodies() {
@@ -132,7 +131,7 @@ class Module_SolarBodies implements Module {
         $solarObserversTrajectories = array();//initialize observers array
         foreach($this->_observers as $observer ){//cycle through each observer in the list
             $solarBodies = array();//init array for bodies
-            foreach($this->_bodies as $body){//cycle through each body in the list
+            foreach($this->_enabledTrajectories as $body){//cycle through each body in the list
                 $newBody = array();//initialize array for body
                 $newTimes = array();//initialize array for times
                 $filePath = $this->_findFile($requestTimeInteger, $observer, $body);
@@ -327,6 +326,68 @@ class Module_SolarBodies implements Module {
 
         }*/
         return $closestData;
+    }
+
+    // finds nearest time to the request time in a given file
+    // TODO: consider a request time between transits (after end but before next start)
+    public function _findTrajectoryTime( $requestTime, $observer, $body, $direction){
+        //construct dictionary filename
+        $pathToDir = HV_ROOT_DIR . '/resources/JSON/celestial-objects';
+        $dictionaryFileName = $observer . '_' . $body . '_dictionary.json';
+        $dictionaryFilePath = $pathToDir . '/' . $observer . '/' . $body . '/' . $dictionaryFileName;
+        $dictionary = null;
+        try{
+            $dictionary = (array)json_decode(file_get_contents($dictionaryFilePath));
+        }catch (Exception $e){
+            //dictionary doesn't exist
+        }
+        //find a file which contains the requested timerange
+        $trajectoryTime = null;
+        if($dictionary != null){
+            if($direction == 'next'){//find next trajectory relative to request time
+                $lastEndTime = null;
+                $fileFound = false;
+                foreach($dictionary as $fileName=>$fileTimes){
+                    if($fileFound){
+                        $trajectoryTime = (int)$fileTimes->{'start'};
+                        break;
+                    }else if($requestTime < (int)$fileTimes->{'start'} && $lastEndTime == null){
+                        //request time earlier than dictionary start
+                        $trajectoryTime = (int)$fileTimes->{'start'};
+                        break;
+                    }else if($requestTime < (int)$fileTimes->{'start'} && $lastEndTime != null){
+                        //request time between transits
+                        $trajectoryTime = (int)$fileTimes->{'start'};
+                        break;
+                    }else if($requestTime >= (int)$fileTimes->{'start'} && $requestTime <= (int)$fileTimes->{'end'}){
+                        //request time in a transit, the next transit start will be returned.
+                        $fileFound = true;
+                    }else if($requestTime > $fileTimes->{'end'}){
+                        //store the transit end time to compare on next iteration.
+                        $lastEndTime = $fileTimes->{'end'};
+                    }
+                }
+            }else if($direction == 'last'){//find previous trajectory relative to request time
+                $lastEndTime = null;
+                foreach($dictionary as $fileName=>$fileTimes){
+                    if($requestTime < (int)$fileTimes->{'start'} && $lastEndTime == null){
+                        //request time earlier than dictionary start
+                        break;
+                    }else if($requestTime < (int)$fileTimes->{'start'} && $lastEndTime != null){
+                        //request time between transits
+                        break;
+                    }else if($requestTime >= (int)$fileTimes->{'start'} && $requestTime <= (int)$fileTimes->{'end'}){
+                        //request time in a transit, return previous transit end time
+                        break;
+                    }else if($requestTime > (int)$fileTimes->{'end'}){
+                        $lastEndTime = (int)$fileTimes->{'end'};
+                    }
+                }
+                $trajectoryTime = $lastEndTime;
+            }
+        }
+        $response = array('time' => $trajectoryTime);
+        return $this->_printJSON(json_encode($response));
     }
 
     public function _findFile( $requestTime, $observer, $body ){
