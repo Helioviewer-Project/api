@@ -908,13 +908,14 @@ class Image_Composite_HelioviewerCompositeImage {
         // Loads an instance of the solar bodies module
         $params = array('time'=>$unixTimeInteger);
         $SolarBodiesModule = new Module_SolarBodies($params);
-        // Searches for labels at request time
-        $labels = $SolarBodiesModule->getSolarBodiesLabelsForScreenshot($unixTimeInteger);
+        // Retrieves the current glossary based on predefined available data
         $glossary = $SolarBodiesModule->getSolarBodiesGlossaryForScreenshot();
         $glossaryMods = $glossary['mods'];
         $glossaryModsKeys = array_keys($glossaryMods);
         // Parses and prepares front end selections
         $selectedObserverBodies = $this->_parseCelestialBodiesSelections($this->celestialBodiesLabels);
+        // Searches for labels at request time
+        $labels = $SolarBodiesModule->getSolarBodiesLabelsForScreenshot($unixTimeInteger,$selectedObserverBodies);
         // Create pixel and text draw objects
         $black = new IMagickPixel('#000');
         $white = new IMagickPixel('white');
@@ -941,11 +942,11 @@ class Image_Composite_HelioviewerCompositeImage {
         // Isolate the labels array
         $coordinates = $labels["labels"];
         // Parse out the observers
-        $observers = array_keys($coordinates);
+        $observers = array_keys($selectedObserverBodies);
         $backToFrontObservers = array_reverse($observers);
         foreach($backToFrontObservers as $observer){
             // Parse out the celestial bodies under the given observer
-            $bodies = array_keys($coordinates[$observer]);
+            $bodies = $selectedObserverBodies[$observer];
             $backToFrontBodies = array_reverse($bodies);
             foreach($backToFrontBodies as $body){
                 // There is data
@@ -1007,13 +1008,14 @@ class Image_Composite_HelioviewerCompositeImage {
         // Loads an instance of the solar bodies module
         $params = array('time'=>$unixTimeInteger);
         $SolarBodiesModule = new Module_SolarBodies($params);
-        // Searches for labels at request time
-        $trajectories = $SolarBodiesModule->getSolarBodiesTrajectoriesForScreenshot($unixTimeInteger);
+        // Searches for glossary at request time
         $glossary = $SolarBodiesModule->getSolarBodiesGlossaryForScreenshot();
         $glossaryMods = $glossary['mods'];
         $glossaryModsKeys = array_keys($glossaryMods);
         // Parses and prepares front end selections
         $selectedObserverBodies = $this->_parseCelestialBodiesSelections($this->celestialBodiesTrajectories);
+        // Searches for trajectories at requested time
+        $trajectories = $SolarBodiesModule->getSolarBodiesTrajectoriesForScreenshot($unixTimeInteger,$selectedObserverBodies);
         // Create pixel and draw objects
         $front = new IMagickPixel('#A0A0A0');
         $behind = new ImagickPixel('#808080');
@@ -1026,11 +1028,11 @@ class Image_Composite_HelioviewerCompositeImage {
         // Isolate the labels array
         $coordinates = $trajectories["trajectories"];
         // Parse out the observers
-        $observers = array_keys($coordinates);
+        $observers = array_keys($selectedObserverBodies);
         $backToFrontObservers = array_reverse($observers);
         foreach($backToFrontObservers as $observer){
-            // Parse out the celestial bodies unde the given observer
-            $bodies = array_keys($coordinates[$observer]);
+            // Parse out the celestial bodies under the given observer
+            $bodies = $selectedObserverBodies[$observer];
             $backToFrontBodies = array_reverse($bodies);
             foreach($backToFrontBodies as $body){
                 // There is data

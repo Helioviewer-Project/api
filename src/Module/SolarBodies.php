@@ -57,7 +57,7 @@ class Module_SolarBodies implements Module {
             $solarBodies = array();
             foreach($this->_bodies as $body){
                 //exclude "earth" from "soho"
-                if($observer !== "soho" || $body !== "earth"){
+                if(($observer !== "soho" || $body !== "earth") && ($observer !== "stereo_b" || $body !== "psp")){
                     array_push($solarBodies, $body);
                 }
             }
@@ -77,7 +77,10 @@ class Module_SolarBodies implements Module {
         foreach($this->_observers as $observer){
             $solarBodies = array();
             foreach($this->_bodies as $body){
-                array_push($solarBodies, $body);
+                //exclude "earth" from "soho"
+                if(($observer !== "soho" || $body !== "earth") && ($observer !== "stereo_b" || $body !== "psp")){
+                    array_push($solarBodies, $body);
+                }
             }
             $newObserver = array($observer => $solarBodies);
             $solarObservers = array_merge($solarObservers, $newObserver);
@@ -198,14 +201,14 @@ class Module_SolarBodies implements Module {
         $this->_printJSON(json_encode($solarObservers));//send the response
     }
 
-    public function getSolarBodiesLabelsForScreenshot($requestUnixTime){
+    public function getSolarBodiesLabelsForScreenshot($requestUnixTime, $selectedObserverBodies){
         $requestTimeInteger = $requestUnixTime;
         // --- start generating labels ---
         $solarObserversLabels = array();//initialize observers array
 
-        foreach($this->_observers as $observer ){//cycle through each observer in the list
+        foreach(array_keys($selectedObserverBodies) as $observer ){//cycle through each observer in the list
             $solarBodies = array();//init array for bodies
-            foreach($this->_bodies as $body){//cycle through each body in the list
+            foreach($selectedObserverBodies[$observer]  as $body){//cycle through each body in the list
                 $filePath = $this->_findFile($requestTimeInteger, $observer, $body);//generate filename
                 $bodyData = null;
                 if($filePath != null){
@@ -231,14 +234,14 @@ class Module_SolarBodies implements Module {
         return $solarObservers;
     }
 
-    public function getSolarBodiesTrajectoriesForScreenshot($requestUnixTime){
+    public function getSolarBodiesTrajectoriesForScreenshot($requestUnixTime,$selectedObserverBodies){
         $requestTimeInteger = $requestUnixTime;
         
         // --- start generating trajectories ---
         $solarObserversTrajectories = array();//initialize observers array
-        foreach($this->_observers as $observer ){//cycle through each observer in the list
+        foreach(array_keys($selectedObserverBodies) as $observer ){//cycle through each observer in the list
             $solarBodies = array();//init array for bodies
-            foreach($this->_bodies as $body){//cycle through each body in the list
+            foreach($selectedObserverBodies[$observer] as $body){//cycle through each body in the list
                 $newBody = array();//initialize array for body
                 $newTimes = array();//initialize array for times
                 $filePath = $this->_findFile($requestTimeInteger, $observer, $body);
@@ -266,7 +269,6 @@ class Module_SolarBodies implements Module {
         $solarObservers = array(
             "trajectories"  => $solarObserversTrajectories
         );
-
         return $solarObservers;
     }
 
