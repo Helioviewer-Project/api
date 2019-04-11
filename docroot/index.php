@@ -101,8 +101,6 @@ function loadModule($params) {
         'getEventGlossary'       	=> 'SolarEvents',
         'getSolarBodiesGlossary'    => 'SolarBodies',
         'getSolarBodies'            => 'SolarBodies',
-        'getSolarBodiesLabels'      => 'SolarBodies',
-        'getSolarBodiesTrajectories'=> 'SolarBodies',
         'getTrajectoryTime'         => 'SolarBodies'
     );
 
