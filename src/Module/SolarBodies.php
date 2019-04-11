@@ -25,6 +25,7 @@ class Module_SolarBodies implements Module {
         $this->_observers = array("soho","stereo_a","stereo_b");
         // list of bodies to track - add new celestial bodies or satellites here
         $this->_bodies = array("mercury","venus","earth","mars","jupiter","saturn","uranus","neptune","psp");
+        
         // custom parameters and names - add any custom parameters that fall outside the normal dataset for planets
         // normal dataset: x, y, distance_observer_to_body_au, distance_sun_to_observer_au, distance_sun_to_body_au, behind_plane_of_sun
         $this->_mods = array("psp" => array( "name" => "Parker Solar Probe", //Name as displayed in the viewport overlay
@@ -51,7 +52,7 @@ class Module_SolarBodies implements Module {
         }
     }
 
-    public function getSolarBodiesGlossary($local) {
+    public function getSolarBodiesGlossary() {
         $solarObservers = array();
         foreach($this->_observers as $observer){
             $solarBodies = array();
@@ -101,14 +102,24 @@ class Module_SolarBodies implements Module {
         echo( $this->_findTrajectoryTime($requestTimeInteger, $observer, $body, $direction) );
     }
 
+
+    /**
+     * Retrieves positions for trajectories of all available bodies around request time
+     * 
+     * Input:   Time as a unix time stamp in milliseconds
+     * Output:  {   labels : Array of bodies with position/distance data from perspective of observer for given input time,
+     *              trajectories : Array of positions as trajectories for all bodies around a given input time }
+     */
     public function getSolarBodies() {
         $requestTimeInteger = (int)$this->_params['time'];
+        $glossary = $this->getSolarBodiesGlossaryForScreenshot();
         // --- start generating labels ---
         $solarObserversLabels = array();//initialize observers array
-
-        foreach($this->_observers as $observer ){//cycle through each observer in the list
+        $observers = array_keys($glossary['observers']);
+        foreach($observers as $observer ){//cycle through each observer in the list
             $solarBodies = array();//init array for bodies
-            foreach($this->_bodies as $body){//cycle through each body in the list
+            $bodies = $glossary['observers'][$observer];
+            foreach($bodies as $body){//cycle through each body in the list
                 $filePath = $this->_findFile($requestTimeInteger, $observer, $body);//generate filename
                 $bodyData = null;
                 if($filePath != null){
@@ -132,27 +143,30 @@ class Module_SolarBodies implements Module {
         
         // --- start generating trajectories ---
         $solarObserversTrajectories = array();//initialize observers array
-        foreach($this->_observers as $observer ){//cycle through each observer in the list
+        foreach($observers as $observer ){//cycle through each observer in the list
             $solarBodies = array();//init array for bodies
-            foreach($this->_enabledTrajectories as $body){//cycle through each body in the list
-                $newBody = array();//initialize array for body
-                $newTimes = array();//initialize array for times
-                $filePath = $this->_findFile($requestTimeInteger, $observer, $body);
-                $bodyData = array();
-                
-                if($filePath != null){
-                    try{
-                        $file = json_decode(file_get_contents($filePath));//open, read, and parse the file as an object
-                        $bodyData = $file->{$observer}->{$body};
-                    }catch (Exception $e){
-                        //file does not exit
-                    }    
-                }
-                
-                $newBody = array(
-                    $body => $bodyData
-                );
-                $solarBodies = array_merge($solarBodies, $newBody);//add new body coordinates to the existing array
+            $bodies = $glossary['observers'][$observer];
+            foreach($bodies as $body){//cycle through each body in the list
+                if(array_intersect($this->_enabledTrajectories,$bodies)){//if body trajectory is enabled
+                    $newBody = array();//initialize array for body
+                    $newTimes = array();//initialize array for times
+                    $filePath = $this->_findFile($requestTimeInteger, $observer, $body);
+                    $bodyData = array();
+                    
+                    if($filePath != null){
+                        try{
+                            $file = json_decode(file_get_contents($filePath));//open, read, and parse the file as an object
+                            $bodyData = $file->{$observer}->{$body};
+                        }catch (Exception $e){
+                            //file does not exit
+                        }    
+                    }
+                    
+                    $newBody = array(
+                        $body => $bodyData
+                    );
+                    $solarBodies = array_merge($solarBodies, $newBody);//add new body coordinates to the existing array
+                }//end if body trajectory enabled
             }//end foreach bodies
             $newObserver = array($observer => $solarBodies);//create a key-value pair of observer-bodies 
             $solarObserversTrajectories = array_merge($solarObserversTrajectories,$newObserver);//add to list of all observers
@@ -162,40 +176,6 @@ class Module_SolarBodies implements Module {
         $solarObservers = array(
             "labels"        => $solarObserversLabels,
             "trajectories"  => $solarObserversTrajectories
-        );
-
-        $this->_printJSON(json_encode($solarObservers));//send the response
-    }
-
-    public function getSolarBodiesLabels(){
-        $requestTimeInteger = (int)$this->_params['time'];
-        // --- start generating labels ---
-        $solarObserversLabels = array();//initialize observers array
-
-        foreach($this->_observers as $observer ){//cycle through each observer in the list
-            $solarBodies = array();//init array for bodies
-            foreach($this->_bodies as $body){//cycle through each body in the list
-                $filePath = $this->_findFile($requestTimeInteger, $observer, $body);//generate filename
-                $bodyData = null;
-                if($filePath != null){
-                    try{
-                        $file = json_decode(file_get_contents($filePath));//open, read, and parse the file as an object
-                        $bodyData = $this->_searchNearestTime($requestTimeInteger, $file, $observer, $body);
-                    }catch (Exception $e){
-                        //file does not exit
-                    }    
-                }
-                $newBody = array(//set up a key value pair
-                    $body => $bodyData
-                );
-                $solarBodies = array_merge($solarBodies, $newBody);//add new body coordinates to the existing array
-            }//end foreach bodies
-            $newObserver = array($observer => $solarBodies);//create a key-value pair of observer-bodies 
-            $solarObserversLabels = array_merge($solarObserversLabels,$newObserver);//add to list of all observers
-        }//end foreach observers
-        // --- end generating labels ---
-        $solarObservers = array(
-            "labels"        => $solarObserversLabels
         );
 
         $this->_printJSON(json_encode($solarObservers));//send the response
@@ -270,43 +250,6 @@ class Module_SolarBodies implements Module {
             "trajectories"  => $solarObserversTrajectories
         );
         return $solarObservers;
-    }
-
-    public function getSolarBodiesTrajectories(){
-        $requestTimeInteger = (int)$this->_params['time'];
-        // --- start generating trajectories ---
-        $solarObserversTrajectories = array();//initialize observers array
-        foreach($this->_observers as $observer ){//cycle through each observer in the list
-            $solarBodies = array();//init array for bodies
-            foreach($this->_bodies as $body){//cycle through each body in the list
-                $newBody = array();//initialize array for body
-                //$polyline = "";
-                $newTimes = array();//initialize array for times
-                $filePath = $this->_findFile($requestTimeInteger, $observer, $body);
-                $bodyData = array();
-                if($filePath != null){
-                    try{
-                        $file = json_decode(file_get_contents($filePath));//open, read, and parse the file as an object
-                        $bodyData = $file->{$observer}->{$body};
-                    }catch (Exception $e){
-                        //file does not exit
-                    }    
-                }
-                $newBody = array(
-                    $body => $bodyData
-                );
-                $solarBodies = array_merge($solarBodies, $newBody);//add new body coordinates to the existing array
-            }//end foreach bodies
-            $newObserver = array($observer => $solarBodies);//create a key-value pair of observer-bodies 
-            $solarObserversTrajectories = array_merge($solarObserversTrajectories,$newObserver);//add to list of all observers
-        }//end foreach observers
-        // --- end generating trajectories ---
-
-        $solarObservers = array(
-            "trajectories"  => $solarObserversTrajectories
-        );
-
-        $this->_printJSON(json_encode($solarObservers));//send the response
     }
 
     //finds nearest time to the request time in a given file
@@ -416,187 +359,6 @@ class Module_SolarBodies implements Module {
     }
 
     /**
-     * Retrieves positions for trajectories of all available bodies around request time
-     * 
-     * Input:   Time as a unix time stamp in milliseconds
-     * Output:  {   labels : Array of bodies with position/distance data from perspective of observer for given input time,
-     *              trajectories : Array of positions as trajectories for all bodies around a given input time }
-     */
-    public function getSolarBodiesOld() {
-        $requestTime = (int)$this->_params['time'];//url request time parameter
-
-        // --- start generating labels ---
-        $nearestTimes = $this->_nearestTime($requestTime);//use helper function to compute times
-        $nearestDay = $nearestTimes['nearestDay'];//nearest day as unix epoch timestamp
-        $nearest30min = $nearestTimes['nearest30min'];//nearest 30 minute interval as unix epoch timestamp
-        $nearestDate = substr(date("c",$nearestDay/1000),0,10);//convert unix epoch to ISO 8601 date and remove timestamp.
-        $pathToDir = '../docroot/resources/JSON/celestial-objects/';//default json file root dir
-        $solarObserversLabels = array();//initialize observers array
-        foreach($this->_observers as $observer ){//cycle through each observer in the list
-            $solarBodies = array();//init array for bodies
-            foreach($this->_bodies as $body){//cycle through each body in the list
-                $filename = $pathToDir . $observer . '/' . $body . '/' .  $observer . '_' . $body . '_' . $nearestDate . '.json';//generate filename
-                $file = json_decode(file_get_contents($filename));//open, read, and parse the file as an object
-                //if($file != NULL){//file exists
-                    $bodyData = $file->{$observer}->{$body}->{$nearest30min};//get the coordinates
-                    //if($bodyData != NULL){//data is not null
-                        $newBody = array(//set up a key value pair
-                            $body => $bodyData
-                        );
-                        $solarBodies = array_merge($solarBodies, $newBody);//add new body coordinates to the existing array
-                    //}//end if data not null
-                //}//end if file exists
-            }//end foreach bodies
-            $newObserver = array($observer => $solarBodies);//create a key-value pair of observer-bodies 
-            $solarObserversLabels = array_merge($solarObserversLabels,$newObserver);//add to list of all observers
-        }//end foreach observers
-        // --- end generating labels ---
-
-        // --- start generating trajectories ---
-        $trajectoryTimes = $this->_generateTrajectoryTimes($requestTime);//use helper function to compute times
-        $solarObserversTrajectories = array();//initialize observers array
-        foreach($this->_observers as $observer ){//cycle through each observer in the list
-            $solarBodies = array();//init array for bodies
-            foreach($this->_bodies as $body){//cycle through each body in the list
-                $newBody = array();//initialize array for body
-                //$polyline = "";
-                $newTimes = array();//initialize array for times
-                foreach($trajectoryTimes as $times){//cycle through each time in the trajectory
-                    $newTime = array();
-                    $nearestDay = $times['nearestDay'];//nearest day as unix epoch timestamp
-                    $nearest30min = $times['nearest30min'];//nearest 30 minute interval as unix epoch timestamp
-                    $requestTimeResponse = $times['requestTime'];
-                    $nearestDate = substr(date("c",$nearestDay/1000),0,10);//convert unix epoch to ISO 8601 date and remove timestamp.
-                    $filename = $pathToDir . $observer . '/' . $body . '/' .  $observer . '_' . $body . '_' . $nearestDate . '.json';//generate filename
-                    $file = json_decode(file_get_contents($filename));//open, read, and parse the file as an object
-                    if($file != NULL){//file exists
-                        $timeInFile = $file->{$observer}->{$body}->{$nearest30min};
-                        if($timeInFile != NULL){
-                            $x = round( $file->{$observer}->{$body}->{$nearest30min}->{'x'} );//x coordinate
-                            $y = round( $file->{$observer}->{$body}->{$nearest30min}->{'y'} );//y coordinate
-                            $behindPlaneOfSun = $file->{$observer}->{$body}->{$nearest30min}->{'behind_plane_of_sun'};//String "True" or "False" converted to 0 or 1
-                            //$polyline = $polyline.$x.",".$y." ";
-                            //if($requestTimeResponse == $requestTime){//if the request is the current position in the trajectory
-                                $bodyData = array(//create new data object with key value pairs
-                                    'x' => $x,
-                                    'y' => $y,
-                                    'b' => $behindPlaneOfSun, //behind_plane_of_sun
-                                    't' => $requestTimeResponse //send the request time to denote current location on trajectory
-                                );
-                            /*}else{
-                                $bodyData = array(//create new data object with key value pairs
-                                    'x' => $x,
-                                    'y' => $y,
-                                    'b' => $behindPlaneOfSun, //behind_plane_of_sun
-                                );
-                            }*/
-                            $nearest30minString = strval($nearest30min);
-                            $newTime = array(
-                                $nearest30minString => $bodyData
-                            );
-                            $newTimes = array_merge($newTimes, $newTime);
-                        }//end if time in file exists
-                        
-                    }//end if file exists
-                }//end foreach times
-                /*
-                $polyline = substr($polyline, 0, -1);
-                $newBody = array(
-                    $body => array('polygon' => $polyline)
-                );
-                */
-                $newBody = array(
-                    $body => $newTimes
-                );
-                $solarBodies = array_merge($solarBodies, $newBody);//add new body coordinates to the existing array
-            }//end foreach bodies
-            $newObserver = array($observer => $solarBodies);//create a key-value pair of observer-bodies 
-            $solarObserversTrajectories = array_merge($solarObserversTrajectories,$newObserver);//add to list of all observers
-        }//end foreach observers
-        // --- end generating trajectories ---
-
-        //merge arrays into one object
-        $solarObservers = array(
-            "labels"        => $solarObserversLabels,
-            "trajectories"  => $solarObserversTrajectories
-        );
-
-        $this->_printJSON(json_encode($solarObservers));//send the response
-    }
-
-    /**
-     * Retrieves positions for trajectories of all available bodies around request time
-     * 
-     * Input:   Time as a unix time stamp in milliseconds 
-     * Output:  Array of positions as trajectories for all bodies around a given input time.
-     */
-    public function getTrajectoriesFixedCadence() {
-        $requestTime = (int)$this->_params['time'];//url request time parameter
-        $trajectoryTimes = $this->_generateTrajectoryTimes($requestTime);//use helper function to compute times
-        $pathToDir = '../docroot/resources/JSON/celestial-objects/';//default json file root dir
-        $solarObservers = array();//initialize observers array
-        foreach($this->_observers as $observer ){//cycle through each observer in the list
-            $solarBodies = array();//init array for bodies
-            foreach($this->_bodies as $body){//cycle through each body in the list
-                $newBody = array();//initialize array for body
-                //$polyline = "";
-                $newTimes = array();//initialize array for times
-                foreach($trajectoryTimes as $times){//cycle through each time in the trajectory
-                    $newTime = array();
-                    $nearestDay = $times['nearestDay'];//nearest day as unix epoch timestamp
-                    $nearest30min = $times['nearest30min'];//nearest 30 minute interval as unix epoch timestamp
-                    $requestTimeResponse = $times['requestTime'];
-                    $nearestDate = substr(date("c",$nearestDay/1000),0,10);//convert unix epoch to ISO 8601 date and remove timestamp.
-                    $filename = $pathToDir . $observer . '/' . $body . '/' .  $observer . '_' . $body . '_' . $nearestDate . '.json';//generate filename
-                    $file = json_decode(file_get_contents($filename));//open, read, and parse the file as an object
-                    if($file != NULL){//file exists
-                        $timeInFile = $file->{$observer}->{$body}->{$nearest30min};
-                        if($timeInFile != NULL){
-                            $x = round( $file->{$observer}->{$body}->{$nearest30min}->{'x'} );//x coordinate
-                            $y = round( $file->{$observer}->{$body}->{$nearest30min}->{'y'} );//y coordinate
-                            $behindPlaneOfSun = $file->{$observer}->{$body}->{$nearest30min}->{'behind_plane_of_sun'};//String "True" or "False" converted to 0 or 1
-                            //$polyline = $polyline.$x.",".$y." ";
-                            //if($requestTimeResponse == $requestTime){//if the request is the current position in the trajectory
-                                $bodyData = array(//create new data object with key value pairs
-                                    'x' => $x,
-                                    'y' => $y,
-                                    'b' => $behindPlaneOfSun, //behind_plane_of_sun
-                                    't' => $requestTimeResponse //send the request time to denote current location on trajectory
-                                );
-                            /*}else{
-                                $bodyData = array(//create new data object with key value pairs
-                                    'x' => $x,
-                                    'y' => $y,
-                                    'b' => $behindPlaneOfSun, //behind_plane_of_sun
-                                );
-                            }*/
-                            $nearest30minString = strval($nearest30min);
-                            $newTime = array(
-                                $nearest30minString => $bodyData
-                            );
-                            $newTimes = array_merge($newTimes, $newTime);
-                        }//end if time in file exists
-                        
-                    }//end if file exists
-                }//end foreach times
-                /*
-                $polyline = substr($polyline, 0, -1);
-                $newBody = array(
-                    $body => array('polygon' => $polyline)
-                );
-                */
-                $newBody = array(
-                    $body => $newTimes
-                );
-                $solarBodies = array_merge($solarBodies, $newBody);//add new body coordinates to the existing array
-            }//end foreach bodies
-            $newObserver = array($observer => $solarBodies);//create a key-value pair of observer-bodies 
-            $solarObservers = array_merge($solarObservers,$newObserver);//add to list of all observers
-        }//end foreach observers
-        $this->_printJSON(json_encode($solarObservers));//send the response
-    }
-
-    /**
      * Helper function for getting the nearest Day and 30 minute interval
      * to the requested time as unix epoch timestamps
      * 
@@ -628,25 +390,6 @@ class Module_SolarBodies implements Module {
             'nearestDay' => $nearestDay,
             'nearest30min' => $nearest30min
         );
-    }
-
-    /**
-     * Helper function which generates an array of times for use with the getTrajectories method.
-     * 
-     * Input: request as unix epoch timestamp in milliseconds
-     * Output: Array of times for finding the datapoints of the trajectory around the request time
-     */
-    private function _generateTrajectoryTimes($requestTime) {
-        $sixHours = 21600000; // 6 hours in milliseconds
-        $timeInterval = $sixHours * 4;
-        $numberOfPoints = 16; // number of points in each direction from request date. (2x + 1 total data points)
-        $trajectoryTimes = array();//initialize array
-        for($i = -$numberOfPoints; $i <= $numberOfPoints ; $i++){//step through points in trajectory, from the past to the future
-            $pointRequestTime = $requestTime + ($i * $timeInterval);//calculate point time
-            $pointNearestTime = array($this->_nearestTime($pointRequestTime));//use helper function to find nearest times
-            $trajectoryTimes = array_merge($trajectoryTimes, $pointNearestTime);//add times to array
-        }
-        return $trajectoryTimes;
     }
 
     /**
