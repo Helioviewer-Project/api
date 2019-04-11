@@ -146,10 +146,14 @@ class Movie_HelioviewerMovie {
 
         // Data Layers
         $this->_layers = new Helper_HelioviewerLayers($info['dataSourceString']);
+        $this->_dataSourceString = $info['dataSourceString'];
         $this->_events = new Helper_HelioviewerEvents($info['eventSourceString']);
+        $this->_eventSourceString = $info['eventSourceString'];
 
         // Regon of interest
         $this->_roi = Helper_RegionOfInterest::parsePolygonString($info['roi'], $info['imageScale']);
+        $this->_roiSourceString = $info['roi'];
+        $this->_imageScaleSourceString = $info['imageScale'];
     }
 
     private function _dbSetup() {
@@ -397,13 +401,15 @@ class Movie_HelioviewerMovie {
      * @return $images an array of built movie frames
      */
     private function _buildMovieFrames($watermark) {
+        $HelioviewerMovieFrameLocation = HV_ROOT_DIR .'/../src/Image/Composite/HelioviewerMovieFrame.php';
+
         $this->_dbSetup();
 
         $frameNum = 0;
 
         // Movie frame parameters
         $options = array(
-            'database'  => $this->_db,
+            'database'  => false,
             'compress'  => false,
             'interlace' => false,
             'watermark' => $watermark,
@@ -423,25 +429,228 @@ class Movie_HelioviewerMovie {
         // Add tolerance for single-frame failures
         $numFailures = 0;
 
+        $totalFrames = count($this->_timestamps);
+        $dspec = array(
+            0 => array('pipe', 'r'),
+            1 => array('pipe', 'w')
+        );
+
+        $numConcurrentFrames = 8;
+        $params = array( 'filepath' => '',
+                                 'eventsLabels' => $this->eventsLabels,
+                                 'movieIcons' => $this->movieIcons,
+                                 'celestialBodies' => $this->celestialBodies,
+                                 'scale' => $this->scale,
+                                 'scaleType' => $this->scaleType,
+                                 'scaleX' => $this->scaleX,
+                                 'scaleY' => $this->scaleY,
+                                 'obsDate' => '',
+                                 'options' => $options,
+                                 'dataSourceString' => $this->_dataSourceString,
+                                 'eventSourceString' => $this->_eventSourceString,
+                                 'roiSourceString' => $this->_roiSourceString,
+                                 'imageScaleSourceString' => $this->_imageScaleSourceString );
         // Compile frames
-        foreach ($this->_timestamps as $time) {
-
-            $filepath =  sprintf('%sframes/frame%d.bmp', $this->directory, $frameNum);
-
+        for($pos = 0;$pos<$totalFrames;$pos+=$numConcurrentFrames) {
             try {
-                $screenshot = new Image_Composite_HelioviewerMovieFrame(
-                    $filepath, $this->_layers, $this->_events,
-                    $this->eventsLabels, $this->movieIcons, $this->celestialBodies, 
-                    $this->scale, $this->scaleType, $this->scaleX, $this->scaleY,
-                    $time, $this->_roi, $options);
+                $pipes = [];
+                $processes = [];
+                $filepaths = [];
+                for($f = 0; $f<$numConcurrentFrames;$f++){
+                    if($pos + $f < $totalFrames){
+                        $time = $this->_timestamps[$pos+$f];
+                        //echo "Processing ".$pos+$f."\n";
+                        $filepath =  sprintf('%sframes/frame%d.bmp', $this->directory, $pos+$f);
+                        array_push($filepaths, $filepath);
+                        $params['filepath'] = $filepath;
+                        $params['obsDate'] = $time;
+                    
+                        $processName = "HV_ROOT_DIR=".HV_ROOT_DIR." php ".HV_ROOT_DIR . "/../src/Helper/ParallelStartMovieFrame.php "."'".json_encode($params)."'";
+                        //echo $processName1;
+                        $proc = proc_open($processName,$dspec,$procPipes);
+                        $processes[$f] = $proc;
+                        stream_set_blocking($procPipes[1], 0);
+                        $pipes[$f] = $procPipes;
+                    }
+                }
 
-                if ( $frameNum == $previewIndex ) {
+                // Run in a loop until all subprocesses finish.
+                while (array_filter($processes, function($proc) { return proc_get_status($proc)['running']; })) {
+                    for($f = 0; $f<$numConcurrentFrames;$f++){
+                        if($pos + $f < $totalFrames){
+                            usleep(10 * 10); // 10ms
+                            // Read all available output (unread output is buffered).
+                            $str = fread($pipes[$f][1], 16);
+                            if ($str) {
+                                printf($str);
+                                array_push($this->_frames, $filepaths[$f]);
+                            }
+                        }
+                    }
+                }
+
+                for($f = 0; $f<$numConcurrentFrames;$f++){
+                    if($pos+$f<$totalFrames){
+                        //echo "Frame ".($pos+$f)." Complete\n";
+                        //close pipes and process
+                        fclose($pipes[$f][0]);
+                        fclose($pipes[$f][1]);
+                        proc_close($processes[$f]);
+                    }
+                }
+
+                // $screenshot = new Image_Composite_HelioviewerMovieFrame(
+                //     $filepath1, $this->_layers, $this->_events,
+                //     $this->eventsLabels, $this->movieIcons, $this->celestialBodies, 
+                //     $this->scale, $this->scaleType, $this->scaleX, $this->scaleY,
+                //     $time1, $this->_roi, $options);
+
+                /*if($pos<$totalFrames-1){
+                    $time2 = $this->_timestamps[$pos+1];
+                    echo "Processing ".($pos+1)."\n";
+
+                    $params2 = array( 'filepath' => $filepath2,
+                                 'eventsLabels' => $this->eventsLabels,
+                                 'movieIcons' => $this->movieIcons,
+                                 'celestialBodies' => $this->celestialBodies,
+                                 'scale' => $this->scale,
+                                 'scaleType' => $this->scaleType,
+                                 'scaleX' => $this->scaleX,
+                                 'scaleY' => $this->scaleY,
+                                 'obsDate' => $time2,
+                                 'options' => $options,
+                                 'dataSourceString' => $this->_dataSourceString,
+                                 'eventSourceString' => $this->_eventSourceString,
+                                 'roiSourceString' => $this->_roiSourceString,
+                                 'imageScaleSourceString' => $this->_imageScaleSourceString );
+
+                    $processName2 = "HV_ROOT_DIR=".HV_ROOT_DIR." php ".HV_ROOT_DIR . "/../src/Helper/ParallelStartMovieFrame.php "."'".json_encode($params2)."'";
+                    //echo $processName2;
+                    $proc2 = proc_open($processName2,$dspec,$pipes2);
+                    // $screenshot2 = new Image_Composite_HelioviewerMovieFrame(
+                    //     $filepath2, $this->_layers, $this->_events,
+                    //     $this->eventsLabels, $this->movieIcons, $this->celestialBodies, 
+                    //     $this->scale, $this->scaleType, $this->scaleX, $this->scaleY,
+                    //     $time2, $this->_roi, $options);
+                }
+
+                if($pos+1<$totalFrames){
+                    $time3 = $this->_timestamps[$pos+2];
+                    echo "Processing ".($pos+2)."\n";
+
+                    $params3 = array( 'filepath' => $filepath3,
+                                 'eventsLabels' => $this->eventsLabels,
+                                 'movieIcons' => $this->movieIcons,
+                                 'celestialBodies' => $this->celestialBodies,
+                                 'scale' => $this->scale,
+                                 'scaleType' => $this->scaleType,
+                                 'scaleX' => $this->scaleX,
+                                 'scaleY' => $this->scaleY,
+                                 'obsDate' => $time3,
+                                 'options' => $options,
+                                 'dataSourceString' => $this->_dataSourceString,
+                                 'eventSourceString' => $this->_eventSourceString,
+                                 'roiSourceString' => $this->_roiSourceString,
+                                 'imageScaleSourceString' => $this->_imageScaleSourceString );
+
+                    $processName3 = "HV_ROOT_DIR=".HV_ROOT_DIR." php ".HV_ROOT_DIR . "/../src/Helper/ParallelStartMovieFrame.php "."'".json_encode($params3)."'";
+                    //echo $processName2;
+                    $proc3 = proc_open($processName3,$dspec,$pipes3);
+                    // $screenshot2 = new Image_Composite_HelioviewerMovieFrame(
+                    //     $filepath2, $this->_layers, $this->_events,
+                    //     $this->eventsLabels, $this->movieIcons, $this->celestialBodies, 
+                    //     $this->scale, $this->scaleType, $this->scaleX, $this->scaleY,
+                    //     $time2, $this->_roi, $options);
+                }
+
+                if($pos+2<$totalFrames){
+                    $time4 = $this->_timestamps[$pos+3];
+                    echo "Processing ".($pos+3)."\n";
+
+                    $params4 = array( 'filepath' => $filepath4,
+                                 'eventsLabels' => $this->eventsLabels,
+                                 'movieIcons' => $this->movieIcons,
+                                 'celestialBodies' => $this->celestialBodies,
+                                 'scale' => $this->scale,
+                                 'scaleType' => $this->scaleType,
+                                 'scaleX' => $this->scaleX,
+                                 'scaleY' => $this->scaleY,
+                                 'obsDate' => $time4,
+                                 'options' => $options,
+                                 'dataSourceString' => $this->_dataSourceString,
+                                 'eventSourceString' => $this->_eventSourceString,
+                                 'roiSourceString' => $this->_roiSourceString,
+                                 'imageScaleSourceString' => $this->_imageScaleSourceString );
+
+                    $processName4 = "HV_ROOT_DIR=".HV_ROOT_DIR." php ".HV_ROOT_DIR . "/../src/Helper/ParallelStartMovieFrame.php "."'".json_encode($params4)."'";
+                    //echo $processName2;
+                    $proc4 = proc_open($processName4,$dspec,$pipes4);
+                    // $screenshot2 = new Image_Composite_HelioviewerMovieFrame(
+                    //     $filepath2, $this->_layers, $this->_events,
+                    //     $this->eventsLabels, $this->movieIcons, $this->celestialBodies, 
+                    //     $this->scale, $this->scaleType, $this->scaleX, $this->scaleY,
+                    //     $time2, $this->_roi, $options);
+                }*/
+
+                /*if(is_resource($proc1)){
+                    echo "Frame ".$pos." Complete\n";
+                    $foo1 = stream_get_contents($pipes1[1]);
+                    //close pipes and process
+                    fclose($pipes1[0]);
+                    fclose($pipes1[1]);
+                    fclose($pipes1[2]);
+                    proc_close($proc1);
+                }
+                
+                if($pos<$totalFrames-1){
+                    if(is_resource($proc2)){
+                        echo "Frame ".($pos+1)." Complete\n";
+                        $foo2 = stream_get_contents($pipes2[1]);
+                        //close pipes and process
+                        fclose($pipes2[0]);
+                        fclose($pipes2[1]);
+                        fclose($pipes2[2]);
+                        proc_close($proc2);
+                    }
+                }
+
+                if($pos+1<$totalFrames-1){
+                    if(is_resource($proc3)){
+                        echo "Frame ".($pos+2)." Complete\n";
+                        $foo3 = stream_get_contents($pipes3[1]);
+                        //close pipes and process
+                        fclose($pipes3[0]);
+                        fclose($pipes3[1]);
+                        fclose($pipes3[2]);
+                        proc_close($proc3);
+                    }
+                }
+
+                if($pos+2<$totalFrames-1){
+                    if(is_resource($proc4)){
+                        echo "Frame ".($pos+3)." Complete\n";
+                        $foo4 = stream_get_contents($pipes4[1]);
+                        //close pipes and process
+                        fclose($pipes4[0]);
+                        fclose($pipes4[1]);
+                        fclose($pipes4[2]);
+                        proc_close($proc4);
+                    }
+                }*/
+                
+
+                /*if ( $frameNum++ == $previewIndex ) {
                     // Make a copy of frame to be used for preview images
                     $previewImage = $screenshot;
                 }
-
-                $frameNum++;
-                array_push($this->_frames, $filepath);
+                if ( $frameNum == $previewIndex ) {
+                    // Make a copy of frame to be used for preview images
+                    $previewImage = $screenshot2;
+                }*/
+                // array_push($this->_frames, $filepath1);
+                // array_push($this->_frames, $filepath2);
+                // array_push($this->_frames, $filepath3);
+                // array_push($this->_frames, $filepath4);
             }
             catch (Exception $e) {
                 $numFailures += 1;
@@ -457,7 +666,7 @@ class Movie_HelioviewerMovie {
             }
         }
 
-        $this->_createPreviewImages($previewImage);
+        //$this->_createPreviewImages($previewImage);
     }
 
     /**
