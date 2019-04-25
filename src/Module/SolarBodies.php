@@ -281,11 +281,11 @@ class Module_SolarBodies implements Module {
         $dictionaryFileName = $observer . '_' . $body . '_dictionary.json';
         $dictionaryFilePath = $pathToDir . '/' . $observer . '/' . $body . '/' . $dictionaryFileName;
         $dictionary = null;
-        try{
-            $dictionary = (array)json_decode(file_get_contents($dictionaryFilePath));
-        }catch (Exception $e){
-            //dictionary doesn't exist
-        }
+        set_error_handler(function ($errno, $errstr){
+            //catch the warnings instead of printing them to the log
+        }, E_WARNING);
+        $dictionary = (array)json_decode(file_get_contents($dictionaryFilePath));
+        restore_error_handler();
         //find a file which contains the requested timerange
         $trajectoryTime = null;
         if($dictionary != null){
@@ -341,11 +341,11 @@ class Module_SolarBodies implements Module {
         $dictionaryFileName = $observer . '_' . $body . '_dictionary.json';
         $dictionaryFilePath = $pathToDir . '/' . $observer . '/' . $body . '/' . $dictionaryFileName;
         $dictionary = null;
-        try{
-            $dictionary = (array)json_decode(file_get_contents($dictionaryFilePath));
-        }catch (Exception $e){
-            //dictionary doesn't exist
-        }
+        set_error_handler(function ($errno, $errstr){
+            //catch the warnings instead of printing them to the log
+        }, E_WARNING);
+        $dictionary = (array)json_decode(file_get_contents($dictionaryFilePath));
+        restore_error_handler();
         //find a file which contains the requested timerange
         $fileRequested = null;
         if($dictionary != null){
