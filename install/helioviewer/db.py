@@ -20,23 +20,37 @@ def setup_database_schema(adminuser, adminpass, dbhost, dbname, dbuser, dbpass, 
         import pgdb
         adaptor = pgdb
     
+    print("Creating Database...")
     create_db(adminuser, adminpass, dbhost, dbname, dbuser, dbpass, mysql, adaptor)
 
     # connect to helioviewer database
     db, cursor = get_db_cursor(dbhost, dbname, dbuser, dbpass, mysql)
 
+    print("Creating datasource table")
     create_datasource_table(cursor)
+    print("Creating datasource property table")
     create_datasource_property_table(cursor)
+    print("Creating data table")
     create_data_table(cursor)
+    print("Creating corrupt table")
     create_corrupt_table(cursor)
+    print("Creating screenshots table")
     create_screenshots_table(cursor)
+    print("Creating movies table")
     create_movies_table(cursor)
+    print("Creating movie formats table")
     create_movie_formats_table(cursor)
+    print("Creating youtube table")
     create_youtube_table(cursor)
+    print("Creating statistics table")
     create_statistics_table(cursor)
+    print("Creating data coverage table")
     create_data_coverage_table(cursor)
+    print("Updating image table index")
     update_image_table_index(cursor)
+    print("Creating events table")
     create_events_table(cursor)
+    print("Creating events coverage table")
     create_events_coverage_table(cursor)
 
     return db, cursor
@@ -706,9 +720,12 @@ def create_movies_table(cursor):
       `numFrames`         SMALLINT UNSIGNED,
       `width`             SMALLINT UNSIGNED,
       `height`            SMALLINT UNSIGNED,
-      `buildTimeStart`    TIMESTAMP,
-      `buildTimeEnd`      TIMESTAMP,
+      `buildTimeStart`    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      `buildTimeEnd`      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       `size` tinyint(2) NOT NULL DEFAULT '0',
+      `switchSources`     TINYINT(1),
+      `celestialBodiesLabels` VARCHAR(359),
+      `celestialBodiesTrajectories` VARCHAR(359),
        PRIMARY KEY (`id`),
        KEY `startDate` (`startDate`),
        KEY `endDate` (`endDate`),
