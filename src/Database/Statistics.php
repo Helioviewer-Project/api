@@ -90,7 +90,8 @@ class Database_Statistics {
      * @return str  JSON
      */
     public function getUsageStatistics($resolution) {
-        require_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
+		require_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
+		require_once HV_ROOT_DIR.'/../src/Helper/HelioviewerLayers.php';
 
         // Determine time intervals to query
         $interval = $this->_getQueryIntervals($resolution);
@@ -104,7 +105,11 @@ class Database_Statistics {
             "getJPXClosestToMidPoint" 	=> array(),
             "takeScreenshot"       		=> array(),
             "uploadMovieToYouTube" 		=> array(),
-            "embed"                		=> array()
+			"embed"                		=> array(),
+			"minimal"					=> array(),
+			"standard"					=> array(),
+			"movie-notifications-granted"=> array(),
+			"movie-notifications-denied"=> array(),
         );
 
         // Summary array
@@ -116,8 +121,20 @@ class Database_Statistics {
             "getJPXClosestToMidPoint"   => 0,
             "takeScreenshot"       		=> 0,
             "uploadMovieToYouTube" 		=> 0,
-            "embed"                		=> 0
-        );
+			"embed"                		=> 0,
+			"minimal"					=> 0,
+			"standard"					=> 0,
+			"movie-notifications-granted"=> 0,
+			"movie-notifications-denied"=> 0
+		);
+		//final counts summary
+		$movieCommonSources = array();
+		//intermediate array used for keeping track of "seen" occurences
+		$rawMovieSourceBreakdown = array();
+		//final counts summary
+		$screenshotCommonSources = array();
+		//intermediate array used for keeping track of "seen" occurences
+		$rawScreenshotSourceBreakdown = array();
 
         // Format to use for displaying dates
         $dateFormat = $this->_getDateFormat($resolution);
@@ -139,7 +156,7 @@ class Database_Statistics {
 
             // Fill with zeros to begin with
             foreach ($counts as $action => $arr) {
-                array_push($counts[$action], array($dateIndex => 0));
+				array_push($counts[$action], array($dateIndex => 0));
             }
             $dateEnd = toMySQLDateString($date);
 
@@ -166,11 +183,108 @@ class Database_Statistics {
 
                 $counts[$count['action']][$i][$dateIndex] = $num;
                 $summary[$count['action']] += $num;
-            }
-        }
+			}
+
+
+			// Begin movie source breakdown summary section
+
+			$sqlMovies = sprintf(
+				"SELECT dataSourceString "
+			  . "FROM movies "
+			  . "WHERE "
+			  .     "timestamp BETWEEN '%s' AND '%s' ;",
+			  $this->_dbConnection->link->real_escape_string($dateStart),
+			  $this->_dbConnection->link->real_escape_string($dateEnd)
+			 );
+
+			try {
+				$resultMovies = $this->_dbConnection->query($sqlMovies);
+			}
+			catch (Exception $e) {
+				return false;
+			}
+
+			// determine counts for each datasource used in movies
+			
+			while ($row = $resultMovies->fetch_array(MYSQLI_ASSOC)) {
+				$string = (string)$row['dataSourceString'];
+				$layers = new Helper_HelioviewerLayers($string);
+				$sourceNames = $layers->toHumanReadableString();
+				if(strpos($sourceNames,', ') === false){
+					$sourceName = $sourceNames;
+					if(!in_array($sourceName,$rawMovieSourceBreakdown)){
+						array_push($rawMovieSourceBreakdown,$sourceName);
+						$movieCommonSources[$sourceName] = 1;
+					}else{
+						$movieCommonSources[$sourceName] = $movieCommonSources[$sourceName]+1;
+					}
+				}else{
+					$sourcesArray = explode(", ",$sourceNames);
+					foreach($sourcesArray as $source){
+						$sourceName = $source;
+						if(!in_array($sourceName,$rawMovieSourceBreakdown)){
+							array_push($rawMovieSourceBreakdown,$sourceName);
+							$movieCommonSources[$sourceName] = 1;
+						}else{
+							$movieCommonSources[$sourceName] = $movieCommonSources[$sourceName]+1;
+						}
+					}
+				}
+			}
+
+			// Begin screenshot source breakdown summary section
+
+			$sqlScreenshots = sprintf(
+				"SELECT dataSourceString "
+			  . "FROM screenshots "
+			  . "WHERE "
+			  .     "timestamp BETWEEN '%s' AND '%s' ;",
+			  $this->_dbConnection->link->real_escape_string($dateStart),
+			  $this->_dbConnection->link->real_escape_string($dateEnd)
+			 );
+
+			try {
+				$resultScreenshots = $this->_dbConnection->query($sqlScreenshots);
+			}
+			catch (Exception $e) {
+				return false;
+			}
+
+			//determine counts for each datasource used in screenshots
+
+			while ($row = $resultScreenshots->fetch_array(MYSQLI_ASSOC)) {
+				$string = (string)$row['dataSourceString'];
+				$layers = new Helper_HelioviewerLayers($string);
+				$sourceNames = $layers->toHumanReadableString();
+				if(strpos($sourceNames,', ') === false){
+					$sourceName = $sourceNames;
+					if(!in_array($sourceName,$rawScreenshotSourceBreakdown)){
+						array_push($rawScreenshotSourceBreakdown,$sourceName);
+						$screenshotCommonSources[$sourceName] = 1;
+					}else{
+						$screenshotCommonSources[$sourceName] = $screenshotCommonSources[$sourceName]+1;
+					}
+				}else{
+					$sourcesArray = explode(", ",$sourceNames);
+					foreach($sourcesArray as $source){
+						$sourceName = $source;
+						if(!in_array($sourceName,$rawScreenshotSourceBreakdown)){
+							array_push($rawScreenshotSourceBreakdown,$sourceName);
+							$screenshotCommonSources[$sourceName] = 1;
+						}else{
+							$screenshotCommonSources[$sourceName] = $screenshotCommonSources[$sourceName]+1;
+						}
+					}
+				}
+			}
+		}
 
         // Include summary info
-        $counts['summary'] = $summary;
+		$counts['summary'] = $summary;
+		// Include movie source breakdown
+		$counts['movieCommonSources'] = $movieCommonSources;
+		// Include movie source breakdown
+		$counts['screenshotCommonSources'] = $screenshotCommonSources;
 
         return json_encode($counts);
     }

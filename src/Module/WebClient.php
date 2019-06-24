@@ -972,6 +972,20 @@ class Module_WebClient implements Module {
          $this->_printJSON(json_encode($statuses));
      }
 
+     public function logNotificationStatistics() {
+        include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
+        $statistics = new Database_Statistics();
+
+        $notification_status = $this->_params['notifications'];
+
+        if($notification_status == "granted"){
+            $statistics->log('movie-notifications-granted');
+        }else if($notification_status == "denied") {
+            $statistics->log('movie-notifications-denied');
+        }
+        echo $this->_printJSON(json_encode($notification_status));
+     }
+
     /**
      * Determines a numeric indicator ("level") of how up to date a particular
      * image source is relative to it's normal operational availability.

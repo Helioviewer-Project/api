@@ -18,7 +18,9 @@
         google.load("jquery", "1.5");
         google.load("visualization", "1", {packages:["corechart"]});
         google.setOnLoadCallback(function (e) {
-            getUsageStatistics("<?php echo $resolution;?>");
+            resolutionOnLoad = "<?php echo $resolution;?>";
+            getUsageStatistics(resolutionOnLoad);
+            setInterval(checkSessionTimeout, 1000);
         });
     </script>
 </head>
@@ -29,14 +31,23 @@
             <img src="../resources/images/logos/hvlogo1s_transparent_logo.png" alt="Helioviewer logo" />
             <div id='headerText'>The Helioviewer Project - Recent Activity</div>
         </div>
-		<div id="overview"></div>
+        <div id="overview"></div>
+        
         <div id="visualizations">
-            <div id="pieChart"></div>
+            <div id="pieChartsGroup">
+                <div id="versionsChart"></div>
+                <div id="requestsChart"></div>
+                <div id="movieSourcesChart"></div>
+                <div id="screenshotSourcesChart"></div>
+                <div id="notificationChart"></div>
+            </div>
             <div id="barCharts"></div>
         </div>
+        <div id="refresh"></div>
         <div id="footer">
             Note: Helioviewer.org only collects information about types of queries made.  Helioviewer.org does not collect or store any information that could be used to identify users.
         </div>
+        
 	</div>
 </body>
 </html>
