@@ -1,10 +1,11 @@
-#main {text-align: center; margin:0px auto; width: 80%;}
+#main {text-align: center; margin:0px auto; width: 90%;}
 #header {font-size:32px; vertical-align: middle; margin-top: 15px; margin-bottom: 26px;}
 #headerText {display: inline-block; vertical-align: super; font-family: arial,helvetica,liberation sans,bitstream vera sans,freesans,clean,sans-serif; font-size:38px;}
-#footer {font-size: 9.6px;}
-#visualizations {margin: 10px 0;}
-#pieChart {width: 45%; display: inline-block; overflow: hidden;}
-#barCharts {width: 45%; display: inline-block; overflow: hidden; vertical-align: top;}
+#footer {font-size: 10px;}
+#refresh {font-size: 14px;}
+#visualizations {margin: 10px 0; display: flex; flex-flow: row; justify-content: space-evenly;}
+#pieChartsGroup {display: flex; flex-flow: column;}
+#barCharts {width: 50%; display: flex; overflow: hidden; vertical-align: top; align-self: flex-start; flex-flow: column; justify-content: flex-end;}
 .summaryCount {font-weight: bold; font-size:24px; cursor: pointer;}
 
 @media screen and (max-width: 800px) {  

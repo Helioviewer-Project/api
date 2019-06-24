@@ -101,7 +101,8 @@ function loadModule($params) {
         'getEventGlossary'       	=> 'SolarEvents',
         'getSolarBodiesGlossary'    => 'SolarBodies',
         'getSolarBodies'            => 'SolarBodies',
-        'getTrajectoryTime'         => 'SolarBodies'
+        'getTrajectoryTime'         => 'SolarBodies',
+        'logNotificationStatistics' => 'WebClient'
     );
 
     include_once HV_ROOT_DIR.'/../src/Validation/InputValidator.php';

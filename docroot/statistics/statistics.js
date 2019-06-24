@@ -10,13 +10,33 @@
  *                      hourly, daily, weekly, etc.
  *  @return void
  */
-colors = ["#d82641", "#9bd927", "#27d9be", "#6527d9"];
+colors = ["#d82641", "#9bd927", "#27d9be", "#6527d9", "#0091EA", "#FF6F00"];
+notificationKeys = ["movie-notifications-granted","movie-notifications-denied"];
+
+var initialTime = new Date();
+var resolutionOnLoad;
+var pieHeightScale = 0.65;
+var maxVisualizationSizePx = 800;
+var refreshIntervalMinutes = 90;
 
 var getUsageStatistics = function(timeInterval) {
     $.getJSON("../index.php", {action: "getUsageStatistics", resolution: timeInterval}, function (response) {
+        updateLastRefreshFooter();
         displayUsageStatistics(response, timeInterval);
     });
 };
+
+var checkSessionTimeout = function () {
+    var minutes = Math.abs((initialTime - new Date()) / 1000 / 60);
+    if (minutes > refreshIntervalMinutes) {
+        initialTime = new Date();
+        getUsageStatistics(resolutionOnLoad); 
+    } 
+};
+
+var updateLastRefreshFooter = function() {
+    $('#refresh').text("Data Displayed From: "+initialTime.toString() + " [auto-refresh every " + refreshIntervalMinutes + " minutes]");
+}
 
 /**
  * Handles the actual rendering of the usage statistics for the requested period
@@ -27,28 +47,50 @@ var getUsageStatistics = function(timeInterval) {
  * @return void
  */
 var displayUsageStatistics = function (data, timeInterval) {
-    var pieChartHeight, barChartHeight, barChartMargin, summary, max;
+    var pieChartHeight, barChartHeight, barChartMargin, summaryRaw, max;
+    var hvTypePieSummary = {};
+    var notificationPieSummary = {};
+    var movieSourcesSummary = data['movieCommonSources'];
+    var screenshotSourcesSummary = data['screenshotCommonSources'];
 
     // Determine how much space is available to plot charts
-    pieChartHeight = Math.min(0.4 * $(window).width(), $(window).height());
-    barChartHeight = Math.min(150, pieChartHeight / 3);
+    pieChartHeight = Math.min(0.42 * $(window).width(), $(window).height() , maxVisualizationSizePx);
+    barChartHeight = Math.min( pieChartHeight / 3, maxVisualizationSizePx);
 
     // Overview text
-    summary = data['summary'];
-    displaySummaryText(timeInterval, summary);
+    summaryRaw = data['summary'];
+    summaryKeys = Object.keys(summaryRaw);
+    for(var key of summaryKeys){
+        if(notificationKeys.indexOf(key) == -1){//if key is not about notifications
+            hvTypePieSummary[key] = summaryRaw[key];
+        }else{//if key is about notifications
+            notificationPieSummary[key] = summaryRaw[key];
+        }
+    }
+
+    $('#barCharts').empty();
+
+    displaySummaryText(timeInterval, summaryRaw);
 
     // Create summary pie chart
-    createPieChart('pieChart', summary, pieChartHeight);
+    createVersionChart('versionsChart', hvTypePieSummary, pieChartHeight);
+    createPieChart('requestsChart', hvTypePieSummary, pieChartHeight);
+    createNotificationChart('notificationChart', notificationPieSummary, pieChartHeight);
+    createMovieSourcesChart('movieSourcesChart', movieSourcesSummary, pieChartHeight);
+    createScreenshotSourcesChart('screenshotSourcesChart', screenshotSourcesSummary, pieChartHeight);
+
 
     // Create bar graphs for each request type
+    createColumnChart('getClosestImage', data['getClosestImage'], 'Observation', barChartHeight, colors[4]);
     createColumnChart('takeScreenshot', data['takeScreenshot'], 'Screenshot', barChartHeight, colors[0]);
     createColumnChart('buildMovie', data['buildMovie'], 'Movie', barChartHeight, colors[1]);
     createColumnChart('getJPX', data['getJPX'], 'JPX', barChartHeight, colors[2]);
-    createColumnChart('embed', data['embed'], 'Embeds', barChartHeight, colors[3])
+    createColumnChart('embed', data['embed'], 'Embed', barChartHeight, colors[3]);
+    createColumnChart('minimal', data['minimal'], 'Student', barChartHeight, colors[5]);
 
     // Spreads bar graphs out a bit if space permits
-    barChartMargin = Math.round(($("#visualizations").height() - $("#barCharts").height()) / 6);
-    $(".columnChart").css("margin", barChartMargin + "px 0");
+    //barChartMargin = Math.round(($("#visualizations").height() - $("#barCharts").height()) / 7);
+    //$(".columnChart").css("margin", barChartMargin + "px 0");
 }
 
 /**
@@ -64,9 +106,10 @@ var displaySummaryText = function(timeInterval, summary) {
 
     // Human readable text for the requested time intervals
     humanTimes = {
-        "daily"  : "two weeks",
+	"hourly" : "day",
+        "daily"  : "four weeks",
         "weekly" : "two months",
-        "monthly": "year",
+        "monthly": "two years",
         "yearly" : "three years"
     };
 
@@ -74,11 +117,12 @@ var displaySummaryText = function(timeInterval, summary) {
 
     // Generate HTML
     html = '<span id="when">During the last <b>' + when + '</b> Helioviewer.org users created</span> ' +
-           '<span style="color:"' + colors[0] + ';" class="summaryCount">' + summary['takeScreenshot'] + ' screenshots</span>, ' +
-           '<span style="color:"' + colors[1] + ';" class="summaryCount">' + summary['buildMovie'] + ' movies</span>, ' +
-           '<span style="color:"' + colors[2] + ';" class="summaryCount">' + summary['getJPX'] + ' JPX movies</span>, and ' +
-           'Helioviewer.org was <span style="color:"' + colors[3] + ';" class="summaryCount">embedded ' + summary['embed'] + ' times</span>.';
-
+           '<span style="color:' + colors[4] + ';" class="summaryCount">' + summary['getClosestImage'] + ' observations</span>, '+
+           '<span style="color:' + colors[0] + ';" class="summaryCount">' + summary['takeScreenshot'] + ' screenshots</span>, ' +
+           '<span style="color:' + colors[1] + ';" class="summaryCount">' + summary['buildMovie'] + ' movies</span>, and ' +
+           '<span style="color:' + colors[2] + ';" class="summaryCount">' + summary['getJPX'] + ' JPX movies</span>. <br> ' +
+           'Helioviewer.org was <span style="color:' + colors[3] + ';" class="summaryCount">embedded ' + summary['embed'] + ' times </span> and '+
+           '<span style="color:' + colors[5] + ';" class="summaryCount"> accessed by ' + summary['minimal'] + ' students </span>';
     $("#overview").html(html);
 
 };
@@ -137,9 +181,9 @@ var createPieChart = function (id, totals, size) {
     var chart, width, data = new google.visualization.DataTable();
 
     data.addColumn('string', 'Request');
-    data.addColumn('number', 'Frequency of requests');
+    data.addColumn('number', 'Types of requests');
 
-    data.addRows(4);
+    data.addRows(3);
 
     data.setValue(0, 0, 'Screenshots');
     data.setValue(0, 1, totals['takeScreenshot']);
@@ -147,9 +191,112 @@ var createPieChart = function (id, totals, size) {
     data.setValue(1, 1, totals['buildMovie']);
     data.setValue(2, 0, 'JPX Movies');
     data.setValue(2, 1, totals['getJPX']);
-    data.setValue(3, 0, 'Helioviewer.org Embeds');
-    data.setValue(3, 1, totals['embed']);
 
     chart = new google.visualization.PieChart(document.getElementById(id));
-    chart.draw(data, {width: size, height: size, colors: colors, title: "Frequency of requests"});
+    chart.draw(data, {width: size, height: size*pieHeightScale, colors: colors, title: "Types of requests"});
+};
+
+
+
+
+var createVersionChart = function (id, totals, size) {
+    var chart, width, data = new google.visualization.DataTable();
+
+    data.addColumn('string', 'Request');
+    data.addColumn('number', 'Helioviewer Version');
+
+    data.addRows(3);
+
+    data.setValue(0, 0, 'Standard');
+    data.setValue(0, 1, totals['standard']);
+    data.setValue(1, 0, 'Embeds');
+    data.setValue(1, 1, totals['embed']);
+    data.setValue(2, 0, 'Students');
+    data.setValue(2, 1, totals['minimal']);
+
+    chart = new google.visualization.PieChart(document.getElementById(id));
+    chart.draw(data, {width: size, height: size*pieHeightScale, colors: colors, title: "Helioviewer Version"});
+};
+
+var createNotificationChart = function (id, totals, size) {
+    var chart, width, data = new google.visualization.DataTable();
+
+    data.addColumn('string', 'Permission');
+    data.addColumn('number', 'Movie Notifications');
+
+    data.addRows(2);
+
+    data.setValue(0, 0, 'Denied');
+    data.setValue(0, 1, totals['movie-notifications-denied']);
+    data.setValue(1, 0, 'Granted');
+    data.setValue(1, 1, totals['movie-notifications-granted']);
+
+    chart = new google.visualization.PieChart(document.getElementById(id));
+    chart.draw(data, {width: size, height: size*pieHeightScale, colors: colors, title: "Movie Notifications"});
+};
+
+var createMovieSourcesChart = function (id, totals, size) {
+    var chart, width, data = new google.visualization.DataTable();
+    var num = 0, maxNum = 10;
+    var otherCount = 0;
+
+    data.addColumn('string', 'Source');
+    data.addColumn('number', 'Instances');
+
+    //sort the keys by value
+    var keysSorted = Object.keys(totals).sort(function(a,b){return totals[b]-totals[a]})
+    //add appropirate number of rows
+    data.addRows(Math.min(maxNum+1,keysSorted.length));//+1 because of the 'other' aggregate category
+
+    //populate the chart
+    for(var name of keysSorted){
+        if(num<maxNum){//add top 10
+            data.setValue(num, 0, name);
+            data.setValue(num, 1, totals[name]);
+            //increment counter
+            num++;
+        }else{//aggregate the rest into 'other'
+            otherCount += totals[name];
+        }
+    }
+    // add 'other' group to chart
+    if(otherCount > 0){
+        data.setValue(num, 0, 'Other');
+        data.setValue(num, 1, otherCount);
+    }
+    chart = new google.visualization.PieChart(document.getElementById(id));
+    chart.draw(data, {width: size, height: size*pieHeightScale, colors: colors, title: "Movie Sources Breakdown"});
+};
+
+var createScreenshotSourcesChart = function (id, totals, size) {
+    var chart, width, data = new google.visualization.DataTable();
+    var num = 0, maxNum = 10;
+    var otherCount = 0;
+
+    data.addColumn('string', 'Source');
+    data.addColumn('number', 'Instances');
+
+    //sort the keys by value
+    var keysSorted = Object.keys(totals).sort(function(a,b){return totals[b]-totals[a]})
+    //add appropirate number of rows
+    data.addRows(Math.min(maxNum+1,keysSorted.length));//+1 because of the 'other' aggregate category
+
+    //populate the chart
+    for(var name of keysSorted){
+        if(num<maxNum){//add top 10
+            data.setValue(num, 0, name);
+            data.setValue(num, 1, totals[name]);
+            //increment counter
+            num++;
+        }else{//aggregate the rest into 'other'
+            otherCount += totals[name];
+        }
+    }
+    // add 'other' group to chart
+    if(otherCount > 0){
+        data.setValue(num, 0, 'Other');
+        data.setValue(num, 1, otherCount);
+    }
+    chart = new google.visualization.PieChart(document.getElementById(id));
+    chart.draw(data, {width: size, height: size*pieHeightScale, colors: colors, title: "Screenshot Sources Breakdown"});
 };
