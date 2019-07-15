@@ -80,6 +80,90 @@ class Database_Statistics {
         }
 
         return true;
+	}
+	
+	/**
+     * Returns an array of the known data sources as strings 
+	 * compatible with dataSourceString used in screenshot and movie tables
+	 * 
+	 * Modified Copy of getDataSources function in src/Database/ImgIndex.php
+     *
+     * @return array An array of strings
+     */
+    public function _getDataSourceStrings() {
+
+        // Support up to 5 levels of datasource hierarchy
+        $letters = array('a','b','c','d','e');
+
+        $sql = 'SELECT '
+             .     's.name '           .'AS nickname, '
+             .     's.id '             .'AS id, '
+             .     's.enabled '        .'AS enabled, '
+             .     's.layeringOrder '  .'AS layeringOrder, '
+             .     's.units '          .'AS units';
+
+        foreach ($letters as $i=>$letter) {
+            $sql .= ', ';
+            $sql .= $letter.'.name '        .'AS '.$letter.'_name, ';
+            $sql .= $letter.'.description ' .'AS '.$letter.'_description, ';
+            $sql .= $letter.'.label '       .'AS '.$letter.'_label';
+        }
+
+        $sql .= ' FROM datasources s ';
+
+        foreach ($letters as $i=>$letter) {
+            $sql .= 'LEFT JOIN datasource_property '.$letter.' ';
+            $sql .= 'ON s.id='.$letter.'.sourceId ';
+            $sql .= 'AND '.$letter.'.uiOrder='.++$i.' ';
+        }
+
+	    $sql .= ' ORDER BY s.displayOrder ASC, a.name ASC;';
+
+        // Use UTF-8 for responses
+        $this->_dbConnection->setEncoding('utf8');
+
+        // Fetch available data-sources
+        $result = $this->_dbConnection->query($sql);
+        $sources = array();
+        while ($row = $result->fetch_array(MYSQLI_ASSOC)) {
+            array_push($sources, $row);
+        }
+
+		// Convert results into a more easily traversable tree structure
+        $dataSourceNameStringArray = array();
+        foreach ($sources as $source) {
+
+            // Only include if data is available for the specified source
+            // as flagged in the `datasources` table
+            if ( !(bool)$source["enabled"] ) {
+                continue;
+            }
+
+            // Determine depth of tree for this data source
+            $depth = 0;
+            $uiLabels = array();
+            foreach ($letters as $i=>$letter) {
+                if ( $source[$letter.'_name'] !== null ) {
+                    $depth = ++$i;
+                }
+			}
+			//concatenate the full data source name based on the depth
+			$fullDataSourceName = '';
+			foreach ($letters as $index=>$letter) {
+				$partialName = $source[$letter.'_name'];
+				if ( $index == $depth ) {
+					break;
+				}
+				$fullDataSourceName = $fullDataSourceName.$partialName.' ';
+				$index++;
+			}
+			//remove trailing space
+			$fullDataSourceName = substr($fullDataSourceName,0,-1);
+
+			$dataSourceNameStringArray = array_merge($dataSourceNameStringArray,array($fullDataSourceName));
+        }
+
+        return $dataSourceNameStringArray;
     }
 
     /**
@@ -109,7 +193,7 @@ class Database_Statistics {
 			"minimal"					=> array(),
 			"standard"					=> array(),
 			"movie-notifications-granted"=> array(),
-			"movie-notifications-denied"=> array(),
+			"movie-notifications-denied"=> array()
         );
 
         // Summary array
@@ -135,6 +219,8 @@ class Database_Statistics {
 		$screenshotCommonSources = array();
 		//intermediate array used for keeping track of "seen" occurences
 		$rawScreenshotSourceBreakdown = array();
+		//cache the data source strings
+		$dataSourceNames = $this->_getDataSourceStrings();
 
         // Format to use for displaying dates
         $dateFormat = $this->_getDateFormat($resolution);
@@ -159,6 +245,8 @@ class Database_Statistics {
 				array_push($counts[$action], array($dateIndex => 0));
             }
             $dateEnd = toMySQLDateString($date);
+
+			//begin statistics table data gathering
 
             $sql = sprintf(
                       "SELECT action, COUNT(id) AS count "
@@ -185,10 +273,9 @@ class Database_Statistics {
                 $summary[$count['action']] += $num;
 			}
 
-
 			// Begin movie source breakdown summary section
 
-			$sqlMovies = sprintf(
+			$sqlScreenshots = sprintf(
 				"SELECT dataSourceString "
 			  . "FROM movies "
 			  . "WHERE "
@@ -198,35 +285,27 @@ class Database_Statistics {
 			 );
 
 			try {
-				$resultMovies = $this->_dbConnection->query($sqlMovies);
+				$resultScreenshots = $this->_dbConnection->query($sqlScreenshots);
 			}
 			catch (Exception $e) {
 				return false;
 			}
 
-			// determine counts for each datasource used in movies
-			
-			while ($row = $resultMovies->fetch_array(MYSQLI_ASSOC)) {
-				$string = (string)$row['dataSourceString'];
-				$layers = new Helper_HelioviewerLayers($string);
-				$sourceNames = $layers->toHumanReadableString();
-				if(strpos($sourceNames,', ') === false){
-					$sourceName = $sourceNames;
-					if(!in_array($sourceName,$rawMovieSourceBreakdown)){
-						array_push($rawMovieSourceBreakdown,$sourceName);
-						$movieCommonSources[$sourceName] = 1;
-					}else{
-						$movieCommonSources[$sourceName] = $movieCommonSources[$sourceName]+1;
-					}
-				}else{
-					$sourcesArray = explode(", ",$sourceNames);
-					foreach($sourcesArray as $source){
-						$sourceName = $source;
-						if(!in_array($sourceName,$rawMovieSourceBreakdown)){
-							array_push($rawMovieSourceBreakdown,$sourceName);
-							$movieCommonSources[$sourceName] = 1;
-						}else{
-							$movieCommonSources[$sourceName] = $movieCommonSources[$sourceName]+1;
+			//determine counts for each datasource used in screenshots
+			while ($row = $resultScreenshots->fetch_array(MYSQLI_ASSOC)) {
+				$layerString = (string)$row['dataSourceString'];
+				$layerStringArray = explode('],[', substr($layerString, 1, -1));
+
+				foreach($layerStringArray as $singleLayerString){
+					$layerStringWithSpaces = str_replace(',',' ',$singleLayerString);
+					foreach($dataSourceNames as $dataSource){
+						if(strpos($layerStringWithSpaces,$dataSource)===0){//data source matches one of the data sources retrieved at the start
+							if(!in_array($dataSource,$rawMovieSourceBreakdown)){//first time this data source is seen
+								array_push($rawMovieSourceBreakdown,$dataSource);
+								$movieCommonSources[$dataSource] = 1;
+							}else{
+								$movieCommonSources[$dataSource] = $movieCommonSources[$dataSource]+1;
+							}
 						}
 					}
 				}
@@ -251,28 +330,20 @@ class Database_Statistics {
 			}
 
 			//determine counts for each datasource used in screenshots
-
 			while ($row = $resultScreenshots->fetch_array(MYSQLI_ASSOC)) {
-				$string = (string)$row['dataSourceString'];
-				$layers = new Helper_HelioviewerLayers($string);
-				$sourceNames = $layers->toHumanReadableString();
-				if(strpos($sourceNames,', ') === false){
-					$sourceName = $sourceNames;
-					if(!in_array($sourceName,$rawScreenshotSourceBreakdown)){
-						array_push($rawScreenshotSourceBreakdown,$sourceName);
-						$screenshotCommonSources[$sourceName] = 1;
-					}else{
-						$screenshotCommonSources[$sourceName] = $screenshotCommonSources[$sourceName]+1;
-					}
-				}else{
-					$sourcesArray = explode(", ",$sourceNames);
-					foreach($sourcesArray as $source){
-						$sourceName = $source;
-						if(!in_array($sourceName,$rawScreenshotSourceBreakdown)){
-							array_push($rawScreenshotSourceBreakdown,$sourceName);
-							$screenshotCommonSources[$sourceName] = 1;
-						}else{
-							$screenshotCommonSources[$sourceName] = $screenshotCommonSources[$sourceName]+1;
+				$layerString = (string)$row['dataSourceString'];
+				$layerStringArray = explode('],[', substr($layerString, 1, -1));
+
+				foreach($layerStringArray as $singleLayerString){
+					$layerStringWithSpaces = str_replace(',',' ',$singleLayerString);
+					foreach($dataSourceNames as $dataSource){
+						if(strpos($layerStringWithSpaces,$dataSource)===0){//data source matches one of the data sources retrieved at the start
+							if(!in_array($dataSource,$rawScreenshotSourceBreakdown)){//first time this data source is seen
+								array_push($rawScreenshotSourceBreakdown,$dataSource);
+								$screenshotCommonSources[$dataSource] = 1;
+							}else{
+								$screenshotCommonSources[$dataSource] = $screenshotCommonSources[$dataSource]+1;
+							}
 						}
 					}
 				}
