@@ -50,7 +50,7 @@ class Helper_SunPy extends Helper_SciScript {
 # (2) The SunPy environment and commands used to find and acquire data
 # ------------------------------------------------------------------------
 #
-# This script requires an up-to-date installation of SunPy (version 0.6 or
+# This script requires an up-to-date installation of SunPy (version 1.0 or
 # higher).  To install SunPy, please follow the instructions at www.sunpy.org.
 #
 # This script is provided AS-IS. NOTE: It may require editing for it to
@@ -60,7 +60,7 @@ class Helper_SunPy extends Helper_SciScript {
 # for further information.
 #
 # IMPORTANT NOTE
-# These scripts query the VSO for the records they have access to.  Data
+# These scripts query for the records that Fido provides access to.  Data
 # relevant to your request may be available elsewhere.  Likewise, the HEK
 # provides only the feature and event information they have access to.
 # Other features and events relevant to your request may be available
@@ -88,14 +88,13 @@ class Helper_SunPy extends Helper_SciScript {
 import os
 import astropy.units as u
 import sunpy.version as version
-from sunpy.net import vso
+from sunpy.net import Fido, attrs as a
 from sunpy.net import hek
 
-vso_client = vso.VSOClient()
 hek_client = hek.HEKClient()
 
-if version.version < '0.6':
-	raise ValueError('SunPy version 0.6 or higher is required to run this script.')
+if version.version < '1.0':
+	raise ValueError('SunPy version 1.0 or higher is required to run this script.')
 
 EOD;
 
@@ -181,7 +180,7 @@ EOD;
         $string = <<<EOD
 
 #
-# EIT data - downloadable via the VSO
+# EIT data
 #
 EOD;
         $count = 0;
@@ -201,9 +200,9 @@ EOD;
 
                 $string .= <<<EOD
 
-vso_result_eit_{$layer['uiLabels'][2]['name']} = vso_client.query(vso.attrs.Time(tstart, tend), \
-    vso.attrs.Instrument('eit'), vso.attrs.Wave('{$layer['uiLabels'][2]['name']}','{$layer['uiLabels'][2]['name']}'))
-vso_data_eit_{$layer['uiLabels'][2]['name']}   = vso_client.get(vso_result_eit_{$layer['uiLabels'][2]['name']}, path=local_path)
+result_eit_{$layer['uiLabels'][2]['name']} = Fido.search(a.Time(tstart, tend), \
+    a.Instrument('eit'), a.Wave('{$layer['uiLabels'][2]['name']}','{$layer['uiLabels'][2]['name']}'))
+data_eit_{$layer['uiLabels'][2]['name']}   = Fido.fetch(result_eit_{$layer['uiLabels'][2]['name']}, path=local_path)
 
 EOD;
             }
@@ -219,7 +218,7 @@ EOD;
         $string = <<<EOD
 
 #
-# LASCO data - downloadable via the VSO
+# LASCO data
 #
 
 EOD;
@@ -241,9 +240,9 @@ EOD;
                 $detector = strtolower($layer['uiLabels'][2]['name']);
                 $string .= <<<EOD
 
-vso_result_lasco_{$detector} = vso_client.query(vso.attrs.Time(tstart, tend), \
-    vso.attrs.Instrument('lasco-{$detector}'))
-vso_data_lasco_{$detector}   = vso_client.get(vso_result_lasco_{$detector}, path=local_path)
+result_lasco_{$detector} = Fido.search(a.Time(tstart, tend), \
+    a.Instrument('lasco-{$detector}'))
+data_lasco_{$detector}   = Fido.fetch(result_lasco_{$detector}, path=local_path)
 
 EOD;
             }
@@ -259,7 +258,7 @@ EOD;
         $string = <<<EOD
 
 #
-# MDI data - downloadable via the VSO
+# MDI data
 #
 
 EOD;
@@ -280,17 +279,17 @@ EOD;
 
 
                 if ( $layer['uiLabels'][2]['name'] == 'continuum' ) {
-                    $physobs_str = ", vso.attrs.Physobs('intensity')";
+                    $physobs_str = ", a.Physobs('intensity')";
                 }
                 else if ( $layer['uiLabels'][2]['name'] == 'magnetogram' ) {
-                    $physobs_str = ", vso.attrs.Physobs('LOS_magnetic_field')";
+                    $physobs_str = ", a.Physobs('LOS_magnetic_field')";
                 }
 
                 $string .= <<<EOD
 
-vso_result_mdi = vso_client.query(vso.attrs.Time(tstart, tend), \
-    vso.attrs.Instrument('mdi'){$physobs_str})
-vso_data_mdi   = vso_client.get(vso_result_mdi, path=local_path)
+result_mdi = Fido.search(a.Time(tstart, tend), \
+    a.Instrument('mdi'){$physobs_str})
+data_mdi   = Fido.fetch(result_mdi, path=local_path)
 
 EOD;
             }
@@ -306,7 +305,7 @@ EOD;
         $string = <<<EOD
 
 #
-# STEREO data - downloadable via the VSO
+# STEREO data
 #
 
 EOD;
@@ -331,9 +330,9 @@ EOD;
 
                 $string .= <<<EOD
 
-vso_result_{$observatory}_{$instrument}_{$detector}_{$layer['uiLabels'][3]['name']} = vso_client.query(vso.attrs.Time(tstart, tend), \
-    vso.attrs.Instrument('euvi'), vso.attrs.Wave('{$layer['uiLabels'][3]['name']}','{$layer['uiLabels'][3]['name']}'))
-vso_data_{$observatory}_{$instrument}_{$detector}_{$layer['uiLabels'][3]['name']}   = vso_client.get(vso_result_{$observatory}_{$instrument}_{$detector}_{$layer['uiLabels'][3]['name']}, \
+result_{$observatory}_{$instrument}_{$detector}_{$layer['uiLabels'][3]['name']} = Fido.search(a.Time(tstart, tend), \
+    a.Instrument('euvi'), a.Wave('{$layer['uiLabels'][3]['name']}','{$layer['uiLabels'][3]['name']}'))
+data_{$observatory}_{$instrument}_{$detector}_{$layer['uiLabels'][3]['name']}   = Fido.fetch(result_{$observatory}_{$instrument}_{$detector}_{$layer['uiLabels'][3]['name']}, \
     path=local_path)
 
 EOD;
@@ -355,9 +354,9 @@ EOD;
 
                 $string .= <<<EOD
 
-vso_result_{$observatory}_{$instrument}_{$detector} = vso_client.query(vso.attrs.Time(tstart, tend), \
-    vso.attrs.Instrument('{$instrument}'), vso.attrs.Detector('{$detector}'))
-vso_data_{$observatory}_{$instrument}_{$detector}   = vso_client.get(vso_result_{$observatory}_{$instrument}_{$detector}, \
+result_{$observatory}_{$instrument}_{$detector} = Fido.search(a.Time(tstart, tend), \
+    a.Instrument('{$instrument}'), a.Detector('{$detector}'))
+data_{$observatory}_{$instrument}_{$detector}   = Fido.fetch(result_{$observatory}_{$instrument}_{$detector}, \
     path=local_path)
 
 EOD;
@@ -374,7 +373,7 @@ EOD;
         $string = <<<EOD
 
 #
-# SWAP data - downloadable via the VSO
+# SWAP data
 #
 
 EOD;
@@ -395,9 +394,9 @@ EOD;
 
                 $string .= <<<EOD
 
-vso_result_swap_{$layer['uiLabels'][2]['name']} = vso_client.query(vso.attrs.Time(tstart, tend), \
-    vso.attrs.Instrument('swap'), vso.attrs.Wave('{$layer['uiLabels'][2]['name']}','{$layer['uiLabels'][2]['name']}'))
-vso_data_swap_{$layer['uiLabels'][2]['name']}   = vso_client.get(vso_result_swap_{$layer['uiLabels'][2]['name']}, path=local_path)
+result_swap_{$layer['uiLabels'][2]['name']} = Fido.search(a.Time(tstart, tend), \
+    a.Instrument('swap'), a.Wave('{$layer['uiLabels'][2]['name']}','{$layer['uiLabels'][2]['name']}'))
+data_swap_{$layer['uiLabels'][2]['name']}   = Fido.fetch(result_swap_{$layer['uiLabels'][2]['name']}, path=local_path)
 
 EOD;
             }
@@ -413,7 +412,7 @@ EOD;
         $string = <<<EOD
 
 #
-# Yohkoh data - downloadable via the VSO
+# Yohkoh data
 #
 
 EOD;
@@ -434,8 +433,8 @@ EOD;
 
                 $string .= <<<EOD
 
-vso_result_sxt = vso_client.query(vso.attrs.Time(tstart, tend), vso.attrs.Instrument('yohkoh'))
-vso_data_sxt   = vso_client.get(vso_result_sxt, path=local_path)
+result_sxt = Fido.search(a.Time(tstart, tend), a.Instrument('yohkoh'))
+data_sxt   = Fido.fetch(result_sxt, path=local_path)
 
 EOD;
                 break;
@@ -476,7 +475,7 @@ EOD;
 
 
 #
-# AIA data - downloadable via the VSO
+# AIA data
 #    WARNING - Full disk only. This may be a lot of data.
 
 EOD;
@@ -494,9 +493,9 @@ EOD;
 
                 $string .= <<<EOD
 
-vso_result_aia_{$layer['uiLabels'][2]['name']} = vso_client.query(vso.attrs.Time(tstart, tend), \
-    vso.attrs.Instrument('aia'), vso.attrs.Wave({$layer['uiLabels'][2]['name']} * u.Angstrom,{$layer['uiLabels'][2]['name']} * u.Angstrom))
-vso_data_aia_{$layer['uiLabels'][2]['name']}   = vso_client.get(vso_result_aia_{$layer['uiLabels'][2]['name']} , path=local_path)
+result_aia_{$layer['uiLabels'][2]['name']} = Fido.search(a.Time(tstart, tend), \
+    a.Instrument('aia'), a.Wave({$layer['uiLabels'][2]['name']} * u.Angstrom,{$layer['uiLabels'][2]['name']} * u.Angstrom))
+data_aia_{$layer['uiLabels'][2]['name']}   = Fido.fetch(result_aia_{$layer['uiLabels'][2]['name']} , path=local_path)
 
 EOD;
             }
@@ -512,7 +511,7 @@ EOD;
 
 
 #
-# HMI data - downloadable via the VSO
+# HMI data
 #
 
 EOD;
@@ -529,17 +528,17 @@ EOD;
                 }
 
                 if ( $layer['uiLabels'][2]['name'] == 'continuum' ) {
-                    $physobs_str = ", vso.attrs.Physobs('intensity')";
+                    $physobs_str = ", a.Physobs('intensity')";
                 }
                 else if ( $layer['uiLabels'][2]['name'] == 'magnetogram' ) {
-                    $physobs_str = ", vso.attrs.Physobs('LOS_magnetic_field')";
+                    $physobs_str = ", a.Physobs('LOS_magnetic_field')";
                 }
 
                 $string .= <<<EOD
 
-vso_result_hmi = vso_client.query(vso.attrs.Time(tstart, tend), \
-    vso.attrs.Instrument('hmi'){$physobs_str})
-vso_data_hmi   = vso_client.get(vso_result_hmi, path=local_path)
+result_hmi = Fido.search(a.Time(tstart, tend), \
+    a.Instrument('hmi'){$physobs_str})
+data_hmi   = Fido.fetch(result_hmi, path=local_path)
 
 EOD;
             }
