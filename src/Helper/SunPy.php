@@ -132,16 +132,16 @@ EOD;
     private function _getScriptFilename() {
         date_default_timezone_set('UTC');
 
-        $temp = str_replace( Array('-', ':', ' UTC', ' '),
-                             Array(',', ',', '',     ','),
+        $temp = str_replace( Array('/', '-', ':', ' UTC', ' '),
+                             Array(',', ',', ',', '',     ','),
                              $this->_start );
         list($Y,$m,$d,$H,$i,$s) = explode(',',$temp);
         $str = date('Ymd_His', mktime($H,$i,$s,$m,$d,$Y) );
 
         if ( !is_null($this->_end) ) {
 
-            $temp = str_replace( Array('-', ':', ' UTC', ' '),
-                                 Array(',', ',', '',     ','),
+            $temp = str_replace( Array('/', '-', ':', ' UTC', ' '),
+                                 Array(',', ',', ',', '',     ','),
                                  $this->_end );
             list($Y,$m,$d,$H,$i,$s) = explode(',',$temp);
             $end   = date('Ymd_His', mktime($H,$i,$s,$m,$d,$Y) );
@@ -201,7 +201,7 @@ EOD;
                 $string .= <<<EOD
 
 result_eit_{$layer['uiLabels'][2]['name']} = Fido.search(a.Time(tstart, tend), \
-    a.Instrument('eit'), a.Wave('{$layer['uiLabels'][2]['name']}','{$layer['uiLabels'][2]['name']}'))
+    a.Instrument('eit'), a.Wavelength('{$layer['uiLabels'][2]['name']}','{$layer['uiLabels'][2]['name']}'))
 data_eit_{$layer['uiLabels'][2]['name']}   = Fido.fetch(result_eit_{$layer['uiLabels'][2]['name']}, path=local_path)
 
 EOD;
@@ -331,7 +331,7 @@ EOD;
                 $string .= <<<EOD
 
 result_{$observatory}_{$instrument}_{$detector}_{$layer['uiLabels'][3]['name']} = Fido.search(a.Time(tstart, tend), \
-    a.Instrument('euvi'), a.Wave('{$layer['uiLabels'][3]['name']}','{$layer['uiLabels'][3]['name']}'))
+    a.Instrument('euvi'), a.Wavelength('{$layer['uiLabels'][3]['name']}','{$layer['uiLabels'][3]['name']}'))
 data_{$observatory}_{$instrument}_{$detector}_{$layer['uiLabels'][3]['name']}   = Fido.fetch(result_{$observatory}_{$instrument}_{$detector}_{$layer['uiLabels'][3]['name']}, \
     path=local_path)
 
@@ -395,7 +395,7 @@ EOD;
                 $string .= <<<EOD
 
 result_swap_{$layer['uiLabels'][2]['name']} = Fido.search(a.Time(tstart, tend), \
-    a.Instrument('swap'), a.Wave('{$layer['uiLabels'][2]['name']}','{$layer['uiLabels'][2]['name']}'))
+    a.Instrument('swap'), a.Wavelength('{$layer['uiLabels'][2]['name']}','{$layer['uiLabels'][2]['name']}'))
 data_swap_{$layer['uiLabels'][2]['name']}   = Fido.fetch(result_swap_{$layer['uiLabels'][2]['name']}, path=local_path)
 
 EOD;
@@ -494,7 +494,7 @@ EOD;
                 $string .= <<<EOD
 
 result_aia_{$layer['uiLabels'][2]['name']} = Fido.search(a.Time(tstart, tend), \
-    a.Instrument('aia'), a.Wave({$layer['uiLabels'][2]['name']} * u.Angstrom,{$layer['uiLabels'][2]['name']} * u.Angstrom))
+    a.Instrument('aia'), a.Wavelength({$layer['uiLabels'][2]['name']} * u.Angstrom,{$layer['uiLabels'][2]['name']} * u.Angstrom))
 data_aia_{$layer['uiLabels'][2]['name']}   = Fido.fetch(result_aia_{$layer['uiLabels'][2]['name']} , path=local_path)
 
 EOD;
