@@ -192,6 +192,8 @@ class Database_Statistics {
 			"embed"                		=> array(),
 			"minimal"					=> array(),
 			"standard"					=> array(),
+			"sciScript-SSWIDL"			=> array(),
+			"sciScript-SunPy"			=> array(),
 			"movie-notifications-granted"=> array(),
 			"movie-notifications-denied"=> array()
         );
@@ -208,17 +210,23 @@ class Database_Statistics {
 			"embed"                		=> 0,
 			"minimal"					=> 0,
 			"standard"					=> 0,
+			"sciScript-SSWIDL"			=> 0,
+			"sciScript-SunPy"			=> 0,
 			"movie-notifications-granted"=> 0,
 			"movie-notifications-denied"=> 0
 		);
 		//final counts summary
 		$movieCommonSources = array();
+		$movieLayerCount = array();
 		//intermediate array used for keeping track of "seen" occurences
 		$rawMovieSourceBreakdown = array();
+		$rawMovieLayerCount = array();
 		//final counts summary
 		$screenshotCommonSources = array();
+		$screenshotLayerCount = array();
 		//intermediate array used for keeping track of "seen" occurences
 		$rawScreenshotSourceBreakdown = array();
+		$rawScreenshotLayerCount = array();
 		//cache the data source strings
 		$dataSourceNames = $this->_getDataSourceStrings();
 
@@ -291,11 +299,23 @@ class Database_Statistics {
 				return false;
 			}
 
-			//determine counts for each datasource used in screenshots
+			//fetch data source string
 			while ($row = $resultScreenshots->fetch_array(MYSQLI_ASSOC)) {
 				$layerString = (string)$row['dataSourceString'];
+				//split the data source string into individual data sources
 				$layerStringArray = explode('],[', substr($layerString, 1, -1));
+				//determine number of datasources used 
+				$layerCount = sizeof($layerStringArray);
+				$layerCountString = (string)$layerCount;
+				if(!in_array($layerCount,$rawMovieLayerCount)){
+					array_push($rawMovieLayerCount,$layerCount);
+					$layerCountString = (string)$layerCount;
+					$movieLayerCount[$layerCountString] = 1;
+				}else{
+					$movieLayerCount[$layerCountString] = $movieLayerCount[$layerCountString] + 1;
+				}
 
+				//determine counts for each datasource used in screenshots
 				foreach($layerStringArray as $singleLayerString){
 					$layerStringWithSpaces = str_replace(',',' ',$singleLayerString);
 					foreach($dataSourceNames as $dataSource){
@@ -329,11 +349,22 @@ class Database_Statistics {
 				return false;
 			}
 
-			//determine counts for each datasource used in screenshots
+			//fetch data source string
 			while ($row = $resultScreenshots->fetch_array(MYSQLI_ASSOC)) {
 				$layerString = (string)$row['dataSourceString'];
+				//split the data source string into individual data sources
 				$layerStringArray = explode('],[', substr($layerString, 1, -1));
-
+				//determine number of datasources used 
+				$layerCount = sizeof($layerStringArray);
+				$layerCountString = (string)$layerCount;
+				if(!in_array($layerCount,$rawScreenshotLayerCount)){
+					array_push($rawScreenshotLayerCount,$layerCount);
+					$layerCountString = (string)$layerCount;
+					$screenshotLayerCount[$layerCountString] = 1;
+				}else{
+					$screenshotLayerCount[$layerCountString] = $screenshotLayerCount[$layerCountString] + 1;
+				}
+				//determine counts for each datasource used in screenshots
 				foreach($layerStringArray as $singleLayerString){
 					$layerStringWithSpaces = str_replace(',',' ',$singleLayerString);
 					foreach($dataSourceNames as $dataSource){
@@ -354,8 +385,10 @@ class Database_Statistics {
 		$counts['summary'] = $summary;
 		// Include movie source breakdown
 		$counts['movieCommonSources'] = $movieCommonSources;
-		// Include movie source breakdown
+		$counts['movieLayerCount'] = $movieLayerCount;
+		// Include screenshot source breakdown
 		$counts['screenshotCommonSources'] = $screenshotCommonSources;
+		$counts['screenshotLayerCount'] = $screenshotLayerCount;
 
         return json_encode($counts);
     }

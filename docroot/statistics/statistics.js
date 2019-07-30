@@ -10,8 +10,9 @@
  *                      hourly, daily, weekly, etc.
  *  @return void
  */
-colors = ["#d82641", "#9bd927", "#27d9be", "#6527d9", "#0091EA", "#FF6F00"];
-notificationKeys = ["movie-notifications-granted","movie-notifications-denied"];
+colors = ["#D32F2F", "#9bd927", "#27d9be", "#6527d9", "#0091EA", "#FF6F00", "#F06292", "#BA68C8"];
+
+notificationKeys = ["movie-notifications-granted", "movie-notifications-denied"];
 
 var initialTime = new Date();
 var resolutionOnLoad;
@@ -51,7 +52,9 @@ var displayUsageStatistics = function (data, timeInterval) {
     var hvTypePieSummary = {};
     var notificationPieSummary = {};
     var movieSourcesSummary = data['movieCommonSources'];
+    var movieLayerCountSummary = data['movieLayerCount'];
     var screenshotSourcesSummary = data['screenshotCommonSources'];
+    var screenshotLayerCountSummary = data['screenshotLayerCount'];
 
     // Determine how much space is available to plot charts
     pieChartHeight = Math.min(0.42 * $(window).width(), $(window).height() , maxVisualizationSizePx);
@@ -71,13 +74,15 @@ var displayUsageStatistics = function (data, timeInterval) {
     $('#barCharts').empty();
 
     displaySummaryText(timeInterval, summaryRaw);
-
+ 
     // Create summary pie chart
     createVersionChart('versionsChart', hvTypePieSummary, pieChartHeight);
-    createPieChart('requestsChart', hvTypePieSummary, pieChartHeight);
+    createRequestsChart('requestsChart', hvTypePieSummary, pieChartHeight);
     createNotificationChart('notificationChart', notificationPieSummary, pieChartHeight);
-    createMovieSourcesChart('movieSourcesChart', movieSourcesSummary, pieChartHeight);
     createScreenshotSourcesChart('screenshotSourcesChart', screenshotSourcesSummary, pieChartHeight);
+    createScreenshotLayerCountChart('screenshotLayerCountChart',screenshotLayerCountSummary, pieChartHeight);
+    createMovieSourcesChart('movieSourcesChart', movieSourcesSummary, pieChartHeight);
+    createMovieLayerCountChart('movieLayerCountChart',movieLayerCountSummary, pieChartHeight);
 
 
     // Create bar graphs for each request type
@@ -87,6 +92,8 @@ var displayUsageStatistics = function (data, timeInterval) {
     createColumnChart('getJPX', data['getJPX'], 'JPX', barChartHeight, colors[2]);
     createColumnChart('embed', data['embed'], 'Embed', barChartHeight, colors[3]);
     createColumnChart('minimal', data['minimal'], 'Student', barChartHeight, colors[5]);
+    createColumnChart('sciScript-SSWIDL', data['sciScript-SSWIDL'], 'SciScript SSWIDL', barChartHeight, colors[6]);
+    createColumnChart('sciScript-SunPy', data['sciScript-SunPy'], 'SciScript SunPy', barChartHeight, colors[7]);
 
     // Spreads bar graphs out a bit if space permits
     //barChartMargin = Math.round(($("#visualizations").height() - $("#barCharts").height()) / 7);
@@ -177,13 +184,13 @@ var createColumnChart = function (id, rows, desc, height, color) {
  *
  * @return void
  */
-var createPieChart = function (id, totals, size) {
+var createRequestsChart = function (id, totals, size) {
     var chart, width, data = new google.visualization.DataTable();
 
     data.addColumn('string', 'Request');
     data.addColumn('number', 'Types of requests');
 
-    data.addRows(3);
+    data.addRows(4);
 
     data.setValue(0, 0, 'Screenshots');
     data.setValue(0, 1, totals['takeScreenshot']);
@@ -191,6 +198,8 @@ var createPieChart = function (id, totals, size) {
     data.setValue(1, 1, totals['buildMovie']);
     data.setValue(2, 0, 'JPX Movies');
     data.setValue(2, 1, totals['getJPX']);
+    data.setValue(3, 0, 'Sci Scripts');
+    data.setValue(3, 1, totals['sciScript-SSWIDL'] + totals['sciScript-SunPy']);
 
     chart = new google.visualization.PieChart(document.getElementById(id));
     chart.draw(data, {width: size, height: size*pieHeightScale, colors: colors, title: "Types of requests"});
@@ -299,4 +308,52 @@ var createScreenshotSourcesChart = function (id, totals, size) {
     }
     chart = new google.visualization.PieChart(document.getElementById(id));
     chart.draw(data, {width: size, height: size*pieHeightScale, colors: colors, title: "Screenshot Sources Breakdown"});
+};
+
+var createScreenshotLayerCountChart = function (id, totals, size) {
+    var chart, width, data = new google.visualization.DataTable();
+    var num = 0, maxNum = 5;
+    var otherCount = 0;
+
+    data.addColumn('string', 'Layers');
+    data.addColumn('number', 'Number');
+
+    //sort the keys by value
+    var keysSorted = Object.keys(totals).sort(function(a,b){return totals[b]-totals[a]})
+    //add appropirate number of rows
+    data.addRows(Math.min(maxNum,keysSorted.length));
+
+    //populate the chart
+    for(var name of keysSorted){
+        data.setValue(num, 0, name);
+        data.setValue(num, 1, totals[name]);
+        //increment counter
+        num++;
+    }
+    chart = new google.visualization.PieChart(document.getElementById(id));
+    chart.draw(data, {width: size, height: size*pieHeightScale, colors: colors, title: "Screenshot Layer Count"});
+};
+
+var createMovieLayerCountChart = function (id, totals, size) {
+    var chart, width, data = new google.visualization.DataTable();
+    var num = 0, maxNum = 5;
+    var otherCount = 0;
+
+    data.addColumn('string', 'Layers');
+    data.addColumn('number', 'Number');
+
+    //sort the keys by value
+    var keysSorted = Object.keys(totals).sort(function(a,b){return totals[b]-totals[a]})
+    //add appropirate number of rows
+    data.addRows(Math.min(maxNum,keysSorted.length));
+
+    //populate the chart
+    for(var name of keysSorted){
+        data.setValue(num, 0, name);
+        data.setValue(num, 1, totals[name]);
+        //increment counter
+        num++;
+    }
+    chart = new google.visualization.PieChart(document.getElementById(id));
+    chart.draw(data, {width: size, height: size*pieHeightScale, colors: colors, title: "Movie Layer Count"});
 };
