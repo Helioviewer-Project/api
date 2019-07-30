@@ -37,8 +37,10 @@
             <div id="pieChartsGroup">
                 <div id="versionsChart"></div>
                 <div id="requestsChart"></div>
-                <div id="movieSourcesChart"></div>
                 <div id="screenshotSourcesChart"></div>
+                <div id="screenshotLayerCountChart"></div>
+                <div id="movieSourcesChart"></div>
+                <div id="movieLayerCountChart"></div>
                 <div id="notificationChart"></div>
             </div>
             <div id="barCharts"></div>

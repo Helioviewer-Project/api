@@ -23,6 +23,8 @@ class Helper_SunPy extends Helper_SciScript {
 
     function buildScript() {
 
+        $this->_logUsageStatistic();
+
         $filename   = $this->_getScriptFilename();
         $provenance = $this->_getProvenanceComment();
 
@@ -127,6 +129,13 @@ local_path = '{:s}{:s}'.format(os.path.expanduser('~/'), '{file}')
 EOD;
 
         $this->_printScript($filename, $code);
+    }
+
+    private function _logUsageStatistic(){
+		//Log Statistic
+		include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
+		$statistics = new Database_Statistics();
+		$statistics->log("sciScript-SunPy");
     }
 
     private function _getScriptFilename() {

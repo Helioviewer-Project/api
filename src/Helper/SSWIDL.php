@@ -18,6 +18,8 @@ class Helper_SSWIDL extends Helper_SciScript {
 
     function buildScript() {
 
+        $this->_logUsageStatistic();
+
         $filename   = $this->_getScriptFilename();
         $provenance = $this->_getProvenanceComment();
 
@@ -122,6 +124,13 @@ END
 EOD;
 
         $this->_printScript($filename, $code);
+    }
+
+    private function _logUsageStatistic(){
+		//Log Statistic
+		include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
+		$statistics = new Database_Statistics();
+		$statistics->log("sciScript-SSWIDL");
     }
 
     private function _getScriptFilename() {
