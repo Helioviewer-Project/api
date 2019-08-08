@@ -20,11 +20,12 @@ class Module_SolarBodies implements Module {
     public function __construct(&$params) {
         $this->_params = $params;
         $this->_options = array();
-
+        // version number - used to reset all client cookies when this module changes significantly
+        $this->_version = 2;
         // list of observers - add new observers here
-        $this->_observers = array("soho","stereo_a","stereo_b");
+        $this->_observers = array("soho","stereo_a"/*,"stereo_b"*/);
         // list of bodies to track - add new celestial bodies or satellites here
-        $this->_bodies = array("mercury","venus","earth","mars","jupiter","saturn","uranus","neptune","psp");
+        $this->_bodies = array(/*"mercury","venus","earth","mars","jupiter","saturn","uranus","neptune",*/"psp");
         
         // custom parameters and names - add any custom parameters that fall outside the normal dataset for planets
         // normal dataset: x, y, distance_observer_to_body_au, distance_sun_to_observer_au, distance_sun_to_body_au, behind_plane_of_sun
@@ -66,9 +67,11 @@ class Module_SolarBodies implements Module {
             $solarObservers = array_merge($solarObservers, $newObserver);
         }
 
-        $this->_glossary = array( "observers" => $solarObservers,
-                        "enabledTrajectories" => $this->_enabledTrajectories,
-                                       "mods" => $this->_mods);
+        $this->_glossary = array( "version" => $this->_version,
+                                "observers" => $solarObservers,
+                      "enabledTrajectories" => $this->_enabledTrajectories,
+                                     "mods" => $this->_mods,
+                         "enabledByDefault" => $this->_enabledByDefault);
 
         $this->_printJSON(json_encode($this->_glossary));
     }
@@ -147,7 +150,7 @@ class Module_SolarBodies implements Module {
             $solarBodies = array();//init array for bodies
             $bodies = $glossary['observers'][$observer];
             foreach($bodies as $body){//cycle through each body in the list
-                if(array_intersect($this->_enabledTrajectories,$bodies)){//if body trajectory is enabled
+                if(in_array($body,$this->_enabledTrajectories)){//if body trajectory is enabled
                     $newBody = array();//initialize array for body
                     $newTimes = array();//initialize array for times
                     $filePath = $this->_findFile($requestTimeInteger, $observer, $body);
