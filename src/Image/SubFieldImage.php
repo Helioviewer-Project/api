@@ -289,6 +289,10 @@ class Image_SubFieldImage {
                 // Assume that no color table is needed
                 $coloredImage = $grayscale;
 
+                if(isset($this->brightnessScalar)){
+                    $coloredImage->modulateImage($this->brightnessScalar*100,100,100);
+                }
+
                 // Apply color table if one exists
                 if ($this->colorTable && $applyColorTable) {
                     $clut = new IMagick($this->colorTable); 
@@ -536,7 +540,18 @@ class Image_SubFieldImage {
 		
 		$resultImage->importImagePixels(0, 0, $width, $height, 'I', Imagick::PIXEL_CHAR, $pixelsNew);
 		return $resultImage;
-	}
+    }
+    
+    /**
+     * Sets the image brightness scalar to use when correcting for SDO AIA sensor decay
+     * 
+     * @param float $scalar
+     * 
+     * @return void
+     */
+    protected function setImageBrightnessScalar($scalar){
+        $this->brightnessScalar = $scalar;
+    }
 	
     /**
      * Handles clean-up in case something goes wrong to avoid mal-formed tiles
