@@ -43,6 +43,11 @@ class Image_ImageType_AIAImage extends Image_HelioviewerImage {
                     . '/resources/images/color-tables/'
                     . 'SDO_AIA_'.$name.'.png';
         $this->setColorTable($colorTable);
+        
+        //compute image brightness rescaling factor to correct for sensor degradation
+        include_once HV_ROOT_DIR.'/../src/Helper/ImageBrightness.php';
+        $brightnessHelper = new Helper_ImageBrightness($options['date'],$name);
+        $this->setImageBrightnessScalar($brightnessHelper->getBrightness());
 
         parent::__construct($jp2, $filepath, $roi, $uiLabels, $offsetX, $offsetY, $options);
     }
