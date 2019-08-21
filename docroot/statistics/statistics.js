@@ -10,7 +10,7 @@
  *                      hourly, daily, weekly, etc.
  *  @return void
  */
-colors = ["#D32F2F", "#9bd927", "#27d9be", "#6527d9", "#0091EA", "#FF6F00", "#F06292", "#BA68C8"];
+colors = ["#D32F2F", "#9bd927", "#27d9be", "#6527d9", "#0091EA", "#FF6F00", "#F06292", "#BA68C8", "#607D8B"];
 
 notificationKeys = ["movie-notifications-granted", "movie-notifications-denied"];
 
@@ -86,6 +86,7 @@ var displayUsageStatistics = function (data, timeInterval) {
 
 
     // Create bar graphs for each request type
+    createColumnChart('visitors', data['standard'], 'Helioviewer.org', barChartHeight, colors[8]);
     createColumnChart('getClosestImage', data['getClosestImage'], 'Observation', barChartHeight, colors[4]);
     createColumnChart('takeScreenshot', data['takeScreenshot'], 'Screenshot', barChartHeight, colors[0]);
     createColumnChart('buildMovie', data['buildMovie'], 'Movie', barChartHeight, colors[1]);
