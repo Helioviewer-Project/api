@@ -21,7 +21,7 @@ class Helper_ImageBrightness {
    public function __construct($datetime,$wavelength){
 
       //from aia_rescaling_data.json
-      $this->availableWavelengths = array("94","131","171","193","211","304","335");
+      $this->availableWavelengths = array("304");
 
       //from https://github.com/Helioviewer-Project/jp2gen/blob/master/idl/sdo/aia/hvs_version5_aia.pro
       $this->dataMax = array( "94"  => 30.0,
@@ -36,6 +36,7 @@ class Helper_ImageBrightness {
 
       if(in_array($wavelength,$this->availableWavelengths)){
          $this->wavelength = $wavelength;
+         $this->type = "rms";
          $this->_findLocalBrightness();
       }else{
          $this->localBrightness = null;
@@ -48,25 +49,25 @@ class Helper_ImageBrightness {
    }
 
    private function _findLocalBrightness(){
-      $filePath = HV_ROOT_DIR . '/resources/JSON/aia_rescaling_data.json';
+      $filePath = HV_ROOT_DIR . '/resources/JSON/aia_correction_data_304.json';
       $file = json_decode(file_get_contents($filePath));
-      $firstDate = "2010-05-01";
-      $lastDate = "2017-05-10";
+      $firstDate = "2010-06-02";
+      $lastDate = "2019-09-03";
       if($file != null){
          if($this->date < $firstDate){
-            $this->localBrightness = $file->{$firstDate}->{$this->wavelength};
+            $this->localBrightness = $file->{$firstDate}->{$this->type};
          }else if($this->date > $lastDate){
-            $this->localBrightness = $file->{$lastDate}->{$this->wavelength};
+            $this->localBrightness = $file->{$lastDate}->{$this->type};
          }else{
-            $this->localBrightness = $file->{$this->date}->{$this->wavelength};
+            $this->localBrightness = $file->{$this->date}->{$this->type};
          }
-         $this->startOfMissionBrightness = $file->{$firstDate}->{$this->wavelength};
+         $this->startOfMissionBrightness = $file->{"max"}->{"rms"};
       }
    }
 
    private function _computeScalar(){
       $this->ratio = $this->startOfMissionBrightness / $this->localBrightness;
-      $this->brightness = 1 + ( log10($this->ratio) / log10($this->dataMax[$this->wavelength]) );
+      $this->brightness = 1 + log10($this->ratio);
    }
 
    public function getBrightness(){

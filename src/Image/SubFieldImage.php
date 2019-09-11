@@ -290,6 +290,8 @@ class Image_SubFieldImage {
                 $coloredImage = $grayscale;
 
                 if(isset($this->brightnessScalar)){
+                    $gammaScale = (($this->brightnessScalar - 1) / 2 ) + 1; //half the value of the brightness after the leading 1, ex 1.6 -> 1.3
+                    $coloredImage->levelImage(0,$gammaScale,65535);
                     $coloredImage->modulateImage($this->brightnessScalar*100,100,100);
                 }
 
