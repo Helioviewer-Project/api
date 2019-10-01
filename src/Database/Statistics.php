@@ -326,6 +326,7 @@ class Database_Statistics {
 							}else{
 								$movieCommonSources[$dataSource] = $movieCommonSources[$dataSource]+1;
 							}
+							break;
 						}
 					}
 				}
@@ -367,16 +368,16 @@ class Database_Statistics {
 				//determine counts for each datasource used in screenshots
 				foreach($layerStringArray as $singleLayerString){
 					$layerStringWithSpaces = str_replace(',',' ',$singleLayerString);
-					foreach($dataSourceNames as $dataSource){
-						if(strpos($layerStringWithSpaces,$dataSource)===0){//data source matches one of the data sources retrieved at the start
-							if(!in_array($dataSource,$rawScreenshotSourceBreakdown)){//first time this data source is seen
-								array_push($rawScreenshotSourceBreakdown,$dataSource);
-								$screenshotCommonSources[$dataSource] = 1;
+					//foreach($dataSourceNames as $dataSource){
+						//if(strpos($layerStringWithSpaces,$dataSource)===0){//data source matches one of the data sources retrieved at the start
+							if(!in_array($layerStringWithSpaces,$rawScreenshotSourceBreakdown)){//first time this data source is seen
+								array_push($rawScreenshotSourceBreakdown,$layerStringWithSpaces);
+								$screenshotCommonSources[$layerStringWithSpaces] = 1;
 							}else{
-								$screenshotCommonSources[$dataSource] = $screenshotCommonSources[$dataSource]+1;
+								$screenshotCommonSources[$layerStringWithSpaces] = $screenshotCommonSources[$layerStringWithSpaces]+1;
 							}
-						}
-					}
+					//	}
+					//}
 				}
 			}
 		}
