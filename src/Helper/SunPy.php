@@ -35,6 +35,7 @@ class Helper_SunPy extends Helper_SciScript {
         $DataSnippet .= $this->_getSTEREOSnippet();
         $DataSnippet .= $this->_getSWAPSnippet();
         $DataSnippet .= $this->_getYohkohSnippet();
+        $DataSnippet .= $this->_getHinodeXRTSnippet();
         $DataSnippet .= $this->_getHEKSnippet();
 
         $code = <<<EOD
@@ -403,9 +404,8 @@ EOD;
 
                 $string .= <<<EOD
 
-result_swap_{$layer['uiLabels'][2]['name']} = Fido.search(a.Time(tstart, tend), \
-    a.Instrument('swap'), a.Wavelength('{$layer['uiLabels'][2]['name']}','{$layer['uiLabels'][2]['name']}'))
-data_swap_{$layer['uiLabels'][2]['name']}   = Fido.fetch(result_swap_{$layer['uiLabels'][2]['name']}, path=local_path)
+result_swap = Fido.search(a.Time(tstart, tend), a.Instrument('swap'), a.Wavelength(174*u.Angstrom, 174*u.Angstrom))
+data_swap   = Fido.fetch(result_swap, path=local_path)
 
 EOD;
             }
@@ -442,7 +442,7 @@ EOD;
 
                 $string .= <<<EOD
 
-result_sxt = Fido.search(a.Time(tstart, tend), a.Instrument('yohkoh'))
+result_sxt = Fido.search(a.Time(tstart, tend), a.Instrument('sxt'))
 data_sxt   = Fido.fetch(result_sxt, path=local_path)
 
 EOD;
@@ -554,6 +554,46 @@ EOD;
         }
 
         return $string;
+    }
+
+    private function _getHinodeXRTSnippet(){
+        $string = <<<EOD
+
+#
+# Hinode/XRT data
+#
+
+EOD;
+        $count = 0;
+        foreach ( $this->_imageLayers as $i=>$layer) {
+            if ( $layer['uiLabels'][1]['name'] == 'XRT' ) {
+                $count++;
+
+                if ( is_null($this->_end) ) {
+                    $tstart = $tend = str_replace('/','-',$layer['subDate']).' '.$layer['subTime'];
+                    $string .= <<<EOD
+
+tstart = '{$tstart}'
+tend   = '{$tend}'
+
+EOD;
+                }
+
+                $string .= <<<EOD
+
+result_xrt = Fido.search(a.Time(tstart, tend), a.Instrument('xrt'))
+data_xrt   = Fido.fetch(result_xrt, path=local_path)
+
+EOD;
+                break;
+            }
+        }
+        if ($count == 0) {
+            $string = '';
+        }
+
+        return $string;
+
     }
 
     private function _getHEKSnippet() {
