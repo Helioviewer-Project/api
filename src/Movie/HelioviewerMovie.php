@@ -196,8 +196,12 @@ class Movie_HelioviewerMovie {
 
             // If the movie frames have not been built create them
             if ( !@file_exists($this->directory.'frames') ) {
-                require_once HV_ROOT_DIR .
-                    '/../src/Image/Composite/HelioviewerMovieFrame.php';
+
+                /*require_once HV_ROOT_DIR .
+                    '/../src/Image/Composite/HelioviewerMovieFrame.php';*/
+                
+                //prepare the frames directory to accept generated frames ( prevents race condition caused by directory creation within each parallel generated frame )
+                $this->_createFramesDirectory($this->directory.'frames');
 
                 $t1 = date('Y-m-d H:i:s');
 
@@ -246,6 +250,15 @@ class Movie_HelioviewerMovie {
         }
 
         $this->_cleanUp();
+    }
+
+    public function _createFramesDirectory($directory){
+        if ( !@file_exists($directory) ) {
+            if ( !@mkdir($directory, 0775, true) ) {
+                throw new Exception(
+                    'Unable to create frames directory: '. $directory, 50);
+            }
+        }
     }
 
     /**
@@ -403,7 +416,7 @@ class Movie_HelioviewerMovie {
     private function _buildMovieFrames($watermark) {
         $HelioviewerMovieFrameLocation = HV_ROOT_DIR .'/../src/Image/Composite/HelioviewerMovieFrame.php';
 
-        $this->_dbSetup();
+        //$this->_dbSetup();
 
         $frameNum = 0;
 
@@ -435,21 +448,23 @@ class Movie_HelioviewerMovie {
             1 => array('pipe', 'w')
         );
 
-        $numConcurrentFrames = 8;
-        $params = array( 'filepath' => '',
-                                 'eventsLabels' => $this->eventsLabels,
-                                 'movieIcons' => $this->movieIcons,
-                                 'celestialBodies' => $this->celestialBodies,
-                                 'scale' => $this->scale,
-                                 'scaleType' => $this->scaleType,
-                                 'scaleX' => $this->scaleX,
-                                 'scaleY' => $this->scaleY,
-                                 'obsDate' => '',
-                                 'options' => $options,
-                                 'dataSourceString' => $this->_dataSourceString,
-                                 'eventSourceString' => $this->_eventSourceString,
-                                 'roiSourceString' => $this->_roiSourceString,
-                                 'imageScaleSourceString' => $this->_imageScaleSourceString );
+        // Number of frames to create in parallel
+        $numConcurrentFrames = 10;
+
+        $params = array('filepath' => '',
+                        'eventsLabels' => $this->eventsLabels,
+                        'movieIcons' => $this->movieIcons,
+                        'celestialBodies' => $this->celestialBodies,
+                        'scale' => $this->scale,
+                        'scaleType' => $this->scaleType,
+                        'scaleX' => $this->scaleX,
+                        'scaleY' => $this->scaleY,
+                        'obsDate' => '',
+                        'options' => $options,
+                        'dataSourceString' => $this->_dataSourceString,
+                        'eventSourceString' => $this->_eventSourceString,
+                        'roiSourceString' => $this->_roiSourceString,
+                        'imageScaleSourceString' => $this->_imageScaleSourceString );
         // Compile frames
         for($pos = 0;$pos<$totalFrames;$pos+=$numConcurrentFrames) {
             try {
@@ -459,22 +474,32 @@ class Movie_HelioviewerMovie {
                 for($f = 0; $f<$numConcurrentFrames;$f++){
                     if($pos + $f < $totalFrames){
                         $time = $this->_timestamps[$pos+$f];
-                        //echo "Processing ".$pos+$f."\n";
                         $filepath =  sprintf('%sframes/frame%d.bmp', $this->directory, $pos+$f);
                         array_push($filepaths, $filepath);
                         $params['filepath'] = $filepath;
                         $params['obsDate'] = $time;
-                    
-                        $processName = "HV_ROOT_DIR=".HV_ROOT_DIR." php ".HV_ROOT_DIR . "/../src/Helper/ParallelStartMovieFrame.php "."'".json_encode($params)."'";
-                        //echo $processName1;
-                        $proc = proc_open($processName,$dspec,$procPipes);
+                        // Set env vars to pass into new process
+                        $env = array ( "HV_ROOT_DIR" => HV_ROOT_DIR );
+                        // Create process string
+                        $processName = "php ".HV_ROOT_DIR."/../src/Helper/ParallelStartMovieFrame.php";
+                        // Encode custom params for the frame
+                        $processParams = json_encode($params);
+                        // Spawn new process to create frame
+                        $proc = proc_open($processName,$dspec,$procPipes,null,$env);
                         $processes[$f] = $proc;
+                        stream_set_blocking($procPipes[0], 0);
                         stream_set_blocking($procPipes[1], 0);
+                        // Write the parameters using stdin pipe
+                        if(is_resource($proc)){
+                            fwrite($procPipes[0], $processParams, strlen($processParams));
+                            fclose($procPipes[0]);
+                        }
+                        // Keep track of process pipes
                         $pipes[$f] = $procPipes;
                     }
                 }
 
-                // Run in a loop until all subprocesses finish.
+                // Run in a loop until all concurrent frame subprocesses finish.
                 while (array_filter($processes, function($proc) { return proc_get_status($proc)['running']; })) {
                     for($f = 0; $f<$numConcurrentFrames;$f++){
                         if($pos + $f < $totalFrames){
@@ -491,9 +516,7 @@ class Movie_HelioviewerMovie {
 
                 for($f = 0; $f<$numConcurrentFrames;$f++){
                     if($pos+$f<$totalFrames){
-                        //echo "Frame ".($pos+$f)." Complete\n";
                         //close pipes and process
-                        fclose($pipes[$f][0]);
                         fclose($pipes[$f][1]);
                         proc_close($processes[$f]);
                     }
@@ -512,8 +535,9 @@ class Movie_HelioviewerMovie {
                 }
             }
         }
-
-        //$this->_createPreviewImages($previewImage);
+        if(sizeof($this->_frames)>0){
+            $this->_createPreviewImages($this->_frames[0]);
+        }
     }
 
     /**
@@ -536,10 +560,10 @@ class Movie_HelioviewerMovie {
     /**
      * Creates preview images of several different sizes
      */
-    private function _createPreviewImages(&$screenshot) {
-
+    private function _createPreviewImages($screenshot) {
         // Create preview image
-        $preview = $screenshot->getIMagickImage();
+        $preview = new IMagick($screenshot);
+        //$preview = $screenshot->getIMagickImage();
         $preview->setImageCompression(IMagick::COMPRESSION_LZW);
         $preview->setImageCompressionQuality(PNG_LOW_COMPRESSION);
         $preview->setInterlaceScheme(IMagick::INTERLACE_PLANE);
