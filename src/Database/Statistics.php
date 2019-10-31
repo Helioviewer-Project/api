@@ -182,38 +182,42 @@ class Database_Statistics {
 
         // Array to keep track of counts for each action
         $counts = array(
-            "buildMovie"           		=> array(),
-            "getClosestData"       		=> array(),
-            "getClosestImage"      		=> array(),
-            "getJPX"               		=> array(),
-            "getJPXClosestToMidPoint" 	=> array(),
-            "takeScreenshot"       		=> array(),
-            "uploadMovieToYouTube" 		=> array(),
-			"embed"                		=> array(),
-			"minimal"					=> array(),
-			"standard"					=> array(),
-			"sciScript-SSWIDL"			=> array(),
-			"sciScript-SunPy"			=> array(),
-			"movie-notifications-granted"=> array(),
-			"movie-notifications-denied"=> array()
+            "buildMovie"           			=> array(),
+            "getClosestData"       			=> array(),
+            "getClosestImage"      			=> array(),
+            "getJPX"               			=> array(),
+            "getJPXClosestToMidPoint" 		=> array(),
+            "takeScreenshot"       			=> array(),
+            "uploadMovieToYouTube" 			=> array(),
+			"embed"                			=> array(),
+			"minimal"						=> array(),
+			"standard"						=> array(),
+			"sciScript-SSWIDL"				=> array(),
+			"sciScript-SunPy"				=> array(),
+			"movie-notifications-granted"	=> array(),
+			"movie-notifications-denied"	=> array(),
+			"getJP2Image-web"				=> array(),
+			"getJP2Image-jpip" 				=> array()
         );
 
         // Summary array
         $summary = array(
-            "buildMovie"           		=> 0,
-            "getClosestData"       		=> 0,
-            "getClosestImage"      		=> 0,
-            "getJPX"               		=> 0,
-            "getJPXClosestToMidPoint"   => 0,
-            "takeScreenshot"       		=> 0,
-            "uploadMovieToYouTube" 		=> 0,
-			"embed"                		=> 0,
-			"minimal"					=> 0,
-			"standard"					=> 0,
-			"sciScript-SSWIDL"			=> 0,
-			"sciScript-SunPy"			=> 0,
-			"movie-notifications-granted"=> 0,
-			"movie-notifications-denied"=> 0
+            "buildMovie"           			=> 0,
+            "getClosestData"       			=> 0,
+            "getClosestImage"      			=> 0,
+            "getJPX"               			=> 0,
+            "getJPXClosestToMidPoint"   	=> 0,
+            "takeScreenshot"       			=> 0,
+            "uploadMovieToYouTube" 			> 0,
+			"embed"                			=> 0,
+			"minimal"						=> 0,
+			"standard"						=> 0,
+			"sciScript-SSWIDL"				=> 0,
+			"sciScript-SunPy"				=> 0,
+			"movie-notifications-granted"	=> 0,
+			"movie-notifications-denied"	=> 0,
+			"getJP2Image-web"				=> 0,
+			"getJP2Image-jpip" 				=> 0
 		);
 		//final counts summary
 		$movieCommonSources = array();

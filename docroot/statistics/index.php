@@ -32,8 +32,8 @@
             <img src="../resources/images/logos/hvlogo1s_transparent_logo.png" alt="Helioviewer logo" />
             <div id='headerText'>The Helioviewer Project - Recent Activity</div>
         </div>
-        <div id="overview"></div>
         <h2 id="loading">Loading...</h2>
+        <div id="overview"></div>
         <div id="visualizations">
             <div id="pieChartsGroup">
                 <div id="versionsChart"></div>

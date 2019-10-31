@@ -10,7 +10,7 @@
  *                      hourly, daily, weekly, etc.
  *  @return void
  */
-colors = ["#D32F2F", "#9bd927", "#27d9be", "#6527d9", "#0091EA", "#FF6F00", "#F06292", "#BA68C8", "#607D8B"];
+colors = ["#D32F2F", "#9bd927", "#27d9be", "#6527d9", "#0091EA", "#FF6F00", "#F06292", "#BA68C8", "#558B2F", "#FFD600"];
 
 notificationKeys = ["movie-notifications-granted", "movie-notifications-denied"];
 
@@ -38,7 +38,7 @@ var checkSessionTimeout = function (timeInterval) {
 
 var setRefreshIntervalFromTimeInterval = function (){
     refreshIntervals = {
-	    "hourly" : 1,
+	    "hourly" : 5,
         "daily"  : 60,
         "weekly" : 180,
         "monthly": 540,
@@ -104,6 +104,7 @@ var displayUsageStatistics = function (data, timeInterval) {
     createColumnChart('getClosestImage', data['getClosestImage'], 'Observation', barChartHeight, colors[4]);
     createColumnChart('takeScreenshot', data['takeScreenshot'], 'Screenshot', barChartHeight, colors[0]);
     createColumnChart('buildMovie', data['buildMovie'], 'Movie', barChartHeight, colors[1]);
+    createColumnChart('getJP2Image-web', data['getJP2Image-web'], 'JP2 Download', barChartHeight, colors[9]);
     createColumnChart('getJPX', data['getJPX'], 'JPX', barChartHeight, colors[2]);
     createColumnChart('embed', data['embed'], 'Embed', barChartHeight, colors[3]);
     createColumnChart('minimal', data['minimal'], 'Student', barChartHeight, colors[5]);
@@ -139,12 +140,12 @@ var displaySummaryText = function(timeInterval, summary) {
 
     // Generate HTML
     html = '<span id="when">During the last <b>' + when + '</b> Helioviewer.org users created</span> ' +
-           '<span style="color:' + colors[4] + ';" class="summaryCount">' + summary['getClosestImage'] + ' observations</span>, '+
-           '<span style="color:' + colors[0] + ';" class="summaryCount">' + summary['takeScreenshot'] + ' screenshots</span>, ' +
-           '<span style="color:' + colors[1] + ';" class="summaryCount">' + summary['buildMovie'] + ' movies</span>, and ' +
-           '<span style="color:' + colors[2] + ';" class="summaryCount">' + summary['getJPX'] + ' JPX movies</span>. <br> ' +
-           'Helioviewer.org was <span style="color:' + colors[3] + ';" class="summaryCount">embedded ' + summary['embed'] + ' times </span> and '+
-           '<span style="color:' + colors[5] + ';" class="summaryCount"> accessed by ' + summary['minimal'] + ' students </span>';
+           '<span style="color:' + colors[4] + ';" class="summaryCount">' + summary['getClosestImage'].toLocaleString() + ' observations</span>, '+
+           '<span style="color:' + colors[0] + ';" class="summaryCount">' + summary['takeScreenshot'].toLocaleString() + ' screenshots</span>, ' +
+           '<span style="color:' + colors[1] + ';" class="summaryCount">' + summary['buildMovie'].toLocaleString() + ' movies</span>, and ' +
+           '<span style="color:' + colors[2] + ';" class="summaryCount">' + summary['getJPX'].toLocaleString() + ' JPX movies</span>. <br> ' +
+           'Helioviewer.org was <span style="color:' + colors[3] + ';" class="summaryCount">embedded ' + summary['embed'].toLocaleString() + ' times </span> and '+
+           '<span style="color:' + colors[5] + ';" class="summaryCount"> accessed by ' + summary['minimal'].toLocaleString() + ' students </span>';
     $("#overview").html(html);
 
 };
