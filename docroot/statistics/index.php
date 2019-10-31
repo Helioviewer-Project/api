@@ -19,6 +19,7 @@
         google.load("visualization", "1", {packages:["corechart"]});
         google.setOnLoadCallback(function (e) {
             resolutionOnLoad = "<?php echo $resolution;?>";
+            setRefreshIntervalFromTimeInterval();
             getUsageStatistics(resolutionOnLoad);
             setInterval(checkSessionTimeout, 1000);
         });
@@ -32,7 +33,7 @@
             <div id='headerText'>The Helioviewer Project - Recent Activity</div>
         </div>
         <div id="overview"></div>
-        
+        <h2 id="loading">Loading...</h2>
         <div id="visualizations">
             <div id="pieChartsGroup">
                 <div id="versionsChart"></div>

@@ -18,7 +18,7 @@ var initialTime = new Date();
 var resolutionOnLoad;
 var pieHeightScale = 0.65;
 var maxVisualizationSizePx = 800;
-var refreshIntervalMinutes = 90;
+var refreshIntervalMinutes;
 
 var getUsageStatistics = function(timeInterval) {
     $.getJSON("../index.php", {action: "getUsageStatistics", resolution: timeInterval}, function (response) {
@@ -27,13 +27,25 @@ var getUsageStatistics = function(timeInterval) {
     });
 };
 
-var checkSessionTimeout = function () {
+var checkSessionTimeout = function (timeInterval) {
     var minutes = Math.abs((initialTime - new Date()) / 1000 / 60);
     if (minutes > refreshIntervalMinutes) {
         initialTime = new Date();
+        $('#loading').text("Refreshing...");
         getUsageStatistics(resolutionOnLoad); 
     } 
 };
+
+var setRefreshIntervalFromTimeInterval = function (){
+    refreshIntervals = {
+	    "hourly" : 1,
+        "daily"  : 60,
+        "weekly" : 180,
+        "monthly": 540,
+        "yearly" : 1440
+    };
+    refreshIntervalMinutes =  refreshIntervals[resolutionOnLoad];
+}
 
 var updateLastRefreshFooter = function() {
     $('#refresh').text("Data Displayed From: "+initialTime.toString() + " [auto-refresh every " + refreshIntervalMinutes + " minutes]");
@@ -48,6 +60,8 @@ var updateLastRefreshFooter = function() {
  * @return void
  */
 var displayUsageStatistics = function (data, timeInterval) {
+    $('#loading').empty();
+
     var pieChartHeight, barChartHeight, barChartMargin, summaryRaw, max;
     var hvTypePieSummary = {};
     var notificationPieSummary = {};
@@ -114,9 +128,9 @@ var displaySummaryText = function(timeInterval, summary) {
 
     // Human readable text for the requested time intervals
     humanTimes = {
-	"hourly" : "day",
+	    "hourly" : "day",
         "daily"  : "four weeks",
-        "weekly" : "two months",
+        "weekly" : "six months",
         "monthly": "two years",
         "yearly" : "three years"
     };
