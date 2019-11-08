@@ -112,9 +112,9 @@ class Module_Movies implements Module {
 
         // Limit movies to three layers
         $layers = new Helper_HelioviewerLayers($this->_params['layers']);
-        if ( $layers->length() < 1 || $layers->length() > 3 ) {
+        if ( $layers->length() < 1 || $layers->length() > 5 ) {
             throw new Exception(
-                'Invalid layer choices! You must specify 1-3 comma-separated '.
+                'Invalid layer choices! You must specify 1-5 comma-separated '.
                 'layer names.', 22);
         }
 
@@ -319,9 +319,9 @@ class Module_Movies implements Module {
 
         // Limit movies to three layers
         $layers = new Helper_HelioviewerLayers($movie['dataSourceString']);
-        if ( $layers->length() < 1 || $layers->length() > 3 ) {
+        if ( $layers->length() < 1 || $layers->length() > 5 ) {
             throw new Exception(
-                'Invalid layer choices! You must specify 1-3 comma-separated '.
+                'Invalid layer choices! You must specify 1-5 comma-separated '.
                 'layer names.', 22);
         }
 
