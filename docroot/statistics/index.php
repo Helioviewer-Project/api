@@ -18,21 +18,24 @@
         google.load("jquery", "1.5");
         google.load("visualization", "1", {packages:["corechart"]});
         google.setOnLoadCallback(function (e) {
-            resolutionOnLoad = "<?php echo $resolution;?>";
-            setRefreshIntervalFromTimeInterval();
-            getUsageStatistics(resolutionOnLoad);
+            temporalResolution = "<?php echo $resolution;?>";
+            setRefreshIntervalFromTemporalResolution();
+            getUsageStatistics(temporalResolution);
             setInterval(checkSessionTimeout, 1000);
         });
     </script>
 </head>
 
 <body>
+    <div id="loadingDiv">
+        <span id="loading">Loading...</span>
+        <div id="refresh"></div>
+    </div>
 	<div id="main">
 		<div id="header">
             <img src="../resources/images/logos/hvlogo1s_transparent_logo.png" alt="Helioviewer logo" />
             <div id='headerText'>The Helioviewer Project - Recent Activity</div>
         </div>
-        <h2 id="loading">Loading...</h2>
         <div id="overview"></div>
         <div id="visualizations">
             <div id="pieChartsGroup">
@@ -46,7 +49,6 @@
             </div>
             <div id="barCharts"></div>
         </div>
-        <div id="refresh"></div>
         <div id="footer">
             Note: Helioviewer.org only collects information about types of queries made.  Helioviewer.org does not collect or store any information that could be used to identify users.
         </div>

@@ -15,28 +15,55 @@ colors = ["#D32F2F", "#9bd927", "#27d9be", "#6527d9", "#0091EA", "#FF6F00", "#F0
 notificationKeys = ["movie-notifications-granted", "movie-notifications-denied"];
 
 var initialTime = new Date();
-var resolutionOnLoad;
+var temporalResolution;
 var pieHeightScale = 0.65;
 var maxVisualizationSizePx = 800;
 var refreshIntervalMinutes;
+var refreshHandler;
+var request;
 
 var getUsageStatistics = function(timeInterval) {
-    $.getJSON("../index.php", {action: "getUsageStatistics", resolution: timeInterval}, function (response) {
-        updateLastRefreshFooter();
-        displayUsageStatistics(response, timeInterval);
+    if(request){
+        request.abort();
+    }
+    request = $.getJSON("../index.php", {action: "getUsageStatistics", resolution: timeInterval}, function (response) {
+        initialTime = new Date();
+        if(responseNoError(response)){//only continue if the server returned a payload without error
+            setRefreshIntervalFromTemporalResolution();
+            displayUsageStatistics(response, timeInterval);
+            updateLastRefreshHeader();
+        }else{
+            refreshIntervalMinutes = 1; // shorten the retry period to 1 minute if error
+            refreshHandler = setInterval(computeTimeTilAutoRefresh,1000,true);//invoke countdown with error
+        }
     });
 };
 
-var checkSessionTimeout = function (timeInterval) {
+var responseNoError = function(response) {
+    var responseKeys = Object.keys(response);
+    return !responseKeys.includes("error");
+}
+
+var checkSessionTimeout = function () {
     var minutes = Math.abs((initialTime - new Date()) / 1000 / 60);
     if (minutes > refreshIntervalMinutes) {
-        initialTime = new Date();
-        $('#loading').text("Refreshing...");
-        getUsageStatistics(resolutionOnLoad); 
+        loadNewStatistics();
     } 
 };
 
-var setRefreshIntervalFromTimeInterval = function (){
+var loadNewStatistics = function(){
+    clearInterval(refreshHandler);
+    initialTime = new Date();
+    if(temporalResolution == 'hourly' || temporalResolution == 'daily'){
+        $('#loading').text("Refreshing...");
+    }else{
+        $('#loading').text("Refreshing... This will take a while...");
+    }
+    getUsageStatistics(temporalResolution); 
+}
+
+var setRefreshIntervalFromTemporalResolution = function (){
+    //set auto-refresh intervals here
     refreshIntervals = {
 	    "hourly" : 5,
         "daily"  : 60,
@@ -44,11 +71,46 @@ var setRefreshIntervalFromTimeInterval = function (){
         "monthly": 540,
         "yearly" : 1440
     };
-    refreshIntervalMinutes =  refreshIntervals[resolutionOnLoad];
+    refreshIntervalMinutes =  refreshIntervals[temporalResolution];
 }
 
-var updateLastRefreshFooter = function() {
-    $('#refresh').text("Data Displayed From: "+initialTime.toString() + " [auto-refresh every " + refreshIntervalMinutes + " minutes]");
+var updateLastRefreshHeader = function() {
+    $('#refresh').text("Data Displayed From: "+initialTime.toString());
+}
+
+/**
+ * Computes Auto-refresh countdown
+ */
+var computeTimeTilAutoRefresh = function (error=false) {
+    var currentTime = new Date();
+    var refreshTime = (refreshIntervalMinutes * 60) - Math.abs((initialTime - currentTime) / 1000);
+    if(refreshTime < 1){
+        clearInterval(refreshHandler);
+        refreshTimeFormatted = "0";
+    }
+    /*else if(refreshTime < 10){
+        //remove leading hours, minutes, and tens of seconds (00:00:0)
+        var refreshTimeFormatted = new Date(1000 * refreshTime).toISOString().substr(18, 1);
+    }
+    else if(refreshTime < 60){
+        //remove leading hours and minutes (00:00)
+        var refreshTimeFormatted = new Date(1000 * refreshTime).toISOString().substr(17, 2);
+    }
+    else if(refreshTime < 3600){
+        //remove leading hours (00)
+        var refreshTimeFormatted = new Date(1000 * refreshTime).toISOString().substr(14, 5);
+    }*/else{
+        //include hours
+        var refreshTimeFormatted = new Date(1000 * refreshTime).toISOString().substr(11, 8);
+        while(refreshTimeFormatted.startsWith("0") || refreshTimeFormatted.startsWith(":")){
+            refreshTimeFormatted = refreshTimeFormatted.substring(1);
+        }
+    }
+    if(error){
+        $('#loading').text( "Connection Error! Retrying in " + refreshTimeFormatted);
+    }else{
+        $('#loading').text( "Auto-refresh in " + refreshTimeFormatted);
+    }
 }
 
 /**
@@ -60,7 +122,9 @@ var updateLastRefreshFooter = function() {
  * @return void
  */
 var displayUsageStatistics = function (data, timeInterval) {
-    $('#loading').empty();
+
+    clearInterval(computeTimeTilAutoRefresh);
+    refreshHandler = setInterval(computeTimeTilAutoRefresh,1000,false);
 
     var pieChartHeight, barChartHeight, barChartMargin, summaryRaw, max;
     var hvTypePieSummary = {};
@@ -133,10 +197,16 @@ var displaySummaryText = function(timeInterval, summary) {
         "daily"  : "four weeks",
         "weekly" : "six months",
         "monthly": "two years",
-        "yearly" : "three years"
+        "yearly" : "eight years"
     };
 
-    when = humanTimes[timeInterval];
+    possibleResolutions = Object.keys(humanTimes);
+
+    when = '<select id=temporalResolution>';
+    for( var res=0; res<possibleResolutions.length; res++){
+        when += '<option value="'+possibleResolutions[res]+'">'+humanTimes[possibleResolutions[res]]+'</option>';
+    }
+    when += '</select>';
 
     // Generate HTML
     html = '<span id="when">During the last <b>' + when + '</b> Helioviewer.org users created</span> ' +
@@ -147,6 +217,12 @@ var displaySummaryText = function(timeInterval, summary) {
            'Helioviewer.org was <span style="color:' + colors[3] + ';" class="summaryCount">embedded ' + summary['embed'].toLocaleString() + ' times </span> and '+
            '<span style="color:' + colors[5] + ';" class="summaryCount"> accessed by ' + summary['minimal'].toLocaleString() + ' students </span>';
     $("#overview").html(html);
+
+    
+    $("#temporalResolution").val(timeInterval).unbind().change(function(e){
+        temporalResolution = $("#temporalResolution").val();
+        loadNewStatistics();
+    });
 
 };
 
