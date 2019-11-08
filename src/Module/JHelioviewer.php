@@ -60,6 +60,8 @@ class Module_JHelioviewer implements Module {
 
         include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
         $imgIndex = new Database_ImgIndex();
+        include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
+	    $statistics = new Database_Statistics();
 
         // Optional parameters
         $defaults = array(
@@ -83,7 +85,7 @@ class Module_JHelioviewer implements Module {
 
         // Output results
         if ( $options['jpip'] ) {
-
+            $statistics->log("getJP2Image-jpip");
             if ( $options['json'] ) {
                 header('Content-type: application/json;charset=UTF-8');
                 echo json_encode(
@@ -92,12 +94,14 @@ class Module_JHelioviewer implements Module {
             else {
                 echo $this->_getJPIPURL($filepath);
             }
+            
         }
         else {
+            $statistics->log("getJP2Image-web");
             $this->_displayJP2($filepath);
         }
     }
-
+           
     /**
      * Construct a JPX image series
      *
