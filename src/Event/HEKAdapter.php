@@ -12,7 +12,7 @@
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     https://github.com/Helioviewer-Project
  */
-define('HEK_BASE_URL', 'http://www.lmsal.com/hek/her');
+define('HEK_BASE_URL', 'https://www.lmsal.com/hek/her');
 define('HEK_CACHE_DIR', HV_CACHE_DIR.'/events');
 define('HEK_CACHE_WINDOW_HOURS', 24);  // 1,2,3,4,6,8,12,24 are valid
 $GLOBALS['HEK_COLORS'] = Array(
