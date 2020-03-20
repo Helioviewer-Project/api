@@ -12,7 +12,7 @@
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     https://github.com/Helioviewer-Project
  */
-define('HEK_BASE_URL', 'http://www.lmsal.com/hek/her');
+define('HEK_BASE_URL', 'https://www.lmsal.com/hek/her');
 define('HEK_CACHE_DIR', HV_CACHE_DIR.'/events');
 define('HEK_CACHE_WINDOW_HOURS', 24);  // 1,2,3,4,6,8,12,24 are valid
 $GLOBALS['HEK_COLORS'] = Array(
@@ -782,7 +782,20 @@ class Event_HEKAdapter {
             'page'       	  => 1,
             'result_limit'    => 1000
         );
-        $response = JSON_decode($this->_proxy->query($params, true), true);
+        // request payload from HEK as string
+        $query = $this->_proxy->query($params, true);
+        // correct any malformed utf8 chars
+        $utf8_query = utf8_encode($query);
+        // log payload length
+        if( strpos($utf8_query,"<html>") == FALSE ){
+            $date = date("Y-m-d H:i:s");
+            echo "[".$date."]"." Response contains ".strlen($utf8_query)." characters and no <html>.\n";
+        }else{
+            $date = date("Y-m-d H:i:s");
+            echo "[".$date."]"." ERROR! Response contains html! \n".$utf8_query."\n";
+        }
+        // create object and parse
+        $response = json_decode($utf8_query, true);
 		$this->_parseEvents($response);
 		
 		//Check if response is not complete and we need to download more pages
@@ -795,7 +808,20 @@ class Event_HEKAdapter {
 		
 		$params['page']++;
 		while ($overmax == true) {
-		    $response = JSON_decode($this->_proxy->query($params, true), true);
+		    // request payload from HEK as string
+            $query = $this->_proxy->query($params, true);
+            // correct any malformed utf8 chars
+            $utf8_query = utf8_encode($query);
+            // log payload length
+            if( strpos($utf8_query,"<html>") == FALSE ){
+                $date = date("Y-m-d H:i:s");
+                echo "[".$date."]"." Response contains ".strlen($utf8_query)." characters and no <html>.\n";
+            }else{
+                $date = date("Y-m-d H:i:s");
+                echo "[".$date."]"." ERROR! Response contains html! \n".$utf8_query."\n";
+            }
+            // create object and parse
+            $response = json_decode($utf8_query, true);
 			$this->_parseEvents($response);
 			
 			if($response['overmax'] == 'true'){
@@ -816,7 +842,12 @@ class Event_HEKAdapter {
 		include_once HV_ROOT_DIR.'/../src/Database/DbConnection.php';
         $dbConnection = new Database_DbConnection();
         
+        //log number of received results
+        $date = date("Y-m-d H:i:s");
+        echo "[".$date."]"." Response object contains ".count($result['result'])." events."."\n";
+
 	    if(count($result['result']) > 0){
+            $successCount = 0;
 			foreach($result['result'] as $k=>$event){
 				$event_starttime = new DateTime($event['event_starttime'].'Z');
 				$event_endtime   = new DateTime($event['event_endtime']  .'Z');
@@ -1006,11 +1037,18 @@ class Event_HEKAdapter {
 	            		".(isset($event['hv_marker_offset_x']) ? $event['hv_marker_offset_x'] : '0').",
 	            		".(isset($event['hv_marker_offset_y']) ? $event['hv_marker_offset_y'] : '0').",
 	            		'".str_replace("'", "\'", json_encode($event))."');";
-	            $dbConnection->query($sql);
-				
+	            $sqlStatus = $dbConnection->query($sql);
+                
+                if($sqlStatus == 1){
+                    $successCount++;
+                }
+
 		        unset($event);
 		        unset($result['result'][$k]);
-			}
+            }
+
+            $date = date("Y-m-d H:i:s");
+            echo "[".$date."]"." Success! Imported ".$successCount." events. \n";
 		}
     }
 
