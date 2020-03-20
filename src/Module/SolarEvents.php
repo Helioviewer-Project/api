@@ -185,22 +185,29 @@ class Module_SolarEvents implements Module {
      * @return void
      */
     public function importEvents() {
-        include_once HV_ROOT_DIR.'/../src/Event/HEKAdapter.php';
+        //function expects an auth parameter in the URL
+        $inputApiKey = (string)filter_input(INPUT_GET,'auth',FILTER_SANITIZE_STRING);
+        //run import only if the auth provided matches the one set in Config.ini
+        if( $inputApiKey == HV_IMPORT_EVENTS_AUTH ){
 
-        $hek = new Event_HEKAdapter();
+            include_once HV_ROOT_DIR.'/../src/Event/HEKAdapter.php';
 
-        if ( array_key_exists('period', $this->_options) ) {
-            $period = $this->_options['period'];
+            $hek = new Event_HEKAdapter();
+
+            if ( array_key_exists('period', $this->_options) ) {
+                $period = $this->_options['period'];
+            }
+            else {
+                $period = null;
+            }
+            // Set header to output status information
+            header('Content-Type: text/plain');
+            $date = date("Y-m-d H:i:s");
+            echo "[".$date."]"." Starting HEK import over ".$period.". \n";
+            // Query the HEK
+            $events = $hek->importEvents($period);
+            echo "------------------------------------------\n";
         }
-        else {
-            $period = null;
-        }
-        
-        // Query the HEK
-        $events = $hek->importEvents($period);
-
-        header('Content-Type: application/json');
-        echo json_encode('{"status":"success"}');
     }
 
     /**
