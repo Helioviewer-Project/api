@@ -103,7 +103,8 @@ function loadModule($params) {
         'getSolarBodies'            => 'SolarBodies',
         'getTrajectoryTime'         => 'SolarBodies',
         'logNotificationStatistics' => 'WebClient',
-        'getTexture'                => 'WebGLClient'
+        'getTexture'                => 'WebGLClient',
+        'getGeometryServiceData'    => 'WebGLClient'
     );
 
     include_once HV_ROOT_DIR.'/../src/Validation/InputValidator.php';

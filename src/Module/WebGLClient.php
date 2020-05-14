@@ -24,6 +24,103 @@ class Module_WebGLClient implements Module {
     public function __construct(&$params) {
         $this->_params = $params;
         $this->_options = array();
+        
+    }
+
+    public function getGeometryServiceData(){
+        $verifiedObservers = array("EARTH","SDO","SOHO","STEREO%20Ahead");
+        $auth = (string)$this->_params["auth"];
+        if($auth == HV_WEBGL_GEOMETRY_SERVICE_AUTH && $_SERVER['HTTP_ORIGIN'] == HV_CLIENT_URL){
+            $type = ((string)$this->_params["type"]) == "distance" ? "distance" : "position";
+            //sanitize by converting to unix timestamp and then formatting locally
+            $utc = str_replace(" ","T",date("Y-m-d G:i:s",strtotime((string)$this->_params["utc"])));
+
+            //verify observer and target
+            $observer = str_replace(" ","%20",(string)$this->_params["observer"]);
+            $target = (string)$this->_params["target"];
+            if(in_array($observer,$verifiedObservers) && $target == "SUN"){
+                $verified = true;
+            }
+
+            if($verified){
+                $url = "http://swhv.oma.be/position?utc=".$utc."&observer=".$observer."&target=".$target."&ref=HEEQ";
+                if($type == "distance"){
+                    $url = $url."&kind=latitudinal";
+                }
+                include_once HV_ROOT_DIR.'/../src/Net/Proxy.php';
+                $proxy = new Net_Proxy($url);
+			    $response = $proxy->query(array(), true);
+
+                header( "Content-Type: application/json" );
+                echo $response;
+            }else{
+                header( "Content-Type: application/json" );
+                $json = json_encode(array("error"=>"Something went wrong."));
+                echo $json;
+            }
+        }else{
+            header( "Content-Type: application/json" );
+            $json = json_encode(array("error"=>"Something went wrong."));
+            echo $json;
+        }
+    }
+
+    public function getTexture(){
+        $this->_prepareGetTexture();
+
+        $unixTime = (int)$this->_params["unixTime"];
+        $sourceId = (int)$this->_params["sourceId"];
+        $date = date('Y-m-d G:i:s',$unixTime);
+
+        $imageData = $this->db->getDataFromDatabase($date, $sourceId);
+        $jp2Filepath = HV_JP2_DIR.$imageData['filepath'].'/'.$imageData['filename'];
+        $bmpFilename = substr($imageData['filename'],0,-4) . "_". $this->reduce .".bmp";
+        $bmpFilepath = $this->_bmpDir . $bmpFilename;
+        $jpgFilename = substr($imageData['filename'],0,-4) . "_". $this->reduce .".jpg";
+        $jpgFilepath = $this->_jpgDir . $jpgFilename;
+        if ( !@file_exists($jpgFilepath) ){//jpg is not cached
+            if ( !@file_exists($bmpFilepath) ) {//bmp is not cached
+                //extract bmp from jp2 file
+                $jp2 = new Image_JPEG2000_JP2Image($jp2Filepath, 4096, 4096, 1);
+                $jp2->extractRegion($bmpFilepath, $this->imageSubRegion, $this->reduce);
+            }
+            //load bmp cache and create new scaled jpg cache
+            $imagickImage = new IMagick($bmpFilepath);
+            $imagickImage->setImageFormat('jpg');
+            header( "Content-Type: image/jpg" );
+            echo $imagickImage->getImageBlob();
+            $imagickImage->writeImage($jpgFilepath);
+        }else{//scaled jpg exists, display it
+            $this->outputFile = $jpgFilepath;
+            $this->display();
+        }
+
+        // $imagickImage = new IMagick($bmpFilepath);
+        // $imagickImage->resizeImage(4096,4096,imagick::FILTER_POINT,1);
+        //$pngFilename = substr($imageData['filename'],0,-4) . ".png";
+        //$pngFilepath = $this->_dir . $pngFilename;
+        //$this->outputFile = $bmpFilepath;
+
+        //$imagickImage->setImageFormat('jpg');
+        //$imagickImage->setImageDepth(8);
+        // Apply compression based on image type for those formats that
+        // support it
+        // Compression type
+        //$imagickImage->setImageCompression(IMagick::COMPRESSION_LZW);
+
+        // Compression quality
+        //$imagickImage->setImageCompressionQuality(50);
+
+        //$imagickImage->stripImage();
+        //$imagickImage->setImageType(2);
+        //$imagickImage->writeImage($this->outputFile);
+
+        // header( "Content-Type: image/jpg" );
+        // echo $imagickImage->getImageBlob();
+        //$this->display();
+    }
+
+    private function _prepareGetTexture(){
         $this->db = new Database_ImgIndex();
         $this->imageSubRegion = array(
             'top'    => 0,
@@ -59,60 +156,6 @@ class Module_WebGLClient implements Module {
         $this->_bmpDir = $this->_dir . "bmp/";
         $this->_jpgDir = $this->_dir . "jpg/";
         $this->createTextureCacheFolder();
-    }
-
-    public function getTexture(){
-        $unixTime = (int)$this->_params["unixTime"];
-        $sourceId = (int)$this->_params["sourceId"];
-        $date = date('Y-m-d G:i:s',$unixTime);
-
-        $imageData = $this->db->getDataFromDatabase($date, $sourceId);
-        $jp2Filepath = HV_JP2_DIR.$imageData['filepath'].'/'.$imageData['filename'];
-        $bmpFilename = substr($imageData['filename'],0,-4) . "_". $this->reduce .".bmp";
-        $bmpFilepath = $this->_bmpDir . $bmpFilename;
-        $jpgFilename = substr($imageData['filename'],0,-4) . "_". $this->reduce .".jpg";
-        $jpgFilepath = $this->_jpgDir . $jpgFilename;
-        if ( !@file_exists($jpgFilepath) ){//jpg is not cached
-            if ( !@file_exists($bmpFilepath) ) {//bmp is not cached
-                //extract bmp from jp2 file
-                $jp2 = new Image_JPEG2000_JP2Image($jp2Filepath, 4096, 4096, 1);
-                $jp2->extractRegion($bmpFilepath, $this->imageSubRegion, $this->reduce);
-            }
-            //load bmp cache and create new scaled jpg cache
-            $imagickImage = new IMagick($bmpFilepath);
-            $imagickImage->setImageFormat('jpg');
-            header( "Content-Type: image/jpg" );
-            echo $imagickImage->getImageBlob();
-            $imagickImage->writeImage($jpgFilepath);
-        }else{//scaled jpg exists, display it
-            $this->outputFile = $jpgFilepath;
-            $this->display();
-        }
-        
-
-        // $imagickImage = new IMagick($bmpFilepath);
-        // $imagickImage->resizeImage(4096,4096,imagick::FILTER_POINT,1);
-        //$pngFilename = substr($imageData['filename'],0,-4) . ".png";
-        //$pngFilepath = $this->_dir . $pngFilename;
-        //$this->outputFile = $bmpFilepath;
-
-        //$imagickImage->setImageFormat('jpg');
-        //$imagickImage->setImageDepth(8);
-        // Apply compression based on image type for those formats that
-        // support it
-        // Compression type
-        //$imagickImage->setImageCompression(IMagick::COMPRESSION_LZW);
-
-        // Compression quality
-        //$imagickImage->setImageCompressionQuality(50);
-
-        //$imagickImage->stripImage();
-        //$imagickImage->setImageType(2);
-        //$imagickImage->writeImage($this->outputFile);
-
-        // header( "Content-Type: image/jpg" );
-        // echo $imagickImage->getImageBlob();
-        //$this->display();
     }
 
     private function createTextureCacheFolder(){
