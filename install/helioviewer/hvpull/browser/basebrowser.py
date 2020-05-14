@@ -13,5 +13,5 @@ class BaseDataBrowser:
         return None
     
 class NetworkError(IOError):
-    """Exception to raise a remove server is unreachable"""
+    """Exception to raise when a remote server is unreachable"""
     pass
