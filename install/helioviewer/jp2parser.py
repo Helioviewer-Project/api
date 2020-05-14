@@ -68,7 +68,7 @@ class JP2parser:
         image['CROTA1'] = self._data['CROTA1'] if 'CROTA1' in self._data else 'NULL'
         
         #Fix FITS NaN parameters
-        for key, value in image.iteritems():
+        for key, value in image.items():
             if self._is_string(value):
                 if value.lower() == 'nan' or value.lower() == '-nan':
                     image[key] = 'NULL'
