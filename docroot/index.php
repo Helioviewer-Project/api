@@ -21,6 +21,7 @@
  *    web-client install to connect with)
  *  = Add getPlugins method to JHelioviewer module (empty function for now)
  */
+use Redis;
 require_once '../src/Config.php';
 require_once '../src/Helper/ErrorHandler.php';
 
@@ -120,32 +121,56 @@ function loadModule($params) {
             );
         }
         else {
-        	// Execute action
-            $moduleName = $valid_actions[$params['action']];
-            $className  = 'Module_'.$moduleName;
+            //Set-up variables for rate-limiting
+            $prefix = HV_RATE_LIMIT_PREFIX;
+            //Use IP address as identifier.
+            $identifier = $_SERVER["REMOTE_ADDR"];
+            //maximum requests a client can make before being rate limited.
+            $maximumRequests = HV_RATE_LIMIT_MAXIMUM_REQUESTS;
 
-            include_once HV_ROOT_DIR.'/../src/Module/'.$moduleName.'.php';
+            // Instantiate rate-limiter
+            include HV_ROOT_DIR."/../src/Net/rate-limit/src/Exception/LimitExceeded.php";
+            include HV_ROOT_DIR."/../src/Net/rate-limit/src/RedisRateLimiter.php";
+            include HV_ROOT_DIR."/../src/Net/rate-limit/src/Rate.php";
+            $redis = new Redis();
+            $redis->connect(HV_REDIS_HOST,HV_REDIS_PORT);
+            $rateLimiter = new RateLimit\RedisRateLimiter($redis,$prefix);
+            
+            try {
+                // Rate-limit the client
+                // This stores the identifier in the redis database and sets an expiry time based on the temporal rate specified
+                // For Example: perMinute will store the $identifier with an expirty time of 60 seconds after which the $identifier is deleted from the redis database
+                $rateLimiter->limit($identifier, RateLimit\Rate::perMinute($maximumRequests));
+                
+                // Execute action
+                $moduleName = $valid_actions[$params['action']];
+                $className  = 'Module_'.$moduleName;
 
-            $module = new $className($params);
+                include_once HV_ROOT_DIR.'/../src/Module/'.$moduleName.'.php';
 
-            $module->execute();
+                $module = new $className($params);
 
-            // Update usage stats
-            $actions_to_keep_stats_for = array('getClosestImage',
-                'takeScreenshot', 'getJPX', 'getJPXClosestToMidPoint', 'uploadMovieToYouTube');
+                $module->execute();
 
-			// Note that in addition to the above, buildMovie requests and
-			// addition to getTile when the tile was already in the cache.
-            if ( HV_ENABLE_STATISTICS_COLLECTION &&
-                 in_array($params['action'], $actions_to_keep_stats_for) ) {
+                // Update usage stats
+                $actions_to_keep_stats_for = array('getClosestImage',
+                    'takeScreenshot', 'getJPX', 'getJPXClosestToMidPoint', 'uploadMovieToYouTube');
 
-                include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
-                $statistics = new Database_Statistics();
-                $log_param = $params['action'];
-                if($log_param == 'getJPXClosestToMidPoint'){
-	                $log_param = 'getJPX';
+                // Note that in addition to the above, buildMovie requests and
+                // addition to getTile when the tile was already in the cache.
+                if ( HV_ENABLE_STATISTICS_COLLECTION &&
+                    in_array($params['action'], $actions_to_keep_stats_for) ) {
+
+                    include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
+                    $statistics = new Database_Statistics();
+                    $log_param = $params['action'];
+                    if($log_param == 'getJPXClosestToMidPoint'){
+                        $log_param = 'getJPX';
+                    }
+                    $statistics->log($params['action']);
                 }
-                $statistics->log($params['action']);
+            } catch (LimitExceeded $exception) {
+                //limit exceeded
             }
         }
     }
