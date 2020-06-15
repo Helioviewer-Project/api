@@ -21,7 +21,6 @@
  *    web-client install to connect with)
  *  = Add getPlugins method to JHelioviewer module (empty function for now)
  */
-use Redis;
 require_once '../src/Config.php';
 require_once '../src/Helper/ErrorHandler.php';
 
