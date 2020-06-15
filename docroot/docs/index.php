@@ -464,7 +464,7 @@
                 </div>
             </div>
 <?php
-        if ( count($endpoint->parameters->parameter > 0) ) {
+        if ( count($endpoint->parameters->parameter) > 0 ) {
 ?>
             <table class="request" style="width: 100%;" summary="
             required and optional request parameters.">
@@ -502,7 +502,7 @@
                 </tr>
 <?php
         }
-        if ( count($endpoint->parameters->parameter > 0) ) {
+        if ( count($endpoint->parameters->parameter) > 0 ) {
 ?>
             </table>
             <br/>
