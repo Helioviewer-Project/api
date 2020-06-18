@@ -174,6 +174,7 @@ var displayUsageStatistics = function (data, timeInterval) {
     createColumnChart('minimal', data['minimal'], 'Student', barChartHeight, colors[5]);
     createColumnChart('sciScript-SSWIDL', data['sciScript-SSWIDL'], 'SciScript SSWIDL', barChartHeight, colors[6]);
     createColumnChart('sciScript-SunPy', data['sciScript-SunPy'], 'SciScript SunPy', barChartHeight, colors[7]);
+    createColumnChart('getRandomSeed', data['getRandomSeed'], 'getRandomSeed', barChartHeight, colors[4]);
 
     // Spreads bar graphs out a bit if space permits
     //barChartMargin = Math.round(($("#visualizations").height() - $("#barCharts").height()) / 7);

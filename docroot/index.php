@@ -77,6 +77,7 @@ function loadModule($params) {
         'updateDataCoverage'     	=> 'WebClient',
         'shortenURL'             	=> 'WebClient',
         'takeScreenshot'         	=> 'WebClient',
+        'getRandomSeed'             => 'WebClient',
         'getJP2Image'            	=> 'JHelioviewer',
         'getJPX'                 	=> 'JHelioviewer',
         'getJPXClosestToMidPoint'	=> 'JHelioviewer',
@@ -153,7 +154,7 @@ function loadModule($params) {
 
                 // Update usage stats
                 $actions_to_keep_stats_for = array('getClosestImage',
-                    'takeScreenshot', 'getJPX', 'getJPXClosestToMidPoint', 'uploadMovieToYouTube');
+                    'takeScreenshot', 'getJPX', 'getJPXClosestToMidPoint', 'uploadMovieToYouTube','getRandomSeed');
 
                 // Note that in addition to the above, buildMovie requests and
                 // addition to getTile when the tile was already in the cache.

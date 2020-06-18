@@ -9,6 +9,7 @@
  * @author   Jeff Stys <jeff.stys@nasa.gov>
  * @author   Keith Hughitt <keith.hughitt@nasa.gov>
  * @author   Serge Zahniy <serge.zahniy@nasa.gov>
+ * @author   Kirill Vorobyev <kirill.g.vorobyev@nasa.gov>
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     https://github.com/Helioviewer-Project
  */
@@ -984,6 +985,46 @@ class Module_WebClient implements Module {
             $statistics->log('movie-notifications-denied');
         }
         echo $this->_printJSON(json_encode($notification_status));
+     }
+
+
+     /**
+      * Creates a random seed for pseudorandom number generators 
+      * based on a hash of AIA image data combined with the current time in microseconds
+      * 
+      * This function uses SHA-256 to hash the image and resulting strings.
+      *
+      * Special thanks to: Juan E. Jiménez [flybd5@gmail.com]
+      * for submitting the idea and pseudocode for this function.
+      */
+     public function getRandomSeed() {
+        include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
+
+        $imgIndex = new Database_ImgIndex();
+
+        $microsecondsNow = microtime(true) * 1000000; // current unixtime in microseconds
+        $sourceId = $microsecondsNow % 9 + 8; // AIA sourceId 8-16 random range based on request time
+        
+        $requestDateTime = date("c");// ISO 8601 date
+        $apiFormattedTime = explode("+",$requestDateTime)[0] . "Z";// JS style date that getDataFromDatabase expects
+        
+        // Get the newest image
+        $image = $imgIndex->getDataFromDatabase($apiFormattedTime, $sourceId);
+        $file = HV_JP2_DIR.$image['filepath'].'/'.$image['filename'];
+        
+        // Hash the image using sha256
+        $image_hash = hash_file("sha256",$file);
+        
+        // Concatenate current time in microseconds to the hash, and hash again.
+        $seed = hash("sha256",microtime(true) . $image_hash);
+
+        // Return seed
+        $response = array(
+            'seed' => $seed
+        );
+
+        // Print result
+        $this->_printJSON(json_encode($response));
      }
 
     /**

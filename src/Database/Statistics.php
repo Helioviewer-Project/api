@@ -197,7 +197,8 @@ class Database_Statistics {
 			"movie-notifications-granted"	=> array(),
 			"movie-notifications-denied"	=> array(),
 			"getJP2Image-web"				=> array(),
-			"getJP2Image-jpip" 				=> array()
+			"getJP2Image-jpip" 				=> array(),
+			"getRandomSeed"					=> array()
         );
 
         // Summary array
@@ -217,7 +218,8 @@ class Database_Statistics {
 			"movie-notifications-granted"	=> 0,
 			"movie-notifications-denied"	=> 0,
 			"getJP2Image-web"				=> 0,
-			"getJP2Image-jpip" 				=> 0
+			"getJP2Image-jpip" 				=> 0,
+			"getRandomSeed"					=> 0
 		);
 		//final counts summary
 		$movieCommonSources = array();
