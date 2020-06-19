@@ -987,7 +987,6 @@ class Module_WebClient implements Module {
         echo $this->_printJSON(json_encode($notification_status));
      }
 
-
      /**
       * Creates a random seed for pseudorandom number generators 
       * based on a hash of AIA image data combined with the current time in microseconds
@@ -998,32 +997,38 @@ class Module_WebClient implements Module {
       * for submitting the idea and pseudocode for this function.
       */
      public function getRandomSeed() {
+        // Initialize image database
         include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
-
         $imgIndex = new Database_ImgIndex();
-
-        $microsecondsNow = microtime(true) * 1000000; // current unixtime in microseconds
-        $sourceId = $microsecondsNow % 9 + 8; // AIA sourceId 8-16 random range based on request time
         
-        $requestDateTime = date("c");// ISO 8601 date
-        $apiFormattedTime = explode("+",$requestDateTime)[0] . "Z";// JS style date that getDataFromDatabase expects
-        
-        // Get the newest image
+        // Current unix timestamp in nanoseconds for sourceId selection
+        $nanoTime = (int)exec("date +%s%N");
+        // AIA sourceId 8-14 random range based on nanoTime above
+        $sourceId = $nanoTime % 7 + 8; 
+        // Current date in ISO 8601 format for latest image
+        $requestDateTime = date("c");
+        // Some formatting to JS style date that getDataFromDatabase expects like "2020-06-19T00:00:00Z"
+        $apiFormattedTime = explode("+",$requestDateTime)[0] . "Z";
+        // Get the newest image from database
         $image = $imgIndex->getDataFromDatabase($apiFormattedTime, $sourceId);
-        $file = HV_JP2_DIR.$image['filepath'].'/'.$image['filename'];
+        // Make the filepath
+        $file = HV_JP2_DIR . $image['filepath'] . '/' . $image['filename'];
         
         // Hash the image using sha256
-        $image_hash = hash_file("sha256",$file);
+        $imageHash = hash_file("sha256",$file);
+        // Hash request IP address
+        $requestAddressHash = hash("sha256", $_SERVER["REMOTE_ADDR"]);
+        // Get a new unix timestamp in nanoseconds
+        $nanoTimeSeed = (int)exec("date +%s%N");
+        // Concatenate current time in nanoseconds, hash of the request IP, and previous image hash, then hash again.
+        $seed = hash("sha256", $nanoTimeSeed . $imageHash . $requestAddressHash);
         
-        // Concatenate current time in microseconds to the hash, and hash again.
-        $seed = hash("sha256",microtime(true) . $image_hash);
-
-        // Return seed
+        // Build return object
         $response = array(
             'seed' => $seed
         );
 
-        // Print result
+        // Output result
         $this->_printJSON(json_encode($response));
      }
 
