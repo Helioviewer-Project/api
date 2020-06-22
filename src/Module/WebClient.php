@@ -1010,7 +1010,7 @@ class Module_WebClient implements Module {
         // Some formatting to JS style date that getDataFromDatabase expects like "2020-06-19T00:00:00Z"
         $apiFormattedTime = explode("+",$requestDateTime)[0] . "Z";
         // Get the newest image from database
-        $image = $imgIndex->getDataFromDatabase($apiFormattedTime, $sourceId);
+        $image = $imgIndex->getClosestDataBeforeDate($apiFormattedTime, $sourceId);
         // Make the filepath
         $file = HV_JP2_DIR . $image['filepath'] . '/' . $image['filename'];
         

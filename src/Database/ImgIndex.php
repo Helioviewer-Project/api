@@ -415,7 +415,7 @@ class Database_ImgIndex {
                    "SELECT id, sourceId, filepath, filename, date FROM ("
                  . "( SELECT "
                  .        "id, sourceId, filepath, filename, date "
-                 .   "FROM data "
+                 .   "FROM data FORCE INDEX (date_index) "
                  .   "WHERE "
                  .       "".$this->getDatasourceIDsString($sourceId)." AND "
                  .       "date "     . " <'%s' "
@@ -424,7 +424,7 @@ class Database_ImgIndex {
                  . "UNION ALL "
                  . "( SELECT "
                  .        "id, sourceId, filepath, filename, date "
-                 .   "FROM data "
+                 .   "FROM data FORCE INDEX (date_index) "
                  .   "WHERE "
                  .       "".$this->getDatasourceIDsString($sourceId)." AND "
                  .       "date "     . ">='%s' "
@@ -476,7 +476,7 @@ class Database_ImgIndex {
 
         $sql = sprintf(
                    "SELECT filepath, filename, date "
-                 . "FROM data "
+                 . "FROM data FORCE INDEX (date_index) "
                  . "WHERE "
                  .     "sourceId " . " = %d AND "
                  .     "date "     . "<='%s' "
@@ -521,7 +521,7 @@ class Database_ImgIndex {
 
         $sql = sprintf(
                    "SELECT filepath, filename, date "
-                 . "FROM data "
+                 . "FROM data FORCE INDEX (date_index) "
                  . "WHERE "
                  .     "sourceId " . " = %d AND "
                  .     "date "     . ">='%s' "
