@@ -380,7 +380,7 @@ class Event_HEKAdapter {
 			$dbConnection = new Database_DbConnection();
 			
 			$sql = sprintf(
-                    "SELECT * FROM events WHERE '%s' BETWEEN event_starttime AND event_endtime ORDER BY event_starttime;",
+                    "SELECT * FROM events FORCE INDEX (event_starttime_2) WHERE '%s' BETWEEN event_starttime AND event_endtime ORDER BY event_starttime;",
                     $dbConnection->link->real_escape_string($dateStartSql)
                    );
             try {
