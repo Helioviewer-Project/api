@@ -43,6 +43,11 @@ class Rate
         return new static($operations, 86400);
     }
 
+    public static function perFourWeeks(int $operations)
+    {
+        return new static($operations, 2419200);
+    }
+
     public static function custom(int $operations, int $interval)
     {
         return new static($operations, $interval);
