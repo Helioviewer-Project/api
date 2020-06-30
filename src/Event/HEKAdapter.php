@@ -363,7 +363,7 @@ class Event_HEKAdapter {
 	        implode(':', Array( $dateArray['hour'],
 	                   str_pad($dateArray['minute'],2,'0',STR_PAD_LEFT),
 	                   str_pad($dateArray['second'],  2,'0',STR_PAD_LEFT) )
-	    );	
+           );
 
         include_once HV_ROOT_DIR.'/../scripts/rot_hpc.php';
 
@@ -380,7 +380,11 @@ class Event_HEKAdapter {
 			$dbConnection = new Database_DbConnection();
 			
 			$sql = sprintf(
-                    "SELECT * FROM events FORCE INDEX (event_starttime_2) WHERE '%s' BETWEEN event_starttime AND event_endtime ORDER BY event_starttime;",
+                    "SELECT * FROM events FORCE INDEX (event_starttime_2) WHERE '%s' BETWEEN event_starttime AND event_endtime ".//events which show up in time range
+                    "AND event_starttime >= DATE_ADD('%s',INTERVAL -1 MONTH) AND event_endtime <= DATE_ADD('%s',INTERVAL 1 MONTH) ".//optimized scan window
+                    "ORDER BY event_starttime;",
+                    $dbConnection->link->real_escape_string($dateStartSql),
+                    $dbConnection->link->real_escape_string($dateStartSql),
                     $dbConnection->link->real_escape_string($dateStartSql)
                    );
             try {
