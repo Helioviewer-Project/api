@@ -10,7 +10,7 @@
  *                      hourly, daily, weekly, etc.
  *  @return void
  */
-colors = ["#D32F2F", "#9bd927", "#27d9be", "#6527d9", "#0091EA", "#FF6F00", "#F06292", "#BA68C8", "#558B2F", "#FFD600"];
+colors = ["#D32F2F", "#9bd927", "#27d9be", "#6527d9", "#0091EA", "#FF6F00", "#F06292", "#BA68C8", "#558B2F", "#FFD600", "#333"];
 
 notificationKeys = ["movie-notifications-granted", "movie-notifications-denied"];
 
@@ -164,6 +164,7 @@ var displayUsageStatistics = function (data, timeInterval) {
 
 
     // Create bar graphs for each request type
+    createColumnChart('totalRequests', data['totalRequests'], 'Total', barChartHeight, colors[10]);
     createColumnChart('visitors', data['standard'], 'Helioviewer.org', barChartHeight, colors[8]);
     createColumnChart('getClosestImage', data['getClosestImage'], 'Observation', barChartHeight, colors[4]);
     createColumnChart('takeScreenshot', data['takeScreenshot'], 'Screenshot', barChartHeight, colors[0]);
@@ -216,7 +217,8 @@ var displaySummaryText = function(timeInterval, summary) {
            '<span style="color:' + colors[1] + ';" class="summaryCount">' + summary['buildMovie'].toLocaleString() + ' movies</span>, and ' +
            '<span style="color:' + colors[2] + ';" class="summaryCount">' + summary['getJPX'].toLocaleString() + ' JPX movies</span>. <br> ' +
            'Helioviewer.org was <span style="color:' + colors[3] + ';" class="summaryCount">embedded ' + summary['embed'].toLocaleString() + ' times </span> and '+
-           '<span style="color:' + colors[5] + ';" class="summaryCount"> accessed by ' + summary['minimal'].toLocaleString() + ' students </span>';
+           '<span style="color:' + colors[5] + ';" class="summaryCount"> accessed by ' + summary['minimal'].toLocaleString() + ' students </span> <br>' +
+           'Helioviewer.org users made <span style="color:'+colors[10]+';" class="summaryCount">' + summary['totalRequests'].toLocaleString() + ' total requests </span>';
     $("#overview").html(html);
 
     

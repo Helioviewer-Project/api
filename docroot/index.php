@@ -169,6 +169,13 @@ function loadModule($params) {
                     }
                     $statistics->log($params['action']);
                 }
+
+                // Log to redis on valid action
+                if (HV_ENABLE_STATISTICS_COLLECTION && in_array($params['action'],array_keys($valid_actions))) {
+                    include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
+                    $statistics = new Database_Statistics();
+                    $statistics->logRedis($redis, $params['action']);
+                }
             } catch (LimitExceeded $exception) {
                 //limit exceeded
             }

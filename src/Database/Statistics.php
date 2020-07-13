@@ -81,6 +81,70 @@ class Database_Statistics {
 
         return true;
 	}
+
+	/**
+	 * Logs api usage to redis.
+	 * Logging is done to the nearest hour.
+	 */
+	public function logRedis($redis, $action){
+		$requestDateTime = date("c");
+        // Some formatting to sql style date like "2020-07-01T00:00:00"
+		$dateTimeNoMilis = str_replace("T", " ", explode("+",$requestDateTime)[0]); // strip out miliseconds and "T"
+		$dateTimeNearestHour = explode(":",$dateTimeNoMilis)[0] . ":00:00"; // strip out minutes and seconds
+
+		// Make compound key
+		$key = HV_REDIS_STATS_PREFIX . "/" . $dateTimeNearestHour . "/" . $action;
+		$redis->incr($key);
+	}
+
+	public function saveStatisticsFromRedis($redis){
+		$oneHourAgoSeconds = time() - (60*60);
+		$oneHourAgoDateTime = date("c",$oneHourAgoSeconds);//
+        // Some formatting to sql style date like "2020-07-01T00:00:00"
+		$dateTimeNoMilis = str_replace("T", " ", explode("+",$oneHourAgoDateTime)[0]); // strip out miliseconds and "T"
+		$dateTimeNearestHour = explode(":",$dateTimeNoMilis)[0] . ":00:00"; // strip out minutes and seconds
+
+		$statisticsKeys = $redis->keys(HV_REDIS_STATS_PREFIX . "/*");
+		$statisticsData = array();
+		foreach( $statisticsKeys as $key ){
+			$count = (int)$redis->get($key);
+			$keyComponents = explode("/",$key);
+			// only import data from the previous hour and older.
+			if($keyComponents[1] <= $dateTimeNearestHour){
+				$statistic = array( 
+					"datetime" => $keyComponents[1],
+					"action" => $keyComponents[2],
+					"count" => $count,
+					"key" => $key
+				);
+				array_push($statisticsData, $statistic);
+			}
+		}
+		foreach($statisticsData as $data){
+			$sql = sprintf(
+				  "INSERT INTO redis_stats "
+				. "SET "
+				. "datetime "	. " = '%s', "
+				. "action "		. " = '%s', " 
+				. "count "		. " = %d "
+				. "ON DUPLICATE KEY UPDATE count = %d;",
+				$this->_dbConnection->link->real_escape_string($data["datetime"]),
+				$this->_dbConnection->link->real_escape_string($data["action"]),
+				$this->_dbConnection->link->real_escape_string($data["count"]),
+				$this->_dbConnection->link->real_escape_string($data["count"])
+			);
+			try {
+				$result = $this->_dbConnection->query($sql);
+				if( $result == 1 ){
+					$redis->delete($data["key"]);
+				}
+			}
+			catch (Exception $e) {
+
+			}
+		}
+		
+	}
 	
 	/**
      * Returns an array of the known data sources as strings 
@@ -177,6 +241,9 @@ class Database_Statistics {
 		require_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
 		require_once HV_ROOT_DIR.'/../src/Helper/HelioviewerLayers.php';
 
+		$redis = new Redis();
+		$redis->connect(HV_REDIS_HOST,HV_REDIS_PORT);
+
         // Determine time intervals to query
         $interval = $this->_getQueryIntervals($resolution);
 
@@ -198,7 +265,8 @@ class Database_Statistics {
 			"movie-notifications-denied"	=> array(),
 			"getJP2Image-web"				=> array(),
 			"getJP2Image-jpip" 				=> array(),
-			"getRandomSeed"					=> array()
+			"getRandomSeed"					=> array(),
+			"totalRequests"					=> array()
         );
 
         // Summary array
@@ -209,7 +277,7 @@ class Database_Statistics {
             "getJPX"               			=> 0,
             "getJPXClosestToMidPoint"   	=> 0,
             "takeScreenshot"       			=> 0,
-            "uploadMovieToYouTube" 			> 0,
+            "uploadMovieToYouTube" 			=> 0,
 			"embed"                			=> 0,
 			"minimal"						=> 0,
 			"standard"						=> 0,
@@ -219,8 +287,12 @@ class Database_Statistics {
 			"movie-notifications-denied"	=> 0,
 			"getJP2Image-web"				=> 0,
 			"getJP2Image-jpip" 				=> 0,
-			"getRandomSeed"					=> 0
+			"getRandomSeed"					=> 0,
+			"totalRequests"					=> 0
 		);
+
+		$new_counts = $this->_createCountsArray();
+		$new_summary = $this->_createSummaryArray();
 		//final counts summary
 		$movieCommonSources = array();
 		$movieLayerCount = array();
@@ -240,7 +312,7 @@ class Database_Statistics {
         $dateFormat = $this->_getDateFormat($resolution);
 
         // Start date
-        $date = $interval['startDate'];
+		$date = $interval['startDate'];
 
         // Query each time interval
         for ($i = 0; $i < $interval["numSteps"]; $i++) {
@@ -257,6 +329,9 @@ class Database_Statistics {
             // Fill with zeros to begin with
             foreach ($counts as $action => $arr) {
 				array_push($counts[$action], array($dateIndex => 0));
+			}
+			foreach ($new_counts as $action => $arr) {
+				array_push($new_counts[$action], array($dateIndex => 0));
             }
             $dateEnd = toMySQLDateString($date);
 
@@ -278,13 +353,105 @@ class Database_Statistics {
                 return false;
             }
 
+			// Append counts for each API action during that interval
+			// to the appropriate array
+			while ($count = $result->fetch_array(MYSQLI_ASSOC)) {
+				$num = (int)$count['count'];
+
+				$counts[$count['action']][$i][$dateIndex] = $num;
+				$summary[$count['action']] += $num;
+			}
+
+			//redis table statistics gathering for total number of calls
+            $sql = sprintf(
+				"SELECT SUM(count) AS count "
+			  . "FROM redis_stats "
+			  . "WHERE "
+			  .     "datetime >= '%s' AND datetime < '%s'; ",
+			  $this->_dbConnection->link->real_escape_string($dateStart),
+			  $this->_dbConnection->link->real_escape_string($dateEnd)
+			 );
+			try {
+				$result = $this->_dbConnection->query($sql);
+			}
+			catch (Exception $e) {
+				return false;
+			}
+
             // Append counts for each API action during that interval
             // to the appropriate array
             while ($count = $result->fetch_array(MYSQLI_ASSOC)) {
                 $num = (int)$count['count'];
+				
+                $counts['totalRequests'][$i][$dateIndex] = $num;
+                $summary['totalRequests'] += $num;
+			}
 
-                $counts[$count['action']][$i][$dateIndex] = $num;
-                $summary[$count['action']] += $num;
+			//additional real-time redis stats for total number of calls
+			$statisticsKeys = $redis->keys(HV_REDIS_STATS_PREFIX . "/*");
+			$statisticsData = array();
+			$realTimeRedisCount = 0;
+			foreach( $statisticsKeys as $key ){
+				$count = (int)$redis->get($key);
+				$keyComponents = explode("/",$key);
+				//collect data that falls within the interval
+				$keyDateTime = $keyComponents[1];
+				if($keyDateTime >= $dateStart && $keyDateTime < $dateEnd){
+					$realTimeRedisCount += $count;
+				}
+			}
+			if($realTimeRedisCount > 0){
+				$counts['totalRequests'][$i][$dateIndex] += $realTimeRedisCount;
+				$summary['totalRequests'] += $realTimeRedisCount;
+			}
+
+			//new redis-stats statistics gathering for all api endpoints
+            $sql = sprintf(
+				"SELECT action, SUM(count) AS count "
+			  . "FROM redis_stats "
+			  . "WHERE "
+			  .     "datetime >= '%s' AND datetime < '%s'"
+			  ."GROUP BY action; ",
+			  $this->_dbConnection->link->real_escape_string($dateStart),
+			  $this->_dbConnection->link->real_escape_string($dateEnd)
+			 );
+			try {
+				$result = $this->_dbConnection->query($sql);
+			}
+			catch (Exception $e) {
+				return false;
+			}
+
+            // Append counts for each API action during that interval
+            // to the appropriate array
+            while ($count = $result->fetch_array(MYSQLI_ASSOC)) {
+                $num = (int)$count['count'];
+				
+                $new_counts[$count['action']][$i][$dateIndex] = $num;
+                $new_summary[$count['action']] += $num;
+			}
+
+			//additional real-time redis stats for all api endpoints
+			$statisticsKeys = $redis->keys(HV_REDIS_STATS_PREFIX . "/*");
+			$statisticsData = array();
+			foreach( $statisticsKeys as $key ){
+				$realTimeRedisCount = 0;
+				$count = (int)$redis->get($key);
+				$keyComponents = explode("/",$key);
+				//collect data that falls within the interval
+				$keyDateTime = $keyComponents[1];
+				$keyAction = $keyComponents[2];
+				if($keyDateTime >= $dateStart && $keyDateTime < $dateEnd){
+					$realTimeRedisCount = $count;
+				}
+				if($realTimeRedisCount > 0){
+					if(isset($new_counts[$keyAction][$i][$dateIndex])){
+						$new_counts[$keyAction][$i][$dateIndex] += $realTimeRedisCount;
+					}else{
+						$new_counts[$keyAction][$i][$dateIndex] = $realTimeRedisCount;
+					}
+					$new_summary[$keyAction] += $realTimeRedisCount;
+				}	
 			}
 
 			if($resolution == 'hourly' || $resolution == 'daily' || $resolution == 'weekly'){
@@ -397,13 +564,141 @@ class Database_Statistics {
 			$counts['screenshotCommonSources'] = $screenshotCommonSources;
 			$counts['screenshotLayerCount'] = $screenshotLayerCount;
 
+
+			// Include movie source breakdown
+			$new_counts['movieCommonSources'] = $movieCommonSources;
+			$new_counts['movieLayerCount'] = $movieLayerCount;
+			// Include screenshot source breakdown
+			$new_counts['screenshotCommonSources'] = $screenshotCommonSources;
+			$new_counts['screenshotLayerCount'] = $screenshotLayerCount;
 		}
 
         // Include summary info
 		$counts['summary'] = $summary;
+		$new_counts['summary'] = $new_summary;
 		
         return json_encode($counts);
-    }
+	}
+	
+	private function _createCountsArray(){
+		return array(
+			'downloadScreenshot'     	=> array(),
+			'getClosestImage'        	=> array(),
+			'getDataSources'         	=> array(),
+			'getJP2Header'           	=> array(),
+			'getNewsFeed'            	=> array(),
+			'getStatus'              	=> array(),
+			'getSciDataScript'       	=> array(),
+			'getTile'                	=> array(),
+			'getUsageStatistics'     	=> array(),
+			'getDataCoverageTimeline'	=> array(),
+			'getDataCoverage'        	=> array(),
+			'updateDataCoverage'     	=> array(),
+			'shortenURL'             	=> array(),
+			'takeScreenshot'         	=> array(),
+			'getRandomSeed'             => array(),
+			'getJP2Image'            	=> array(),
+			'getJPX'                 	=> array(),
+			'getJPXClosestToMidPoint'	=> array(),
+			'launchJHelioviewer'     	=> array(),
+			'downloadMovie'          	=> array(),
+			'getMovieStatus'         	=> array(),
+			'playMovie'              	=> array(),
+			'queueMovie'             	=> array(),
+			'reQueueMovie'           	=> array(),
+			'uploadMovieToYouTube'   	=> array(),
+			'checkYouTubeAuth'       	=> array(),
+			'getYouTubeAuth'         	=> array(),
+			'getUserVideos'          	=> array(),
+			'getObservationDateVideos'	=> array(),
+			'getEventFRMs'           	=> array(),
+			'getEvent'		         	=> array(),
+			'getFRMs'                	=> array(),
+			'getDefaultEventTypes'   	=> array(),
+			'getEvents'              	=> array(),
+			'importEvents'           	=> array(),
+			'getEventsByEventLayers' 	=> array(),
+			'getEventGlossary'       	=> array(),
+			'getSolarBodiesGlossary'    => array(),
+			'getSolarBodies'            => array(),
+			'getTrajectoryTime'         => array(),
+			'logNotificationStatistics' => array(),
+			'getTexture'                => array(),
+			'getGeometryServiceData'    => array(),
+			'buildMovie'				=> array(),//this one happens in HelioviewerMovie.php
+			"getClosestData"				=> array(),
+			"embed"                			=> array(),
+			"minimal"						=> array(),
+			"standard"						=> array(),
+			"sciScript-SSWIDL"				=> array(),
+			"sciScript-SunPy"				=> array(),
+			"movie-notifications-granted"	=> array(),
+			"movie-notifications-denied"	=> array(),
+			"getJP2Image-web"				=> array(),
+			"getJP2Image-jpip" 				=> array(),
+			"totalRequests"					=> array()
+		);
+	}
+
+	private function _createSummaryArray(){
+        return array(
+			'downloadScreenshot'     	=> 0,
+			'getClosestImage'        	=> 0,
+			'getDataSources'         	=> 0,
+			'getJP2Header'           	=> 0,
+			'getNewsFeed'            	=> 0,
+			'getStatus'              	=> 0,
+			'getSciDataScript'       	=> 0,
+			'getTile'                	=> 0,
+			'getUsageStatistics'     	=> 0,
+			'getDataCoverageTimeline'	=> 0,
+			'getDataCoverage'        	=> 0,
+			'updateDataCoverage'     	=> 0,
+			'shortenURL'             	=> 0,
+			'takeScreenshot'         	=> 0,
+			'getRandomSeed'             => 0,
+			'getJP2Image'            	=> 0,
+			'getJPX'                 	=> 0,
+			'getJPXClosestToMidPoint'	=> 0,
+			'launchJHelioviewer'     	=> 0,
+			'downloadMovie'          	=> 0,
+			'getMovieStatus'         	=> 0,
+			'playMovie'              	=> 0,
+			'queueMovie'             	=> 0,
+			'reQueueMovie'           	=> 0,
+			'uploadMovieToYouTube'   	=> 0,
+			'checkYouTubeAuth'       	=> 0,
+			'getYouTubeAuth'         	=> 0,
+			'getUserVideos'          	=> 0,
+			'getObservationDateVideos'	=> 0,
+			'getEventFRMs'           	=> 0,
+			'getEvent'		         	=> 0,
+			'getFRMs'                	=> 0,
+			'getDefaultEventTypes'   	=> 0,
+			'getEvents'              	=> 0,
+			'importEvents'           	=> 0,
+			'getEventsByEventLayers' 	=> 0,
+			'getEventGlossary'       	=> 0,
+			'getSolarBodiesGlossary'    => 0,
+			'getSolarBodies'            => 0,
+			'getTrajectoryTime'         => 0,
+			'logNotificationStatistics' => 0,
+			'getTexture'                => 0,
+			'getGeometryServiceData'    => 0,
+			'buildMovie'				=> 0,//this one happens in HelioviewerMovie.php
+			"getClosestData"				=> 0,
+			"embed"                			=> 0,
+			"minimal"						=> 0,
+			"standard"						=> 0,
+			"sciScript-SSWIDL"				=> 0,
+			"sciScript-SunPy"				=> 0,
+			"movie-notifications-granted"	=> 0,
+			"movie-notifications-denied"	=> 0,
+			"getJP2Image-web"				=> 0,
+			"getJP2Image-jpip" 				=> 0,
+			"totalRequests"					=> 0
+		);
+	}
 
     /**
      * Return date format string for the specified time resolution
