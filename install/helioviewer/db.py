@@ -44,6 +44,8 @@ def setup_database_schema(adminuser, adminpass, dbhost, dbname, dbuser, dbpass, 
     create_youtube_table(cursor)
     print("Creating statistics table")
     create_statistics_table(cursor)
+    print("Creating redis-stats table")
+    create_redis_stats_table(cursor)
     print("Creating data coverage table")
     create_data_coverage_table(cursor)
     print("Updating image table index")
@@ -825,6 +827,16 @@ def create_statistics_table(cursor):
        PRIMARY KEY (`id`),
        KEY `date_idx` (`timestamp`,`action`)
     ) DEFAULT CHARSET=utf8;""")
+
+def create_redis_stats_table(cursor):
+    """Creates a table to import query statistics from redis"""
+
+    cursor.execute("""CREATE TABLE `redis_stats` (
+     `datetime` DATETIME NOT NULL,
+     `action` VARCHAR(32) NOT NULL,
+     `count` INT unsigned NOT NULL,
+     PRIMARY KEY (`datetime`,`action`)
+     ) DEFAULT CHARSET=utf8;""")
 
 def create_data_coverage_table(cursor):
     """Creates a table to keep data coverage statistics

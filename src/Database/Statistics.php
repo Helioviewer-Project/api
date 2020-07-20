@@ -47,7 +47,7 @@ class Database_Statistics {
         }
         catch (Exception $e) {
             return false;
-        }
+		}
 
         return true;
     }
@@ -85,16 +85,29 @@ class Database_Statistics {
 	/**
 	 * Logs api usage to redis.
 	 * Logging is done to the nearest hour.
+	 * 
+	 * $action - (String) the action to log
+	 * 
+	 * Optional $redis param for initilized connection to redis
+	 * API index.php passes $redis in since a connection is established for rate-limit
 	 */
-	public function logRedis($redis, $action){
-		$requestDateTime = date("c");
-        // Some formatting to sql style date like "2020-07-01T00:00:00"
-		$dateTimeNoMilis = str_replace("T", " ", explode("+",$requestDateTime)[0]); // strip out miliseconds and "T"
-		$dateTimeNearestHour = explode(":",$dateTimeNoMilis)[0] . ":00:00"; // strip out minutes and seconds
+	public function logRedis($action, $redis = null){
+		try{
+			if(!isset($redis)){
+				$redis = new Redis();
+				$redis->connect(HV_REDIS_HOST,HV_REDIS_PORT);
+			}
+			$requestDateTime = date("c");
+			// Some formatting to sql style date like "2020-07-01T00:00:00"
+			$dateTimeNoMilis = str_replace("T", " ", explode("+",$requestDateTime)[0]); // strip out miliseconds and "T"
+			$dateTimeNearestHour = explode(":",$dateTimeNoMilis)[0] . ":00:00"; // strip out minutes and seconds
 
-		// Make compound key
-		$key = HV_REDIS_STATS_PREFIX . "/" . $dateTimeNearestHour . "/" . $action;
-		$redis->incr($key);
+			// Make compound key
+			$key = HV_REDIS_STATS_PREFIX . "/" . $dateTimeNearestHour . "/" . $action;
+			$redis->incr($key);
+		}catch(Exception $e){
+			//continue gracefully if redis statistics logging fails
+		}
 	}
 
 	public function saveStatisticsFromRedis($redis){
@@ -336,7 +349,7 @@ class Database_Statistics {
             $dateEnd = toMySQLDateString($date);
 
 			//begin statistics table data gathering
-
+			/*
             $sql = sprintf(
                       "SELECT action, COUNT(id) AS count "
                     . "FROM statistics "
@@ -361,6 +374,7 @@ class Database_Statistics {
 				$counts[$count['action']][$i][$dateIndex] = $num;
 				$summary[$count['action']] += $num;
 			}
+			*/
 
 			//redis table statistics gathering for total number of calls
             $sql = sprintf(
@@ -383,8 +397,8 @@ class Database_Statistics {
             while ($count = $result->fetch_array(MYSQLI_ASSOC)) {
                 $num = (int)$count['count'];
 				
-                $counts['totalRequests'][$i][$dateIndex] = $num;
-                $summary['totalRequests'] += $num;
+                $new_counts['totalRequests'][$i][$dateIndex] = $num;
+                $new_summary['totalRequests'] += $num;
 			}
 
 			//additional real-time redis stats for total number of calls
@@ -401,8 +415,8 @@ class Database_Statistics {
 				}
 			}
 			if($realTimeRedisCount > 0){
-				$counts['totalRequests'][$i][$dateIndex] += $realTimeRedisCount;
-				$summary['totalRequests'] += $realTimeRedisCount;
+				$new_counts['totalRequests'][$i][$dateIndex] += $realTimeRedisCount;
+				$new_summary['totalRequests'] += $realTimeRedisCount;
 			}
 
 			//new redis-stats statistics gathering for all api endpoints
@@ -577,11 +591,12 @@ class Database_Statistics {
 		$counts['summary'] = $summary;
 		$new_counts['summary'] = $new_summary;
 		
-        return json_encode($counts);
+        return json_encode($new_counts);
 	}
 	
 	private function _createCountsArray(){
 		return array(
+			"totalRequests"				=> array(),
 			'downloadScreenshot'     	=> array(),
 			'getClosestImage'        	=> array(),
 			'getDataSources'         	=> array(),
@@ -635,13 +650,13 @@ class Database_Statistics {
 			"movie-notifications-granted"	=> array(),
 			"movie-notifications-denied"	=> array(),
 			"getJP2Image-web"				=> array(),
-			"getJP2Image-jpip" 				=> array(),
-			"totalRequests"					=> array()
+			"getJP2Image-jpip" 				=> array()
 		);
 	}
 
 	private function _createSummaryArray(){
         return array(
+			"totalRequests"				=> 0,
 			'downloadScreenshot'     	=> 0,
 			'getClosestImage'        	=> 0,
 			'getDataSources'         	=> 0,
@@ -695,8 +710,7 @@ class Database_Statistics {
 			"movie-notifications-granted"	=> 0,
 			"movie-notifications-denied"	=> 0,
 			"getJP2Image-web"				=> 0,
-			"getJP2Image-jpip" 				=> 0,
-			"totalRequests"					=> 0
+			"getJP2Image-jpip" 				=> 0
 		);
 	}
 

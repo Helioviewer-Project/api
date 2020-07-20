@@ -981,8 +981,10 @@ class Module_WebClient implements Module {
 
         if($notification_status == "granted"){
             $statistics->log('movie-notifications-granted');
+            $statistics->logRedis('movie-notifications-granted');
         }else if($notification_status == "denied") {
             $statistics->log('movie-notifications-denied');
+            $statistics->logRedis('movie-notifications-denied');
         }
         echo $this->_printJSON(json_encode($notification_status));
      }

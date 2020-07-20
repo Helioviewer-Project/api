@@ -12,8 +12,6 @@
  */
 colors = ["#D32F2F", "#9bd927", "#27d9be", "#6527d9", "#0091EA", "#FF6F00", "#F06292", "#BA68C8", "#558B2F", "#FFD600", "#333"];
 
-notificationKeys = ["movie-notifications-granted", "movie-notifications-denied"];
-
 var initialTime = new Date();
 var temporalResolution;
 var pieHeightScale = 0.65;
@@ -140,30 +138,34 @@ var displayUsageStatistics = function (data, timeInterval) {
 
     // Overview text
     summaryRaw = data['summary'];
-    summaryKeys = Object.keys(summaryRaw);
-    for(var key of summaryKeys){
-        if(notificationKeys.indexOf(key) == -1){//if key is not about notifications
-            hvTypePieSummary[key] = summaryRaw[key];
-        }else{//if key is about notifications
-            notificationPieSummary[key] = summaryRaw[key];
-        }
-    }
 
     $('#barCharts').empty();
 
     displaySummaryText(timeInterval, summaryRaw);
- 
+
     // Create summary pie chart
-    createVersionChart('versionsChart', hvTypePieSummary, pieChartHeight);
-    createRequestsChart('requestsChart', hvTypePieSummary, pieChartHeight);
-    createNotificationChart('notificationChart', notificationPieSummary, pieChartHeight);
+    createVersionChart('versionsChart', summaryRaw, pieChartHeight);
+    createRequestsChart('requestsChart', summaryRaw, pieChartHeight);
+    createNotificationChart('notificationChart', summaryRaw, pieChartHeight);
     createScreenshotSourcesChart('screenshotSourcesChart', screenshotSourcesSummary, pieChartHeight);
     createScreenshotLayerCountChart('screenshotLayerCountChart',screenshotLayerCountSummary, pieChartHeight);
     createMovieSourcesChart('movieSourcesChart', movieSourcesSummary, pieChartHeight);
     createMovieLayerCountChart('movieLayerCountChart',movieLayerCountSummary, pieChartHeight);
 
+    var colorMod = 0;
+    var excludeFromCharts = ['movieCommonSources','movieLayerCount','screenshotCommonSources','screenshotLayerCount','summary'];
+    // Bar Charts
+    for ( var key of Object.keys(data) ){
+        if(!excludeFromCharts.includes(key) && data['summary'][key] > 0){
+            //console.log(key);
+            var colorIndex = colorMod % colors.length;
+            createColumnChart(key,data[key],key,barChartHeight,colors[colorIndex]);
+            colorMod++;
+        }
+    }
 
     // Create bar graphs for each request type
+    /*
     createColumnChart('totalRequests', data['totalRequests'], 'Total', barChartHeight, colors[10]);
     createColumnChart('visitors', data['standard'], 'Helioviewer.org', barChartHeight, colors[8]);
     createColumnChart('getClosestImage', data['getClosestImage'], 'Observation', barChartHeight, colors[4]);
@@ -176,6 +178,7 @@ var displayUsageStatistics = function (data, timeInterval) {
     createColumnChart('sciScript-SSWIDL', data['sciScript-SSWIDL'], 'SciScript SSWIDL', barChartHeight, colors[6]);
     createColumnChart('sciScript-SunPy', data['sciScript-SunPy'], 'SciScript SunPy', barChartHeight, colors[7]);
     createColumnChart('getRandomSeed', data['getRandomSeed'], 'getRandomSeed', barChartHeight, colors[4]);
+    */
 
     // Spreads bar graphs out a bit if space permits
     //barChartMargin = Math.round(($("#visualizations").height() - $("#barCharts").height()) / 7);

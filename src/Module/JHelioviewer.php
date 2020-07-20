@@ -86,6 +86,7 @@ class Module_JHelioviewer implements Module {
         // Output results
         if ( $options['jpip'] ) {
             $statistics->log("getJP2Image-jpip");
+            $statistics->logRedis("getJP2Image-jpip");
             if ( $options['json'] ) {
                 header('Content-type: application/json;charset=UTF-8');
                 echo json_encode(
@@ -98,6 +99,7 @@ class Module_JHelioviewer implements Module {
         }
         else {
             $statistics->log("getJP2Image-web");
+            $statistics->logRedis("getJP2Image-web");
             $this->_displayJP2($filepath);
         }
     }

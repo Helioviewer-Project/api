@@ -136,7 +136,8 @@ EOD;
 		//Log Statistic
 		include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
 		$statistics = new Database_Statistics();
-		$statistics->log("sciScript-SunPy");
+        $statistics->log("sciScript-SunPy");
+        $statistics->logRedis("sciScript-SunPy");
     }
 
     private function _getScriptFilename() {

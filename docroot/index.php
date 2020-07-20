@@ -174,7 +174,7 @@ function loadModule($params) {
                 if (HV_ENABLE_STATISTICS_COLLECTION && in_array($params['action'],array_keys($valid_actions))) {
                     include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
                     $statistics = new Database_Statistics();
-                    $statistics->logRedis($redis, $params['action']);
+                    $statistics->logRedis( $params['action'] , $redis );
                 }
             } catch (LimitExceeded $exception) {
                 //limit exceeded
