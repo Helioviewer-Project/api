@@ -10,12 +10,23 @@
  *                      hourly, daily, weekly, etc.
  *  @return void
  */
-colors = ["#D32F2F", "#9bd927", "#27d9be", "#6527d9", "#0091EA", "#FF6F00", "#F06292", "#BA68C8", "#558B2F", "#FFD600", "#333"];
+var colors = ["#D32F2F", "#9bd927", "#27d9be", "#6527d9", "#0091EA", "#FF6F00", "#F06292", "#BA68C8", "#558B2F", "#FFD600", "#333"];
+
+var heirarchy = {
+    "Total":["totalRequests"],
+    "Client Sites":["standard","embed","minimal"],
+    "Images":["takeScreenshot","getTile","getClosestImage","getJP2Image-web","getJP2Image-jpip","getJP2Image","downloadScreenshot","getJPX","getJPXClosestToMidPoint"],
+    "Movies":["buildMovie","getMovieStatus","queueMovie","reQueueMovie","playMovie","downloadMovie","getUserVideos","getObservationDateVideos","uploadMovieToYouTube","checkYouTubeAuth","getYouTubeAuth"],
+    "Events":["getEventGlossary","getEvents","getFRMs","getEvent","getEventFRMs","getDefaultEventTypes","getEventsByEventLayers","importEvents"],
+    "Data":["getRandomSeed","getDataSources","getJP2Header","getDataCoverage","getStatus","getNewsFeed","getDataCoverageTimeline","getClosestData","getSolarBodiesGlossary","getSolarBodies","getTrajectoryTime","sciScript-SSWIDL","sciScript-SunPy","getSciDataScript","updateDataCoverage"],
+    "Other":["shortenURL","getUsageStatistics","movie-notifications-granted","movie-notifications-denied","logNotificationStatistics","launchJHelioviewer"],
+    "WebGL":["getTexture","getGeometryServiceData"]
+};
 
 var initialTime = new Date();
 var temporalResolution;
 var pieHeightScale = 0.65;
-var maxVisualizationSizePx = 800;
+var maxVisualizationSizePx = 900;
 var refreshIntervalMinutes;
 var refreshHandler;
 var request;
@@ -155,12 +166,28 @@ var displayUsageStatistics = function (data, timeInterval) {
     var colorMod = 0;
     var excludeFromCharts = ['movieCommonSources','movieLayerCount','screenshotCommonSources','screenshotLayerCount','summary'];
     // Bar Charts
+    /*
     for ( var key of Object.keys(data) ){
-        if(!excludeFromCharts.includes(key) && data['summary'][key] > 0){
-            //console.log(key);
-            var colorIndex = colorMod % colors.length;
-            createColumnChart(key,data[key],key,barChartHeight,colors[colorIndex]);
-            colorMod++;
+        
+    }*/
+
+    var barChartsDiv = document.getElementById("barCharts");
+    for( var group of Object.keys(heirarchy) ){
+        var writeHeading = true;
+        for(var key of heirarchy[group]){
+            if(!excludeFromCharts.includes(key) && data['summary'][key] > 0){
+                if(writeHeading){
+                    var heading = document.createElement("h2");
+                    heading.innerText = group;
+                    heading.className = "heading"
+                    barChartsDiv.append(heading);
+                    writeHeading = false;
+                }
+                //console.log(key);
+                var colorIndex = colorMod % colors.length;
+                createColumnChart(key,data[key],key,barChartHeight,colors[colorIndex]);
+                colorMod++;
+            }
         }
     }
 

@@ -1,5 +1,5 @@
 body{font-family:Arial, Helvetica, sans-serif;}
-#main {text-align: center; margin:0px auto; width: 90%; padding-top: 20px; }
+#main {text-align: center; margin:0px auto; width: 98%; padding-top: 20px; }
 #header {font-size:32px; vertical-align: middle; margin-top: 15px; margin-bottom: 26px;}
 #headerText {display: inline-block; vertical-align: super; font-family: arial,helvetica,liberation sans,bitstream vera sans,freesans,clean,sans-serif; font-size:38px;}
 #footer {font-size: 10px;}
@@ -11,6 +11,7 @@ body{font-family:Arial, Helvetica, sans-serif;}
 #pieChartsGroup {display: flex; flex-flow: column;}
 #barCharts {width: 50%; display: flex; overflow: hidden; vertical-align: top; align-self: flex-start; flex-flow: column; justify-content: flex-end;}
 .summaryCount {font-weight: bold; font-size:24px; cursor: pointer;}
+.heading {text-align: left; padding-left: 10%;}
 
 @media screen and (max-width: 800px) {  
     #header {font-size: 24px;}
