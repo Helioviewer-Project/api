@@ -1,5 +1,5 @@
 <?php
-    $validResolutions = array("hourly", "daily", "weekly", "monthly", "yearly");
+    $validResolutions = array("hourly", "daily", "weekly", "monthly", "yearly", "custom");
     if (isset($_GET['resolution']) && in_array($_GET['resolution'], $validResolutions)) {
         $resolution = $_GET['resolution'];
     } else {
@@ -19,8 +19,10 @@
         google.load("visualization", "1", {packages:["corechart"]});
         google.setOnLoadCallback(function (e) {
             temporalResolution = "<?php echo $resolution;?>";
+            dateStart = "<?php echo $_GET['dateStart']; ?>";
+            dateEnd = "<?php echo $_GET['dateEnd']; ?>";
             setRefreshIntervalFromTemporalResolution();
-            getUsageStatistics(temporalResolution);
+            getUsageStatistics(temporalResolution,dateStart,dateEnd);
             setInterval(checkSessionTimeout, 1000);
         });
     </script>

@@ -578,7 +578,7 @@ class Module_WebClient implements Module {
 
         // Determine resolution to use
         $validResolutions = array('hourly', 'daily', 'weekly', 'monthly',
-            'yearly');
+            'yearly','custom');
         if ( isset($this->_options['resolution']) ) {
 
             // Make sure a valid resolution was specified
@@ -597,7 +597,7 @@ class Module_WebClient implements Module {
         $statistics = new Database_Statistics();
 
         $this->_printJSON($statistics->getUsageStatistics(
-            $this->_options['resolution'])
+            $this->_options['resolution'],$this->_options['dateStart'],$this->_options['dateEnd'])
         );
     }
 
@@ -1309,7 +1309,8 @@ class Module_WebClient implements Module {
             break;
         case 'getUsageStatistics':
             $expected = array(
-                'optional' => array('resolution', 'callback'),
+                'optional' => array('resolution', 'callback','dateStart','dateEnd'),
+                'dates' => array('dateStart','dateEnd'),
                 'alphanum' => array('resolution', 'callback')
             );
             break;

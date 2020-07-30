@@ -250,7 +250,7 @@ class Database_Statistics {
      *
      * @return str  JSON
      */
-    public function getUsageStatistics($resolution) {
+    public function getUsageStatistics($resolution,$dateStart = null, $dateEnd = null) {
 		require_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
 		require_once HV_ROOT_DIR.'/../src/Helper/HelioviewerLayers.php';
 
@@ -258,7 +258,7 @@ class Database_Statistics {
 		$redis->connect(HV_REDIS_HOST,HV_REDIS_PORT);
 
         // Determine time intervals to query
-        $interval = $this->_getQueryIntervals($resolution);
+        $interval = $this->_getQueryIntervals($resolution,$dateStart, $dateEnd);
 
         // Array to keep track of counts for each action
         $counts = array(
@@ -397,8 +397,8 @@ class Database_Statistics {
             while ($count = $result->fetch_array(MYSQLI_ASSOC)) {
                 $num = (int)$count['count'];
 				
-                $new_counts['totalRequests'][$i][$dateIndex] = $num;
-                $new_summary['totalRequests'] += $num;
+                $new_counts['total'][$i][$dateIndex] = $num;
+                $new_summary['total'] += $num;
 			}
 
 			//additional real-time redis stats for total number of calls
@@ -415,8 +415,8 @@ class Database_Statistics {
 				}
 			}
 			if($realTimeRedisCount > 0){
-				$new_counts['totalRequests'][$i][$dateIndex] += $realTimeRedisCount;
-				$new_summary['totalRequests'] += $realTimeRedisCount;
+				$new_counts['total'][$i][$dateIndex] += $realTimeRedisCount;
+				$new_summary['total'] += $realTimeRedisCount;
 			}
 
 			//new redis-stats statistics gathering for all api endpoints
@@ -596,7 +596,7 @@ class Database_Statistics {
 	
 	private function _createCountsArray(){
 		return array(
-			"totalRequests"				=> array(),
+			"total"						=> array(),
 			'downloadScreenshot'     	=> array(),
 			'getClosestImage'        	=> array(),
 			'getDataSources'         	=> array(),
@@ -656,7 +656,7 @@ class Database_Statistics {
 
 	private function _createSummaryArray(){
         return array(
-			"totalRequests"				=> 0,
+			"total"						=> 0,
 			'downloadScreenshot'     	=> 0,
 			'getClosestImage'        	=> 0,
 			'getDataSources'         	=> 0,
@@ -1833,7 +1833,10 @@ class Database_Statistics {
                 break;
             case "yearly":
                 return "Y";   // 2009
-                break;
+				break;
+			case "custom":
+				return "Y-m-d H:i:s";
+				break;
         }
     }
 
@@ -1844,7 +1847,7 @@ class Database_Statistics {
      *
      * @return array   Array specifying a time interval
      */
-    private function _getQueryIntervals($resolution) {
+    private function _getQueryIntervals($resolution,$dateStart,$dateEnd) {
 
         date_default_timezone_set('UTC');
 
@@ -1854,61 +1857,74 @@ class Database_Statistics {
         $numSteps = null;
 
         // For hourly resolution, keep the hours value, otherwise set to zero
-        $hour = ($resolution == "hourly") ? (int) $date->format("H") : 0;
+		$hour = ($resolution == "hourly") ? (int) $date->format("H") : 0;
+		
+		if($resolution != "custom"){
 
-        // Round end time to nearest hour or day to begin with (may round other units later)
-        $date->setTime($hour, 0, 0);
+			// Round end time to nearest hour or day to begin with (may round other units later)
+			$date->setTime($hour, 0, 0);
 
-        // Hourly
-        if ($resolution == "hourly") {
-            $timestep = new DateInterval("PT1H");
-            $numSteps = 24;
+			// Hourly
+			if ($resolution == "hourly") {
+				$timestep = new DateInterval("PT1H");
+				$numSteps = 24;
 
-            $date->add($timestep);
+				$date->add($timestep);
 
-            // Subtract 24 hours
-            $date->sub(new DateInterval("P1D"));
-        }
+				// Subtract 24 hours
+				$date->sub(new DateInterval("P1D"));
+			}
 
-        // Daily
-        else if ($resolution == "daily") {
-            $timestep = new DateInterval("P1D");
-            $numSteps = 28;
+			// Daily
+			else if ($resolution == "daily") {
+				$timestep = new DateInterval("P1D");
+				$numSteps = 28;
 
-            $date->add($timestep);
+				$date->add($timestep);
 
-            // Subtract 4 weeks
-            $date->sub(new DateInterval("P4W"));
-        }
+				// Subtract 4 weeks
+				$date->sub(new DateInterval("P4W"));
+			}
 
-        // Weekly
-        else if ($resolution == "weekly") {
-            $timestep = new DateInterval("P1W");
-            $numSteps = 26;
+			// Weekly
+			else if ($resolution == "weekly") {
+				$timestep = new DateInterval("P1W");
+				$numSteps = 26;
 
-            $date->add(new DateInterval("P1D"));
+				$date->add(new DateInterval("P1D"));
 
-            // Subtract 25 weeks
-            $date->sub(new DateInterval("P25W"));
-        }
+				// Subtract 25 weeks
+				$date->sub(new DateInterval("P25W"));
+			}
 
-        // Monthly
-        else if ($resolution == "monthly") {
-            $timestep = new DateInterval("P1M");
-            $numSteps = 24;
+			// Monthly
+			else if ($resolution == "monthly") {
+				$timestep = new DateInterval("P1M");
+				$numSteps = 24;
 
-            $date->modify('first day of next month');
-            $date->sub(new DateInterval("P24M"));
-        }
+				$date->modify('first day of next month');
+				$date->sub(new DateInterval("P24M"));
+			}
 
-        // Yearly
-        else if ($resolution == "yearly") {
-            $timestep = new DateInterval("P1Y");
-            $numSteps = 8;
+			// Yearly
+			else if ($resolution == "yearly") {
+				$timestep = new DateInterval("P1Y");
+				$numSteps = 8;
 
-            $year = (int) $date->format("Y");
-            $date->setDate($year - $numSteps + 1, 1, 1);
-        }
+				$year = (int) $date->format("Y");
+				$date->setDate($year - $numSteps + 1, 1, 1);
+			}
+			
+		}else{
+			$dateTimeDateEnd = new DateTime($dateEnd);
+			$dateTimeDateStart = new DateTime($dateStart);
+			$dateDiffSeconds = $dateTimeDateEnd->getTimestamp() - $dateTimeDateStart->getTimestamp();
+			$numSteps = 24;
+			$stepSeconds = (int)($dateDiffSeconds / $numSteps);
+			$intervalString = "PT" . $stepSeconds . "S";
+			$timestep = new DateInterval($intervalString);
+			$date = $dateTimeDateStart;
+		}
 
         // Array to store time intervals
         $intervals = array(

@@ -13,7 +13,7 @@
 var colors = ["#D32F2F", "#9bd927", "#27d9be", "#6527d9", "#0091EA", "#FF6F00", "#F06292", "#BA68C8", "#558B2F", "#FFD600", "#333"];
 
 var heirarchy = {
-    "Total":["totalRequests"],
+    "Total":["total"],
     "Client Sites":["standard","embed","minimal"],
     "Images":["takeScreenshot","getTile","getClosestImage","getJP2Image-web","getJP2Image-jpip","getJP2Image","downloadScreenshot","getJPX","getJPXClosestToMidPoint"],
     "Movies":["buildMovie","getMovieStatus","queueMovie","reQueueMovie","playMovie","downloadMovie","getUserVideos","getObservationDateVideos","uploadMovieToYouTube","checkYouTubeAuth","getYouTubeAuth"],
@@ -30,12 +30,26 @@ var maxVisualizationSizePx = 900;
 var refreshIntervalMinutes;
 var refreshHandler;
 var request;
+var dateStart,dateEnd;
 
-var getUsageStatistics = function(timeInterval) {
+var getUsageStatistics = function(timeInterval,dateStartInput,dateEndInput) {
     if(request){
         request.abort();
     }
-    request = $.getJSON("../index.php", {action: "getUsageStatistics", resolution: timeInterval}, function (response) {
+    //initialize dateStart and dateEnd end if empty
+    if(dateStartInput == "" || dateEndInput == ""){
+        todayString = new Date().toISOString().split(".")[0] + "Z";//remove millis
+        yesterdayUnix = Date.now() - 86400000;
+        yesterday = new Date();
+        yesterday.setTime(yesterdayUnix);
+        yesterdayString = yesterday.toISOString().split(".")[0] + "Z";//remove millis
+
+        dateStartInput = yesterdayString;
+        dateEndInput = todayString;
+        dateStart = yesterdayString;
+        dateEnd = todayString;
+    }
+    request = $.getJSON("../index.php", {action: "getUsageStatistics", resolution: timeInterval, dateStart: dateStartInput, dateEnd: dateEndInput}, function (response) {
         initialTime = new Date();
         if(responseNoError(response)){//only continue if the server returned a payload without error
             setRefreshIntervalFromTemporalResolution();
@@ -68,7 +82,12 @@ var loadNewStatistics = function(){
     }else{
         $('#loading').text("Refreshing... This will take a while...");
     }
-    getUsageStatistics(temporalResolution); 
+
+    if(temporalResolution != "custom"){
+        getUsageStatistics(temporalResolution,dateStart,dateEnd);
+    }else{
+        getUsageStatistics(temporalResolution,dateStart,dateEnd);
+    }
 }
 
 var setRefreshIntervalFromTemporalResolution = function (){
@@ -78,7 +97,8 @@ var setRefreshIntervalFromTemporalResolution = function (){
         "daily"  : 60,
         "weekly" : 180,
         "monthly": 540,
-        "yearly" : 1440
+        "yearly" : 1440,
+        "custom" : 60
     };
     refreshIntervalMinutes =  refreshIntervals[temporalResolution];
 }
@@ -166,30 +186,59 @@ var displayUsageStatistics = function (data, timeInterval) {
     var colorMod = 0;
     var excludeFromCharts = ['movieCommonSources','movieLayerCount','screenshotCommonSources','screenshotLayerCount','summary'];
     // Bar Charts
-    /*
-    for ( var key of Object.keys(data) ){
-        
-    }*/
-
     var barChartsDiv = document.getElementById("barCharts");
     for( var group of Object.keys(heirarchy) ){
         var writeHeading = true;
         for(var key of heirarchy[group]){
             if(!excludeFromCharts.includes(key) && data['summary'][key] > 0){
                 if(writeHeading){
-                    var heading = document.createElement("h2");
+                    var heading = document.createElement("button");
                     heading.innerText = group;
-                    heading.className = "heading"
+                    heading.id = group;
+                    heading.className = "collapsible"
                     barChartsDiv.append(heading);
                     writeHeading = false;
                 }
-                //console.log(key);
                 var colorIndex = colorMod % colors.length;
+                var innerContent = document.createElement("div");
+                innerContent.id = key+"Chart";
+                innerContent.className = "content columnChart";
+                var heading = document.getElementById(group);
+                barChartsDiv.append(innerContent);
                 createColumnChart(key,data[key],key,barChartHeight,colors[colorIndex]);
                 colorMod++;
             }
         }
     }
+
+
+    var groupsElements = document.getElementsByClassName("collapsible");
+
+    for (var groupButton of groupsElements) {
+        groupButton.addEventListener("click", function() {
+            var groupKey = this.id;
+            this.classList.toggle("active"); //can start disabled
+            for(var contentId of heirarchy[groupKey]){
+                var content = document.getElementById(contentId+"Chart");
+                if(content){
+                    if (content.style.maxHeight){
+                        content.style.maxHeight = null;
+                    } else {
+                        content.style.maxHeight = content.scrollHeight + "px";
+                    } 
+                    console.log(contentId + " " + content.style.maxHeight);
+                }
+            }
+        });
+        //start with all graphs open and showing (to start closed comment this out)
+        var groupKey = groupButton.id;
+        for(var contentId of heirarchy[groupKey]){
+            var content = document.getElementById(contentId+"Chart");
+            if(content){
+                content.style.maxHeight = content.scrollHeight + "px";
+            }
+        }
+    } 
 
     // Create bar graphs for each request type
     /*
@@ -229,7 +278,8 @@ var displaySummaryText = function(timeInterval, summary) {
         "daily"  : "four weeks",
         "weekly" : "six months",
         "monthly": "two years",
-        "yearly" : "eight years"
+        "yearly" : "eight years",
+        "custom" : "time range"
     };
 
     possibleResolutions = Object.keys(humanTimes);
@@ -239,21 +289,82 @@ var displaySummaryText = function(timeInterval, summary) {
         when += '<option value="'+possibleResolutions[res]+'">'+humanTimes[possibleResolutions[res]]+'</option>';
     }
     when += '</select>';
+    //default date/times are empty and un-initialized and logic is below
+    when += '<span id="timeRange"> from <input type="date" id="startDate"><input type="time" step="1" id="startTime"> to <input type="date" id="endDate"><input type="time" step="1" id="endTime"></span>'
 
     // Generate HTML
-    html = '<span id="when">During the last <b>' + when + '</b> Helioviewer.org users created</span> ' +
+    html = '<span id="when">During the last ' + when + '</span><br><span>Helioviewer.org users created</span> ' +
            '<span style="color:' + colors[4] + ';" class="summaryCount">' + summary['getClosestImage'].toLocaleString() + ' observations</span>, '+
            '<span style="color:' + colors[0] + ';" class="summaryCount">' + summary['takeScreenshot'].toLocaleString() + ' screenshots</span>, ' +
            '<span style="color:' + colors[1] + ';" class="summaryCount">' + summary['buildMovie'].toLocaleString() + ' movies</span>, and ' +
            '<span style="color:' + colors[2] + ';" class="summaryCount">' + summary['getJPX'].toLocaleString() + ' JPX movies</span>. <br> ' +
            'Helioviewer.org was <span style="color:' + colors[3] + ';" class="summaryCount">embedded ' + summary['embed'].toLocaleString() + ' times </span> and '+
            '<span style="color:' + colors[5] + ';" class="summaryCount"> accessed by ' + summary['minimal'].toLocaleString() + ' students </span> <br>' +
-           'Helioviewer.org users made <span style="color:'+colors[10]+';" class="summaryCount">' + summary['totalRequests'].toLocaleString() + ' total requests </span>';
+           'Helioviewer.org users made <span style="color:'+colors[10]+';" class="summaryCount">' + summary['total'].toLocaleString() + ' total requests </span>';
     $("#overview").html(html);
 
+
+    //date/time initilization logic
+    if(temporalResolution == "custom"){
+        //first-run empty date/time fields
+        // if(dateStart == "" && dateEnd == ""){
+        //     todayString = new Date().toISOString().split("T")[0];
+        //     yesterdayUnix = Date.now()- 86400000;
+        //     yesterday = new Date();
+        //     yesterday.setTime(yesterdayUnix);
+        //     yesterdayString = yesterday.toISOString().split("T")[0];
+        //     document.getElementById("startDate").value = yesterdayString;
+        //     document.getElementById("startTime").value = "00:00";
+        //     document.getElementById("endDate").value = todayString;
+        //     document.getElementById("endTime").value = "00:00";
+        // }else{
+            //second run use existing date/time
+            document.getElementById("startDate").value = dateStart.slice(0,-1).split("T")[0];
+            document.getElementById("startTime").value = dateStart.slice(0,-1).split("T")[1];
+            document.getElementById("endDate").value = dateEnd.slice(0,-1).split("T")[0];
+            document.getElementById("endTime").value = dateEnd.slice(0,-1).split("T")[1];
+        // }
+        $("#timeRange").show();
+    }else{//any other temporalResolution (for example "daily")
+        if(dateStart != "" && dateEnd != ""){//restore date/time even if it's hidden
+            document.getElementById("startDate").value = dateStart.slice(0,-1).split("T")[0];
+            document.getElementById("startTime").value = dateStart.slice(0,-1).split("T")[1];
+            document.getElementById("endDate").value = dateEnd.slice(0,-1).split("T")[0];
+            document.getElementById("endTime").value = dateEnd.slice(0,-1).split("T")[1];
+        }
+        $("#timeRange").hide();
+    }
     
+    //temporal resolution dropdown change event listener
     $("#temporalResolution").val(timeInterval).unbind().change(function(e){
         temporalResolution = $("#temporalResolution").val();
+        if(temporalResolution == "custom"){
+            //first-run empty date/time fields
+            // if(dateStart == "" && dateEnd == ""){
+            //     todayString = new Date().toISOString().split("T")[0];
+            //     yesterdayUnix = Date.now()- 86400000;
+            //     yesterday = new Date();
+            //     yesterday.setTime(yesterdayUnix);
+            //     yesterdayString = yesterday.toISOString().split("T")[0];
+            //     document.getElementById("startDate").value = yesterdayString;
+            //     document.getElementById("startTime").value = "00:00";
+            //     document.getElementById("endDate").value = todayString;
+            //     document.getElementById("endTime").value = "00:00";
+            // }
+            dateStart = document.getElementById("startDate").value + "T" + document.getElementById("startTime").value + "Z";
+            dateEnd = document.getElementById("endDate").value + "T" + document.getElementById("endTime").value + "Z";
+            $("#timeRange").show();
+            loadNewStatistics();
+        }else{
+            $("#timeRange").hide();
+            loadNewStatistics();
+        }
+    });
+
+    //date/time change event listener
+    $("#timeRange").children().unbind().change(function(e){
+        dateStart = document.getElementById("startDate").value + "T" + document.getElementById("startTime").value + "Z";
+        dateEnd = document.getElementById("endDate").value + "T" + document.getElementById("endTime").value + "Z";
         loadNewStatistics();
     });
 
@@ -288,7 +399,7 @@ var createColumnChart = function (id, rows, desc, height, color) {
         row++;
     });
 
-    $("#barCharts").append('<div id="' + id + 'Chart" class="columnChart"></div>');
+    //$("#barCharts").append('<div id="' + id + 'Chart" class="columnChart content"></div>');
 
     chart = new google.visualization.ColumnChart(document.getElementById(id + "Chart"));
     chart.draw(data, {
