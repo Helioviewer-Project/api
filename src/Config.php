@@ -48,7 +48,7 @@ class Config {
         $this->_fixTypes();
 
         foreach ($this->config as $key => $value) {
-            if ( gettype($value) != 'array' ) {
+            if ( $key != 'acao_url' ) {
                 define('HV_'.strtoupper($key), $value);
             }
         }

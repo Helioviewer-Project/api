@@ -13,7 +13,7 @@
 var colors = ["#D32F2F", "#9bd927", "#27d9be", "#6527d9", "#0091EA", "#FF6F00", "#F06292", "#BA68C8", "#558B2F", "#FFD600", "#333"];
 
 var heirarchy = {
-    "Total":["total"],
+    "Total":["total","rate_limit_exceeded"],
     "Client Sites":["standard","embed","minimal"],
     "Images":["takeScreenshot","getTile","getClosestImage","getJP2Image-web","getJP2Image-jpip","getJP2Image","downloadScreenshot","getJPX","getJPXClosestToMidPoint"],
     "Movies":["buildMovie","getMovieStatus","queueMovie","reQueueMovie","playMovie","downloadMovie","getUserVideos","getObservationDateVideos","uploadMovieToYouTube","checkYouTubeAuth","getYouTubeAuth"],
@@ -205,6 +205,7 @@ var displayUsageStatistics = function (data, timeInterval) {
                 innerContent.className = "content columnChart";
                 var heading = document.getElementById(group);
                 barChartsDiv.append(innerContent);
+                console.log(key,data[key],key,barChartHeight,colors[colorIndex]);
                 createColumnChart(key,data[key],key,barChartHeight,colors[colorIndex]);
                 colorMod++;
             }
@@ -217,7 +218,7 @@ var displayUsageStatistics = function (data, timeInterval) {
     for (var groupButton of groupsElements) {
         groupButton.addEventListener("click", function() {
             var groupKey = this.id;
-            this.classList.toggle("active"); //can start disabled
+            this.classList.toggle("active"); //can start collapsed
             for(var contentId of heirarchy[groupKey]){
                 var content = document.getElementById(contentId+"Chart");
                 if(content){

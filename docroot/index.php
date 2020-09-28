@@ -140,7 +140,9 @@ function loadModule($params) {
                 // Rate-limit the client
                 // This stores the identifier in the redis database and sets an expiry time based on the temporal rate specified
                 // For Example: perMinute will store the $identifier with an expirty time of 60 seconds after which the $identifier is deleted from the redis database
-                $rateLimiter->limit($identifier, RateLimit\Rate::perMinute($maximumRequests));
+                if(HV_ENFORCE_RATE_LIMIT && !in_array($identifier,HV_RATE_LIMIT_ALLOW_LIST)){
+                    $rateLimiter->limit($identifier, RateLimit\Rate::perMinute($maximumRequests));
+                }
                 
                 // Execute action
                 $moduleName = $valid_actions[$params['action']];

@@ -31,6 +31,7 @@ class RedisRateLimiter implements RateLimiter, SilentRateLimiter
         $current = $this->getCurrent($key);
 
         if ($current >= $rate->getOperations()) {
+            $this->logLimitExceeded($identifier, $rate);
             throw LimitExceeded::for($identifier, $rate);
         }
 
@@ -55,9 +56,20 @@ class RedisRateLimiter implements RateLimiter, SilentRateLimiter
         );
     }
 
+    private function logLimitExceeded(string $identifier, Rate $rate){
+        $requestDateTime = date("c");
+        // Some formatting to sql style date like "2020-07-01T00:00:00"
+        $dateTimeNoMilis = str_replace("T", " ", explode("+",$requestDateTime)[0]); // strip out miliseconds and "T"
+        $dateTimeNearestHour = explode(":",$dateTimeNoMilis)[0] . ":00:00"; // strip out minutes and seconds
+
+        // Make compound key
+        $key = HV_RATE_EXCEEDED_PREFIX . "/" . $identifier . "/" . $dateTimeNearestHour;//   $this->key($identifier, $rate->getInterval());
+        $current = $this->redis->incr($key);
+    }
+
     private function key(string $identifier, int $interval): string
     {
-        return "{$this->keyPrefix}{$identifier}:$interval";
+        return "{$this->keyPrefix}/{$identifier}/$interval";
     }
 
     private function getCurrent(string $key): int

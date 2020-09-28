@@ -158,6 +158,55 @@ class Database_Statistics {
 		}
 		
 	}
+
+	public function saveRateLimitExceededFromRedis($redis){
+		$oneHourAgoSeconds = time() - (60*60);
+		$oneHourAgoDateTime = date("c",$oneHourAgoSeconds);//
+        // Some formatting to sql style date like "2020-07-01T00:00:00"
+		$dateTimeNoMilis = str_replace("T", " ", explode("+",$oneHourAgoDateTime)[0]); // strip out miliseconds and "T"
+		$dateTimeNearestHour = explode(":",$dateTimeNoMilis)[0] . ":00:00"; // strip out minutes and seconds
+
+		$statisticsKeys = $redis->keys(HV_RATE_EXCEEDED_PREFIX . "/*");
+		$statisticsData = array();
+		foreach( $statisticsKeys as $key ){
+			$count = (int)$redis->get($key);
+			$keyComponents = explode("/",$key);
+			// only import data from the previous hour and older.
+			if($keyComponents[2] <= $dateTimeNearestHour){
+				$statistic = array( 
+					"identifier" => $keyComponents[1],
+					"datetime" => $keyComponents[2],
+					"count" => $count,
+					"key" => $key
+				);
+				array_push($statisticsData, $statistic);
+			}
+		}
+		foreach($statisticsData as $data){
+			$sql = sprintf(
+				  "INSERT INTO rate_limit_exceeded "
+				. "SET "
+				. "datetime "	. " = '%s', "
+				. "identifier "	. " = '%s', " 
+				. "count "		. " = %d "
+				. "ON DUPLICATE KEY UPDATE count = %d;",
+				$this->_dbConnection->link->real_escape_string($data["datetime"]),
+				$this->_dbConnection->link->real_escape_string($data["identifier"]),
+				$this->_dbConnection->link->real_escape_string($data["count"]),
+				$this->_dbConnection->link->real_escape_string($data["count"])
+			);
+			try {
+				$result = $this->_dbConnection->query($sql);
+				if( $result == 1 ){
+					$redis->delete($data["key"]);
+				}
+			}
+			catch (Exception $e) {
+
+			}
+		}
+		
+	}
 	
 	/**
      * Returns an array of the known data sources as strings 
@@ -250,7 +299,7 @@ class Database_Statistics {
      *
      * @return str  JSON
      */
-    public function getUsageStatistics($resolution,$dateStart = null, $dateEnd = null) {
+    public function getUsageStatistics($resolution, $dateStart = null, $dateEnd = null) {
 		require_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
 		require_once HV_ROOT_DIR.'/../src/Helper/HelioviewerLayers.php';
 
@@ -258,7 +307,7 @@ class Database_Statistics {
 		$redis->connect(HV_REDIS_HOST,HV_REDIS_PORT);
 
         // Determine time intervals to query
-        $interval = $this->_getQueryIntervals($resolution,$dateStart, $dateEnd);
+        $interval = $this->_getQueryIntervals($resolution, $dateStart, $dateEnd);
 
         // Array to keep track of counts for each action
         $counts = array(
@@ -326,6 +375,8 @@ class Database_Statistics {
 
         // Start date
 		$date = $interval['startDate'];
+		$intervalStartDate = toMySQLDateString($interval['startDate']);
+		$intervalEndDate = "";
 
         // Query each time interval
         for ($i = 0; $i < $interval["numSteps"]; $i++) {
@@ -337,7 +388,7 @@ class Database_Statistics {
             $dateStart = toMySQLDateString($date);
 
             // Move to end date for the current interval
-            $date->add($interval['timestep']);
+			$date->add($interval['timestep']);
 
             // Fill with zeros to begin with
             foreach ($counts as $action => $arr) {
@@ -346,7 +397,8 @@ class Database_Statistics {
 			foreach ($new_counts as $action => $arr) {
 				array_push($new_counts[$action], array($dateIndex => 0));
             }
-            $dateEnd = toMySQLDateString($date);
+			$dateEnd = toMySQLDateString($date);
+			$intervalEndDate = $dateEnd;
 
 			//begin statistics table data gathering
 			/*
@@ -587,9 +639,41 @@ class Database_Statistics {
 			$new_counts['screenshotLayerCount'] = $screenshotLayerCount;
 		}
 
+		//Get rate limit exceeded date
+		$sql = sprintf(
+			"SELECT identifier, SUM(count) AS count "
+		  . "FROM rate_limit_exceeded "
+		  . "WHERE "
+		  .     "datetime >= '%s' AND datetime < '%s'"
+		  . "GROUP BY identifier "
+		  . "ORDER BY count DESC "
+		  . "LIMIT 10; ",
+		  $this->_dbConnection->link->real_escape_string($intervalStartDate),
+		  $this->_dbConnection->link->real_escape_string($intervalEndDate)
+		 );
+		try {
+			$result = $this->_dbConnection->query($sql);
+		}
+		catch (Exception $e) {
+			return false;
+		}
+
+		// Append counts for each API action during that interval
+		// to the appropriate array
+		$id = 1;
+		$rateLimitExceeded = array();
+		while ($exceededArray = $result->fetch_array(MYSQLI_ASSOC)) {
+			$num = (int)$exceededArray['count'];
+			
+			array_push($rateLimitExceeded, (object)array((string)$id => $num));
+			$new_summary['rate_limit_exceeded'] += $num;
+			$id++;
+		}
+
         // Include summary info
 		$counts['summary'] = $summary;
 		$new_counts['summary'] = $new_summary;
+		$new_counts['rate_limit_exceeded'] = $rateLimitExceeded;
 		
         return json_encode($new_counts);
 	}
@@ -710,7 +794,8 @@ class Database_Statistics {
 			"movie-notifications-granted"	=> 0,
 			"movie-notifications-denied"	=> 0,
 			"getJP2Image-web"				=> 0,
-			"getJP2Image-jpip" 				=> 0
+			"getJP2Image-jpip" 				=> 0,
+			"rate_limit_exceeded"			=> 0
 		);
 	}
 
