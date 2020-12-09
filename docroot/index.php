@@ -6,6 +6,7 @@
  * @package  Helioviewer
  * @author   Jeff Stys <jeff.stys@nasa.gov>
  * @author   Keith Hughitt <keith.hughitt@nasa.gov>
+ * @author   Kirill Vorobyev <kirill.g.vorobyev@nasa.gov>
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     https://github.com/Helioviewer-Project/
  *
@@ -105,7 +106,8 @@ function loadModule($params) {
         'getTrajectoryTime'         => 'SolarBodies',
         'logNotificationStatistics' => 'WebClient',
         'getTexture'                => 'WebGLClient',
-        'getGeometryServiceData'    => 'WebGLClient'
+        'getGeometryServiceData'    => 'WebGLClient',
+        'logWebGLMovieStatistics'   => 'WebGLClient'
     );
 
     include_once HV_ROOT_DIR.'/../src/Validation/InputValidator.php';
@@ -182,6 +184,9 @@ function loadModule($params) {
                 //limit exceeded
             }
         }
+    }
+    catch (Throwable $e){
+        printHTMLErrorMsg($e->getMessage());
     }
     catch (Exception $e) {
         printHTMLErrorMsg($e->getMessage());

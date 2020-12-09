@@ -724,6 +724,7 @@ class Database_Statistics {
 			'logNotificationStatistics' => array(),
 			'getTexture'                => array(),
 			'getGeometryServiceData'    => array(),
+			'logWebGLMovieStatistics'	=> array(),
 			'buildMovie'				=> array(),//this one happens in HelioviewerMovie.php
 			"getClosestData"				=> array(),
 			"embed"                			=> array(),
@@ -784,6 +785,7 @@ class Database_Statistics {
 			'logNotificationStatistics' => 0,
 			'getTexture'                => 0,
 			'getGeometryServiceData'    => 0,
+			"logWebGLMovieStatistics"	=> 0,
 			'buildMovie'				=> 0,//this one happens in HelioviewerMovie.php
 			"getClosestData"				=> 0,
 			"embed"                			=> 0,

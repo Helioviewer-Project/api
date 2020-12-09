@@ -20,7 +20,7 @@ var heirarchy = {
     "Events":["getEventGlossary","getEvents","getFRMs","getEvent","getEventFRMs","getDefaultEventTypes","getEventsByEventLayers","importEvents"],
     "Data":["getRandomSeed","getDataSources","getJP2Header","getDataCoverage","getStatus","getNewsFeed","getDataCoverageTimeline","getClosestData","getSolarBodiesGlossary","getSolarBodies","getTrajectoryTime","sciScript-SSWIDL","sciScript-SunPy","getSciDataScript","updateDataCoverage"],
     "Other":["shortenURL","getUsageStatistics","movie-notifications-granted","movie-notifications-denied","logNotificationStatistics","launchJHelioviewer"],
-    "WebGL":["getTexture","getGeometryServiceData"]
+    "WebGL":["logWebGLMovieStatistics","getTexture","getGeometryServiceData"]
 };
 
 var initialTime = new Date();
