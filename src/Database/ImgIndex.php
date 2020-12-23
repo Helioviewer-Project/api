@@ -55,10 +55,10 @@ class Database_ImgIndex {
                   "INSERT INTO screenshots "
                 . "SET "
                 .     "id "                . " = NULL, "
-                .     "timestamp "         . " = NULL, "
+                .     "timestamp "         . " = CURRENT_TIMESTAMP, "
                 .     "observationDate "   . " ='%s', "
                 .     "imageScale "        . " = %f, "
-                .     "regionOfInterest "  . " = PolygonFromText('%s'), "
+                .     "regionOfInterest "  . " = ST_PolygonFromText('%s'), "
                 .     "watermark "         . " = %b, "
                 .     "dataSourceString "  . " ='%s', "
                 .     "dataSourceBitMask " . " = %d, "
@@ -114,7 +114,7 @@ class Database_ImgIndex {
         $this->_dbConnect();
 
         $sql = sprintf(
-                   "SELECT movies.*, movieFormats.movieId, movieFormats.format, movieFormats.status, movieFormats.procTime, movieFormats.modified, AsText(regionOfInterest) AS roi "
+                   "SELECT movies.*, movieFormats.movieId, movieFormats.format, movieFormats.status, movieFormats.procTime, movieFormats.modified, ST_AsText(regionOfInterest) AS roi "
                  . "FROM movies "
                  . "LEFT JOIN "
                  .     "movieFormats ON movies.id = movieFormats.movieId "
@@ -963,10 +963,8 @@ class Database_ImgIndex {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
-            return false;
+            throw new Exception($e,20);
         }
-
-        $row = $result->fetch_array(MYSQLI_ASSOC);
 
         $result_array = Array();
         $result_array['id']            = $row['id'];
@@ -1414,7 +1412,7 @@ class Database_ImgIndex {
     public function getScreenshotMetadata($screenshotId) {
         $this->_dbConnect();
 
-        $sql = sprintf('SELECT *, AsText(regionOfInterest) as roi ' .
+        $sql = sprintf('SELECT *, ST_AsText(regionOfInterest) as roi ' .
             'FROM screenshots WHERE id=%d LIMIT 1;',
              (int)$screenshotId
         );
