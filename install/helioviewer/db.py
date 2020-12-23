@@ -754,6 +754,27 @@ def create_movie_formats_table(cursor):
        KEY `movieId_2` (`movieId`)
     ) DEFAULT CHARSET=utf8;""")
 
+def create_movies_webgl_table(cursor):
+    """Creates movies_webgl table
+
+    Creates a table to keep track of the requested batches of texture images 
+    from the server used to render a webgl movie. Individual texture requests
+    are not logged, instead metadata about a batch of requests which represents
+    a movie is logged for usage statistics.
+    """
+    cursor.execute("""
+    CREATE TABLE `movies_webgl` (
+      `id`                INT unsigned NOT NULL auto_increment,
+      `timestamp`         timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      `startTime`         datetime NOT NULL,
+      `endTime`           datetime NOT NULL,
+      `sourceId`          SMALLINT UNSIGNED,
+      `numFrames`         SMALLINT UNSIGNED,
+       PRIMARY KEY (`id`),
+       KEY `sourceId` (`sourceId`),
+       KEY `timestamp` (`timestamp`)
+    ) DEFAULT CHARSET=utf8;""")
+
 def create_youtube_table(cursor):
     """Creates a table to track shared movie uploads.
 
@@ -945,8 +966,7 @@ def update_image_table_index(cursor):
 
 def mark_as_corrupt(cursor, filename, note):
     """Adds an image to the 'corrupt' database table"""
-    sql = "INSERT INTO corrupt VALUES (NULL, NULL, '%s', '%s');" % (filename,
-                                                                    note)
+    sql = "INSERT INTO corrupt VALUES (NULL, CURRENT_TIMESTAMP, '%s', '%s');" % (filename, note)
 
     cursor.execute(sql)
 
