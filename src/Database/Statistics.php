@@ -38,7 +38,7 @@ class Database_Statistics {
                   "INSERT INTO statistics "
                 . "SET "
                 .     "id "        . " = NULL, "
-                .     "timestamp " . " = NULL, "
+                .     "timestamp " . " = CURRENT_TIMESTAMP, "
                 .     "action "    . " = '%s';",
                 $this->_dbConnection->link->real_escape_string($action)
                );
@@ -64,7 +64,7 @@ class Database_Statistics {
                   "INSERT INTO movies_jpx "
                 . "SET "
                 .     "id "        . " = NULL, "
-                .     "timestamp " . " = NULL, "
+                .     "timestamp " . " = CURRENT_TIMESTAMP, "
                 .     "reqStartDate " . " = '%s', "
                 .     "reqEndDate " . " = '%s', "
                 .     "sourceId " . " = %d;",
