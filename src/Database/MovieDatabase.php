@@ -39,6 +39,37 @@ class Database_MovieDatabase {
         }
     }
 
+    public function insertMovieWebGL($startTime,$endTime,$sourceId,$numFrames){
+        include_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
+
+        $this->_dbConnect();
+        $startTime = isoDateToMySQL($startTime);
+        $endTime = isoDateToMySQL($endTime);
+        $sourceId = (int)$sourceId;
+        $numFrames = (int)$numFrames;
+
+        $sql = sprintf(
+            'INSERT INTO movies_webgl '
+            . 'SET '
+            .     'id '          . ' = NULL, '
+            .     'timestamp'    . ' = NULL, '
+            .     'startTime '   . ' = "%s", '
+            .     'endTime '     . ' = "%s", '
+            .     'sourceId '    . ' = %d, '
+            .     'numFrames '   . ' = %d;',
+            $this->_dbConnection->link->real_escape_string($startTime),
+            $this->_dbConnection->link->real_escape_string($endTime),
+            $sourceId,
+            $numFrames
+        );
+        try {
+            $result = $this->_dbConnection->query($sql);
+        }
+        catch (Exception $e) {
+            return false;
+        }
+    }
+
     /**
      * Insert a new movie entry into the `movies` table and returns its
      * identifier.
@@ -64,12 +95,12 @@ class Database_MovieDatabase {
                    'INSERT INTO movies '
                  . 'SET '
                  .     'id '                . ' = NULL, '
-                 .     'timestamp '         . ' = NULL, '
+                 .     'timestamp '         . ' = CURRENT_TIMESTAMP, '
                  .     'reqStartDate '      . ' ="%s", '
                  .     'reqEndDate '        . ' ="%s", '
                  .     'reqObservationDate '. ' ='.$reqObservationDate.', '
                  .     'imageScale '        . ' = %f, '
-                 .     'regionOfInterest '  . ' = PolygonFromText("%s"), '
+                 .     'regionOfInterest '  . ' = ST_PolygonFromText("%s"), '
                  .     'maxFrames '         . ' = %d, '
                  .     'watermark '         . ' = %b, '
                  .     'dataSourceString '  . ' ="%s", '
@@ -182,7 +213,7 @@ class Database_MovieDatabase {
                  .     'id '          . ' = NULL, '
                  .     'movieId '     . ' = %d, '
                  .     'youtubeId '   . ' = NULL, '
-                 .     'timestamp '   . ' = NULL, '
+                 .     'timestamp '   . ' = CURRENT_TIMESTAMP, '
                  .     'title '       . ' ="%s", '
                  .     'description ' . ' ="%s", '
                  .     'keywords '    . ' ="%s", '
@@ -387,7 +418,7 @@ class Database_MovieDatabase {
         $sql = sprintf(
                    'SELECT youtube.id, youtube.movieId, youtube.youtubeId, youtube.timestamp, youtube.title, youtube.description, '
                  . 'youtube.keywords, youtube.thumbnail, youtube.shared, youtube.checked, movies.imageScale, movies.dataSourceString, movies.eventSourceString, '
-                 . 'movies.movieLength, movies.width, movies.height, movies.startDate, movies.endDate, AsText(regionOfInterest) as roi '
+                 . 'movies.movieLength, movies.width, movies.height, movies.startDate, movies.endDate, ST_AsText(regionOfInterest) as roi '
                  . 'FROM youtube '
                  . 'LEFT JOIN movies '
                  . 'ON movies.id = youtube.movieId '
@@ -448,7 +479,7 @@ class Database_MovieDatabase {
     public function getMovieMetadata($movieId) {
         $this->_dbConnect();
 
-        $sql = sprintf('SELECT *, AsText(regionOfInterest) as roi '
+        $sql = sprintf('SELECT *, ST_AsText(regionOfInterest) as roi '
              . 'FROM movies WHERE movies.id=%d LIMIT 1;',
              (int)$movieId
         );
