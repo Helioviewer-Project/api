@@ -28,9 +28,8 @@ class Module_WebGLClient implements Module {
     }
 
     public function getGeometryServiceData(){
-        $verifiedObservers = array("EARTH","SDO","SOHO","STEREO%20Ahead");
-        $auth = (string)$this->_params["auth"];
-        if($auth == HV_WEBGL_GEOMETRY_SERVICE_AUTH && $_SERVER['HTTP_ORIGIN'] == HV_CLIENT_URL){
+        $verifiedObservers = array("EARTH","SDO","SOHO","STEREO%20Ahead","Parker%20Solar%20Probe");
+        if($_SERVER['HTTP_ORIGIN'] == HV_CLIENT_URL){
             $type = ((string)$this->_params["type"]) == "distance" ? "distance" : "position";
             //sanitize by converting to unix timestamp and then formatting locally
             $utc = str_replace(" ","T",date("Y-m-d G:i:s",strtotime((string)$this->_params["utc"])));
@@ -90,6 +89,9 @@ class Module_WebGLClient implements Module {
             header( "Content-Type: image/jpg" );
             echo $imagickImage->getImageBlob();
             $imagickImage->writeImage($jpgFilepath);
+            //change file permissions to allow for file cleanup later
+            chmod($jpgFilepath, 0664);
+            chmod($bmpFilepath, 0664);
         }else{//scaled jpg exists, display it
             $this->outputFile = $jpgFilepath;
             $this->display();
@@ -155,10 +157,10 @@ class Module_WebGLClient implements Module {
         $this->_dir = HV_CACHE_DIR."/textures/";
         $this->_bmpDir = $this->_dir . "bmp/";
         $this->_jpgDir = $this->_dir . "jpg/";
-        $this->createTextureCacheFolder();
+        $this->_createTextureCacheFolder();
     }
 
-    private function createTextureCacheFolder(){
+    private function _createTextureCacheFolder(){
         if ( !@file_exists($this->_bmpDir) ) {
             if ( !@mkdir($this->_bmpDir, 0775, true) ) {
                 throw new Exception(
@@ -227,6 +229,21 @@ class Module_WebGLClient implements Module {
         }
     }
 
+    public function logWebGLMovieStatistics() {
+        include_once HV_ROOT_DIR.'/../src/Database/MovieDatabase.php';
+        $movieDb = new Database_MovieDatabase();
+
+        $sourceId = (int)$this->_params["sourceId"];
+        $numFrames = (int)$this->_params["numFrames"];
+        $startTime = $this->_params["startDateTime"];
+        $endTime = $this->_params["endDateTime"];
+
+        //Discard zero frame and zero sourceId requests
+        if($sourceId > 0 && $numFrames > 0){
+            $movieDb->insertMovieWebGL($startTime,$endTime,$sourceId,$numFrames);
+        }
+    }
+
     /**
      * execute
      *
@@ -248,12 +265,55 @@ class Module_WebGLClient implements Module {
      *
      * @return bool Returns true if input parameters are valid
      */
+    // public function validate() {
+
+    //     switch( $this->_params['action'] ) {
+    //         default:
+    //             break;
+    //     }
+    //     // Check input
+    //     if ( isset($expected) ) {
+    //         Validation_InputValidator::checkInput($expected, $this->_params,
+    //             $this->_options);
+    //     }
+
+    //     return true;
+    // }
+
+
+    /**
+     * validate
+     *
+     * @return bool Returns true if input parameters are valid
+     */
     public function validate() {
 
         switch( $this->_params['action'] ) {
-            default:
-                break;
+
+        case 'getGeometryServiceData':
+            $expected = array(
+                'required' => array('type', 'utc', 'observer', 'target', 'auth'),
+                'alphanum' => array('type', 'observer', 'target', 'auth'),
+                'date' => array('utc')
+            );
+            break;
+        case 'getTexture':
+            $expected = array(
+                'required' => array('unixTime', 'sourceId'),
+                'alphanum' => array('unixTime', 'sourceId'),
+            );
+            break;
+        case 'logWebGLMovieStatistics':
+            $expected = array(
+                'required' => array('sourceId','numFrames','startDateTime','endDateTime'),
+                'num' => array('numFrames','sourceId'),
+                'dates' => array('startDateTime','endDateTime')
+            );
+            break;
+        default:
+            break;
         }
+
         // Check input
         if ( isset($expected) ) {
             Validation_InputValidator::checkInput($expected, $this->_params,
@@ -261,6 +321,7 @@ class Module_WebGLClient implements Module {
         }
 
         return true;
+    
     }
 
 }
