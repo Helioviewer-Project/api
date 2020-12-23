@@ -247,7 +247,7 @@ class Helper_RegionOfInterest
        $p3 = $this->_right . " " . $this->_bottom;
        $p4 = $this->_left  . " " . $this->_bottom;
        
-       return sprintf("POLYGON((%s))", implode(array($p1, $p2, $p3, $p4, $p1), ","));
+       return sprintf("POLYGON((%s))", implode( "," , array($p1, $p2, $p3, $p4, $p1)));
     }
     
     /**
