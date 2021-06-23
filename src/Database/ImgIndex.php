@@ -1350,12 +1350,13 @@ class Database_ImgIndex {
         }
 
         // Set defaults for verbose mode (JHelioviewer)
+        /* Some servers may not have AIA 171 data - better solution to be found
         if ($verbose) {
             $tree["SDO"]["default"]=true;
             $tree["SDO"]["children"]["AIA"]["default"]=true;
             $tree["SDO"]["children"]["AIA"]["children"]["171"]["default"]=true;
         }
-
+        */
         return $tree;
     }
 
