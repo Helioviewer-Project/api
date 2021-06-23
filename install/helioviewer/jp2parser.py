@@ -14,6 +14,8 @@ from sunpy.io.header import FileHeader
 from glymur import Jp2k
 from sunpy.util.xml import xml_to_dict
 
+from sources.EUI import EUIMap
+
 __HV_CONSTANT_RSUN__ = 959.644
 __HV_CONSTANT_AU__ = 149597870700
 
