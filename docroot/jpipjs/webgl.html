@@ -1,0 +1,384 @@
+<html>
+    <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Communication over jpip demo</title>
+    <link href='//fonts.googleapis.com/css?family=Lobster' rel='stylesheet' type='text/css'>
+    
+    <link rel="stylesheet" href="./css/webgl.css" type="text/css"> 
+    <!-- <link rel="stylesheet" href="./css/aaccordion.css" type="text/css"> -->
+    <link rel="stylesheet" href="./css/tabs.css" type="text/css"> 
+    <!--<script src="./WebGL-Inspector/core/embed.js" type="text/javascript"></script>-->
+    
+    
+    <script src="./js/jquery-3.1.0.min.js" type="text/javascript"></script>  
+    <script src="./js/globals.js" type="text/javascript"></script>
+    <script src="./js/astronomy.js" type="text/javascript"></script>
+    <script src="./js/sylvester.js" type="text/javascript"></script>
+    <script src="./js/glUtils.js" type="text/javascript"></script>
+    <script src="./js/jpip.js" type="text/javascript"></script>
+    <script src="./js/solarJPIP.js" type="text/javascript"></script>
+    
+    <script src="./js/webgl.js" type="text/javascript"></script>
+    <script src="./js/gui.js" type="text/javascript"></script>
+    <script src="./js/viewports.js" type="text/javascript"></script>
+    <script src="./js/mouse.js" type="text/javascript"></script>
+    <script src="./js/points.js" type="text/javascript"></script>
+    <script id="shader-fs-sunpoints-3D" type="x-shader/x-fragment">  
+      uniform sampler2D uSampler;
+      varying highp vec2 vTextureCoord;
+      void main(void) {
+		gl_FragColor = texture2D(uSampler, vTextureCoord);
+      }
+    </script>
+ 
+    <script id="shader-vs-sunpoints-3D" type="x-shader/x-vertex">
+      attribute vec2 aVertexPosition;
+      attribute vec2 aTextureCoords;
+      varying highp vec2 vTextureCoord;  
+      uniform mat4 uMVMatrix;	  
+      void main(void) {
+		gl_Position =  vec4(aVertexPosition.x, aVertexPosition.y, 0.0 , 1.0);
+		gl_Position = uMVMatrix * gl_Position;
+        vTextureCoord = aTextureCoords;
+      }
+    </script>   
+    <script id="shader-fs-sunpoints-2D" type="x-shader/x-fragment">    
+      uniform sampler2D uSampler;
+      varying highp vec2 vTextureCoord;  
+      void main(void) {
+		gl_FragColor = texture2D(uSampler, vTextureCoord);
+      }
+    </script>
+ 
+    <script id="shader-vs-sunpoints-2D" type="x-shader/x-vertex">
+      attribute vec2 aVertexPosition;
+      attribute vec2 aTextureCoords;
+      varying highp vec2 vTextureCoord;
+
+      uniform mat4 uMVMatrix;
+ 
+      void main(void) {
+		gl_Position =  vec4(aVertexPosition.x, aVertexPosition.y, 0.0 , 1.0);
+		gl_Position = uMVMatrix * gl_Position;
+        vTextureCoord = aTextureCoords;
+      }
+    </script>
+    <script id="shader-fs-3D" type="x-shader/x-fragment">
+      varying highp vec2 vTextureCoord;
+      varying highp vec2 vTextureCoordDiff;
+      varying highp vec3 position;
+
+      uniform sampler2D uSampler;
+      uniform sampler2D uSamplerDiff;
+	  uniform highp mat3 rotmatinv;
+	  uniform highp mat3 rotmat;
+
+      uniform sampler2D uColormap;
+      uniform highp float colorTableValue;
+      uniform highp float boostboxValue;
+      uniform highp float alphaValue;
+      uniform int isDiff;
+      
+      void main(void) {
+		highp vec3 rotposition = rotmat*position;
+
+	    if(isDiff==1){
+          gl_FragColor = texture2D(uSampler, vTextureCoord) - texture2D(uSamplerDiff, vTextureCoordDiff);
+		  highp float val = clamp((clamp(gl_FragColor.x, -boostboxValue, boostboxValue)/boostboxValue + 1.)/2., 0. , 1.);
+		  gl_FragColor.xyz = vec3(val,val,val);
+		}
+        else{
+		  gl_FragColor = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
+		}
+
+        gl_FragColor = texture2D(uColormap, vec2(gl_FragColor.r, colorTableValue));
+		if(vTextureCoord.y<0.||vTextureCoord.y>1.||vTextureCoord.x<0.||vTextureCoord.x>1.){
+discard;
+		}
+		if((position.z!=0. &&rotposition.z<0.)||(position.z==0. && dot(position, position)<0.99)){
+		  	gl_FragColor = vec4(0.,0.,0.,1.);
+		}
+        gl_FragColor.a = alphaValue;
+      }
+    </script>
+ 
+    <script id="shader-vs-3D" type="x-shader/x-vertex">
+      attribute vec3 aVertexPosition;
+      attribute vec2 aTextureCoord;
+
+    
+      uniform mat4 uMVMatrix;
+      uniform mat4 uPMatrix;
+	  uniform mat3 rotmat;
+	  uniform mat3 rotmatinv;
+
+      uniform vec2 center;
+      uniform vec2 centerDiff;
+      uniform vec2 stretch;
+      uniform vec2 stretchDiff;
+      
+      varying highp vec2 vTextureCoord;
+      varying highp vec2 vTextureCoordDiff;
+      varying highp vec3 position;
+ 
+      void main(void) {
+        vec3 rot, rott;
+
+        gl_Position =  vec4(aVertexPosition.x, aVertexPosition.y, aVertexPosition.z , 1.0);
+		gl_Position = uMVMatrix * gl_Position;
+		if(abs(aVertexPosition.x)<4.){
+	    	rot = rotmat*aVertexPosition;
+        	gl_Position =  vec4(aVertexPosition.x, aVertexPosition.y, aVertexPosition.z , 1.0);
+			gl_Position = uMVMatrix * gl_Position;
+		}
+		else{
+			rot = aVertexPosition;
+	    	rott = rotmatinv*aVertexPosition;
+
+        	gl_Position =  vec4(rott.x, rott.y, rott.z , 1.0);
+			gl_Position = uMVMatrix * gl_Position;
+		}
+
+        vTextureCoord = (rot.xy/stretch.x+1.)/2.;// + vec2(center.x, -center.y);
+		vTextureCoord.y = 1.-vTextureCoord.y;
+		position = aVertexPosition;
+        vTextureCoordDiff = vTextureCoord;
+      }
+    </script>
+    <script id="shader-fs-2D" type="x-shader/x-fragment">
+      varying highp vec2 vTextureCoord;
+      varying highp vec2 vTextureCoordDiff;
+
+      uniform sampler2D uSampler;
+      uniform sampler2D uSamplerDiff;
+
+      uniform sampler2D uColormap;
+      uniform highp float colorTableValue;
+      uniform highp float boostboxValue;
+      uniform highp float alphaValue;
+      uniform int isDiff;
+      
+      void main(void) {
+	    if(isDiff==1){
+          gl_FragColor = texture2D(uSampler, vTextureCoord) - texture2D(uSamplerDiff, vTextureCoordDiff);
+		  highp float val = clamp((clamp(gl_FragColor.x, -boostboxValue, boostboxValue)/boostboxValue + 1.)/2., 0. , 1.);
+		  gl_FragColor.xyz = vec3(val,val,val);
+		}
+        else{
+		  gl_FragColor = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
+		}
+
+        gl_FragColor = texture2D(uColormap, vec2(gl_FragColor.r, colorTableValue));
+
+        gl_FragColor.a = alphaValue;
+      }
+    </script>
+ 
+    <script id="shader-vs-2D" type="x-shader/x-vertex">
+      attribute vec3 aVertexPosition;
+      attribute vec2 aTextureCoord;
+
+    
+      uniform mat4 uMVMatrix;
+      uniform mat4 uPMatrix;
+      uniform vec2 center;
+      uniform vec2 centerDiff;
+      uniform vec2 stretch;
+      uniform vec2 stretchDiff;
+      
+      varying highp vec2 vTextureCoord;
+      varying highp vec2 vTextureCoordDiff;
+   
+      void main(void) {
+        gl_Position =  vec4(aVertexPosition.x*stretch.x, aVertexPosition.y*stretch.y, 0. , 1.0);
+		gl_Position = uMVMatrix * gl_Position;
+        vTextureCoord = (aVertexPosition.xy+1.)/2.;// + vec2(center.x, -center.y);
+		vTextureCoord.y = 1.-vTextureCoord.y;
+        vTextureCoordDiff = vTextureCoord;
+      }
+    </script>
+    <script id="shader-fs-limb" type="x-shader/x-fragment">
+      varying highp vec2 vTextureCoord;
+      varying highp vec2 vTextureCoordDiff;
+
+      uniform sampler2D uSampler;
+      uniform sampler2D uSamplerDiff;
+
+      uniform sampler2D uColormap;
+      uniform highp float colorTableValue;
+      uniform highp float boostboxValue;
+      uniform highp float alphaValue;
+      uniform int isDiff;
+      
+      void main(void) {
+		highp vec2 xcar, xcardiff;
+    	xcar.x = vTextureCoord.y*sin(vTextureCoord.x*3.1415)/2. + .5;
+    	xcar.y = vTextureCoord.y*cos(vTextureCoord.x*3.1415)/2. + .5;
+
+	    if(isDiff==1){
+    	  xcardiff.x = vTextureCoord.y*sin(vTextureCoord.x*3.1415)/2. + .5;
+    	  xcardiff.y = vTextureCoord.y*cos(vTextureCoord.x*3.1415)/2. + .5;
+
+          gl_FragColor = texture2D(uSampler, xcar) - texture2D(uSamplerDiff, xcardiff);
+		  highp float val = clamp((clamp(gl_FragColor.x, -boostboxValue, boostboxValue)/boostboxValue + 1.)/2., 0. , 1.);
+		  gl_FragColor.xyz = vec3(val,val,val);
+		}
+        else{
+		  gl_FragColor = texture2D(uSampler, xcar);
+		}
+
+        gl_FragColor = texture2D(uColormap, vec2(gl_FragColor.r, colorTableValue));
+
+        gl_FragColor.a = alphaValue;
+      }
+    </script>
+ 
+     
+    <script id="shader-vs-limb" type="x-shader/x-vertex">
+      attribute vec3 aVertexPosition;
+      attribute vec2 aTextureCoord;
+
+    
+      uniform mat4 uMVMatrix;
+      uniform mat4 uPMatrix;
+      uniform vec2 center;
+      uniform vec2 centerDiff;
+      uniform vec2 stretch;
+      uniform vec2 stretchDiff;
+      
+      varying highp vec2 vTextureCoord;
+      varying highp vec2 vTextureCoordDiff;
+   
+      void main(void) {
+        gl_Position =  vec4(aVertexPosition , 1.0);
+		gl_Position.y = -gl_Position.y;
+        vTextureCoord = (aVertexPosition.xy+1.)/2.;// + vec2(center.x, -center.y);
+		vTextureCoord.y = 1.-vTextureCoord.y;
+        vTextureCoordDiff = vTextureCoord;
+      }
+    </script>
+    
+    <script id="shader-fs-limb-conformal" type="x-shader/x-fragment">
+      varying highp vec2 vTextureCoord;
+      varying highp vec2 vTextureCoordDiff;
+
+      uniform sampler2D uSampler;
+      uniform sampler2D uSamplerDiff;
+
+      uniform sampler2D uColormap;
+      uniform highp float colorTableValue;
+      uniform highp float boostboxValue;
+      uniform highp float alphaValue;
+      uniform int isDiff;
+      
+      void main(void) {
+		highp vec2 xcar, xcardiff;
+    	xcar.x = exp(vTextureCoord.y)/exp(1.)*sin(vTextureCoord.x*3.1415)/2. + .5;// + crpix1*scale/width;
+    	xcar.y = exp(vTextureCoord.y)/exp(1.)*cos(vTextureCoord.x*3.1415)/2. + .5;// + crpix2*scale/height;
+	    if(isDiff==1){
+    	  xcardiff.x = exp(vTextureCoordDiff.y)/exp(1.)*sin(vTextureCoordDiff.x*3.1415)/2. + .5 -1.;
+    	  xcardiff.y = exp(vTextureCoordDiff.y)/exp(1.)*cos(vTextureCoordDiff.x*3.1415)/2. + .5 -1.;
+          gl_FragColor = texture2D(uSampler, xcar) - texture2D(uSamplerDiff, xcardiff);
+		  highp float val = clamp((clamp(gl_FragColor.x, -boostboxValue, boostboxValue)/boostboxValue + 1.)/2., 0. , 1.);
+		  gl_FragColor.xyz = vec3(val,val,val);
+		}
+        else{
+		  gl_FragColor = texture2D(uSampler, vec2(xcar.s, xcar.t));
+		}
+
+        gl_FragColor = texture2D(uColormap, vec2(gl_FragColor.r, colorTableValue));
+
+        gl_FragColor.a = alphaValue;
+      }
+    </script>
+ 
+     
+    <script id="shader-vs-limb-conformal" type="x-shader/x-vertex">
+      attribute vec3 aVertexPosition;
+      attribute vec2 aTextureCoord;
+
+    
+      uniform mat4 uMVMatrix;
+      uniform mat4 uPMatrix;
+      uniform vec2 center;
+      uniform vec2 centerDiff;
+      uniform vec2 stretch;
+      uniform vec2 stretchDiff;
+      
+      varying highp vec2 vTextureCoord;
+      varying highp vec2 vTextureCoordDiff;
+   
+      void main(void) {
+        gl_Position =  vec4(aVertexPosition , 1.0);
+		gl_Position.y = -gl_Position.y;
+        vTextureCoord = (aVertexPosition.xy+1.)/2.;// + vec2(center.x, -center.y);
+		vTextureCoord.y = 1.-vTextureCoord.y;
+
+        vTextureCoordDiff = vTextureCoord;
+      }
+    </script>
+  </head>
+  
+  <body>
+    <div id="videourl"></div>
+  	<div style = "float:left;">
+	    <section class="tab-area tabs-checked">
+			<input class="tabinput" checked="" type="radio" name="tab" id="tab-A">
+			<input class="tabinput" type="radio" name="tab" id="tab-B">
+			<input class="tabinput" type="radio" name="tab" id="tab-C">
+			<label class="tab-link" for="tab-A">Dataset</label>
+			<label class="tab-link" for="tab-B">Viewport</label>
+			<label class="tab-link" for="tab-C">Layer</label>
+	
+			<article class="tab">
+				<h3>Dataset options</h3>   
+		      	<div id ="datePanel"></div>  	      
+			  	<div id ="controlpanel"></div> 
+			  	<div id ="controlpanelButton"></div>
+			  	<div id ="local_controlpanel"></div>
+			</article>
+			<article class="tab">
+				<h3>Viewport options</h3>
+			    <div id ="viewport"></div>  
+			    <div id ="viewportDiv"></div>
+			</article>
+			<article class="tab">
+				<h3>TBD</h3>
+			</article>
+		</section>
+		<p style="clear:both"></p>
+		<section id="layerOptions" style="width:340px;">
+	  		<h3>Layers</h3>
+	  	  	<div><ul id="layers"></ul></div>
+	  	  	<h3 >Layer options</h3>
+	      	<div id="info"></div>
+	      	<div id ="imagepanel"></div>
+	      	<div id="metadata"></div>
+			<div id="fps"></div>
+	  	</section>
+ 	</div>    
+	<div style="margin-left:1em;float:left;">
+	    <div id ="videoPlayButton" data-tips="Play/Pause video" class="video bottom-tip"><img src="images/play.png"/>
+	 	</div><div id="videoBarWrap"><div id="videoBar"></div><div id="videoIndicator" class="video bottom-tip"></div>
+	 	</div><div></div><div id="videoStart" data-tips="Jump to start" class="video bottom-tip"><img src="images/first.png"/>
+	 	</div><div id="videoPrevious" data-tips="Step backward in time" class="video bottom-tip"><img src="images/previous.png"/>
+	 	</div><div id="videoNext" data-tips="Step forward in time" class="video bottom-tip"><img src="images/next.png"/>
+	 	</div><div id="videoEnd" data-tips="Jump to end" class="video bottom-tip"><img src="images/last.png"/>
+	 	</div>
+	 	<div id="gllcanvaswrap" style="width:550px; height:512px;">	
+	    <canvas id="glcanvas" width="512" height="512">
+	      Your browser doesn't appear to support the HTML5 <code>&lt;canvas&gt;</code> element.
+	    </canvas>
+	   </div>
+	 </div>
+	<div style="margin-left:1em;float:left">
+		<div id = "canvasCoordinates"></div>
+		<div id = "viewportCoordinates"></div>
+		<div id = "solarCoordinates"></div>	
+	    <div id = "solarCoordinates3D"></div>		
+	    <div id = "thetaPhi"></div>		
+		<div id = "L0B0"></div>			
+	</div>
+</body>
+
+</html>

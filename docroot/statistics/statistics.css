@@ -1,12 +1,55 @@
-#main {text-align: center; margin:0px auto; width: 90%;}
+body{font-family:Arial, Helvetica, sans-serif;}
+#main {text-align: center; margin:0px auto; width: 90%; padding-top: 20px; }
 #header {font-size:32px; vertical-align: middle; margin-top: 15px; margin-bottom: 26px;}
 #headerText {display: inline-block; vertical-align: super; font-family: arial,helvetica,liberation sans,bitstream vera sans,freesans,clean,sans-serif; font-size:38px;}
 #footer {font-size: 10px;}
-#refresh {font-size: 14px;}
+#loadingDiv {position: absolute; width:100%; top: 0px; left: 0px; height:22px; display: flex; justify-content: space-between; align-items: center; text-align: center; z-index: 1000; border-bottom: 1px solid #CCCCCC;}
+#refresh {position: relative; padding: 1px 2% 1px 0px; margin: 0px; font-size: 14px; height: 20px; top: 0px; color: #666666 }
+#loading {position: relative; text-align: center; font-size: 14px; margin: 0px; padding: 1px 0px 1px 2%; color: #777777 }
+#temporalResolution { font-size: 14px; width: auto;}
 #visualizations {margin: 10px 0; display: flex; flex-flow: row; justify-content: space-evenly;}
 #pieChartsGroup {display: flex; flex-flow: column;}
-#barCharts {width: 50%; display: flex; overflow: hidden; vertical-align: top; align-self: flex-start; flex-flow: column; justify-content: flex-end;}
+#barCharts {width: 50%; display: flex; overflow: hidden; vertical-align: top; align-self: flex-start; flex-flow: column; justify-content: flex-end; padding-top: 20px}
+#when {font-size:1.5em;}
+#temporalResolution {font-size: 1em;}
+#startDate, #startTime, #endDate, #endTime {font-size: 1.5em;}
+.hide {display: none;}
 .summaryCount {font-weight: bold; font-size:24px; cursor: pointer;}
+.heading {text-align: left; padding-left: 10%;}
+.content {
+    overflow: hidden;
+    padding: 0 18px;
+    background-color: white;
+    max-height: 0;
+    transition: max-height 0.2s ease-out;
+}
+.collapsible {
+    background-color: #eee;
+    color: #444;
+    cursor: pointer;
+    padding: 13px 18px;
+    width: 100%;
+    border: none;
+    text-align: left;
+    outline: none;
+    font-size: 20px;
+    margin-top: 18px;
+}
+.active, .collapsible:hover {
+    background-color: #ddd;
+}
+.collapsible:after {
+    content: "+"; /* Unicode character for "plus" sign (+) */
+    font-size: 18px;
+    color: black;
+    float: right;
+    margin-left: 5px;
+  }
+  
+  .active:after {
+    content: "-"; /* Unicode character for "minus" sign (-) */
+  }
+
 
 @media screen and (max-width: 800px) {  
     #header {font-size: 24px;}

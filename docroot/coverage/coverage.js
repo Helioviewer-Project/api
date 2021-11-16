@@ -239,9 +239,11 @@ function displayDataCoverage(dataCoverage) {
                   "#abdda4", "#66c2a5", "#3288bd"];
 
     $.each(dataCoverage, function (i, dataSource) {
-        createColumnChart(dataSource.sourceId, dataSource.data,
-            dataSource.label, barChartHeight, colors[count % colors.length]);
-        count += 1;
+        if (dataSource.label != null) {
+            createColumnChart(dataSource.sourceId, dataSource.data,
+                dataSource.label, barChartHeight, colors[count % colors.length]);
+            count += 1;
+        }
     });
 
     // Now that charts are rendered, scroll to specified anchor tag

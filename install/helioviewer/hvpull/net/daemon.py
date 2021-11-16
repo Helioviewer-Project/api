@@ -196,11 +196,13 @@ class ImageRetrievalDaemon:
                                                     endtime.strftime(fmt))
 
         for browser in self.browsers:
+            #print(browser, starttime, endtime)
             matches = self.query_server(browser, starttime, endtime)
-
+            #print(matches)
             if len(matches) > 0:
                 urls.append(matches)
 
+        #print(urls)
         # Remove duplicate files, randomizing to spread load across servers
         if len(urls) > 1:
             urls = self._deduplicate(urls)
@@ -229,7 +231,74 @@ class ImageRetrievalDaemon:
                     except:
                         pass
 
-            new_urls.append(filtered)
+
+            ################################
+            # Temporarily slow down the cadence of the data from certain instruments
+            # Apply the extra filtering to the high-volume data only.
+            # Note that the backfill operations should also be killed when using this option
+            # Also the look-back time should not exceed the time between searches
+
+            # Sample size
+            stride = 10
+
+            # Number of strided files
+            n_strided = 0
+
+            # We want to subsample data from these high volume instruments
+            high_volume_instruments = ('aia', 'hmi')
+
+            # Some of these high volume data are slower behind real time than others
+            processing_delay = {"aia": datetime.timedelta(minutes=0), "hmi": datetime.timedelta(minutes=4*60)}
+
+            # Storage for the ub-sampled URLs
+            strided = dict()
+
+            # URLs that do not include specified instruments
+            does_not_include_specified_instruments = []
+
+            for instrument in high_volume_instruments:
+                # Dictionary contains the results for the next instrument
+                strided[instrument] = []
+
+                # Delay
+                delay = processing_delay[instrument]
+
+                # These URLs are within the time range
+                includes_specified_instruments = []
+                for this_url in filtered:
+                    if instrument in this_url.lower():
+                        # Calculate the observation time of the 
+                        url_filename = this_url.split('/')[-1]
+                        url_datetime = url_filename[0:20]
+                        url_time = datetime.datetime.strptime(url_datetime, '%Y_%m_%d__%H_%M_%S')
+
+                        # Get all the URLs within a specified time range
+                        if (starttime - delay <= url_time) and (url_time <= endtime - delay):
+                            includes_specified_instruments.append(this_url)
+                # Take a subsample of the files for this instrument
+                strided[instrument] = includes_specified_instruments[::stride]
+                n = len(strided[instrument])
+                n_strided = n_strided + n
+                logging.info('Number of files from ' + instrument + ' = ' + str(n))
+
+            high_volume_instrument_string = ' '.join([str(elem) for elem in high_volume_instruments])
+            logging.info('Number of files available in time range from high volume instruments= ' + str(len(filtered)))
+            logging.info('High volume instruments are = ' + high_volume_instrument_string)
+            logging.info('Stride value = ' + str(stride))
+            logging.info('Number of strided files from high volume instruments = ' + str(n_strided))
+            # Create a combined list
+            extra_filtered = []
+            for instrument in high_volume_instruments:
+                extra_filtered.extend(strided[instrument])
+            extra_filtered.extend(does_not_include_specified_instruments)
+            logging.info('Number of new URLS = ' + str(len(extra_filtered)))
+
+            ################################
+            if self.servers[0].name == 'LMSAL2':
+                new_urls.append(extra_filtered)
+            else:
+                new_urls.append(filtered)
+
 
         # check disk space
         if not self.sent_diskspace_warning:
@@ -240,7 +309,6 @@ class ImageRetrievalDaemon:
 
     def query_server(self, browser, starttime, endtime):
         """Queries a single server for new files"""
-        # Get a list of directories which may contain new images
         directories = browser.get_directories(starttime, endtime)
 
         # Get a sorted list of available JP2 files via browser
@@ -307,6 +375,7 @@ class ImageRetrievalDaemon:
             for i, server in enumerate(list(urls)):
                 for j in range(100): #pylint: disable=W0612
                     if len(list(server)) > 0:
+
                         url = server.pop()
                         
                         finished.append(url)
@@ -663,6 +732,7 @@ class ImageRetrievalDaemon:
     def get_servers(cls):
         """Returns a list of valid servers to interact with"""
         return {
+            "lmsal2": "LMSALDataServer2",
             "lmsal": "LMSALDataServer",
             "soho": "SOHODataServer",
             "stereo": "STEREODataServer",
@@ -699,3 +769,4 @@ class KduTranscodeError(RuntimeError):
     def get_message(self):
         return self.message
 
+"""ImageRetreivalDaemon"""

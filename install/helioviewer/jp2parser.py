@@ -28,7 +28,7 @@ class JP2parser:
     def getData(self):
         """Create data object of JPEG 2000 image.
     
-        Get image observatory, instrument, detector, measurement, date from image
+        Get image observatory, instrument, detector, ∑measurement, date from image
         metadata and create an object.
         """
             
@@ -36,14 +36,14 @@ class JP2parser:
         image = dict()
         
         #Calculate sun position/size/scale
-        dimensions              = self.getImageDimensions()
-        refPixel                = self.getRefPixelCoords()
-        imageScale              = self.getImagePlateScale()
-        dsun                    = self.getDSun()
-        layeringOrder           = self.getLayeringOrder()
+        dimensions              = self.getImageDimensions();
+        refPixel                = self.getRefPixelCoords();
+        imageScale              = self.getImagePlateScale();
+        dsun                    = self.getDSun();
+        layeringOrder           = self.getLayeringOrder();
 
         # Normalize image scale
-        imageScale = imageScale * (dsun / __HV_CONSTANT_AU__)
+        imageScale = imageScale * (dsun / __HV_CONSTANT_AU__);
         
         image['scale'] = imageScale
         image['width'] = dimensions['width']
@@ -77,7 +77,7 @@ class JP2parser:
         image['observatory'] = imageData.observatory.replace(" ","_")
         image['instrument'] = imageData.instrument.split(" ")[0]
         image['detector'] = imageData.detector
-        # Remove explicit units from the measurement
+        # Remove explicit units from the measurement 
         measurement = str(imageData.measurement).replace(".0 Angstrom", "").replace(".0 nm","").replace(".0", "")
         # Convert Yohkoh measurements to be helioviewer compatible
         if image['observatory'] == "Yohkoh":

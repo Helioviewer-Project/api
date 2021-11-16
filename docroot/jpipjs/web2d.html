@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>WebGL - Fundamentals</title>
+<link rel="stylesheet" href="./css/tabs.css" type="text/css">
+<script src="./js/jquery-3.1.0.min.js" type="text/javascript"></script>
+<script src="./js/dygraph-combined.js" type="text/javascript"></script>
+
+
+<script>
+var url = "http://swhv.oma.be/datasets/odi_read_data.php?start_date=2015-01-05&end_date=2015-01-12&timeline=GOES_XRSA_ODI&data_format=json";
+fetchData = function(url, data, g){
+	var xmlhttp = new XMLHttpRequest();	
+	xmlhttp.onreadystatechange = function() {
+	    if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+	        var myArr = JSON.parse(xmlhttp.responseText);
+	        var newdata = myArr.data;
+	        if(data.length ===1){
+	            data.pop();
+	        }
+	        for(var i = 0; i<newdata.length; i++){
+	        	data.push([new Date(newdata[i][0]*1000), myArr.multiplier*newdata[i][1]]);
+	        }
+	        console.log(myArr);
+            g.updateOptions( { 'file': data } );
+            var end = data[data.length-1][0];
+            var begin  = end -1000*60*60*24;
+            g.updateOptions({'dateWindow': [begin, end]})
+	    }
+	}
+	xmlhttp.open("GET", url, true);
+	xmlhttp.send();
+}
+function myFunction(arr, data) {
+    var out = "";
+    var i;
+    for(i = 0; i < arr.length; i++) {
+        out += '<a href="' + arr[i].url + '">' + 
+        arr[i].display + '</a><br>';
+    }
+    document.getElementById("id01").innerHTML = out;
+}
+function downV3(event, g, context) {
+    context.initializeMouseDown(event, g, context);
+    if (event.altKey || event.shiftKey) {
+      Dygraph.startZoom(event, g, context);
+    } else {
+      Dygraph.startPan(event, g, context);
+    }
+  }
+
+  function moveV3(event, g, context) {
+    if (context.isPanning) {
+      Dygraph.movePan(event, g, context);
+    } else if (context.isZooming) {
+      Dygraph.moveZoom(event, g, context);
+    }
+  }
+
+  function upV3(event, g, context) {
+    if (context.isPanning) {
+      Dygraph.endPan(event, g, context);
+    } else if (context.isZooming) {
+      Dygraph.endZoom(event, g, context);
+    }
+  }
+  function offsetToPercentage(g, offsetX, offsetY) {
+      // This is calculating the pixel offset of the leftmost date.
+      var xOffset = g.toDomCoords(g.xAxisRange()[0], null)[0];
+      var yar0 = g.yAxisRange(0);
+
+      // This is calculating the pixel of the higest value. (Top pixel)
+      var yOffset = g.toDomCoords(null, yar0[1])[1];
+
+      // x y w and h are relative to the corner of the drawing area,
+      // so that the upper corner of the drawing area is (0, 0).
+      var x = offsetX - xOffset;
+      var y = offsetY - yOffset;
+
+      // This is computing the rightmost pixel, effectively defining the
+      // width.
+      var w = g.toDomCoords(g.xAxisRange()[1], null)[0] - xOffset;
+
+      // This is computing the lowest pixel, effectively defining the height.
+      var h = g.toDomCoords(null, yar0[0])[1] - yOffset;
+
+      // Percentage from the left.
+      var xPct = w === 0 ? 0 : (x / w);
+      // Percentage from the top.
+      var yPct = h === 0 ? 0 : (y / h);
+
+      // The (1-) part below changes it from "% distance down from the top"
+      // to "% distance up from the bottom".
+      return [xPct, (1-yPct)];
+    }
+
+    function dblClickV3(event, g, context) {
+      // Reducing by 20% makes it 80% the original size, which means
+      // to restore to original size it must grow by 25%
+
+      if (!(event.offsetX && event.offsetY)){
+        event.offsetX = event.layerX - event.target.offsetLeft;
+        event.offsetY = event.layerY - event.target.offsetTop;
+      }
+
+      var percentages = offsetToPercentage(g, event.offsetX, event.offsetY);
+      var xPct = percentages[0];
+      var yPct = percentages[1];
+
+      if (event.ctrlKey) {
+        zoom(g, -0.25, xPct, yPct);
+      } else {
+        zoom(g, +0.2, xPct, yPct);
+      }
+    }
+    var lastClickedGraph = null;
+
+    function clickV3(event, g, context) {
+      lastClickedGraph = g;
+      Dygraph.cancelEvent(event);
+    }
+
+    function scrollV3(event, g, context) {
+      if (lastClickedGraph != g) {
+        return;
+      }
+      var normal = event.detail ? event.detail * -1 : event.wheelDelta / 40;
+      // For me the normalized value shows 0.075 for one click. If I took
+      // that verbatim, it would be a 7.5%.
+      var percentage = normal / 50;
+
+      if (!(event.offsetX && event.offsetY)){
+        event.offsetX = event.layerX - event.target.offsetLeft;
+        event.offsetY = event.layerY - event.target.offsetTop;
+      }
+
+      var percentages = offsetToPercentage(g, event.offsetX, event.offsetY);
+      var xPct = percentages[0];
+      var yPct = percentages[1];
+
+      zoom(g, percentage, xPct, yPct);
+      Dygraph.cancelEvent(event);
+    }
+    function zoom(g, zoomInPercentage, xBias, yBias) {
+        xBias = xBias || 0.5;
+        yBias = yBias || 0.5;
+        function adjustAxis(axis, zoomInPercentage, bias) {
+          var delta = axis[1] - axis[0];
+          var increment = delta * zoomInPercentage;
+          var foo = [increment * bias, increment * (1-bias)];
+          return [ axis[0] + foo[0], axis[1] - foo[1] ];
+        }
+        var yAxes = g.yAxisRanges();
+        var newYAxes = [];
+        for (var i = 0; i < yAxes.length; i++) {
+          newYAxes[i] = adjustAxis(yAxes[i], zoomInPercentage, yBias);
+        }
+
+        g.updateOptions({
+          dateWindow: adjustAxis(g.xAxisRange(), zoomInPercentage, xBias),
+          valueRange: newYAxes[0]
+          });
+      }    
+$(document).ready(function () {
+      var data = [[new Date(0),0]];
+      
+      var t = new Date();
+
+      var g = new Dygraph(document.getElementById("div_g"), data,                     {
+                            drawPoints: true,
+                            xRange: [new Date(), new Date()],
+
+                            //valueRange: [0.0, 1.2],
+                            labels: ['Time', 'W/m^2'],
+                            interactionModel : {
+                                'mousedown' : downV3,
+                                'mousemove' : moveV3,
+                                'mouseup' : upV3,
+                                'click' : clickV3,
+                                'dblclick' : dblClickV3,
+                                'mousewheel' : scrollV3
+                          }                          });
+      //g.updateOptions({ logscale: true });
+
+      // It sucks that these things aren't objects, and we need to store state in window.
+      window.intervalId = setInterval(function() {
+        var x = new Date();  // current time
+        var y = Math.random();
+        //data.push([x, y]);
+        g.updateOptions( { 'file': data } );
+      }, 1000);
+      fetchData(url, data, g);
+
+    }
+);
+ </script> 
+</head>
+<body>
+<div id="div_g" style="width:600px; height:300px;"></div>
+<p>This test is modeled after a 
+<a href="http://www.highcharts.com/demo/?example=dynamic-update&amp;theme=default">highcharts
+test</a>. New points should appear once per second. Try zooming and 
+panning over to the right edge to watch them show up.</p>
+</body>
+</html>

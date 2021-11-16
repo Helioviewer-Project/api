@@ -9,7 +9,7 @@ class KCORDataServer(DataServer):
         then copied over to a directory on the main Helioviewer server, from 
         which it can be picked up by the ingestion services.  Note that
         a full path is required to specify the location of the data."""
-        DataServer.__init__(self, "https://download.hao.ucar.edu/jp2/", "kcor")
+        DataServer.__init__(self, "http://download.hao.ucar.edu/jp2/", "kcor")
         self.pause = datetime.timedelta(minutes=30)
         
     def compute_directories(self, start_date, end_date):

@@ -8,6 +8,13 @@ define("HV_DB_USER", "helioviewer");
 define("HV_DB_PASS", "helioviewer");
 
 /**
+ * Redis Database Information
+ * Used for rate-limiting
+ */
+define("HV_REDIS_HOST","127.0.0.1");
+define("HV_REDIS_PORT",6379);
+
+/**
  * In order to enable users to submit videos to YouTube, you must register for
  * a developer key which is included with each request. For more information
  * and to request a key, see:

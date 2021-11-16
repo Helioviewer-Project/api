@@ -1,0 +1,8 @@
+# Installation instructions
+# Run in Python3.7.4 (or >v3)
+### Use the following command to install the required packages
+
+pip3 install numpy scipy datetime pandas  mysql-connector-python bokeh==2.2.1  matplotlib pathlib joblib 
+
+
+# Edit the SQL credentials on line 44 of hv_stats.py
