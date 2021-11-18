@@ -20,9 +20,9 @@
 	$logBody = "////////////////////\n".date("Y-m-d H:i:s")."\n";
 	$logBody .= $output."";
 	//$strOut = array();
-	putenv("http_proxy=http://gs600-squid.ndc.nasa.gov:443");
-	putenv("https_proxy=http://gs600-squid.ndc.nasa.gov:443");
-	putenv("http_export=http://gs600-squid.ndc.nasa.gov:443");
+	putenv("http_proxy=" . $config->config["http_proxy"]);
+	putenv("https_proxy=" . $config->config["https_proxy"]);
+	putenv("http_export=" . $config->config["http_export"]);
     foreach($commands as $cmd => $name){
         $is = strpos($output, $cmd);
         //$strOut[] = grab_dump($is);
