@@ -43,5 +43,14 @@ status/movieId.php
 log
 docs
 scripts/nohup.out
+scripts/hv_stats/nohup.out
+scripts/hv_stats/coverages
+scripts/hv_stats/embed_service
+scripts/hv_stats/histograms
+scripts/hv_stats/hv_movies
+scripts/hv_stats/hv_screenshots
+scripts/hv_stats/hv_student
+scripts/hv_stats/Jhv_movies
+scripts/hv_stats/service_usage
 /docroot/resources/JSON/celestial-objects*
 /docroot/resources/JSON/celestial-bodies*
