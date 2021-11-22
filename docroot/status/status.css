@@ -11,7 +11,12 @@
 #legend {display: none; width: 100%; text-align: center;}
 .instrument {font-weight: bold; cursor: pointer;}
 .datasource {display: none; color: gray;}
+.weekly {color: gray}
+.monthly {color: gray}
 .status-icon {width: 18px; height: 18px; vertical-align:text-bottom;}
 .status-text {margin-right: 5px;}
 .provider-link {text-decoration: none; color: #555;}
 .provider-link:hover {text-decoration: underline; color: #CC3366;}
+.tooltip {position: relative; display: inline-block; border-bottom: 1px dotted black; font-weight: bold;}
+.tooltip .tooltiptext {visibility: hidden; width: 350px; background-color: rgba(0,0,0,0.8); color: #FFF; font-weight: normal; text-align: left; padding: 5px; border-radius: 5px; position: absolute; z-index: 1; top: -3px; left: 105%;}
+.tooltip:hover .tooltiptext { visibility: visible; }

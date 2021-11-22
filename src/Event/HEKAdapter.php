@@ -380,8 +380,12 @@ class Event_HEKAdapter {
 			$dbConnection = new Database_DbConnection();
 			
 			$sql = sprintf(
-                    "SELECT * FROM events WHERE '%s' BETWEEN event_starttime AND event_endtime ORDER BY event_starttime;",
-                    $dbConnection->link->real_escape_string($dateStartSql)
+                    "SELECT * FROM events FORCE INDEX (event_starttime_2) WHERE '%s' BETWEEN event_starttime AND event_endtime ". 
+                    "AND event_starttime >= DATE_ADD('%s',INTERVAL -1 MONTH) AND event_endtime <= DATE_ADD('%s',INTERVAL 1 MONTH) ".
+                    "ORDER BY event_starttime;",
+                    $dbConnection->link->real_escape_string($dateStartSql),
+                    $dbConnection->link->real_escape_string($dateStartSql),
+		    $dbConnection->link->real_escape_string($dateStartSql)
                    );
             try {
                 $result = $dbConnection->query($sql);
@@ -784,7 +788,7 @@ class Event_HEKAdapter {
         );
         // request payload from HEK as string
         $query = $this->_proxy->query($params, true);
-        // correct any malformed utf8 chars
+        // correct malformed utf8 chars
         $utf8_query = utf8_encode($query);
         // log payload length
         if( strpos($utf8_query,"<html>") == FALSE ){
@@ -810,7 +814,7 @@ class Event_HEKAdapter {
 		while ($overmax == true) {
 		    // request payload from HEK as string
             $query = $this->_proxy->query($params, true);
-            // correct any malformed utf8 chars
+            // correct malformed utf8 chars
             $utf8_query = utf8_encode($query);
             // log payload length
             if( strpos($utf8_query,"<html>") == FALSE ){

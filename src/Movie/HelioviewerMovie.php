@@ -239,6 +239,7 @@ class Movie_HelioviewerMovie {
 
             $statistics = new Database_Statistics();
             $statistics->log('buildMovie');
+	    $statistics->logRedis('buildMovie');
         }
 
         $this->_cleanUp();

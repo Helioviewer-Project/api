@@ -21,11 +21,11 @@ class Module_SolarBodies implements Module {
         $this->_params = $params;
         $this->_options = array();
         // version number - used to reset all client cookies when this module changes significantly
-        $this->_version = 2;
+        $this->_version = 3;
         // list of observers - add new observers here
-        $this->_observers = array("soho","stereo_a"/*,"stereo_b"*/);
+        $this->_observers = array("soho","stereo_a","stereo_b");
         // list of bodies to track - add new celestial bodies or satellites here
-        $this->_bodies = array(/*"mercury","venus","earth","mars","jupiter","saturn","uranus","neptune",*/"psp");
+        $this->_bodies = array("mercury","venus","earth","mars","jupiter","saturn","uranus","neptune","psp");
         
         // custom parameters and names - add any custom parameters that fall outside the normal dataset for planets
         // normal dataset: x, y, distance_observer_to_body_au, distance_sun_to_observer_au, distance_sun_to_body_au, behind_plane_of_sun

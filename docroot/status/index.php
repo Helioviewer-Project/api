@@ -85,7 +85,11 @@
                 $t2 = 5 * 7 * 24  * 3600;
                 $t3 = 6 * 7 * 24 * 3600;
                 $t4 = 7 * 7 * 24 * 3600;
-            }
+            } else if ($inst == "COSMO") {
+		$t1 = 24 * 3600;
+		$t2 = 72 * 3600;
+		$t3 = 168 * 3600;
+	    }
 
             if ($elapsed <= $t1) {
                 return 1;
@@ -233,7 +237,44 @@
 	    }
 	    
     ?>
+
+    <?php
+    $SDO_weekly = date("M d Y H:i:s", filectime(HV_SDO_WEEKLY_LOG));
+    $SDO_monthly = date("M d Y H:i:s", filectime(HV_SDO_MONTHLY_LOG));
+    $SWAP_weekly = date("M d Y H:i:s", filectime(HV_SWAP_WEEKLY_LOG));
+    $SWAP_monthly = date("M d Y H:i:s", filectime(HV_SWAP_MONTHLY_LOG));
+    $SOHO_weekly = date("M d Y H:i:s", filectime(HV_SOHO_WEEKLY_LOG));
+    $SOHO_monthly = date("M d Y H:i:s", filectime(HV_SOHO_MONTHLY_LOG));
+    $STEREO_weekly = date("M d Y H:i:s", filectime(HV_STEREO_WEEKLY_LOG));
+    $STEREO_monthly = date("M d Y H:i:s", filectime(HV_STEREO_MONTHLY_LOG));
+    ?>
     </table>
+    <h3>Data Backfill</h3>
+    <table id='statuses'>
+    <tr id='status-headers'>
+        <th width='120'>Type</th>
+        <th width='120'>Latest Backfill</th>
+    </tr>
+    <tr>
+        <td><div class="tooltip">Weekly (?)
+            <span class="tooltiptext">"Weekly" means "The backfill script is run once per day looking for data with observation times in a defined time range that is available for download, but is not on the Helioviewer server according to Helioviewer image database.  The time range is defined as the script execution time in UTC minus 7 days to minus 1 day."</span>
+        </div></td>
+    </tr>
+        <tr class="weekly SDO"><td>&nbsp&nbsp&nbsp&nbsp SDO</td><td><?php echo $SDO_weekly ?></td></tr>
+        <tr class="weekly SWAP"><td>&nbsp&nbsp&nbsp&nbsp SWAP</td><td><?php echo $SWAP_weekly ?></td></tr>
+        <tr class="weekly SOHO"><td>&nbsp&nbsp&nbsp&nbsp SOHO</td><td><?php echo $SOHO_weekly ?></td></tr>
+        <tr class="weekly STEREO"><td>&nbsp&nbsp&nbsp&nbsp STEREO</td><td><?php echo $STEREO_weekly ?></td></tr>
+    <tr>
+        <td><div class="tooltip">Monthly (?)
+            <span class="tooltiptext">"Monthly" means "The backfill script is run on the 1st of the month looking for data with observation times in a defined time range that is available for download, but is not on the Helioviewer server according to Helioviewer image database.  The time range is defined as the script execution time in UTC minus 31 days to minus 1 day."</span>
+        </div></td>
+    </tr>
+        <tr class="monthly SDO"><td>&nbsp&nbsp&nbsp&nbsp SDO</td><td><?php echo $SDO_monthly ?></td></tr>
+        <tr class="monthly SWAP"><td>&nbsp&nbsp&nbsp&nbsp SWAP</td><td><?php echo $SWAP_monthly ?></td></tr>
+        <tr class="monthly SOHO"><td>&nbsp&nbsp&nbsp&nbsp SOHO</td><td><?php echo $SOHO_monthly ?></td></tr>
+        <tr class="monthly STEREO"><td>&nbsp&nbsp&nbsp&nbsp STEREO</td><td><?php echo $STEREO_monthly ?></td></tr>
+    </table>
+
     
     <br />
     <div id='footer'><strong>Upstream: </strong>

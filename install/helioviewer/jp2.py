@@ -127,18 +127,19 @@ def insert_images(images, sources, rootdir, db, cursor, mysql, step_function=Non
     query = query[:-1] + ";"
     query_v2 = query_v2[:-1] + ";"
 
-    # Commit enabling datasources
-    db.commit()
-
     # Execute query
     try:
         cursor.execute(query)
+	# Commit enabling datasources
+        db.commit()
     except Exception as e:
         print("Error: " + e.args[1])
     
     if cursor_v2:
         try:
             cursor_v2.execute(query_v2)
+            # Commit enabling datasources
+            db.commit()
         except Exception as e:
             print("Error: " + e.args[1])
 

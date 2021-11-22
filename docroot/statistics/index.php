@@ -1,5 +1,5 @@
 <?php
-    $validResolutions = array("hourly", "daily", "weekly", "monthly", "yearly");
+    $validResolutions = array("hourly", "daily", "weekly", "monthly", "yearly", "custom");
     if (isset($_GET['resolution']) && in_array($_GET['resolution'], $validResolutions)) {
         $resolution = $_GET['resolution'];
     } else {
@@ -18,21 +18,27 @@
         google.load("jquery", "1.5");
         google.load("visualization", "1", {packages:["corechart"]});
         google.setOnLoadCallback(function (e) {
-            resolutionOnLoad = "<?php echo $resolution;?>";
-            getUsageStatistics(resolutionOnLoad);
+            temporalResolution = "<?php echo $resolution;?>";
+            dateStart = "<?php echo $_GET['dateStart']; ?>";
+            dateEnd = "<?php echo $_GET['dateEnd']; ?>";
+            setRefreshIntervalFromTemporalResolution();
+            getUsageStatistics(temporalResolution,dateStart,dateEnd);
             setInterval(checkSessionTimeout, 1000);
         });
     </script>
 </head>
 
 <body>
+    <div id="loadingDiv">
+        <span id="loading">Loading...</span>
+        <div id="refresh"></div>
+    </div>
 	<div id="main">
 		<div id="header">
             <img src="../resources/images/logos/hvlogo1s_transparent_logo.png" alt="Helioviewer logo" />
             <div id='headerText'>The Helioviewer Project - Recent Activity</div>
         </div>
         <div id="overview"></div>
-        
         <div id="visualizations">
             <div id="pieChartsGroup">
                 <div id="versionsChart"></div>
@@ -45,7 +51,6 @@
             </div>
             <div id="barCharts"></div>
         </div>
-        <div id="refresh"></div>
         <div id="footer">
             Note: Helioviewer.org only collects information about types of queries made.  Helioviewer.org does not collect or store any information that could be used to identify users.
         </div>
