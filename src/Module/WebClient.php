@@ -9,6 +9,7 @@
  * @author   Jeff Stys <jeff.stys@nasa.gov>
  * @author   Keith Hughitt <keith.hughitt@nasa.gov>
  * @author   Serge Zahniy <serge.zahniy@nasa.gov>
+ * @author   Kirill Vorobyev <kirill.g.vorobyev@nasa.gov>
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     https://github.com/Helioviewer-Project
  */
@@ -504,13 +505,13 @@ class Module_WebClient implements Module {
         // Check for feed in cache
         $cache = new JG_Cache($cacheDir);
 
-        if( !($feed = $cache->get('news.xml', 1800)) ) {
+        if( !($feed = $cache->get('feed.xml', 1800)) ) {
 
             // Re-fetch if it is old than 30 mins
             include_once HV_ROOT_DIR.'/../src/Net/Proxy.php';
             $proxy = new Net_Proxy(HV_NEWS_FEED_URL);
             $feed  = $proxy->query(array(), true);
-            $cache->set('news.xml', $feed);
+            $cache->set('feed.xml', $feed);
         }
 
         // Print Response as XML or JSONP/XML
@@ -577,7 +578,7 @@ class Module_WebClient implements Module {
 
         // Determine resolution to use
         $validResolutions = array('hourly', 'daily', 'weekly', 'monthly',
-            'yearly');
+            'yearly','custom');
         if ( isset($this->_options['resolution']) ) {
 
             // Make sure a valid resolution was specified
@@ -596,7 +597,7 @@ class Module_WebClient implements Module {
         $statistics = new Database_Statistics();
 
         $this->_printJSON($statistics->getUsageStatistics(
-            $this->_options['resolution'])
+            $this->_options['resolution'],$this->_options['dateStart'],$this->_options['dateEnd'])
         );
     }
 
@@ -980,10 +981,57 @@ class Module_WebClient implements Module {
 
         if($notification_status == "granted"){
             $statistics->log('movie-notifications-granted');
+            $statistics->logRedis('movie-notifications-granted');
         }else if($notification_status == "denied") {
             $statistics->log('movie-notifications-denied');
+            $statistics->logRedis('movie-notifications-denied');
         }
         echo $this->_printJSON(json_encode($notification_status));
+     }
+
+     /**
+      * Creates a random seed for pseudorandom number generators 
+      * based on a hash of AIA image data combined with the current time in microseconds
+      * 
+      * This function uses SHA-256 to hash the image and resulting strings.
+      *
+      * Special thanks to: Juan E. Jiménez [flybd5@gmail.com]
+      * for submitting the idea and pseudocode for this function.
+      */
+     public function getRandomSeed() {
+        // Initialize image database
+        include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
+        $imgIndex = new Database_ImgIndex();
+        
+        // Current unix timestamp in nanoseconds for sourceId selection
+        $nanoTime = (int)exec("date +%s%N");
+        // AIA sourceId 8-14 random range based on nanoTime above
+        $sourceId = $nanoTime % 7 + 8; 
+        // Current date in ISO 8601 format for latest image
+        $requestDateTime = date("c");
+        // Some formatting to JS style date that getDataFromDatabase expects like "2020-06-19T00:00:00Z"
+        $apiFormattedTime = explode("+",$requestDateTime)[0] . "Z";
+        // Get the newest image from database
+        $image = $imgIndex->getClosestDataBeforeDate($apiFormattedTime, $sourceId);
+        // Make the filepath
+        $file = HV_JP2_DIR . $image['filepath'] . '/' . $image['filename'];
+        
+        // Hash the image using sha256
+        $imageHash = hash_file("sha256",$file);
+        // Hash request IP address
+        $requestAddressHash = hash("sha256", $_SERVER["REMOTE_ADDR"]);
+        // Get a new unix timestamp in nanoseconds
+        $nanoTimeSeed = (int)exec("date +%s%N");
+        // Concatenate current time in nanoseconds, hash of the request IP, and previous image hash, then hash again.
+        $seed = hash("sha256", $nanoTimeSeed . $imageHash . $requestAddressHash);
+        
+        // Build return object
+        $response = array(
+            'seed' => $seed
+        );
+
+        // Output result
+        $this->_printJSON(json_encode($response));
      }
 
     /**
@@ -1261,7 +1309,8 @@ class Module_WebClient implements Module {
             break;
         case 'getUsageStatistics':
             $expected = array(
-                'optional' => array('resolution', 'callback'),
+                'optional' => array('resolution', 'callback','dateStart','dateEnd'),
+                'dates' => array('dateStart','dateEnd'),
                 'alphanum' => array('resolution', 'callback')
             );
             break;

@@ -28,7 +28,7 @@ class Helper_Serialize {
 
         // Verify that cache directory exists
         if ( !@file_exists($this->_path) ) {
-            if ( !@mkdir($this->_path, 0775, true) ) {
+            if ( !@mkdir($this->_path, 0777, true) ) {
                return false;
             }
         }

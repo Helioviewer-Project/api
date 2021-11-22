@@ -143,7 +143,7 @@ If this is correct, please press "Start" to begin processing.
             
             # Insert image information into database
             if len(images) > 0:
-                process_jp2_images(images, jp2dir, db, cursor, mysql, self.update_progress)
+                process_jp2_images(images, jp2dir, cursor, mysql, self.update_progress)
                 
             # clean up afterwards
             images = []

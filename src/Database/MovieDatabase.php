@@ -64,12 +64,12 @@ class Database_MovieDatabase {
                    'INSERT INTO movies '
                  . 'SET '
                  .     'id '                . ' = NULL, '
-                 .     'timestamp '         . ' = NULL, '
+                 .     'timestamp '         . ' = CURRENT_TIMESTAMP, '
                  .     'reqStartDate '      . ' ="%s", '
                  .     'reqEndDate '        . ' ="%s", '
                  .     'reqObservationDate '. ' ='.$reqObservationDate.', '
                  .     'imageScale '        . ' = %f, '
-                 .     'regionOfInterest '  . ' = PolygonFromText("%s"), '
+                 .     'regionOfInterest '  . ' = ST_PolygonFromText("%s"), '
                  .     'maxFrames '         . ' = %d, '
                  .     'watermark '         . ' = %b, '
                  .     'dataSourceString '  . ' ="%s", '
@@ -182,7 +182,7 @@ class Database_MovieDatabase {
                  .     'id '          . ' = NULL, '
                  .     'movieId '     . ' = %d, '
                  .     'youtubeId '   . ' = NULL, '
-                 .     'timestamp '   . ' = NULL, '
+                 .     'timestamp '   . ' = CURRENT_TIMESTAMP, '
                  .     'title '       . ' ="%s", '
                  .     'description ' . ' ="%s", '
                  .     'keywords '    . ' ="%s", '
@@ -387,7 +387,7 @@ class Database_MovieDatabase {
         $sql = sprintf(
                    'SELECT youtube.id, youtube.movieId, youtube.youtubeId, youtube.timestamp, youtube.title, youtube.description, '
                  . 'youtube.keywords, youtube.thumbnail, youtube.shared, youtube.checked, movies.imageScale, movies.dataSourceString, movies.eventSourceString, '
-                 . 'movies.movieLength, movies.width, movies.height, movies.startDate, movies.endDate, AsText(regionOfInterest) as roi '
+                 . 'movies.movieLength, movies.width, movies.height, movies.startDate, movies.endDate, ST_AsText(regionOfInterest) as roi '
                  . 'FROM youtube '
                  . 'LEFT JOIN movies '
                  . 'ON movies.id = youtube.movieId '
@@ -448,7 +448,7 @@ class Database_MovieDatabase {
     public function getMovieMetadata($movieId) {
         $this->_dbConnect();
 
-        $sql = sprintf('SELECT *, AsText(regionOfInterest) as roi '
+        $sql = sprintf('SELECT *, ST_AsText(regionOfInterest) as roi '
              . 'FROM movies WHERE movies.id=%d LIMIT 1;',
              (int)$movieId
         );

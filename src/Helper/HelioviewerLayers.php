@@ -61,7 +61,8 @@ class Helper_HelioviewerLayers {
         // Check to make sure at least one valid layer was specified
         if (sizeOf($this->_layers) === 0) {
             throw new Exception(
-                'No valid and visible layers specified for request.', 20);
+		json_encode($this->_layers), 20);
+                //'No valid and visible layers specified for request.', 20);
         }
     }
 

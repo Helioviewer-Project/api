@@ -47,7 +47,7 @@ class Database_Statistics {
         }
         catch (Exception $e) {
             return false;
-        }
+		}
 
         return true;
     }
@@ -80,6 +80,132 @@ class Database_Statistics {
         }
 
         return true;
+	}
+
+	/**
+	 * Logs api usage to redis.
+	 * Logging is done to the nearest hour.
+	 * 
+	 * $action - (String) the action to log
+	 * 
+	 * Optional $redis param for initilized connection to redis
+	 * API index.php passes $redis in since a connection is established for rate-limit
+	 */
+	public function logRedis($action, $redis = null){
+		try{
+			if(!isset($redis)){
+				$redis = new Redis();
+				$redis->connect(HV_REDIS_HOST,HV_REDIS_PORT);
+			}
+			$requestDateTime = date("c");
+			// Some formatting to sql style date like "2020-07-01T00:00:00"
+			$dateTimeNoMilis = str_replace("T", " ", explode("+",$requestDateTime)[0]); // strip out miliseconds and "T"
+			$dateTimeNearestHour = explode(":",$dateTimeNoMilis)[0] . ":00:00"; // strip out minutes and seconds
+
+			// Make compound key
+			$key = HV_REDIS_STATS_PREFIX . "/" . $dateTimeNearestHour . "/" . $action;
+			$redis->incr($key);
+		}catch(Exception $e){
+			//continue gracefully if redis statistics logging fails
+		}
+	}
+
+	public function saveStatisticsFromRedis($redis){
+		$oneHourAgoSeconds = time() - (60*60);
+		$oneHourAgoDateTime = date("c",$oneHourAgoSeconds);//
+        // Some formatting to sql style date like "2020-07-01T00:00:00"
+		$dateTimeNoMilis = str_replace("T", " ", explode("+",$oneHourAgoDateTime)[0]); // strip out miliseconds and "T"
+		$dateTimeNearestHour = explode(":",$dateTimeNoMilis)[0] . ":00:00"; // strip out minutes and seconds
+
+		$statisticsKeys = $redis->keys(HV_REDIS_STATS_PREFIX . "/*");
+		$statisticsData = array();
+		foreach( $statisticsKeys as $key ){
+			$count = (int)$redis->get($key);
+			$keyComponents = explode("/",$key);
+			// only import data from the previous hour and older.
+			if($keyComponents[1] <= $dateTimeNearestHour){
+				$statistic = array( 
+					"datetime" => $keyComponents[1],
+					"action" => $keyComponents[2],
+					"count" => $count,
+					"key" => $key
+				);
+				array_push($statisticsData, $statistic);
+			}
+		}
+		foreach($statisticsData as $data){
+			$sql = sprintf(
+				  "INSERT INTO redis_stats "
+				. "SET "
+				. "datetime "	. " = '%s', "
+				. "action "		. " = '%s', " 
+				. "count "		. " = %d "
+				. "ON DUPLICATE KEY UPDATE count = %d;",
+				$this->_dbConnection->link->real_escape_string($data["datetime"]),
+				$this->_dbConnection->link->real_escape_string($data["action"]),
+				$this->_dbConnection->link->real_escape_string($data["count"]),
+				$this->_dbConnection->link->real_escape_string($data["count"])
+			);
+			try {
+				$result = $this->_dbConnection->query($sql);
+				if( $result == 1 ){
+					$redis->delete($data["key"]);
+				}
+			}
+			catch (Exception $e) {
+
+			}
+		}
+		
+	}
+
+	public function saveRateLimitExceededFromRedis($redis){
+		$oneHourAgoSeconds = time() - (60*60);
+		$oneHourAgoDateTime = date("c",$oneHourAgoSeconds);//
+        // Some formatting to sql style date like "2020-07-01T00:00:00"
+		$dateTimeNoMilis = str_replace("T", " ", explode("+",$oneHourAgoDateTime)[0]); // strip out miliseconds and "T"
+		$dateTimeNearestHour = explode(":",$dateTimeNoMilis)[0] . ":00:00"; // strip out minutes and seconds
+
+		$statisticsKeys = $redis->keys(HV_RATE_EXCEEDED_PREFIX . "/*");
+		$statisticsData = array();
+		foreach( $statisticsKeys as $key ){
+			$count = (int)$redis->get($key);
+			$keyComponents = explode("/",$key);
+			// only import data from the previous hour and older.
+			if($keyComponents[2] <= $dateTimeNearestHour){
+				$statistic = array( 
+					"identifier" => $keyComponents[1],
+					"datetime" => $keyComponents[2],
+					"count" => $count,
+					"key" => $key
+				);
+				array_push($statisticsData, $statistic);
+			}
+		}
+		foreach($statisticsData as $data){
+			$sql = sprintf(
+				  "INSERT INTO rate_limit_exceeded "
+				. "SET "
+				. "datetime "	. " = '%s', "
+				. "identifier "	. " = '%s', " 
+				. "count "		. " = %d "
+				. "ON DUPLICATE KEY UPDATE count = %d;",
+				$this->_dbConnection->link->real_escape_string($data["datetime"]),
+				$this->_dbConnection->link->real_escape_string($data["identifier"]),
+				$this->_dbConnection->link->real_escape_string($data["count"]),
+				$this->_dbConnection->link->real_escape_string($data["count"])
+			);
+			try {
+				$result = $this->_dbConnection->query($sql);
+				if( $result == 1 ){
+					$redis->delete($data["key"]);
+				}
+			}
+			catch (Exception $e) {
+
+			}
+		}
+		
 	}
 	
 	/**
@@ -173,48 +299,62 @@ class Database_Statistics {
      *
      * @return str  JSON
      */
-    public function getUsageStatistics($resolution) {
+    public function getUsageStatistics($resolution, $dateStart = null, $dateEnd = null) {
 		require_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
 		require_once HV_ROOT_DIR.'/../src/Helper/HelioviewerLayers.php';
 
+		$redis = new Redis();
+		$redis->connect(HV_REDIS_HOST,HV_REDIS_PORT);
+
         // Determine time intervals to query
-        $interval = $this->_getQueryIntervals($resolution);
+        $interval = $this->_getQueryIntervals($resolution, $dateStart, $dateEnd);
 
         // Array to keep track of counts for each action
         $counts = array(
-            "buildMovie"           		=> array(),
-            "getClosestData"       		=> array(),
-            "getClosestImage"      		=> array(),
-            "getJPX"               		=> array(),
-            "getJPXClosestToMidPoint" 	=> array(),
-            "takeScreenshot"       		=> array(),
-            "uploadMovieToYouTube" 		=> array(),
-			"embed"                		=> array(),
-			"minimal"					=> array(),
-			"standard"					=> array(),
-			"sciScript-SSWIDL"			=> array(),
-			"sciScript-SunPy"			=> array(),
-			"movie-notifications-granted"=> array(),
-			"movie-notifications-denied"=> array()
+            "buildMovie"           			=> array(),
+            "getClosestData"       			=> array(),
+            "getClosestImage"      			=> array(),
+            "getJPX"               			=> array(),
+            "getJPXClosestToMidPoint" 		=> array(),
+            "takeScreenshot"       			=> array(),
+            "uploadMovieToYouTube" 			=> array(),
+			"embed"                			=> array(),
+			"minimal"						=> array(),
+			"standard"						=> array(),
+			"sciScript-SSWIDL"				=> array(),
+			"sciScript-SunPy"				=> array(),
+			"movie-notifications-granted"	=> array(),
+			"movie-notifications-denied"	=> array(),
+			"getJP2Image-web"				=> array(),
+			"getJP2Image-jpip" 				=> array(),
+			"getRandomSeed"					=> array(),
+			"totalRequests"					=> array()
         );
 
         // Summary array
         $summary = array(
-            "buildMovie"           		=> 0,
-            "getClosestData"       		=> 0,
-            "getClosestImage"      		=> 0,
-            "getJPX"               		=> 0,
-            "getJPXClosestToMidPoint"   => 0,
-            "takeScreenshot"       		=> 0,
-            "uploadMovieToYouTube" 		=> 0,
-			"embed"                		=> 0,
-			"minimal"					=> 0,
-			"standard"					=> 0,
-			"sciScript-SSWIDL"			=> 0,
-			"sciScript-SunPy"			=> 0,
-			"movie-notifications-granted"=> 0,
-			"movie-notifications-denied"=> 0
+            "buildMovie"           			=> 0,
+            "getClosestData"       			=> 0,
+            "getClosestImage"      			=> 0,
+            "getJPX"               			=> 0,
+            "getJPXClosestToMidPoint"   	=> 0,
+            "takeScreenshot"       			=> 0,
+            "uploadMovieToYouTube" 			=> 0,
+			"embed"                			=> 0,
+			"minimal"						=> 0,
+			"standard"						=> 0,
+			"sciScript-SSWIDL"				=> 0,
+			"sciScript-SunPy"				=> 0,
+			"movie-notifications-granted"	=> 0,
+			"movie-notifications-denied"	=> 0,
+			"getJP2Image-web"				=> 0,
+			"getJP2Image-jpip" 				=> 0,
+			"getRandomSeed"					=> 0,
+			"totalRequests"					=> 0
 		);
+
+		$new_counts = $this->_createCountsArray();
+		$new_summary = $this->_createSummaryArray();
 		//final counts summary
 		$movieCommonSources = array();
 		$movieLayerCount = array();
@@ -234,7 +374,9 @@ class Database_Statistics {
         $dateFormat = $this->_getDateFormat($resolution);
 
         // Start date
-        $date = $interval['startDate'];
+		$date = $interval['startDate'];
+		$intervalStartDate = toMySQLDateString($interval['startDate']);
+		$intervalEndDate = "";
 
         // Query each time interval
         for ($i = 0; $i < $interval["numSteps"]; $i++) {
@@ -246,16 +388,20 @@ class Database_Statistics {
             $dateStart = toMySQLDateString($date);
 
             // Move to end date for the current interval
-            $date->add($interval['timestep']);
+			$date->add($interval['timestep']);
 
             // Fill with zeros to begin with
             foreach ($counts as $action => $arr) {
 				array_push($counts[$action], array($dateIndex => 0));
+			}
+			foreach ($new_counts as $action => $arr) {
+				array_push($new_counts[$action], array($dateIndex => 0));
             }
-            $dateEnd = toMySQLDateString($date);
+			$dateEnd = toMySQLDateString($date);
+			$intervalEndDate = $dateEnd;
 
 			//begin statistics table data gathering
-
+			/*
             $sql = sprintf(
                       "SELECT action, COUNT(id) AS count "
                     . "FROM statistics "
@@ -272,127 +418,386 @@ class Database_Statistics {
                 return false;
             }
 
+			// Append counts for each API action during that interval
+			// to the appropriate array
+			while ($count = $result->fetch_array(MYSQLI_ASSOC)) {
+				$num = (int)$count['count'];
+
+				$counts[$count['action']][$i][$dateIndex] = $num;
+				$summary[$count['action']] += $num;
+			}
+			*/
+
+			//redis table statistics gathering for total number of calls
+            $sql = sprintf(
+				"SELECT SUM(count) AS count "
+			  . "FROM redis_stats "
+			  . "WHERE "
+			  .     "datetime >= '%s' AND datetime < '%s'; ",
+			  $this->_dbConnection->link->real_escape_string($dateStart),
+			  $this->_dbConnection->link->real_escape_string($dateEnd)
+			 );
+			try {
+				$result = $this->_dbConnection->query($sql);
+			}
+			catch (Exception $e) {
+				return false;
+			}
+
             // Append counts for each API action during that interval
             // to the appropriate array
             while ($count = $result->fetch_array(MYSQLI_ASSOC)) {
                 $num = (int)$count['count'];
-
-                $counts[$count['action']][$i][$dateIndex] = $num;
-                $summary[$count['action']] += $num;
+				
+                $new_counts['total'][$i][$dateIndex] = $num;
+                $new_summary['total'] += $num;
 			}
 
-			// Begin movie source breakdown summary section
+			//additional real-time redis stats for total number of calls
+			$statisticsKeys = $redis->keys(HV_REDIS_STATS_PREFIX . "/*");
+			$statisticsData = array();
+			$realTimeRedisCount = 0;
+			foreach( $statisticsKeys as $key ){
+				$count = (int)$redis->get($key);
+				$keyComponents = explode("/",$key);
+				//collect data that falls within the interval
+				$keyDateTime = $keyComponents[1];
+				if($keyDateTime >= $dateStart && $keyDateTime < $dateEnd){
+					$realTimeRedisCount += $count;
+				}
+			}
+			if($realTimeRedisCount > 0){
+				$new_counts['total'][$i][$dateIndex] += $realTimeRedisCount;
+				$new_summary['total'] += $realTimeRedisCount;
+			}
 
-			$sqlScreenshots = sprintf(
-				"SELECT dataSourceString "
-			  . "FROM movies "
+			//new redis-stats statistics gathering for all api endpoints
+            $sql = sprintf(
+				"SELECT action, SUM(count) AS count "
+			  . "FROM redis_stats "
 			  . "WHERE "
-			  .     "timestamp BETWEEN '%s' AND '%s' ;",
+			  .     "datetime >= '%s' AND datetime < '%s'"
+			  ."GROUP BY action; ",
 			  $this->_dbConnection->link->real_escape_string($dateStart),
 			  $this->_dbConnection->link->real_escape_string($dateEnd)
 			 );
-
 			try {
-				$resultScreenshots = $this->_dbConnection->query($sqlScreenshots);
+				$result = $this->_dbConnection->query($sql);
 			}
 			catch (Exception $e) {
 				return false;
 			}
 
-			//fetch data source string
-			while ($row = $resultScreenshots->fetch_array(MYSQLI_ASSOC)) {
-				$layerString = (string)$row['dataSourceString'];
-				//split the data source string into individual data sources
-				$layerStringArray = explode('],[', substr($layerString, 1, -1));
-				//determine number of datasources used 
-				$layerCount = sizeof($layerStringArray);
-				$layerCountString = (string)$layerCount;
-				if(!in_array($layerCount,$rawMovieLayerCount)){
-					array_push($rawMovieLayerCount,$layerCount);
-					$layerCountString = (string)$layerCount;
-					$movieLayerCount[$layerCountString] = 1;
-				}else{
-					$movieLayerCount[$layerCountString] = $movieLayerCount[$layerCountString] + 1;
+            // Append counts for each API action during that interval
+            // to the appropriate array
+            while ($count = $result->fetch_array(MYSQLI_ASSOC)) {
+                $num = (int)$count['count'];
+				
+                $new_counts[$count['action']][$i][$dateIndex] = $num;
+                $new_summary[$count['action']] += $num;
+			}
+
+			//additional real-time redis stats for all api endpoints
+			$statisticsKeys = $redis->keys(HV_REDIS_STATS_PREFIX . "/*");
+			$statisticsData = array();
+			foreach( $statisticsKeys as $key ){
+				$realTimeRedisCount = 0;
+				$count = (int)$redis->get($key);
+				$keyComponents = explode("/",$key);
+				//collect data that falls within the interval
+				$keyDateTime = $keyComponents[1];
+				$keyAction = $keyComponents[2];
+				if($keyDateTime >= $dateStart && $keyDateTime < $dateEnd){
+					$realTimeRedisCount = $count;
+				}
+				if($realTimeRedisCount > 0){
+					if(isset($new_counts[$keyAction][$i][$dateIndex])){
+						$new_counts[$keyAction][$i][$dateIndex] += $realTimeRedisCount;
+					}else{
+						$new_counts[$keyAction][$i][$dateIndex] = $realTimeRedisCount;
+					}
+					$new_summary[$keyAction] += $realTimeRedisCount;
+				}	
+			}
+
+			if($resolution == 'hourly' || $resolution == 'daily' || $resolution == 'weekly'){
+
+				// Begin movie source breakdown summary section
+
+				$sqlScreenshots = sprintf(
+					"SELECT dataSourceString "
+				. "FROM movies "
+				. "WHERE "
+				.     "timestamp BETWEEN '%s' AND '%s' ;",
+				$this->_dbConnection->link->real_escape_string($dateStart),
+				$this->_dbConnection->link->real_escape_string($dateEnd)
+				);
+
+				try {
+					$resultScreenshots = $this->_dbConnection->query($sqlScreenshots);
+				}
+				catch (Exception $e) {
+					return false;
 				}
 
-				//determine counts for each datasource used in screenshots
-				foreach($layerStringArray as $singleLayerString){
-					$layerStringWithSpaces = str_replace(',',' ',$singleLayerString);
-					foreach($dataSourceNames as $dataSource){
-						if(strpos($layerStringWithSpaces,$dataSource)===0){//data source matches one of the data sources retrieved at the start
-							if(!in_array($dataSource,$rawMovieSourceBreakdown)){//first time this data source is seen
-								array_push($rawMovieSourceBreakdown,$dataSource);
-								$movieCommonSources[$dataSource] = 1;
-							}else{
-								$movieCommonSources[$dataSource] = $movieCommonSources[$dataSource]+1;
+				//fetch data source string
+				while ($row = $resultScreenshots->fetch_array(MYSQLI_ASSOC)) {
+					$layerString = (string)$row['dataSourceString'];
+					//split the data source string into individual data sources
+					$layerStringArray = explode('],[', substr($layerString, 1, -1));
+					//determine number of datasources used 
+					$layerCount = sizeof($layerStringArray);
+					$layerCountString = (string)$layerCount;
+					if(!in_array($layerCount,$rawMovieLayerCount)){
+						array_push($rawMovieLayerCount,$layerCount);
+						$layerCountString = (string)$layerCount;
+						$movieLayerCount[$layerCountString] = 1;
+					}else{
+						$movieLayerCount[$layerCountString] = $movieLayerCount[$layerCountString] + 1;
+					}
+
+					//determine counts for each datasource used in screenshots
+					foreach($layerStringArray as $singleLayerString){
+						$layerStringWithSpaces = str_replace(',',' ',$singleLayerString);
+						foreach($dataSourceNames as $dataSource){
+							if(strpos($layerStringWithSpaces,$dataSource)===0){//data source matches one of the data sources retrieved at the start
+								if(!in_array($dataSource,$rawMovieSourceBreakdown)){//first time this data source is seen
+									array_push($rawMovieSourceBreakdown,$dataSource);
+									$movieCommonSources[$dataSource] = 1;
+								}else{
+									$movieCommonSources[$dataSource] = $movieCommonSources[$dataSource]+1;
+								}
+								break;
 							}
-							break;
 						}
+					}
+				}
+
+				// Begin screenshot source breakdown summary section
+
+				$sqlScreenshots = sprintf(
+					"SELECT dataSourceString "
+				. "FROM screenshots "
+				. "WHERE "
+				.     "timestamp BETWEEN '%s' AND '%s' ;",
+				$this->_dbConnection->link->real_escape_string($dateStart),
+				$this->_dbConnection->link->real_escape_string($dateEnd)
+				);
+
+				try {
+					$resultScreenshots = $this->_dbConnection->query($sqlScreenshots);
+				}
+				catch (Exception $e) {
+					return false;
+				}
+
+				//fetch data source string
+				while ($row = $resultScreenshots->fetch_array(MYSQLI_ASSOC)) {
+					$layerString = (string)$row['dataSourceString'];
+					//split the data source string into individual data sources
+					$layerStringArray = explode('],[', substr($layerString, 1, -1));
+					//determine number of datasources used 
+					$layerCount = sizeof($layerStringArray);
+					$layerCountString = (string)$layerCount;
+					if(!in_array($layerCount,$rawScreenshotLayerCount)){
+						array_push($rawScreenshotLayerCount,$layerCount);
+						$layerCountString = (string)$layerCount;
+						$screenshotLayerCount[$layerCountString] = 1;
+					}else{
+						$screenshotLayerCount[$layerCountString] = $screenshotLayerCount[$layerCountString] + 1;
+					}
+					//determine counts for each datasource used in screenshots
+					foreach($layerStringArray as $singleLayerString){
+						$layerStringWithSpaces = str_replace(',',' ',$singleLayerString);
+						//foreach($dataSourceNames as $dataSource){
+							//if(strpos($layerStringWithSpaces,$dataSource)===0){//data source matches one of the data sources retrieved at the start
+								if(!in_array($layerStringWithSpaces,$rawScreenshotSourceBreakdown)){//first time this data source is seen
+									array_push($rawScreenshotSourceBreakdown,$layerStringWithSpaces);
+									$screenshotCommonSources[$layerStringWithSpaces] = 1;
+								}else{
+									$screenshotCommonSources[$layerStringWithSpaces] = $screenshotCommonSources[$layerStringWithSpaces]+1;
+								}
+						//	}
+						//}
 					}
 				}
 			}
 
-			// Begin screenshot source breakdown summary section
+			// Include movie source breakdown
+			$counts['movieCommonSources'] = $movieCommonSources;
+			$counts['movieLayerCount'] = $movieLayerCount;
+			// Include screenshot source breakdown
+			$counts['screenshotCommonSources'] = $screenshotCommonSources;
+			$counts['screenshotLayerCount'] = $screenshotLayerCount;
 
-			$sqlScreenshots = sprintf(
-				"SELECT dataSourceString "
-			  . "FROM screenshots "
-			  . "WHERE "
-			  .     "timestamp BETWEEN '%s' AND '%s' ;",
-			  $this->_dbConnection->link->real_escape_string($dateStart),
-			  $this->_dbConnection->link->real_escape_string($dateEnd)
-			 );
 
-			try {
-				$resultScreenshots = $this->_dbConnection->query($sqlScreenshots);
-			}
-			catch (Exception $e) {
-				return false;
-			}
+			// Include movie source breakdown
+			$new_counts['movieCommonSources'] = $movieCommonSources;
+			$new_counts['movieLayerCount'] = $movieLayerCount;
+			// Include screenshot source breakdown
+			$new_counts['screenshotCommonSources'] = $screenshotCommonSources;
+			$new_counts['screenshotLayerCount'] = $screenshotLayerCount;
+		}
 
-			//fetch data source string
-			while ($row = $resultScreenshots->fetch_array(MYSQLI_ASSOC)) {
-				$layerString = (string)$row['dataSourceString'];
-				//split the data source string into individual data sources
-				$layerStringArray = explode('],[', substr($layerString, 1, -1));
-				//determine number of datasources used 
-				$layerCount = sizeof($layerStringArray);
-				$layerCountString = (string)$layerCount;
-				if(!in_array($layerCount,$rawScreenshotLayerCount)){
-					array_push($rawScreenshotLayerCount,$layerCount);
-					$layerCountString = (string)$layerCount;
-					$screenshotLayerCount[$layerCountString] = 1;
-				}else{
-					$screenshotLayerCount[$layerCountString] = $screenshotLayerCount[$layerCountString] + 1;
-				}
-				//determine counts for each datasource used in screenshots
-				foreach($layerStringArray as $singleLayerString){
-					$layerStringWithSpaces = str_replace(',',' ',$singleLayerString);
-					//foreach($dataSourceNames as $dataSource){
-						//if(strpos($layerStringWithSpaces,$dataSource)===0){//data source matches one of the data sources retrieved at the start
-							if(!in_array($layerStringWithSpaces,$rawScreenshotSourceBreakdown)){//first time this data source is seen
-								array_push($rawScreenshotSourceBreakdown,$layerStringWithSpaces);
-								$screenshotCommonSources[$layerStringWithSpaces] = 1;
-							}else{
-								$screenshotCommonSources[$layerStringWithSpaces] = $screenshotCommonSources[$layerStringWithSpaces]+1;
-							}
-					//	}
-					//}
-				}
-			}
+		//Get rate limit exceeded date
+		$sql = sprintf(
+			"SELECT identifier, SUM(count) AS count "
+		  . "FROM rate_limit_exceeded "
+		  . "WHERE "
+		  .     "datetime >= '%s' AND datetime < '%s'"
+		  . "GROUP BY identifier "
+		  . "ORDER BY count DESC "
+		  . "LIMIT 10; ",
+		  $this->_dbConnection->link->real_escape_string($intervalStartDate),
+		  $this->_dbConnection->link->real_escape_string($intervalEndDate)
+		 );
+		try {
+			$result = $this->_dbConnection->query($sql);
+		}
+		catch (Exception $e) {
+			return false;
+		}
+
+		// Append counts for each API action during that interval
+		// to the appropriate array
+		$id = 1;
+		$rateLimitExceeded = array();
+		while ($exceededArray = $result->fetch_array(MYSQLI_ASSOC)) {
+			$num = (int)$exceededArray['count'];
+			
+			array_push($rateLimitExceeded, (object)array((string)$id => $num));
+			$new_summary['rate_limit_exceeded'] += $num;
+			$id++;
 		}
 
         // Include summary info
 		$counts['summary'] = $summary;
-		// Include movie source breakdown
-		$counts['movieCommonSources'] = $movieCommonSources;
-		$counts['movieLayerCount'] = $movieLayerCount;
-		// Include screenshot source breakdown
-		$counts['screenshotCommonSources'] = $screenshotCommonSources;
-		$counts['screenshotLayerCount'] = $screenshotLayerCount;
+		$new_counts['summary'] = $new_summary;
+		$new_counts['rate_limit_exceeded'] = $rateLimitExceeded;
+		
+        return json_encode($new_counts);
+	}
+	
+	private function _createCountsArray(){
+		return array(
+			"total"						=> array(),
+			'downloadScreenshot'     	=> array(),
+			'getClosestImage'        	=> array(),
+			'getDataSources'         	=> array(),
+			'getJP2Header'           	=> array(),
+			'getNewsFeed'            	=> array(),
+			'getStatus'              	=> array(),
+			'getSciDataScript'       	=> array(),
+			'getTile'                	=> array(),
+			'getUsageStatistics'     	=> array(),
+			'getDataCoverageTimeline'	=> array(),
+			'getDataCoverage'        	=> array(),
+			'updateDataCoverage'     	=> array(),
+			'shortenURL'             	=> array(),
+			'takeScreenshot'         	=> array(),
+			'getRandomSeed'             => array(),
+			'getJP2Image'            	=> array(),
+			'getJPX'                 	=> array(),
+			'getJPXClosestToMidPoint'	=> array(),
+			'launchJHelioviewer'     	=> array(),
+			'downloadMovie'          	=> array(),
+			'getMovieStatus'         	=> array(),
+			'playMovie'              	=> array(),
+			'queueMovie'             	=> array(),
+			'reQueueMovie'           	=> array(),
+			'uploadMovieToYouTube'   	=> array(),
+			'checkYouTubeAuth'       	=> array(),
+			'getYouTubeAuth'         	=> array(),
+			'getUserVideos'          	=> array(),
+			'getObservationDateVideos'	=> array(),
+			'getEventFRMs'           	=> array(),
+			'getEvent'		         	=> array(),
+			'getFRMs'                	=> array(),
+			'getDefaultEventTypes'   	=> array(),
+			'getEvents'              	=> array(),
+			'importEvents'           	=> array(),
+			'getEventsByEventLayers' 	=> array(),
+			'getEventGlossary'       	=> array(),
+			'getSolarBodiesGlossary'    => array(),
+			'getSolarBodies'            => array(),
+			'getTrajectoryTime'         => array(),
+			'logNotificationStatistics' => array(),
+			'getTexture'                => array(),
+			'getGeometryServiceData'    => array(),
+			'buildMovie'				=> array(),//this one happens in HelioviewerMovie.php
+			"getClosestData"				=> array(),
+			"embed"                			=> array(),
+			"minimal"						=> array(),
+			"standard"						=> array(),
+			"sciScript-SSWIDL"				=> array(),
+			"sciScript-SunPy"				=> array(),
+			"movie-notifications-granted"	=> array(),
+			"movie-notifications-denied"	=> array(),
+			"getJP2Image-web"				=> array(),
+			"getJP2Image-jpip" 				=> array()
+		);
+	}
 
-        return json_encode($counts);
-    }
+	private function _createSummaryArray(){
+        return array(
+			"total"						=> 0,
+			'downloadScreenshot'     	=> 0,
+			'getClosestImage'        	=> 0,
+			'getDataSources'         	=> 0,
+			'getJP2Header'           	=> 0,
+			'getNewsFeed'            	=> 0,
+			'getStatus'              	=> 0,
+			'getSciDataScript'       	=> 0,
+			'getTile'                	=> 0,
+			'getUsageStatistics'     	=> 0,
+			'getDataCoverageTimeline'	=> 0,
+			'getDataCoverage'        	=> 0,
+			'updateDataCoverage'     	=> 0,
+			'shortenURL'             	=> 0,
+			'takeScreenshot'         	=> 0,
+			'getRandomSeed'             => 0,
+			'getJP2Image'            	=> 0,
+			'getJPX'                 	=> 0,
+			'getJPXClosestToMidPoint'	=> 0,
+			'launchJHelioviewer'     	=> 0,
+			'downloadMovie'          	=> 0,
+			'getMovieStatus'         	=> 0,
+			'playMovie'              	=> 0,
+			'queueMovie'             	=> 0,
+			'reQueueMovie'           	=> 0,
+			'uploadMovieToYouTube'   	=> 0,
+			'checkYouTubeAuth'       	=> 0,
+			'getYouTubeAuth'         	=> 0,
+			'getUserVideos'          	=> 0,
+			'getObservationDateVideos'	=> 0,
+			'getEventFRMs'           	=> 0,
+			'getEvent'		         	=> 0,
+			'getFRMs'                	=> 0,
+			'getDefaultEventTypes'   	=> 0,
+			'getEvents'              	=> 0,
+			'importEvents'           	=> 0,
+			'getEventsByEventLayers' 	=> 0,
+			'getEventGlossary'       	=> 0,
+			'getSolarBodiesGlossary'    => 0,
+			'getSolarBodies'            => 0,
+			'getTrajectoryTime'         => 0,
+			'logNotificationStatistics' => 0,
+			'getTexture'                => 0,
+			'getGeometryServiceData'    => 0,
+			'buildMovie'				=> 0,//this one happens in HelioviewerMovie.php
+			"getClosestData"				=> 0,
+			"embed"                			=> 0,
+			"minimal"						=> 0,
+			"standard"						=> 0,
+			"sciScript-SSWIDL"				=> 0,
+			"sciScript-SunPy"				=> 0,
+			"movie-notifications-granted"	=> 0,
+			"movie-notifications-denied"	=> 0,
+			"getJP2Image-web"				=> 0,
+			"getJP2Image-jpip" 				=> 0,
+			"rate_limit_exceeded"			=> 0
+		);
+	}
 
     /**
      * Return date format string for the specified time resolution
@@ -1513,7 +1918,10 @@ class Database_Statistics {
                 break;
             case "yearly":
                 return "Y";   // 2009
-                break;
+				break;
+			case "custom":
+				return "Y-m-d H:i:s";
+				break;
         }
     }
 
@@ -1524,7 +1932,7 @@ class Database_Statistics {
      *
      * @return array   Array specifying a time interval
      */
-    private function _getQueryIntervals($resolution) {
+    private function _getQueryIntervals($resolution,$dateStart,$dateEnd) {
 
         date_default_timezone_set('UTC');
 
@@ -1534,61 +1942,74 @@ class Database_Statistics {
         $numSteps = null;
 
         // For hourly resolution, keep the hours value, otherwise set to zero
-        $hour = ($resolution == "hourly") ? (int) $date->format("H") : 0;
+		$hour = ($resolution == "hourly") ? (int) $date->format("H") : 0;
+		
+		if($resolution != "custom"){
 
-        // Round end time to nearest hour or day to begin with (may round other units later)
-        $date->setTime($hour, 0, 0);
+			// Round end time to nearest hour or day to begin with (may round other units later)
+			$date->setTime($hour, 0, 0);
 
-        // Hourly
-        if ($resolution == "hourly") {
-            $timestep = new DateInterval("PT1H");
-            $numSteps = 24;
+			// Hourly
+			if ($resolution == "hourly") {
+				$timestep = new DateInterval("PT1H");
+				$numSteps = 24;
 
-            $date->add($timestep);
+				$date->add($timestep);
 
-            // Subtract 24 hours
-            $date->sub(new DateInterval("P1D"));
-        }
+				// Subtract 24 hours
+				$date->sub(new DateInterval("P1D"));
+			}
 
-        // Daily
-        else if ($resolution == "daily") {
-            $timestep = new DateInterval("P1D");
-            $numSteps = 28;
+			// Daily
+			else if ($resolution == "daily") {
+				$timestep = new DateInterval("P1D");
+				$numSteps = 28;
 
-            $date->add($timestep);
+				$date->add($timestep);
 
-            // Subtract 4 weeks
-            $date->sub(new DateInterval("P4W"));
-        }
+				// Subtract 4 weeks
+				$date->sub(new DateInterval("P4W"));
+			}
 
-        // Weekly
-        else if ($resolution == "weekly") {
-            $timestep = new DateInterval("P1W");
-            $numSteps = 26;
+			// Weekly
+			else if ($resolution == "weekly") {
+				$timestep = new DateInterval("P1W");
+				$numSteps = 26;
 
-            $date->add(new DateInterval("P1D"));
+				$date->add(new DateInterval("P1D"));
 
-            // Subtract 25 weeks
-            $date->sub(new DateInterval("P25W"));
-        }
+				// Subtract 25 weeks
+				$date->sub(new DateInterval("P25W"));
+			}
 
-        // Monthly
-        else if ($resolution == "monthly") {
-            $timestep = new DateInterval("P1M");
-            $numSteps = 24;
+			// Monthly
+			else if ($resolution == "monthly") {
+				$timestep = new DateInterval("P1M");
+				$numSteps = 24;
 
-            $date->modify('first day of next month');
-            $date->sub(new DateInterval("P24M"));
-        }
+				$date->modify('first day of next month');
+				$date->sub(new DateInterval("P24M"));
+			}
 
-        // Yearly
-        else if ($resolution == "yearly") {
-            $timestep = new DateInterval("P1Y");
-            $numSteps = 8;
+			// Yearly
+			else if ($resolution == "yearly") {
+				$timestep = new DateInterval("P1Y");
+				$numSteps = 8;
 
-            $year = (int) $date->format("Y");
-            $date->setDate($year - $numSteps + 1, 1, 1);
-        }
+				$year = (int) $date->format("Y");
+				$date->setDate($year - $numSteps + 1, 1, 1);
+			}
+			
+		}else{
+			$dateTimeDateEnd = new DateTime($dateEnd);
+			$dateTimeDateStart = new DateTime($dateStart);
+			$dateDiffSeconds = $dateTimeDateEnd->getTimestamp() - $dateTimeDateStart->getTimestamp();
+			$numSteps = 24;
+			$stepSeconds = (int)($dateDiffSeconds / $numSteps);
+			$intervalString = "PT" . $stepSeconds . "S";
+			$timestep = new DateInterval($intervalString);
+			$date = $dateTimeDateStart;
+		}
 
         // Array to store time intervals
         $intervals = array(

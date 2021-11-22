@@ -131,6 +131,7 @@ EOD;
 		include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
 		$statistics = new Database_Statistics();
 		$statistics->log("sciScript-SSWIDL");
+		$statistics->logRedis("sciScript-SSWIDL");
     }
 
     private function _getScriptFilename() {

@@ -10,7 +10,7 @@
 	
 	require_once __DIR__."/../src/Config.php";
 	$config = new Config(__DIR__."/../settings/Config.ini");
-	
+
 	$commands = unserialize(TERMINAL_COMMANDS);
 	$sendEmail = false;
 	$log = true;
@@ -20,6 +20,9 @@
 	$logBody = "////////////////////\n".date("Y-m-d H:i:s")."\n";
 	$logBody .= $output."";
 	//$strOut = array();
+	putenv("http_proxy=" . $config->config["http_proxy"]);
+	putenv("https_proxy=" . $config->config["https_proxy"]);
+	putenv("http_export=" . $config->config["http_export"]);
     foreach($commands as $cmd => $name){
         $is = strpos($output, $cmd);
         //$strOut[] = grab_dump($is);

@@ -10,33 +10,136 @@
  *                      hourly, daily, weekly, etc.
  *  @return void
  */
-colors = ["#D32F2F", "#9bd927", "#27d9be", "#6527d9", "#0091EA", "#FF6F00", "#F06292", "#BA68C8", "#607D8B"];
+var colors = ["#D32F2F", "#9bd927", "#27d9be", "#6527d9", "#0091EA", "#FF6F00", "#F06292", "#BA68C8", "#558B2F", "#FFD600", "#333"];
 
-notificationKeys = ["movie-notifications-granted", "movie-notifications-denied"];
+var heirarchy = {
+    "Total":["total","rate_limit_exceeded"],
+    "Client Sites":["standard","embed","minimal"],
+    "Images":["takeScreenshot","getTile","getClosestImage","getJP2Image-web","getJP2Image-jpip","getJP2Image","downloadScreenshot","getJPX","getJPXClosestToMidPoint"],
+    "Movies":["buildMovie","getMovieStatus","queueMovie","reQueueMovie","playMovie","downloadMovie","getUserVideos","getObservationDateVideos","uploadMovieToYouTube","checkYouTubeAuth","getYouTubeAuth"],
+    "Events":["getEventGlossary","getEvents","getFRMs","getEvent","getEventFRMs","getDefaultEventTypes","getEventsByEventLayers","importEvents"],
+    "Data":["getRandomSeed","getDataSources","getJP2Header","getDataCoverage","getStatus","getNewsFeed","getDataCoverageTimeline","getClosestData","getSolarBodiesGlossary","getSolarBodies","getTrajectoryTime","sciScript-SSWIDL","sciScript-SunPy","getSciDataScript","updateDataCoverage"],
+    "Other":["shortenURL","getUsageStatistics","movie-notifications-granted","movie-notifications-denied","logNotificationStatistics","launchJHelioviewer"],
+    "WebGL":["getTexture","getGeometryServiceData"]
+};
 
 var initialTime = new Date();
-var resolutionOnLoad;
+var temporalResolution;
 var pieHeightScale = 0.65;
-var maxVisualizationSizePx = 800;
-var refreshIntervalMinutes = 90;
+var maxVisualizationSizePx = 900;
+var refreshIntervalMinutes;
+var refreshHandler;
+var request;
+var dateStart,dateEnd;
 
-var getUsageStatistics = function(timeInterval) {
-    $.getJSON("../index.php", {action: "getUsageStatistics", resolution: timeInterval}, function (response) {
-        updateLastRefreshFooter();
-        displayUsageStatistics(response, timeInterval);
+var getUsageStatistics = function(timeInterval,dateStartInput,dateEndInput) {
+    if(request){
+        request.abort();
+    }
+    //initialize dateStart and dateEnd end if empty
+    if(dateStartInput == "" || dateEndInput == ""){
+        todayString = new Date().toISOString().split(".")[0] + "Z";//remove millis
+        yesterdayUnix = Date.now() - 86400000;
+        yesterday = new Date();
+        yesterday.setTime(yesterdayUnix);
+        yesterdayString = yesterday.toISOString().split(".")[0] + "Z";//remove millis
+
+        dateStartInput = yesterdayString;
+        dateEndInput = todayString;
+        dateStart = yesterdayString;
+        dateEnd = todayString;
+    }
+    request = $.getJSON("../index.php", {action: "getUsageStatistics", resolution: timeInterval, dateStart: dateStartInput, dateEnd: dateEndInput}, function (response) {
+        initialTime = new Date();
+        if(responseNoError(response)){//only continue if the server returned a payload without error
+            setRefreshIntervalFromTemporalResolution();
+            displayUsageStatistics(response, timeInterval);
+            updateLastRefreshHeader();
+        }else{
+            refreshIntervalMinutes = 1; // shorten the retry period to 1 minute if error
+            refreshHandler = setInterval(computeTimeTilAutoRefresh,1000,true);//invoke countdown with error
+        }
     });
 };
+
+var responseNoError = function(response) {
+    var responseKeys = Object.keys(response);
+    return !responseKeys.includes("error");
+}
 
 var checkSessionTimeout = function () {
     var minutes = Math.abs((initialTime - new Date()) / 1000 / 60);
     if (minutes > refreshIntervalMinutes) {
-        initialTime = new Date();
-        getUsageStatistics(resolutionOnLoad); 
+        loadNewStatistics();
     } 
 };
 
-var updateLastRefreshFooter = function() {
-    $('#refresh').text("Data Displayed From: "+initialTime.toString() + " [auto-refresh every " + refreshIntervalMinutes + " minutes]");
+var loadNewStatistics = function(){
+    clearInterval(refreshHandler);
+    initialTime = new Date();
+    if(temporalResolution == 'hourly' || temporalResolution == 'daily'){
+        $('#loading').text("Refreshing...");
+    }else{
+        $('#loading').text("Refreshing... This will take a while...");
+    }
+
+    if(temporalResolution != "custom"){
+        getUsageStatistics(temporalResolution,dateStart,dateEnd);
+    }else{
+        getUsageStatistics(temporalResolution,dateStart,dateEnd);
+    }
+}
+
+var setRefreshIntervalFromTemporalResolution = function (){
+    //set auto-refresh intervals here
+    refreshIntervals = {
+	    "hourly" : 5,
+        "daily"  : 60,
+        "weekly" : 180,
+        "monthly": 540,
+        "yearly" : 1440,
+        "custom" : 60
+    };
+    refreshIntervalMinutes =  refreshIntervals[temporalResolution];
+}
+
+var updateLastRefreshHeader = function() {
+    $('#refresh').text("Data Displayed From: "+initialTime.toString());
+}
+
+/**
+ * Computes Auto-refresh countdown
+ */
+var computeTimeTilAutoRefresh = function (error=false) {
+    var currentTime = new Date();
+    var refreshTime = (refreshIntervalMinutes * 60) - Math.abs((initialTime - currentTime) / 1000);
+    if(refreshTime < 1){
+        clearInterval(refreshHandler);
+        refreshTimeFormatted = "0";
+    }
+    /*else if(refreshTime < 10){
+        //remove leading hours, minutes, and tens of seconds (00:00:0)
+        var refreshTimeFormatted = new Date(1000 * refreshTime).toISOString().substr(18, 1);
+    }
+    else if(refreshTime < 60){
+        //remove leading hours and minutes (00:00)
+        var refreshTimeFormatted = new Date(1000 * refreshTime).toISOString().substr(17, 2);
+    }
+    else if(refreshTime < 3600){
+        //remove leading hours (00)
+        var refreshTimeFormatted = new Date(1000 * refreshTime).toISOString().substr(14, 5);
+    }*/else{
+        //include hours
+        var refreshTimeFormatted = new Date(1000 * refreshTime).toISOString().substr(11, 8);
+        while(refreshTimeFormatted.startsWith("0") || refreshTimeFormatted.startsWith(":")){
+            refreshTimeFormatted = refreshTimeFormatted.substring(1);
+        }
+    }
+    if(error){
+        $('#loading').text( "Connection Error! Retrying in " + refreshTimeFormatted);
+    }else{
+        $('#loading').text( "Auto-refresh in " + refreshTimeFormatted);
+    }
 }
 
 /**
@@ -48,6 +151,10 @@ var updateLastRefreshFooter = function() {
  * @return void
  */
 var displayUsageStatistics = function (data, timeInterval) {
+
+    clearInterval(computeTimeTilAutoRefresh);
+    refreshHandler = setInterval(computeTimeTilAutoRefresh,1000,false);
+
     var pieChartHeight, barChartHeight, barChartMargin, summaryRaw, max;
     var hvTypePieSummary = {};
     var notificationPieSummary = {};
@@ -62,39 +169,93 @@ var displayUsageStatistics = function (data, timeInterval) {
 
     // Overview text
     summaryRaw = data['summary'];
-    summaryKeys = Object.keys(summaryRaw);
-    for(var key of summaryKeys){
-        if(notificationKeys.indexOf(key) == -1){//if key is not about notifications
-            hvTypePieSummary[key] = summaryRaw[key];
-        }else{//if key is about notifications
-            notificationPieSummary[key] = summaryRaw[key];
-        }
-    }
 
     $('#barCharts').empty();
 
     displaySummaryText(timeInterval, summaryRaw);
- 
+
     // Create summary pie chart
-    createVersionChart('versionsChart', hvTypePieSummary, pieChartHeight);
-    createRequestsChart('requestsChart', hvTypePieSummary, pieChartHeight);
-    createNotificationChart('notificationChart', notificationPieSummary, pieChartHeight);
+    createVersionChart('versionsChart', summaryRaw, pieChartHeight);
+    createRequestsChart('requestsChart', summaryRaw, pieChartHeight);
+    createNotificationChart('notificationChart', summaryRaw, pieChartHeight);
     createScreenshotSourcesChart('screenshotSourcesChart', screenshotSourcesSummary, pieChartHeight);
     createScreenshotLayerCountChart('screenshotLayerCountChart',screenshotLayerCountSummary, pieChartHeight);
     createMovieSourcesChart('movieSourcesChart', movieSourcesSummary, pieChartHeight);
     createMovieLayerCountChart('movieLayerCountChart',movieLayerCountSummary, pieChartHeight);
 
+    var colorMod = 0;
+    var excludeFromCharts = ['movieCommonSources','movieLayerCount','screenshotCommonSources','screenshotLayerCount','summary'];
+    // Bar Charts
+    var barChartsDiv = document.getElementById("barCharts");
+    for( var group of Object.keys(heirarchy) ){
+        var writeHeading = true;
+        for(var key of heirarchy[group]){
+            if(!excludeFromCharts.includes(key) && data['summary'][key] > 0){
+                if(writeHeading){
+                    var heading = document.createElement("button");
+                    heading.innerText = group;
+                    heading.id = group;
+                    heading.className = "collapsible"
+                    barChartsDiv.append(heading);
+                    writeHeading = false;
+                }
+                var colorIndex = colorMod % colors.length;
+                var innerContent = document.createElement("div");
+                innerContent.id = key+"Chart";
+                innerContent.className = "content columnChart";
+                var heading = document.getElementById(group);
+                barChartsDiv.append(innerContent);
+                console.log(key,data[key],key,barChartHeight,colors[colorIndex]);
+                createColumnChart(key,data[key],key,barChartHeight,colors[colorIndex]);
+                colorMod++;
+            }
+        }
+    }
+
+
+    var groupsElements = document.getElementsByClassName("collapsible");
+
+    for (var groupButton of groupsElements) {
+        groupButton.addEventListener("click", function() {
+            var groupKey = this.id;
+            this.classList.toggle("active"); //can start collapsed
+            for(var contentId of heirarchy[groupKey]){
+                var content = document.getElementById(contentId+"Chart");
+                if(content){
+                    if (content.style.maxHeight){
+                        content.style.maxHeight = null;
+                    } else {
+                        content.style.maxHeight = content.scrollHeight + "px";
+                    } 
+                    console.log(contentId + " " + content.style.maxHeight);
+                }
+            }
+        });
+        //start with all graphs open and showing (to start closed comment this out)
+        var groupKey = groupButton.id;
+        for(var contentId of heirarchy[groupKey]){
+            var content = document.getElementById(contentId+"Chart");
+            if(content){
+                content.style.maxHeight = content.scrollHeight + "px";
+            }
+        }
+    } 
 
     // Create bar graphs for each request type
+    /*
+    createColumnChart('totalRequests', data['totalRequests'], 'Total', barChartHeight, colors[10]);
     createColumnChart('visitors', data['standard'], 'Helioviewer.org', barChartHeight, colors[8]);
     createColumnChart('getClosestImage', data['getClosestImage'], 'Observation', barChartHeight, colors[4]);
     createColumnChart('takeScreenshot', data['takeScreenshot'], 'Screenshot', barChartHeight, colors[0]);
     createColumnChart('buildMovie', data['buildMovie'], 'Movie', barChartHeight, colors[1]);
+    createColumnChart('getJP2Image-web', data['getJP2Image-web'], 'JP2 Download', barChartHeight, colors[9]);
     createColumnChart('getJPX', data['getJPX'], 'JPX', barChartHeight, colors[2]);
     createColumnChart('embed', data['embed'], 'Embed', barChartHeight, colors[3]);
     createColumnChart('minimal', data['minimal'], 'Student', barChartHeight, colors[5]);
     createColumnChart('sciScript-SSWIDL', data['sciScript-SSWIDL'], 'SciScript SSWIDL', barChartHeight, colors[6]);
     createColumnChart('sciScript-SunPy', data['sciScript-SunPy'], 'SciScript SunPy', barChartHeight, colors[7]);
+    createColumnChart('getRandomSeed', data['getRandomSeed'], 'getRandomSeed', barChartHeight, colors[4]);
+    */
 
     // Spreads bar graphs out a bit if space permits
     //barChartMargin = Math.round(($("#visualizations").height() - $("#barCharts").height()) / 7);
@@ -114,24 +275,99 @@ var displaySummaryText = function(timeInterval, summary) {
 
     // Human readable text for the requested time intervals
     humanTimes = {
-	"hourly" : "day",
+	    "hourly" : "day",
         "daily"  : "four weeks",
-        "weekly" : "two months",
+        "weekly" : "six months",
         "monthly": "two years",
-        "yearly" : "three years"
+        "yearly" : "eight years",
+        "custom" : "time range"
     };
 
-    when = humanTimes[timeInterval];
+    possibleResolutions = Object.keys(humanTimes);
+
+    when = '<select id=temporalResolution>';
+    for( var res=0; res<possibleResolutions.length; res++){
+        when += '<option value="'+possibleResolutions[res]+'">'+humanTimes[possibleResolutions[res]]+'</option>';
+    }
+    when += '</select>';
+    //default date/times are empty and un-initialized and logic is below
+    when += '<span id="timeRange"> from <input type="date" id="startDate"><input type="time" step="1" id="startTime"> to <input type="date" id="endDate"><input type="time" step="1" id="endTime"></span>'
 
     // Generate HTML
-    html = '<span id="when">During the last <b>' + when + '</b> Helioviewer.org users created</span> ' +
-           '<span style="color:' + colors[4] + ';" class="summaryCount">' + summary['getClosestImage'] + ' observations</span>, '+
-           '<span style="color:' + colors[0] + ';" class="summaryCount">' + summary['takeScreenshot'] + ' screenshots</span>, ' +
-           '<span style="color:' + colors[1] + ';" class="summaryCount">' + summary['buildMovie'] + ' movies</span>, and ' +
-           '<span style="color:' + colors[2] + ';" class="summaryCount">' + summary['getJPX'] + ' JPX movies</span>. <br> ' +
-           'Helioviewer.org was <span style="color:' + colors[3] + ';" class="summaryCount">embedded ' + summary['embed'] + ' times </span> and '+
-           '<span style="color:' + colors[5] + ';" class="summaryCount"> accessed by ' + summary['minimal'] + ' students </span>';
+    html = '<span id="when">During the last ' + when + '</span><br><span>Helioviewer.org users created</span> ' +
+           '<span style="color:' + colors[4] + ';" class="summaryCount">' + summary['getClosestImage'].toLocaleString() + ' observations</span>, '+
+           '<span style="color:' + colors[0] + ';" class="summaryCount">' + summary['takeScreenshot'].toLocaleString() + ' screenshots</span>, ' +
+           '<span style="color:' + colors[1] + ';" class="summaryCount">' + summary['buildMovie'].toLocaleString() + ' movies</span>, and ' +
+           '<span style="color:' + colors[2] + ';" class="summaryCount">' + summary['getJPX'].toLocaleString() + ' JPX movies</span>. <br> ' +
+           'Helioviewer.org was <span style="color:' + colors[3] + ';" class="summaryCount">embedded ' + summary['embed'].toLocaleString() + ' times </span> and '+
+           '<span style="color:' + colors[5] + ';" class="summaryCount"> accessed by ' + summary['minimal'].toLocaleString() + ' students </span> <br>' +
+           'Helioviewer.org users made <span style="color:'+colors[10]+';" class="summaryCount">' + summary['total'].toLocaleString() + ' total requests </span>';
     $("#overview").html(html);
+
+
+    //date/time initilization logic
+    if(temporalResolution == "custom"){
+        //first-run empty date/time fields
+        // if(dateStart == "" && dateEnd == ""){
+        //     todayString = new Date().toISOString().split("T")[0];
+        //     yesterdayUnix = Date.now()- 86400000;
+        //     yesterday = new Date();
+        //     yesterday.setTime(yesterdayUnix);
+        //     yesterdayString = yesterday.toISOString().split("T")[0];
+        //     document.getElementById("startDate").value = yesterdayString;
+        //     document.getElementById("startTime").value = "00:00";
+        //     document.getElementById("endDate").value = todayString;
+        //     document.getElementById("endTime").value = "00:00";
+        // }else{
+            //second run use existing date/time
+            document.getElementById("startDate").value = dateStart.slice(0,-1).split("T")[0];
+            document.getElementById("startTime").value = dateStart.slice(0,-1).split("T")[1];
+            document.getElementById("endDate").value = dateEnd.slice(0,-1).split("T")[0];
+            document.getElementById("endTime").value = dateEnd.slice(0,-1).split("T")[1];
+        // }
+        $("#timeRange").show();
+    }else{//any other temporalResolution (for example "daily")
+        if(dateStart != "" && dateEnd != ""){//restore date/time even if it's hidden
+            document.getElementById("startDate").value = dateStart.slice(0,-1).split("T")[0];
+            document.getElementById("startTime").value = dateStart.slice(0,-1).split("T")[1];
+            document.getElementById("endDate").value = dateEnd.slice(0,-1).split("T")[0];
+            document.getElementById("endTime").value = dateEnd.slice(0,-1).split("T")[1];
+        }
+        $("#timeRange").hide();
+    }
+    
+    //temporal resolution dropdown change event listener
+    $("#temporalResolution").val(timeInterval).unbind().change(function(e){
+        temporalResolution = $("#temporalResolution").val();
+        if(temporalResolution == "custom"){
+            //first-run empty date/time fields
+            // if(dateStart == "" && dateEnd == ""){
+            //     todayString = new Date().toISOString().split("T")[0];
+            //     yesterdayUnix = Date.now()- 86400000;
+            //     yesterday = new Date();
+            //     yesterday.setTime(yesterdayUnix);
+            //     yesterdayString = yesterday.toISOString().split("T")[0];
+            //     document.getElementById("startDate").value = yesterdayString;
+            //     document.getElementById("startTime").value = "00:00";
+            //     document.getElementById("endDate").value = todayString;
+            //     document.getElementById("endTime").value = "00:00";
+            // }
+            dateStart = document.getElementById("startDate").value + "T" + document.getElementById("startTime").value + "Z";
+            dateEnd = document.getElementById("endDate").value + "T" + document.getElementById("endTime").value + "Z";
+            $("#timeRange").show();
+            loadNewStatistics();
+        }else{
+            $("#timeRange").hide();
+            loadNewStatistics();
+        }
+    });
+
+    //date/time change event listener
+    $("#timeRange").children().unbind().change(function(e){
+        dateStart = document.getElementById("startDate").value + "T" + document.getElementById("startTime").value + "Z";
+        dateEnd = document.getElementById("endDate").value + "T" + document.getElementById("endTime").value + "Z";
+        loadNewStatistics();
+    });
 
 };
 
@@ -164,7 +400,7 @@ var createColumnChart = function (id, rows, desc, height, color) {
         row++;
     });
 
-    $("#barCharts").append('<div id="' + id + 'Chart" class="columnChart"></div>');
+    //$("#barCharts").append('<div id="' + id + 'Chart" class="columnChart content"></div>');
 
     chart = new google.visualization.ColumnChart(document.getElementById(id + "Chart"));
     chart.draw(data, {

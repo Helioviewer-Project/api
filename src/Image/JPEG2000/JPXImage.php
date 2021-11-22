@@ -17,13 +17,11 @@
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     https://github.com/Helioviewer-Project
  */
-
 class Image_JPEG2000_JPXImage
 {
     protected $frames;
     protected $linked;
     protected $outputFile;
-
     /**
      * Creates a JPXImage instance
      *
@@ -35,7 +33,6 @@ class Image_JPEG2000_JPXImage
     {
         $this->outputFile = $outputFile;
     }
-
     /**
      * Given a set of JP2 images, runs kdu_merge to build a single JPX image from them
      *
@@ -70,7 +67,6 @@ class Image_JPEG2000_JPXImage
           throw new Exception($msg, 14);
         }
     }
-
     private function p2sc_execute($cmd, $stdin, &$output) {
         $dspec = array(
           0 => array('pipe', 'r'),
@@ -105,17 +101,14 @@ class Image_JPEG2000_JPXImage
         if (is_resource($proc)) {
           fwrite($pipes[0], $stdin);
           fclose($pipes[0]);
-
           $out = stream_get_contents($pipes[1]);
           fclose($pipes[1]);
           fclose($pipes[2]);
-
           $output = $out;
           return proc_close($proc);
         } else
           return 1;
     }
-
     /**
      * Prints a JPX image to the screen
      *
@@ -135,7 +128,6 @@ class Image_JPEG2000_JPXImage
 		    @readfile($this->outputFile) or die("");
         }else{
 			$filename = basename($this->outputFile);
-
 	        header("Content-Length: 0");
 	        header("Content-Type: "   . image_type_to_mime_type(IMAGETYPE_JPX));
 	        header("Content-Disposition: attachment; filename=\"$filename\"");

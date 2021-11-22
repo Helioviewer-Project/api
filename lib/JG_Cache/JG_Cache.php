@@ -85,7 +85,7 @@ class JG_Cache {
             return FALSE;  
         }  
         fclose($fp);  
-        @chmod($cache_path, 0775);  
+        @chmod($cache_path, 0777);  
         return TRUE;  
     }  
   

@@ -187,10 +187,10 @@ class Module_SolarEvents implements Module {
     public function importEvents() {
         //function expects an auth parameter in the URL
         $inputApiKey = (string)filter_input(INPUT_GET,'auth',FILTER_SANITIZE_STRING);
-        //run import only if the auth provided matches the one set in Config.ini
+        //run import if the auth provided matches the one set in config.ini
         if( $inputApiKey == HV_IMPORT_EVENTS_AUTH ){
 
-            include_once HV_ROOT_DIR.'/../src/Event/HEKAdapter.php';
+	    include_once HV_ROOT_DIR.'/../src/Event/HEKAdapter.php';
 
             $hek = new Event_HEKAdapter();
 
@@ -207,7 +207,9 @@ class Module_SolarEvents implements Module {
             // Query the HEK
             $events = $hek->importEvents($period);
             echo "------------------------------------------\n";
-        }
+            //header('Content-Type: application/json');
+            //echo json_encode('{"status":"success"}');
+	}
     }
 
     /**

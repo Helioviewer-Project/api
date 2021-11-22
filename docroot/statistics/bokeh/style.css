@@ -1,0 +1,35 @@
+body {
+    margin: 10px 25px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    color: #333;
+    font-family: Arial, Helvetica, sans-serif;
+    background-color: #efefef;
+}
+
+h1 {
+    color: #222;
+    margin: 0px 0px;
+    font-size: 2.5em;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+h2 {
+    margin: 15px 0px 0px 0px;
+}
+
+a:link {
+    color: rgb(17, 76, 185);
+    text-decoration: none;
+}
+
+a:visited {
+    color: rgb(109, 17, 185);
+}
+
+a:hover {
+    color: rgb(0, 53, 228);
+    text-decoration: underline;
+}

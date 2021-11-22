@@ -47,7 +47,7 @@ class HelioviewerConsoleInstaller:
 
             # Insert image information into database
             if len(images) > 0:
-                process_jp2_images(images, path, db, cursor, mysql)
+                process_jp2_images(images, path, cursor, mysql)
 
             # clean up afterwards
             images = []
@@ -104,7 +104,7 @@ class HelioviewerConsoleInstaller:
             print("ReferenceError:", err)
             sys.exit()
         except:
-            print("Specified database already exists! Exiting installer. Error:", sys.exc_info())
+            print("Specified database already exists! Exiting installer. Error:", sys.exc_info()[0])
             sys.exit()
 
     def get_filepath(self):
