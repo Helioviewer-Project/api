@@ -122,7 +122,7 @@ If this is correct, please press "Start" to begin processing.
 
         db, cursor = setup_database_schema(admin, adminpass, "localhost", hvdb, hvuser, hvpass, mysql)
 
-        process_jp2_images(self.images, jp2dir, cursor, mysql, self.updateProgress)
+        process_jp2_images(self.images, jp2dir, db, cursor, mysql, self.updateProgress)
     
         cursor.close()
         #self.ui.installProgress.setValue(len(images))

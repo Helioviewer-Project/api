@@ -47,7 +47,7 @@ class HelioviewerConsoleInstaller:
 
             # Insert image information into database
             if len(images) > 0:
-                process_jp2_images(images, path, cursor, mysql)
+                process_jp2_images(images, path, db, cursor, mysql)
 
             # clean up afterwards
             images = []
