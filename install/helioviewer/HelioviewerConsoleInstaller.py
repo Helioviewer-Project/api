@@ -161,7 +161,7 @@ def loadTextInstaller(options):
     print("Processing Images...")
 
     # Insert image information into database
-    process_jp2_images(images, path, cursor, mysql)
+    process_jp2_images(images, path, db, cursor, mysql)
     cursor.close()
 
     print("Finished!")
@@ -173,12 +173,12 @@ def loadUpdater(options):
     # MySQL?
     mysql = options.dbtype == "mysql"
         
-    cursor = get_db_cursor("localhost", options.dbname, options.dbuser, options.dbpass, mysql)
+    db, cursor = get_db_cursor("localhost", options.dbname, options.dbuser, options.dbpass, mysql)
 
     print("Processing Images...")
 
     # Insert image information into database
-    process_jp2_images(options.files, options.basedir, cursor, mysql)
+    process_jp2_images(options.files, options.basedir, db, cursor, mysql)
     
     cursor.close()
 

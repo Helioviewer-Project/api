@@ -56,7 +56,7 @@ def main(argv):
     
     # Add images to the database
     db, cursor = get_db_cursor(options.dbhost, options.dbname, options.dbuser, options.dbpass)
-    process_jp2_images(images, options.destination, cursor, True)    
+    process_jp2_images(images, options.destination, db, cursor, True)    
     cursor.close()
     
     print('Finished!')
