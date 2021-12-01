@@ -27,10 +27,11 @@ def check_db_info(dbname, dbuser, dbpass):
     db.close()
     return True
 
-def get_dbcursor():
+def get_dbcursor(dbname='', dbuser='', dbpass=''):
     """Prompts the user for database info and returns a database cursor"""
-    print("Please enter existing database login information:")
-    dbname, dbuser, dbpass = get_dbinfo()
+    if dbname == '' or dbuser == '' or dbpass == '':
+        print("Please enter existing database login information:")
+        dbname, dbuser, dbpass = get_dbinfo()
 
     db = MySQLdb.connect(host="localhost", db=dbname, user=dbuser, 
                          passwd=dbpass)
