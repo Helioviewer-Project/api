@@ -8,8 +8,12 @@ python3 -m jp2verify.validate_db
 import os
 import sys
 
-from builtins import input # Python 2/3 compatibility
+from utils.one_line_logger import OneLineLogger
 from utils import database
+
+from builtins import input # Python 2/3 compatibility
+
+GET_COUNT_SQL = "SELECT count(id) FROM data"
 GET_FILES_SQL = "SELECT filepath, filename FROM data LIMIT %s, %s"
 
 class DataPager:
@@ -22,6 +26,11 @@ class DataPager:
         self.skip = 0
         self.take = 100
         self._load_next_page()
+    
+    def get_image_count(self):
+        self.cursor.execute(GET_COUNT_SQL)
+        result = self.cursor.fetchone()
+        return result[0]
     
     def _load_next_page(self):
         """
@@ -93,27 +102,33 @@ def _get_data_path():
 def main():
     data_path = _get_data_path()
     log_file = _get_log_file()
+    logger = OneLineLogger(log_file)
     cursor = database.get_dbcursor()
 
     missing_files = []
     # Get list of files from the data table
-    print("Getting list of files")
+    logger.log("Getting list of files")
     pager = DataPager(cursor)
+    total_images = pager.get_image_count()
     image_list = pager.generate_image_list()
 
-    print("Checking database files against data on disk...")
-    print("This may take a while.")
+    logger.log("Checking database files against data on disk...")
+    logger.log("This may take a while.")
+    logger.lock_position()
 
-    with open(log_file, "w") as log:
-        # Iterate over files and check if they exist on disk
-        for image_path in image_list:
-            # Concatenate the db file path with the data directory
-            full_image_path = data_path + image_path
-            file_exists = os.path.exists(full_image_path)
-            # If the file doesn't exist, add it to the missing file list
-            if not file_exists:
-                log.write(full_image_path)
-                log.flush() # Flush to disk to keep memory usage low
+    # Iterate over files and check if they exist on disk
+    count = 0
+    for image_path in image_list:
+        count += 1
+        # Log progress
+        logger.log("Processing image %d of %s" % (count, total_images))
+        # Concatenate the db file path with the data directory
+        full_image_path = data_path + image_path
+        file_exists = os.path.exists(full_image_path)
+        # If the file doesn't exist, add it to the missing file list
+        if not file_exists:
+            logger.log(full_image_path)
+            logger.lock_position()
     # Close db connection
     cursor.close()
 
