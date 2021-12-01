@@ -24,7 +24,11 @@ class DataPager:
     def __init__(self, cursor):
         self.cursor = cursor
         self.skip = 0
-        self.take = 100
+        # Modify this take value to optimize for memory usage.
+        # Default is set to query 5 million rows.
+        # Assume each row is approximately 100 bytes (which is close to accurate for our file names)
+        # then 5,000,000 * 100 bytes = approximately 500 megabytes of memory.
+        self.take = 5000000
         self._load_next_page()
     
     def get_image_count(self):
