@@ -7,7 +7,7 @@ import re
 import operator
 import shutil
 import remove
-import database
+from utils import database
 from itertools import islice
 
 def main():

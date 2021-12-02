@@ -5,6 +5,8 @@ __MACOSX
 .project
 .pydevproject
 .settings
+.env
+.vscode
 *.pyc
 api/docs
 api/lib/phpvideotoolkit/config.php

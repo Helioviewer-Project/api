@@ -1,12 +1,13 @@
 """Shared database functions"""
 import getpass
 import MySQLdb
+from builtins import input # Python 2/3 compatibility
 
 def get_dbinfo():
     """Gets database type and administrator login information"""
     while True:
-        dbname = raw_input("    Database [helioviewer]: ") or "helioviewer"
-        dbuser = raw_input("    Username [helioviewer]: ") or "helioviewer"
+        dbname = input("    Database [helioviewer]: ") or "helioviewer"
+        dbuser = input("    Username [helioviewer]: ") or "helioviewer"
         dbpass = getpass.getpass("    Password: ")
 
         if not check_db_info(dbname, dbuser, dbpass):
@@ -26,10 +27,11 @@ def check_db_info(dbname, dbuser, dbpass):
     db.close()
     return True
 
-def get_dbcursor():
+def get_dbcursor(dbname='', dbuser='', dbpass=''):
     """Prompts the user for database info and returns a database cursor"""
-    print("Please enter existing database login information:")
-    dbname, dbuser, dbpass = get_dbinfo()
+    if dbname == '' or dbuser == '' or dbpass == '':
+        print("Please enter existing database login information:")
+        dbname, dbuser, dbpass = get_dbinfo()
 
     db = MySQLdb.connect(host="localhost", db=dbname, user=dbuser, 
                          passwd=dbpass)
