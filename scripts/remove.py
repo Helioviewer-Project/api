@@ -15,7 +15,7 @@ Usage:
 import sys
 import os
 import shutil
-import database
+from utils import database
 
 def main(argv):
     rootdir = "/var/www/jp2"

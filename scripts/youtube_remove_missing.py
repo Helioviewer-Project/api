@@ -6,7 +6,7 @@ or removed) ids.
 """
 import sys
 import datetime
-import database
+from utils import database
 import gdata.youtube
 import gdata.youtube.service
 
