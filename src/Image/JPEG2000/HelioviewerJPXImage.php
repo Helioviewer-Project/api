@@ -36,18 +36,23 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
      * @param bool   $linked     Whether or not requested JPX image should be
      *                           a linked JPX
      * @param string $outputFile Filename to use for generated JPX file
+     * 
+     * @param int    $currentTime An epoch timestamp to override current system
+     *                            time for caching purposes.
      *
      * @return void
      */
-    public function __construct($sourceId, $startTime, $endTime, $cadence, $linked, $filename, $middleFrames = false) {
+    public function __construct($sourceId, $startTime, $endTime, $cadence, $linked, $filename, $middleFrames = false, $currentTime = null) {
 
         $this->_sourceId  = $sourceId;
         $this->_startTime = $startTime;
         $this->_endTime   = $endTime;
         $this->_cadence   = $cadence;
+        $this->_cache     = $this->_shouldCache($endTime, $currentTime);
 
         $directory  = HV_JP2_DIR.'/movies/';
         $filepath   = $directory.$filename;
+        $this->_jpxFile = $filepath;
 
         $this->_url = HV_JP2_ROOT_URL.'/movies/'.$filename;
 
@@ -56,8 +61,9 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
 
         parent::__construct($filepath);
 
-        // If the file doesn't exist already, create it
-        if ( !@file_exists($filepath) ) {
+        // Check cache conditions to see if we need to generate
+        // the jpx file or not.
+        if ( $this->_shouldGenerateNewJpx() ) {
             try {
                 $this->_timestamps = array();
 	            $this->_images     = array();
@@ -70,7 +76,6 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
                 
                 $this->_timestamps = $timestamps;
 	            $this->_images     = $images;
-                
                 
                 // Make sure that at least some movie frames were found
                 if ( sizeOf($images) > 0 ) {
@@ -85,7 +90,7 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
                 //$this->_removeFileGenerationReport();
                 throw new Exception('Error encountered during JPX creation: ' . $e->getMessage(), 60);
             }
-            $this->_writeFileGenerationReport();
+            $this->_writeFileGenerationReport($this->_cache);
         }
         else {
             // If the JPX exists, but no JSON is present,
@@ -108,6 +113,84 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
                 throw new Exception('JPX is taking an unusually long time to '.
                     'process. Please try again in 1-2 minutes.', 61);
             }
+        }
+    }
+
+    /**
+     * Checks for file existence and cache conditions to determine if the
+     * requested JPX movie needs to be generated, or if an existing movie
+     * on disk can be used.
+     */
+    private function _shouldGenerateNewJpx() {
+        // Check if the file already exists
+        $jpx_exists = file_exists($this->_jpxFile);
+        $summary_exists = file_exists($this->_summaryFile);
+        
+        // If the jpx file does not exist, a new one must be generated.
+        if (!$jpx_exists) {
+            return true;
+        }
+
+        // If the JPX exists, but no JSON is present
+        if (!$summary_exists) {
+            // then kdu_merge is still running.
+            // no need to generate a new jpx.
+            return false;
+        }
+
+        // If the jpx & summary files do exist, then check the summary cache status.
+        $summary = $this->_loadSummary();
+        // If cache = True
+        if ($summary->cache) {
+            // then no need to generate a new jpx.
+            return false;
+        }
+
+        // If none of the above conditions are met, then generate a new jpx.
+        return true;
+    }
+
+    /**
+     * Loads and returns the summary contents as a json object.
+     */
+    private function _loadSummary() {
+        $summary_fp = fopen($this->_summaryFile, 'r');
+        $summary_contents = fread($summary_fp, filesize($this->_summaryFile));
+        fclose($summary_fp);
+
+        return json_decode($summary_contents);
+    }
+
+    /**
+     * Returns true if this image should be cached for future use.
+     * 
+     * Most JPX Requests can be cached so that we don't regenerate large movies
+     * whenever the same time range is requested. However, if the endTime is
+     * in the future, then we should not cache that movie because once future
+     * data is downloaded, we will have new frames to add to the movie, so we should
+     * regenerate it. 
+     * 
+     * @param string $endTimeStr The end time for this jpx.
+     *                        (ISO 8601 UTC date string)
+     * @param int $currentTime epoch timestamp for overriding current system time.
+     */
+    private function _shouldCache($endTimeStr, $currentTime = null) {
+        // Ability to override time for testing purposes.
+        if ($currentTime == null) {
+            $currentTime = time();
+        }
+        // Convert ISO time string into epoch timestamp
+        $endTime = strtotime($endTimeStr);
+
+        // Compare end time to current time.
+        if ($endTime < $currentTime) {
+            // If end time is earlier than current time,
+            // Then we likely have all frames required, so we can cache this video.
+            return true;
+        } else {
+            // Otherwise, there will be more frames downloaded as time goes on.
+            // don't cache the video.
+            return false;
         }
     }
 	
@@ -368,11 +451,12 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
      *
      * @return void
      */
-    private function _writeFileGenerationReport() {
+    private function _writeFileGenerationReport($cache) {
         $contents = array(
             'uri'     => $this->_url,
             'frames'  => $this->_timestamps,
-            'message' => $this->_message
+            'message' => $this->_message,
+            'cache'   => $cache
         );
 
         $fp = @fopen($this->_summaryFile, 'w');
@@ -482,6 +566,20 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
         // Print
         header('Content-Type: application/json');
         print json_encode($output);
+    }
+
+    /**
+     * Returns the path to this jpx's summary file.
+     */
+    public function getSummaryFile() {
+        return $this->_summaryFile;
+    }
+
+    /**
+     * Returns the path to this jpx's binary file.
+     */
+    public function getJpxFile() {
+        return $this->_jpxFile;
     }
 }
 ?>
