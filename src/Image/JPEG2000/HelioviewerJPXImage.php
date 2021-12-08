@@ -36,9 +36,6 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
      * @param bool   $linked     Whether or not requested JPX image should be
      *                           a linked JPX
      * @param string $outputFile Filename to use for generated JPX file
-     * 
-     * @param int    $currentTime An epoch timestamp to override current system
-     *                            time for caching purposes.
      *
      * @return void
      */
@@ -539,20 +536,6 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
         // Print
         header('Content-Type: application/json');
         print json_encode($output);
-    }
-
-    /**
-     * Returns the path to this jpx's summary file.
-     */
-    public function getSummaryFile() {
-        return $this->_summaryFile;
-    }
-
-    /**
-     * Returns the path to this jpx's binary file.
-     */
-    public function getJpxFile() {
-        return $this->_jpxFile;
     }
 }
 ?>
