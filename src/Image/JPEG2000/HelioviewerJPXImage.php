@@ -42,16 +42,18 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
      *
      * @return void
      */
-    public function __construct($sourceId, $startTime, $endTime, $cadence, $linked, $filename, $middleFrames = false, $currentTime = null) {
+    public function __construct($sourceId, $startTime, $endTime, $cadence, $linked, $filename, $middleFrames = false) {
 
         $this->_sourceId  = $sourceId;
         $this->_startTime = $startTime;
         $this->_endTime   = $endTime;
         $this->_cadence   = $cadence;
-        $this->_cache     = $this->_shouldCache($endTime, $currentTime);
 
         $directory  = HV_JP2_DIR.'/movies/';
-        $filepath   = $directory.$filename;
+        // Add suffix to file name for middle frames request to differentiate them
+        // for caching purposes.
+        $suffix = $middleFrames ? 'mid' : '';
+        $filepath   = $directory.$filename.$suffix;
         $this->_jpxFile = $filepath;
 
         $this->_url = HV_JP2_ROOT_URL.'/movies/'.$filename;
@@ -61,22 +63,15 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
 
         parent::__construct($filepath);
 
-        // Check cache conditions to see if we need to generate
-        // the jpx file or not.
-        if ( $this->_shouldGenerateNewJpx() ) {
+        // Query frames from the database for this request.
+        list($images, $timestamps) = $this->_getFrames($middleFrames);
+        $this->_timestamps = $timestamps;
+        $this->_images     = $images;
+
+        // Compare images requested from the database to the existing JPX
+        // movie (if it exists) and determine if a new one should be generated.
+        if ( $this->_shouldGenerateNewJpx($timestamps) ) {
             try {
-                $this->_timestamps = array();
-	            $this->_images     = array();
-	            
-                if($middleFrames == false){
-	                list($images, $timestamps) = $this->_queryJPXImageFrames();
-                }else{
-	                list($images, $timestamps) = $this->_queryJPXImageFramesMidPoint();
-                }
-                
-                $this->_timestamps = $timestamps;
-	            $this->_images     = $images;
-                
                 // Make sure that at least some movie frames were found
                 if ( sizeOf($images) > 0 ) {
                     $this->buildJPXImage($images, $linked);
@@ -90,7 +85,7 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
                 //$this->_removeFileGenerationReport();
                 throw new Exception('Error encountered during JPX creation: ' . $e->getMessage(), 60);
             }
-            $this->_writeFileGenerationReport($this->_cache);
+            $this->_writeFileGenerationReport();
         }
         else {
             // If the JPX exists, but no JSON is present,
@@ -116,12 +111,22 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
         }
     }
 
+    private function _getFrames($middleFrames) {
+        if ($middleFrames == false) {
+            return $this->_queryJPXImageFrames();
+        } else {
+            return $this->_queryJPXImageFramesMidPoint();
+        }
+    }
+
     /**
-     * Checks for file existence and cache conditions to determine if the
-     * requested JPX movie needs to be generated, or if an existing movie
-     * on disk can be used.
+     * Determines if a JPX movie should be generated/regenerated.
+     * 
+     * Compares the provided frame timestamps against the frames in the existing
+     * JPX file (if any). If there are new frames in the database, then the
+     * JPX movie will be regenerated with all the new frames.
      */
-    private function _shouldGenerateNewJpx() {
+    private function _shouldGenerateNewJpx($db_frame_timestamps) {
         // Check if the file already exists
         $jpx_exists = file_exists($this->_jpxFile);
         $summary_exists = file_exists($this->_summaryFile);
@@ -138,16 +143,19 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
             return false;
         }
 
-        // If the jpx & summary files do exist, then check the summary cache status.
+        // If the jpx & summary files do exist
         $summary = $this->_loadSummary();
-        // If cache = True (Check property existence for backwards support before cache field was introduced)
-        if (property_exists($summary, "cache") && $summary->cache) {
-            // then no need to generate a new jpx.
+        // then compare the frames from the database to the frames in the
+        // JPX summary.
+        $diff = array_diff($db_frame_timestamps, $summary->frames);
+        // If there are any differences in frames
+        if (count($diff) > 0) {
+            // then generate a new JPX
+            return true;
+        } else {
+            // Otherwise, use the cached file
             return false;
         }
-
-        // If none of the above conditions are met, then generate a new jpx.
-        return true;
     }
 
     /**
@@ -160,40 +168,6 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
 
         return json_decode($summary_contents);
     }
-
-    /**
-     * Returns true if this image should be cached for future use.
-     * 
-     * Most JPX Requests can be cached so that we don't regenerate large movies
-     * whenever the same time range is requested. However, if the endTime is
-     * in the future, then we should not cache that movie because once future
-     * data is downloaded, we will have new frames to add to the movie, so we should
-     * regenerate it. 
-     * 
-     * @param string $endTimeStr The end time for this jpx.
-     *                        (ISO 8601 UTC date string)
-     * @param int $currentTime epoch timestamp for overriding current system time.
-     */
-    private function _shouldCache($endTimeStr, $currentTime = null) {
-        // Ability to override time for testing purposes.
-        if ($currentTime == null) {
-            $currentTime = time();
-        }
-        // Convert ISO time string into epoch timestamp
-        $endTime = strtotime($endTimeStr);
-
-        // Compare end time to current time.
-        if ($endTime < $currentTime) {
-            // If end time is earlier than current time,
-            // Then we likely have all frames required, so we can cache this video.
-            return true;
-        } else {
-            // Otherwise, there will be more frames downloaded as time goes on.
-            // don't cache the video.
-            return false;
-        }
-    }
-	
 	
 	/**
      * Return list of JP2 files to use for JPX generation selected by Mid Points
@@ -451,12 +425,11 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
      *
      * @return void
      */
-    private function _writeFileGenerationReport($cache) {
+    private function _writeFileGenerationReport() {
         $contents = array(
             'uri'     => $this->_url,
             'frames'  => $this->_timestamps,
-            'message' => $this->_message,
-            'cache'   => $cache
+            'message' => $this->_message
         );
 
         $fp = @fopen($this->_summaryFile, 'w');

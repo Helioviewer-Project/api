@@ -11,3 +11,5 @@ define("HV_JP2_ROOT_URL", "127.0.0.1");
 
 define("HV_MAX_JPX_FRAMES", 1000);
 define("HV_KDU_MERGE_BIN", "/usr/local/bin/kdu_merge");
+
+define("HV_TEST_ASSETS_DIR", "test_assets");
