@@ -125,7 +125,7 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
         // Check if the file already exists
         $jpx_exists = file_exists($this->_jpxFile);
         $summary_exists = file_exists($this->_summaryFile);
-        
+
         // If the jpx file does not exist, a new one must be generated.
         if (!$jpx_exists) {
             return true;
@@ -140,8 +140,8 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
 
         // If the jpx & summary files do exist, then check the summary cache status.
         $summary = $this->_loadSummary();
-        // If cache = True
-        if ($summary->cache) {
+        // If cache = True (Check property existence for backwards support before cache field was introduced)
+        if (property_exists($summary, "cache") && $summary->cache) {
             // then no need to generate a new jpx.
             return false;
         }
