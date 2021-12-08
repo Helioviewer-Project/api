@@ -46,11 +46,11 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
         $this->_endTime   = $endTime;
         $this->_cadence   = $cadence;
 
-        $directory  = HV_JP2_DIR.'/movies/';
+        $directory = HV_JP2_DIR.'/movies/';
         // Add suffix to file name for middle frames request to differentiate them
-        // for caching purposes.
-        $suffix = $middleFrames ? 'mid' : '';
-        $filepath   = $directory.$filename.$suffix;
+        // from normal requests for caching or parallel-requests purposes.
+        $suffix         = $middleFrames ? 'mid' : '';
+        $filepath       = $directory.$filename.$suffix;
         $this->_jpxFile = $filepath;
 
         $this->_url = HV_JP2_ROOT_URL.'/movies/'.$filename;
@@ -108,6 +108,12 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
         }
     }
 
+    /**
+     * Retrieves the frames from the database to satisfy this request.
+     * 
+     * @param bool $middleFrames flag to determine whether or not to select
+     *                           images by midpoint.
+     */
     private function _getFrames($middleFrames) {
         if ($middleFrames == false) {
             return $this->_queryJPXImageFrames();
