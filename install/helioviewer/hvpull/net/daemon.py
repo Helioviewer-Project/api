@@ -97,6 +97,7 @@ class ImageRetrievalDaemon:
 
         # For each server instantiate a browser and one or more downloaders
         for server in self.servers:
+            print("Creating browser with me")
             self.browsers.append(self._load_browser(browse_method, server))
             global queue
             queue = queue.Queue()
@@ -215,7 +216,9 @@ class ImageRetrievalDaemon:
 
             while filtered is None:
                 try:
-                    filtered = list(filter(self._filter_new, url_list))
+                    # Filter by time range
+                    filtered = self._filter_files_by_time(url_list, starttime, endtime)
+                    filtered = list(filter(self._filter_new, filtered))
                 except mysqld.OperationalError:
                     # MySQL has gone away -- try again in 5s
                     logging.warning(("Unable to access database to check for file existence. Will try again in 5 seconds."))
@@ -268,13 +271,12 @@ class ImageRetrievalDaemon:
                 for this_url in filtered:
                     if instrument in this_url.lower():
                         # Calculate the observation time of the
-                        url_filename = this_url.split('/')[-1]
-                        url_datetime = url_filename[0:20]
-                        url_time = datetime.datetime.strptime(url_datetime, '%Y_%m_%d__%H_%M_%S')
+                        url_time = self._get_datetime_from_file(this_url)
 
                         # Get all the URLs within a specified time range
                         if (starttime - delay <= url_time) and (url_time <= endtime - delay):
                             includes_specified_instruments.append(this_url)
+                print("Time filtered file count: %d" % len(includes_specified_instruments))
                 # Take a subsample of the files for this instrument
                 strided[instrument] = includes_specified_instruments[::stride]
                 n = len(strided[instrument])
@@ -282,6 +284,7 @@ class ImageRetrievalDaemon:
                 logging.info('Number of files from ' + instrument + ' = ' + str(n))
 
             high_volume_instrument_string = ' '.join([str(elem) for elem in high_volume_instruments])
+            print("Why are there so many?")
             logging.info('Number of files available in time range from high volume instruments= ' + str(len(filtered)))
             logging.info('High volume instruments are = ' + high_volume_instrument_string)
             logging.info('Stride value = ' + str(stride))
@@ -298,6 +301,7 @@ class ImageRetrievalDaemon:
                 new_urls.append(extra_filtered)
             else:
                 new_urls.append(filtered)
+            print(new_urls)
 
 
         # check disk space
@@ -306,6 +310,25 @@ class ImageRetrievalDaemon:
 
         # acquire the data files
         self.acquire(new_urls)
+
+    def _get_datetime_from_file(self, file):
+        url_filename = os.path.basename(file)
+        url_datetime = url_filename[0:20]
+        return datetime.datetime.strptime(url_datetime, '%Y_%m_%d__%H_%M_%S')
+
+
+    def _filter_files_by_time(self, files, starttime, endtime):
+        """
+        Days on the server are already organized by day of the month.
+        This function will further filter through the file names for
+        hours:minutes:seconds time.
+        """
+        filtered_list = []
+        for file in files:
+            timestamp = self._get_datetime_from_file(file)
+            if (timestamp > starttime) and (timestamp < endtime):
+                filtered_list.append(file)
+        return filtered_list
 
     def query_server(self, browser, starttime, endtime):
         """Queries a single server for new files"""
@@ -490,6 +513,8 @@ class ImageRetrievalDaemon:
         """Sends an email notification to the Helioviewer admin(s) when a
         one of the data sources becomes unreachable."""
         # If no server was specified, don't do anything
+        print(message)
+        return
         if self.email_server is "":
             return
 
