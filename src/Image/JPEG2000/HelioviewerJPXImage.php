@@ -46,8 +46,12 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
         $this->_endTime   = $endTime;
         $this->_cadence   = $cadence;
 
-        $directory  = HV_JP2_DIR.'/movies/';
-        $filepath   = $directory.$filename;
+        $directory = HV_JP2_DIR.'/movies/';
+        // Add suffix to file name for middle frames request to differentiate them
+        // from normal requests for caching or parallel-requests purposes.
+        $suffix         = $middleFrames ? 'mid' : '';
+        $filepath       = $directory.$filename.$suffix;
+        $this->_jpxFile = $filepath;
 
         $this->_url = HV_JP2_ROOT_URL.'/movies/'.$filename;
 
@@ -56,22 +60,15 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
 
         parent::__construct($filepath);
 
-        // If the file doesn't exist already, create it
-        if ( !@file_exists($filepath) ) {
+        // Query frames from the database for this request.
+        list($images, $timestamps) = $this->_getFrames($middleFrames);
+        $this->_timestamps = $timestamps;
+        $this->_images     = $images;
+
+        // Compare images requested from the database to the existing JPX
+        // movie (if it exists) and determine if a new one should be generated.
+        if ( $this->_shouldGenerateNewJpx($timestamps) ) {
             try {
-                $this->_timestamps = array();
-	            $this->_images     = array();
-	            
-                if($middleFrames == false){
-	                list($images, $timestamps) = $this->_queryJPXImageFrames();
-                }else{
-	                list($images, $timestamps) = $this->_queryJPXImageFramesMidPoint();
-                }
-                
-                $this->_timestamps = $timestamps;
-	            $this->_images     = $images;
-                
-                
                 // Make sure that at least some movie frames were found
                 if ( sizeOf($images) > 0 ) {
                     $this->buildJPXImage($images, $linked);
@@ -110,7 +107,70 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
             }
         }
     }
-	
+
+    /**
+     * Retrieves the frames from the database to satisfy this request.
+     * 
+     * @param bool $middleFrames flag to determine whether or not to select
+     *                           images by midpoint.
+     */
+    private function _getFrames($middleFrames) {
+        if ($middleFrames == false) {
+            return $this->_queryJPXImageFrames();
+        } else {
+            return $this->_queryJPXImageFramesMidPoint();
+        }
+    }
+
+    /**
+     * Determines if a JPX movie should be generated/regenerated.
+     * 
+     * Compares the provided frame timestamps against the frames in the existing
+     * JPX file (if any). If there are new frames in the database, then the
+     * JPX movie will be regenerated with all the new frames.
+     */
+    private function _shouldGenerateNewJpx($db_frame_timestamps) {
+        // Check if the file already exists
+        $jpx_exists = file_exists($this->_jpxFile);
+        $summary_exists = file_exists($this->_summaryFile);
+
+        // If the jpx file does not exist, a new one must be generated.
+        if (!$jpx_exists) {
+            return true;
+        }
+
+        // If the JPX exists, but no JSON is present
+        if (!$summary_exists) {
+            // then kdu_merge is still running.
+            // no need to generate a new jpx.
+            return false;
+        }
+
+        // If the jpx & summary files do exist
+        $summary = $this->_loadSummary();
+        // then compare the frames from the database to the frames in the
+        // JPX summary.
+        $diff = array_diff($db_frame_timestamps, $summary->frames);
+        // If there are any differences in frames
+        if (count($diff) > 0) {
+            // then generate a new JPX
+            return true;
+        } else {
+            // Otherwise, use the cached file
+            return false;
+        }
+    }
+
+    /**
+     * Loads and returns the summary contents as a json object.
+     */
+    private function _loadSummary() {
+        $summary_fp = fopen($this->_summaryFile, 'r');
+        $summary_contents = fread($summary_fp, filesize($this->_summaryFile));
+        fclose($summary_fp);
+
+        return json_decode($summary_contents);
+    }
 	
 	/**
      * Return list of JP2 files to use for JPX generation selected by Mid Points
