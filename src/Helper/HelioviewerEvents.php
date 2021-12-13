@@ -12,7 +12,7 @@
  * @link     https://github.com/Helioviewer-Project
  */
 
-class Helper_HelioviewerEvents {
+class Helper_HelioviewerEvents implements Countable {
 
     private $_events = array();
     private $_eventString;
@@ -126,4 +126,7 @@ class Helper_HelioviewerEvents {
         );
     }
 
+    public function count(): int {
+        return count($this->_events);
+    }
 }
