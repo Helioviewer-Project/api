@@ -87,7 +87,9 @@ class Image_Composite_HelioviewerScreenshot
             $this->scaleX,
             $this->scaleY,
             $this->layers->length(),
-            $this->switchSources
+            $this->switchSources,
+            $this->celestialBodiesLabels,
+            $this->celestialBodiesTrajectories
         );
     }
 }

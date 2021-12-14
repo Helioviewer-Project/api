@@ -45,7 +45,7 @@ class Database_ImgIndex {
      */
     public function insertScreenshot($date, $imageScale, $roi, $watermark,
         $layers, $bitmask, $events, $eventsLabels, $movieIcons, $scale, $scaleType,
-        $scaleX, $scaleY, $numLayers, $switchSources) {
+        $scaleX, $scaleY, $numLayers, $switchSources, $celestialLabels, $celestialTrajectories) {
 
         include_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
 
@@ -70,7 +70,10 @@ class Database_ImgIndex {
                 .     "scaleX "            . " = %f, "
                 .     "scaleY "            . " = %f, "
                 .     "numLayers "         . " = %d, "
-                .     "switchSources "     . " = %b;",
+                .     "switchSources "     . " = %b, "
+                .     "celestialBodiesLabels" . " = '%s', "
+                .     "celestialBodiesTrajectories" . " = '%s';",
+
                 $this->_dbConnection->link->real_escape_string(
                     isoDateToMySQL($date) ),
                 (float)$imageScale,
@@ -91,7 +94,9 @@ class Database_ImgIndex {
                 (float)$scaleX,
                 (float)$scaleY,
                 (int)$numLayers,
-                (bool)$switchSources
+                (bool)$switchSources,
+                $celestialLabels,
+                $celestialTrajectories
                );
         try {
             $result = $this->_dbConnection->query($sql);
