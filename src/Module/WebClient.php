@@ -480,9 +480,13 @@ class Module_WebClient implements Module {
         $events = new Helper_HelioviewerEvents(
             $metaData['eventSourceString']);
 
+        $celestialBodies = array( "labels" => $metaData['celestialBodiesLabels'],
+                            "trajectories" => $metaData['celestialBodiesTrajectories']);
+        
         // Create the screenshot
         $screenshot = new Image_Composite_HelioviewerScreenshot(
             $layers, $events, (bool)$metaData['eventsLabels'], (bool)$metaData['movieIcons'],
+            $celestialBodies,
             (bool)$metaData['scale'], $metaData['scaleType'],
             $metaData['scaleX'], $metaData['scaleY'],
             $metaData['observationDate'], $roi, $options
