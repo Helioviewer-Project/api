@@ -133,7 +133,7 @@ function loadModule($params) {
             $redis = new Redis();
             $redis->connect(HV_REDIS_HOST,HV_REDIS_PORT);
             $rateLimiter = new RateLimit\RedisRateLimiter($redis,$prefix);
-            
+
             try {
                 // Rate-limit the client
                 // This stores the identifier in the redis database and sets an expiry time based on the temporal rate specified
@@ -244,7 +244,7 @@ function printHTMLErrorMsg($msg) {
 function shutDownFunction() {
     $error = error_get_last();
 
-    if ($error['type'] == 1) {
+    if (!is_null($error) && $error['type'] == 1) {
         handleError(sprintf("%s:%d - %s", $error['file'], $error['line'],
             $error['message']), $error->getCode());
     }
