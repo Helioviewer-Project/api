@@ -19,7 +19,7 @@ def setup_database_schema(adminuser, adminpass, dbhost, dbname, dbuser, dbpass, 
     else:
         import pgdb
         adaptor = pgdb
-    
+
     print("Creating Database...")
     create_db(adminuser, adminpass, dbhost, dbname, dbuser, dbpass, mysql, adaptor)
 
@@ -38,6 +38,8 @@ def setup_database_schema(adminuser, adminpass, dbhost, dbname, dbuser, dbpass, 
     create_screenshots_table(cursor)
     print("Creating movies table")
     create_movies_table(cursor)
+    print("Creating movies jpx table")
+    create_movies_jpx_table(cursor)
     print("Creating movie formats table")
     create_movie_formats_table(cursor)
     print("Creating youtube table")
@@ -52,6 +54,10 @@ def setup_database_schema(adminuser, adminpass, dbhost, dbname, dbuser, dbpass, 
     create_events_table(cursor)
     print("Creating events coverage table")
     create_events_coverage_table(cursor)
+    print("Creating redis stats table")
+    create_redis_stats_table(cursor)
+    print("Creating rate limit table")
+    create_rate_limit_table(cursor)
 
     return db, cursor
 
@@ -72,7 +78,7 @@ def get_db_cursor(dbhost, dbname, dbuser, dbpass, mysql=True):
         import pgdb
         db = pgdb.connect(use_unicode=True, charset="utf8", database=dbname, user=dbuser, password=dbpass)
         db.autocommit(True)
-    
+
     cursor = db.cursor()
     return db, cursor
 
@@ -328,7 +334,7 @@ def create_datasource_property_table(cursor):
       KEY `name` (`name`),
       KEY `fitsName` (`fitsName`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
-    
+
     """Inserts properties about datasource
         @sourceId:      unique sidentifier which matches datasource table id
         @label:         one of the following Observatory/Instrument/Detector/Measurement
@@ -336,7 +342,7 @@ def create_datasource_property_table(cursor):
         @fitsName       the name that is embedded in the jp2 file
         @description:   verbal description of datasource
         @uiOrder:       the order of property appearance embedded in the jp2 image,
-                        refers to the order of drop-down ui elements for choosing 
+                        refers to the order of drop-down ui elements for choosing
                         image source on helioviewer.org"""
     cursor.execute("""
 INSERT INTO `datasource_property` (`sourceId`, `label`, `name`, `fitsName`, `description`, `uiOrder`) VALUES
@@ -735,6 +741,22 @@ def create_movies_table(cursor):
        KEY `startDate_2` (`startDate`,`endDate`)
     ) DEFAULT CHARSET=utf8;""")
 
+def create_movies_jpx_table(cursor):
+    """Creates movie table
+
+    Creates a table for logging jpx movies created with JHelioviewer
+    """
+    cursor.execute("""
+    CREATE TABLE `movies_jpx` (
+      `id`                INT unsigned NOT NULL auto_increment,
+      `timestamp`         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      `reqStartDate`      datetime NOT NULL,
+      `reqEndDate`        datetime NOT NULL,
+      `sourceId`          INT unsigned,
+       PRIMARY KEY (`id`),
+       KEY `sourceId` (`sourceId`)
+    ) DEFAULT CHARSET=utf8;""")
+
 def create_movie_formats_table(cursor):
     """Creates movie formats table
 
@@ -753,6 +775,30 @@ def create_movie_formats_table(cursor):
        KEY `format` (`format`),
        KEY `movieId` (`movieId`,`format`),
        KEY `movieId_2` (`movieId`)
+    ) DEFAULT CHARSET=utf8;""")
+
+def create_redis_stats_table(cursor):
+    """
+    Creates the table used to hold API statistics
+    """
+    cursor.execute("""
+    CREATE TABLE `redis_stats` (
+        `datetime`       datetime NOT NULL,
+        `action`         varchar(32) NOT NULL,
+        `count`          int unsigned NOT NULL,
+        PRIMARY KEY (`datetime`, `action`)
+    ) DEFAULT CHARSET=utf8;""")
+
+def create_rate_limit_table(cursor):
+    """
+    Create table for tracking rate limiting events
+    """
+    cursor.execute("""
+    CREATE TABLE `rate_limit_exceeded` (
+        `datetime`    datetime NOT NULL,
+        `identifier`  varchar(39) NOT NULL,
+        `count`       int unsigned NOT NULL,
+        PRIMARY KEY (`datetime`, `identifier`)
     ) DEFAULT CHARSET=utf8;""")
 
 def create_youtube_table(cursor):
@@ -845,7 +891,7 @@ def create_data_coverage_table(cursor):
       KEY `index3` (`sourceId`,`date`),
       KEY `index4` (`date`,`sourceId`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
-    
+
 def create_events_table(cursor):
     """Creates a table to keep events data
 
@@ -901,7 +947,7 @@ def create_events_table(cursor):
       KEY `frm_name` (`frm_name`),
       KEY `frm_name_2` (`frm_name`,`event_type`)
     ) ENGINE=MyISAM DEFAULT CHARSET=utf8;""")
-    
+
 def create_events_coverage_table(cursor):
     """Creates a table to keep events coverage statistics
 
