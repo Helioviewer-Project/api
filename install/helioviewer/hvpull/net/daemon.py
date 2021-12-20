@@ -54,8 +54,8 @@ class ImageRetrievalDaemon:
             logging.error("Unable to access MySQL. Is the database daemon running?")
             self.shutdown()
             self.stop()
-        
-        # v2 database  
+
+        # v2 database
         if self.dbhost_v2 != "" and self.dbname_v2 != "":
             try:
                 self._db_v2, self._cursor_v2 = get_db_cursor(self.dbhost_v2, self.dbname_v2, self.dbuser_v2, self.dbpass_v2)
@@ -267,7 +267,7 @@ class ImageRetrievalDaemon:
                 includes_specified_instruments = []
                 for this_url in filtered:
                     if instrument in this_url.lower():
-                        # Calculate the observation time of the 
+                        # Calculate the observation time of the
                         url_filename = this_url.split('/')[-1]
                         url_datetime = url_filename[0:20]
                         url_time = datetime.datetime.strptime(url_datetime, '%Y_%m_%d__%H_%M_%S')
@@ -357,7 +357,7 @@ class ImageRetrievalDaemon:
         if not urls:
             logging.info("Found no new files.")
             return
-        
+
         n = sum(len(x) for x in urls)
 
         # Keep track of progress
@@ -377,7 +377,7 @@ class ImageRetrievalDaemon:
                     if len(list(server)) > 0:
 
                         url = server.pop()
-                        
+
                         finished.append(url)
 
                         counter += 1.
@@ -440,7 +440,7 @@ class ImageRetrievalDaemon:
 
             # The files must be transcoded in order to work with JHelioviewer.
             # Therefore, any problem with the transcoding process must raise
-            # an error. 
+            # an error.
             try:
                 if image_params['instrument'] == "AIA":
                     self._transcode(filepath, cprecincts=[128, 128])
@@ -454,7 +454,7 @@ class ImageRetrievalDaemon:
                 directory = os.path.join(self.image_archive, image_params['nickname'], date_str, str(image_params['filter1']), str(image_params['filter2']))
             else:
                 directory = os.path.join(self.image_archive, image_params['nickname'], date_str, str(image_params['measurement']))
-            
+
             dest = os.path.join(directory, filename)
 
             image_params['filepath'] = dest
@@ -743,7 +743,8 @@ class ImageRetrievalDaemon:
             "uio": "UIODataServer",
             "trace": "TRACEDataServer",
             "xrt": "XRTDataServer",
-            "kcor": "KCORDataServer"
+            "kcor": "KCORDataServer",
+            "hv_kcor": "HVKCORDataServer"
         }
 
     @classmethod
