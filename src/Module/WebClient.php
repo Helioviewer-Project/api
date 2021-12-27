@@ -118,7 +118,7 @@ class Module_WebClient implements Module {
         include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
 
         $imgIndex = new Database_ImgIndex();
-		
+
 		if(isset($this->_params['switchSources']) && $this->_params['switchSources']){
 			if($this->_params['sourceId'] == 13 && strtotime($this->_params['date']) < strtotime('2010-06-02 00:05:39')){$this->_params['sourceId'] = 3;}
 			if($this->_params['sourceId'] == 10 && strtotime($this->_params['date']) < strtotime('2010-06-02 00:05:36')){$this->_params['sourceId'] = 0;}
@@ -126,13 +126,13 @@ class Module_WebClient implements Module {
 			if($this->_params['sourceId'] == 18 && strtotime($this->_params['date']) < strtotime('2010-12-06 06:53:41')){$this->_params['sourceId'] = 7;}
 			if($this->_params['sourceId'] == 19 && strtotime($this->_params['date']) < strtotime('2010-12-06 06:53:41')){$this->_params['sourceId'] = 6;}
 		}
-		
+
         $image = $imgIndex->getDataFromDatabase($this->_params['date'], $this->_params['sourceId']);
 
         // Read JPEG 2000 header
         $file   = HV_JP2_DIR.$image['filepath'].'/'.$image['filename'];
         $xmlBox = $imgIndex->extractJP2MetaInfo($file);
-		
+
         // Prepare cache for tiles
         $this->_createTileCacheDir($image['filepath']);
 
@@ -221,7 +221,7 @@ class Module_WebClient implements Module {
         // Look up image properties
         $imgIndex = new Database_ImgIndex();
         $image = $imgIndex->getImageInformation($this->_params['id']);
-		
+
 		//Difference Filepath
 		$difference = '';
 		if(isset($params['difference'])){
@@ -231,12 +231,12 @@ class Module_WebClient implements Module {
 				$difference = '_base';
 			}
 		}
-		
+
 		$this->_options['date'] 		= $image['date'];
 
         // Tile filepath
         $filepath =  $this->_getTileCacheFilename($image['filepath'], $image['filename'], $params['imageScale'], $params['x'], $params['y'], $difference);
-				
+
         // Create directories in cache
         $this->_createTileCacheDir($image['filepath']);
 
@@ -280,12 +280,12 @@ class Module_WebClient implements Module {
 
         include_once HV_ROOT_DIR.'/../src/Image/ImageType/'.$type.'.php';
         $classname = 'Image_ImageType_'.$type;
-		
+
 		//Difference JP2 File
 		if(isset($params['difference']) && $params['difference'] > 0){
 			if($params['difference'] == 1){
 				$date = new DateTime($image['date']);
-				
+
 				if($params['diffTime'] == 6){ $dateDiff = 'year'; }
 				else if($params['diffTime'] == 5){ $dateDiff = 'month'; }
 				else if($params['diffTime'] == 4){ $dateDiff = 'week'; }
@@ -293,7 +293,7 @@ class Module_WebClient implements Module {
 				else if($params['diffTime'] == 2){ $dateDiff = 'hour'; }
 				else if($params['diffTime'] == 0){ $dateDiff = 'second'; }
 				else{ $dateDiff = 'minute'; }
-				
+
 				$date->modify('-'.$params['diffCount'].' '.$dateDiff);
 				$dateStr = $date->format("Y-m-d\TH:i:s.000\Z");
 			}elseif($params['difference'] == 2){
@@ -304,12 +304,12 @@ class Module_WebClient implements Module {
 	        $imageDifference = $imgIndex->getClosestDataBeforeDate($dateStr, $image['sourceId']);
 	        $fileDifference   = HV_JP2_DIR.$imageDifference['filepath'].'/'.$imageDifference['filename'];
 	        $jp2Difference = new Image_JPEG2000_JP2Image($fileDifference, $image['width'], $image['height'], $image['scale']);
-	        
+
 			$this->_options['jp2DiffPath']   =  $this->_getTileCacheFilename($image['filepath'], $imageDifference['filename'], $params['imageScale'], $params['x'], $params['y'], $difference);
 	        $this->_options['jp2Difference'] = $jp2Difference;
-	        
+
 		}
-		
+
         // Create the tile
         $tile = new $classname(
             $jp2, $filepath, $roi, $image['uiLabels'],
@@ -354,7 +354,7 @@ class Module_WebClient implements Module {
         if ( array_key_exists('eventLabels', $this->_params) ) {
             $eventLabels = $this->_params['eventLabels'];
         }
-        
+
         // Event Labels
         $movieIcons = false;
         if ( array_key_exists('movieIcons', $this->_params) ) {
@@ -388,7 +388,7 @@ class Module_WebClient implements Module {
             $celestialBodies = array( "labels" => "",
                                 "trajectories" => "");
         }
-        
+
         // Create the screenshot
         $screenshot = new Image_Composite_HelioviewerScreenshot(
             $layers, $events, $eventLabels, $movieIcons, $celestialBodies, $scale, $scaleType, $scaleX,
@@ -482,7 +482,7 @@ class Module_WebClient implements Module {
 
         $celestialBodies = array( "labels" => $metaData['celestialBodiesLabels'],
                             "trajectories" => $metaData['celestialBodiesTrajectories']);
-        
+
         // Create the screenshot
         $screenshot = new Image_Composite_HelioviewerScreenshot(
             $layers, $events, (bool)$metaData['eventsLabels'], (bool)$metaData['movieIcons'],
@@ -539,13 +539,13 @@ class Module_WebClient implements Module {
         include_once HV_ROOT_DIR.'/../src/Net/Proxy.php';
 
         $proxy = new Net_Proxy('http://api.bitly.com/v3/shorten?');
-		
+
 		$allowed = false;
-		
+
 		if (stripos($this->_params['queryString'], HV_BITLY_ALLOWED_DOMAIN) !== false) {
 			$allowed = true;
 		}
-		
+
 		if($allowed){
 			$longURL = urldecode($this->_params['queryString']);
 
@@ -554,19 +554,19 @@ class Module_WebClient implements Module {
 	            'login'   => HV_BITLY_USER,
 	            'apiKey'  => HV_BITLY_API_KEY
 	        );
-	
+
 	        $this->_printJSON($proxy->query($params, true));
 		}else{
 			$this->_printJSON(json_encode(array(
-				"status_code" => 200, 
-				"status_txt" => "OK", 
-				"data" => array( 
-					"long_url" => $this->_params['queryString'], 
+				"status_code" => 200,
+				"status_txt" => "OK",
+				"data" => array(
+					"long_url" => $this->_params['queryString'],
 					"url" => $this->_params['queryString'],
-				)) 
+				))
 			));
 		}
-        
+
     }
 
     /**
@@ -633,7 +633,7 @@ class Module_WebClient implements Module {
     public function getDataCoverage() {
 	    include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerLayers.php';
 	    include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerEvents.php';
-	    
+
 	    // Data Layers
 	    if(!empty($this->_options['imageLayers'])){
 		    $layers = new Helper_HelioviewerLayers($this->_options['imageLayers']);
@@ -647,9 +647,9 @@ class Module_WebClient implements Module {
 	    }else{
 		    $events = null;
 	    }
-        
-        
-        
+
+
+
         $start = @$this->_options['startDate'];
 		if ($start && !preg_match('/^[0-9]+$/', $start)) {
 			die("Invalid start parameter: $start");
@@ -665,42 +665,42 @@ class Module_WebClient implements Module {
 		if (!$start) $start = 0;
 		if (!$end) $end = time() * 1000;
 		if (!$current) $current = 0;
-        
+
         // set some utility variables
 		$range = $end - $start;
 		$startDate = gmstrftime('%Y-%m-%d %H:%M:%S', $start / 1000) + 60;
 		$endDate = gmstrftime('%Y-%m-%d %H:%M:%S', $end / 1000) - 60;
-        
+
         // find the right range
 		if ($range < 105 * 60 * 1000) {
 			$resolution = 'm';
-			
+
 		// 12 hours range loads hourly data
 		} elseif  ($range < 12 * 3600 * 1000) {
 			$resolution = '5m';
-			
+
 		// one month range loads hourly data
 		} elseif  ($range < 2 * 24 * 3600 * 1000) {
 			$resolution = '15m';
-			
+
 		// one month range loads hourly data
 		} elseif ($range < 10 * 24 * 3600 * 1000) {
 			$resolution = 'h';
-			
+
 		// one year range loads daily data
 		} elseif ($range < 6 * 31 * 24 * 3600 * 1000) {
 			$resolution = 'D';
-			
+
 		// half year range loads daily data
 		} elseif ($range < 15 * 31 * 24 * 3600 * 1000) {
 			$resolution = 'W';
-			
+
 		// greater range loads monthly data
 		} else {
 			$resolution = 'M';
-		} 
+		}
 		//$resolution = 'm';
-		
+
         $dateEnd = new DateTime();
         if ( isset($this->_options['endDate']) ) {
             $dateEnd->setTimestamp( $this->_options['endDate']/1000);
@@ -719,10 +719,10 @@ class Module_WebClient implements Module {
         }else{
 	        $dateCurrent->setTimestamp( $current);
         }
-        
+
         include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
         $statistics = new Database_Statistics();
-        
+
         if($layers != null){
 	        $this->_printJSON(
 	            $statistics->getDataCoverage(
@@ -736,7 +736,7 @@ class Module_WebClient implements Module {
 	        if ($range < 24 * 60 * 60 * 1000) {
 				$resolution = 'm';
 			}
-			
+
 	        if($resolution == '5m' || $resolution == '15m' ){
 		        $resolution = '30m';
 	        }
@@ -750,8 +750,8 @@ class Module_WebClient implements Module {
 	            )
 	        );
         }
-        
-        
+
+
     }
 
     /**
@@ -994,9 +994,9 @@ class Module_WebClient implements Module {
      }
 
      /**
-      * Creates a random seed for pseudorandom number generators 
+      * Creates a random seed for pseudorandom number generators
       * based on a hash of AIA image data combined with the current time in microseconds
-      * 
+      *
       * This function uses SHA-256 to hash the image and resulting strings.
       *
       * Special thanks to: Juan E. Jiménez [flybd5@gmail.com]
@@ -1006,11 +1006,11 @@ class Module_WebClient implements Module {
         // Initialize image database
         include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
         $imgIndex = new Database_ImgIndex();
-        
+
         // Current unix timestamp in nanoseconds for sourceId selection
         $nanoTime = (int)exec("date +%s%N");
         // AIA sourceId 8-14 random range based on nanoTime above
-        $sourceId = $nanoTime % 7 + 8; 
+        $sourceId = $nanoTime % 7 + 8;
         // Current date in ISO 8601 format for latest image
         $requestDateTime = date("c");
         // Some formatting to JS style date that getDataFromDatabase expects like "2020-06-19T00:00:00Z"
@@ -1019,7 +1019,7 @@ class Module_WebClient implements Module {
         $image = $imgIndex->getClosestDataBeforeDate($apiFormattedTime, $sourceId);
         // Make the filepath
         $file = HV_JP2_DIR . $image['filepath'] . '/' . $image['filename'];
-        
+
         // Hash the image using sha256
         $imageHash = hash_file("sha256",$file);
         // Hash request IP address
@@ -1028,7 +1028,7 @@ class Module_WebClient implements Module {
         $nanoTimeSeed = (int)exec("date +%s%N");
         // Concatenate current time in nanoseconds, hash of the request IP, and previous image hash, then hash again.
         $seed = hash("sha256", $nanoTimeSeed . $imageHash . $requestAddressHash);
-        
+
         // Build return object
         $response = array(
             'seed' => $seed
@@ -1360,6 +1360,7 @@ class Module_WebClient implements Module {
                 'optional' => array('key'),
                 'alphanum' => array('key')
             );
+            break;
         case "getSciDataScript":
             $expected = array(
                 "required" => array('imageScale', 'sourceIds',
