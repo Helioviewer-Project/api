@@ -936,7 +936,7 @@ def create_events_table(cursor):
       `hv_poly_height_max_zoom_pixels` decimal(20,16) DEFAULT NULL,
       `hv_marker_offset_x` float NOT NULL DEFAULT '0',
       `hv_marker_offset_y` float NOT NULL DEFAULT '0',
-      `event_json` text,
+      `event_json` longtext,
       PRIMARY KEY (`id`),
       UNIQUE KEY `kb_archivid` (`kb_archivid`) USING BTREE,
       KEY `concept` (`concept`),
