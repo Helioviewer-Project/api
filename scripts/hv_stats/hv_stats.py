@@ -76,6 +76,16 @@ cred['dbname'] = configParser.get('database', 'dbname')
 cred['dbuser'] = configParser.get('database', 'dbuser')
 cred['dbpass'] = configParser.get('database', 'dbpass')
         
+def skip_empty_table(table, title):
+    """
+    Prints a message to indicate this table is empty and returns
+    true if it is empty. This is for handling newer servers that don't
+    have any data yet.
+    """
+    if table.empty:
+        print("Skipping empty table: %s" % title)
+    return table.empty
+
 # define sql_query to return results as pandas dataframes
 def sql_query(sql_select_Query):
 
@@ -882,7 +892,7 @@ print("### Stats for movies prepared per day ###")
 print("Starting SQL query in movies, screenshots, movies_jpx, statistics tables of hv database...")
 
 hv={}
-query = "SELECT date_format(timestamp, '%Y-%m-%d 00:00:00') as date, count(*) as count FROM {} GROUP BY date_format(timestamp, '%Y-%m-%d 00:00:00');"
+query = "SELECT id, date_format(timestamp, '%Y-%m-%d 00:00:00') as date, count(*) as count FROM {} GROUP BY date_format(timestamp, '%Y-%m-%d 00:00:00');"
 
 start_time=time.time()
 
@@ -892,11 +902,11 @@ hv['Jhv_movies'] = sql_query(query.format('movies_jpx'))
 
 hv['embed_service'] = sql_query(query.format("statistics WHERE action=\'embed\'"))
 hv['embed_service']['date'] = pd.to_datetime(hv['embed_service']['date'])  
-df_em = pd.read_csv('embed.csv')
-df_em['timestamp'] = pd.to_datetime(df_em['timestamp'])
-df_em = pd.DataFrame(df_em.groupby(by=df_em['timestamp'].dt.date).count()['id'])
+#df_em = pd.read_csv('embed.csv')
+#df_em['timestamp'] = pd.to_datetime(df_em['timestamp'])
+#df_em = pd.DataFrame(df_em.groupby(by=df_em['timestamp'].dt.date).count()['id'])
 hv['embed_service'].index = hv['embed_service']['date']
-hv['embed_service'] = df_em.join(hv['embed_service'], how='outer')
+#hv['embed_service'] = df_em.join(hv['embed_service'], how='outer')
 hv['embed_service'] = pd.DataFrame(hv['embed_service'][['id','count']].max(axis=1), columns=['count'])
 hv['embed_service']['date'] = hv['embed_service'].index
 hv['embed_service'] = hv['embed_service'].reset_index(drop=True)
@@ -937,6 +947,9 @@ server_shutdown_days = ((pd.Timestamp('2011/09/18') - pd.Timestamp('2011/08/11')
 
 print("Making time series of movies generated per day...")
 for key, title, service in zip(hv.keys(), titles, services):
+    if skip_empty_table(hv[key], key):
+        continue
+
     directory = key
     print(key)
     if not os.path.exists(directory):
@@ -1026,6 +1039,9 @@ print("Time series completed.")
 
 print("Making histogram of movies generated per day...")
 for key, title, service in zip(hv.keys(), titles, services):
+    if skip_empty_table(hv[key], key):
+        continue
+
     directory = key
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -1174,6 +1190,9 @@ print("Histograms completed.")
 
 print("Making weekday frequency distribution of movies generated per day...")
 for key, title, service in zip(hv.keys(), titles, services):
+    if skip_empty_table(hv[key], key):
+        continue
+
     directory = key
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -1285,6 +1304,9 @@ df_service
 
 print("Making weekday frequency against weeknumber distribution of movies generated per day...")
 for key, title, service in zip(hv.keys(), titles, services):
+    if skip_empty_table(hv[key], key):
+        continue
+
     directory = key
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -1419,6 +1441,8 @@ print("Weekday frequency against weeknumber distribution done.")
 print("Making weekly weekday distribution of movies generated per day...")
 TOOLS = "save, pan, box_zoom, reset, wheel_zoom"
 for key, title, service in zip(hv.keys(), titles, services):
+    if skip_empty_table(hv[key], key):
+        continue
     
     directory = key
     if not os.path.exists(directory):
@@ -1683,6 +1707,9 @@ for observatory in hv_keys.keys():
         panels.append(popularity_plot(df_obs, popularity[ind][0], popularity[ind][1], 'Helioviewer.org'))
         tabs = Tabs(tabs=panels)
 #     show(tabs)
+    if len(panels) == 0:
+        print("Skipping %s because it is empty" % observatory)
+        continue
     save(tabs, filename='./%s/popularity/%s_popularity.html'%(directory, observatory), title='Solar popularity of %s in Helioviewer.org movies'%(observatory))
     print("%s popularity done in %d seconds"%(observatory, time.time()-start_time))
 print("Popularity plot done.")
@@ -1720,6 +1747,9 @@ for observatory in hv_keys.keys():
         panels.append(popularity_plot(df_obs, popularity[ind][0], popularity[ind][1], 'JHelioviewer'))
         tabs = Tabs(tabs=panels)
 #     show(tabs)
+    if len(panels) == 0:
+        print("Skipping %s because it is empty" % observatory)
+        continue
     save(tabs, filename='./%s/popularity/%s_popularity.html'%(directory, observatory), title='Solar popularity of %s in JHelioviewer movies'%(observatory))
     print("%s popularity done in %d seconds"%(observatory, time.time()-start_time))
 print("Popularity plot done.")
@@ -1957,7 +1987,7 @@ start_time=time.time()
 hv={}
 print("Starting SQL query in movies and statistics table of hv database...")
 
-query = "SELECT date_format(timestamp, '%Y-%m-%d 00:00:00') as date, count(*) as count FROM {} GROUP BY date_format(timestamp, '%Y-%m-%d 00:00:00');"
+query = "SELECT id, date_format(timestamp, '%Y-%m-%d 00:00:00') as date, count(*) as count FROM {} GROUP BY date_format(timestamp, '%Y-%m-%d 00:00:00');"
 hv['hv_movies'] = sql_query(query.format('movies'))
 
 hv['embed'] = sql_query(query.format("statistics WHERE action=\'embed\'"))
@@ -1965,6 +1995,9 @@ hv['embed'] = sql_query(query.format("statistics WHERE action=\'embed\'"))
 hv['Jhv_movies'] = sql_query(query.format("statistics WHERE action=\'getJPX\'"))
 
 for key in hv.keys():
+    if skip_empty_table(hv[key], key):
+        continue
+
     hv[key]['date'] = pd.to_datetime(hv[key]['date'])
 
 print("Query completed in %d seconds."%(time.time()-start_time))
@@ -1973,11 +2006,11 @@ print("Query completed in %d seconds."%(time.time()-start_time))
 # In[ ]:
 
 
-df_em = pd.read_csv('embed.csv')
-df_em['timestamp'] = pd.to_datetime(df_em['timestamp'])
-df_em = pd.DataFrame(df_em.groupby(by=df_em['timestamp'].dt.date).count()['id'])
+#df_em = pd.read_csv('embed.csv')
+#df_em['timestamp'] = pd.to_datetime(df_em['timestamp'])
+#df_em = pd.DataFrame(df_em.groupby(by=df_em['timestamp'].dt.date).count()['id'])
 hv['embed'].index = hv['embed']['date']
-hv['embed'] = df_em.join(hv['embed'], how='outer')
+#hv['embed'] = df_em.join(hv['embed'], how='outer')
 hv['embed'] = pd.DataFrame(hv['embed'][['id','count']].max(axis=1), columns=['count'])
 
 hv['embed']['date'] = hv['embed'].index
@@ -1986,209 +2019,212 @@ hv['embed'] = hv['embed'].reset_index(drop=True)
 
 # In[ ]:
 
-
-date_start = min(hv['hv_movies']['date'].min(), hv['embed']['date'].min(), hv['Jhv_movies']['date'].min())
-date_end = max(hv['hv_movies']['date'].max(), hv['embed']['date'].max(), hv['Jhv_movies']['date'].max())
-
-
-# In[ ]:
-
-
-for key in hv.keys():
-#     print(key)
-    df = hv[key].copy()
-    df = df.set_index('date')
-    df = df.reindex(pd.date_range(date_start, date_end, freq='D').to_period('D').to_timestamp(),
-                                  fill_value=0)
-    df['date'] = df.index
-    df = df.reset_index(drop=True)
-    hv[key] = df
-
-
-# In[ ]:
-
-
-for key in hv.keys():
-    hv[key].loc[(hv['Jhv_movies']['count']==0) & (hv['embed']['count']==0) & (hv['hv_movies']['count']==0), 'bottom_frac'] = np.nan
-    hv[key].loc[(hv['Jhv_movies']['count']==0) & (hv['embed']['count']==0) & (hv['hv_movies']['count']==0), 'top_frac'] = np.nan    
-    hv[key].loc[(hv['Jhv_movies']['count']==0) & (hv['embed']['count']==0) & (hv['hv_movies']['count']==0), 'fraction'] = np.nan
-
-
-# In[ ]:
-
-
-# total_count = (hv['hv_movies']['count'] + hv['embed']['count'] + hv['Jhv_movies']['count'])
-
-# hv['hv_movies']['bottom_frac'] = 0
-# hv['hv_movies']['top_frac'] = hv['hv_movies']['count']/total_count
-# hv['hv_movies']['fraction'] = hv['hv_movies']['top_frac'] - hv['hv_movies']['bottom_frac']
-
-# hv['embed']['bottom_frac'] = hv['hv_movies']['top_frac'] 
-# hv['embed']['top_frac'] = hv['embed']['bottom_frac'] + hv['embed']['count']/total_count
-# hv['embed']['fraction'] = hv['embed']['top_frac'] - hv['embed']['bottom_frac']
-
-# hv['Jhv_movies']['bottom_frac'] = hv['embed']['top_frac']
-# hv['Jhv_movies']['top_frac'] = 1
-# hv['Jhv_movies']['fraction'] = hv['Jhv_movies']['top_frac'] - hv['Jhv_movies']['bottom_frac']
-
-
-# In[ ]:
-
-
-frac = pd.DataFrame()
-
-frac['date'] = pd.date_range(date_start, date_end, freq='D').to_period('D').to_timestamp()
-
-frac['total_count'] = (hv['hv_movies']['count'] + hv['embed']['count'] + hv['Jhv_movies']['count'])
-
-frac['hv_frac'] = hv['hv_movies']['count']/frac['total_count']
-frac['hv_perc'] = frac['hv_frac']*100
-frac['em_frac'] = hv['embed']['count']/frac['total_count']
-frac['em_perc'] = frac['em_frac']*100
-frac['Jhv_frac'] = hv['Jhv_movies']['count']/frac['total_count']
-frac['Jhv_perc'] = frac['Jhv_frac']*100
-
-frac['hv_bottom'] = 1e-6
-frac['hv_top'] = frac['hv_frac']
-
-frac['em_bottom'] = frac['hv_top'] 
-frac['em_top'] = frac['em_bottom'] + frac['em_frac']
-
-frac['Jhv_bottom'] = frac['em_top']
-frac['Jhv_top'] = frac['Jhv_bottom'] + frac['Jhv_frac']
-
-
-# In[ ]:
-
-
-frac['date_str'] = frac['date'].astype(str)
-frac = frac.fillna(0)
-frac['index'] = frac.index
-frac
-
-
-# In[ ]:
-
-
-frac['year_dec'] = frac['date'].dt.year + frac['date'].dt.day/pd.to_datetime(dict(year=frac['date'].dt.year, month=12, day=31)).dt.strftime('%j').astype(int)
-
-
-# In[ ]:
-
-
-print("Preparing plot for helioviewer services comparison...")
-
-directory='service_usage'
-if not os.path.exists(directory):
-    os.makedirs(directory)
-
-TOOLS = "save, pan, box_zoom, reset, wheel_zoom"
-
-p = figure(plot_height=250, output_backend='webgl',
-           tools=TOOLS,
-           sizing_mode="scale_width", min_border_left = 0,
-#            tooltips="$name @date: @$name"
-#            y_axis_type="log", #y_range = (1, 10**(-4))
-          )
-
-p.add_layout(Title(text = "Daily fractional usage of helioviewer services", text_font_size = "16pt", text_font_style="bold"), 
-             place = 'above')
-p.add_layout(Title(text = "Date Range: %s - %s"%(date_start.strftime('%Y, %b %d'),date_end.strftime('%Y, %b %d'))), 
-             place = 'above')
-
-p.background_fill_color="#f5f5f5"
-p.grid.grid_line_color="white"
-p.xaxis.axis_label = 'Date'
-p.yaxis.axis_label = 'Fractional usage'
-p.axis.axis_line_color = None
-
-stacks = ['hv_frac', 'em_frac', 'Jhv_frac']
-
-p_hv = p.vbar_stack(stackers=stacks,
-                    x='index', width=0.75, 
-#                     alpha = 0.5,
-                    color = bp.Category10[max(3,len(stacks))][:len(stacks)],#bp.Viridis[3],
-#                     hover_color = bp.Viridis[3],
-                    source=ColumnDataSource(frac), 
-                    legend_label=["Fraction of Helioviewer.org movie requests",
-                                  "Fraction of Embedded Helioviewer.org requests",
-                                  "Fraction of JHelioviewer movie requests"])
-
-# p_hv = p.vbar(x='index', width=0.75,
-#               bottom='hv_bottom', 
-#               top='hv_top',
-# #               hover_alpha = 0.5,
-#               color = 'blue',
-# #               hover_color='blue',
-#               source=frac, legend_label="Fraction of Helioviewer.org requests")
-
-# p_em = p.vbar(x='index', width=0.75, 
-#               bottom='em_bottom', top='em_top',
-#               hover_alpha = 0.5,
-#               color = 'orange',
-#               hover_color='orange',
-#               source=frac, legend_label="Fraction of embedded Helioviewer.org requests")
-
-# p_Jh = p.vbar(x='index', width=0.75, 
-#               bottom='Jhv_bottom', top='Jhv_top',
-#               hover_alpha = 0.5,
-#               color = 'green',
-#               hover_color='green',
-#               source=frac, legend_label="Fraction of JHelioviewer movie requests")
-
-
-p.add_tools(HoverTool(renderers=p_hv,#, p_em, p_Jh],
-                      tooltips=[('Date', '@date_str'),
-                                ('JHelioviewer', '@Jhv_perc{0.00}%'),
-                                ('Embed Helioviewer.org', '@em_perc{0.00}%'),
-                                ('Helioviewer.org', '@hv_perc{0.00}%'),
-                                ('Total hits', '@total_count')
-                               ],
-#                       formatters={'@date' : 'datetime', # use 'datetime' formatter for 'date' field
-#                                  },
-                     ))
-
-# frac['date'].dt.year + frac['date'].dt.day/pd.to_datetime(dict(year=frac['date'].dt.year, month=12, day=31)).dt.strftime('%j').astype(int)
-
-def dt2ind(dt):
-#     y = dt.year + dt.day/int(pd.Timestamp(dt.year,12,31).strftime('%j'))
-    return frac.loc[frac['date']==dt].index[0]
-
-p.line(y=[0,1.1], x=dt2ind(pd.Timestamp('2011/06/07')), line_width=1.5, line_dash='dotdash', color='red', alpha=1, legend_label= "failed eruption (2011/06/07)")
-p.line(y=[0,1.1], x=dt2ind(pd.Timestamp('2013/11/28')), line_width=1.5, line_dash='dotdash', color='purple', alpha=1, legend_label= "Comet ISON (2013/11/28)")
-p.harea(y=[0,1.1], x1=dt2ind(pd.Timestamp('2017/09/06')), x2=dt2ind(pd.Timestamp('2017/09/10')), fill_color='black', fill_alpha=1, legend_label= "large flares (2017/09/06-09)")
-
-p.harea(y=[0,1.1], x1=dt2ind(pd.Timestamp('2011/08/11')), x2=dt2ind(pd.Timestamp('2011/09/18')), fill_color='gray', fill_alpha=0.3, legend_label= "GSFC server repair (2011/08/11 - 2011/09/18)")
-p.harea(y=[0,1.1], x1=dt2ind(pd.Timestamp('2013/10/01')), x2=dt2ind(pd.Timestamp('2013/10/16')), fill_color='green', fill_alpha=0.3, legend_label= "U.S. Fed. Gov. shutdown (2013/10/01 - 2013/10/16)")
-p.harea(y=[0,1.1], x1=dt2ind(pd.Timestamp('2015/02/04')), x2=dt2ind(pd.Timestamp('2015/09/23')), fill_color='red', fill_alpha=0.3, legend_label= "GSFC server down (2015/02/04 - 2015/09/23)")
-
-
-df_stats = pd.DataFrame({'width': np.linspace(frac['index'].min()-100, frac['index'].max()+100, 2),
-                         'mean_hv':np.nanmean(frac['hv_frac']), 'mean_embed':np.nanmean(frac['em_frac']), 'mean_Jhv':np.nanmean(frac['Jhv_frac'])})
-
-p.line(y='mean_hv', x='width', line_color = "red", line_dash='dotted', line_width= 2, alpha=0.5,
-       legend_label="Mean fraction of Helioviewer.org movie requests (%.3f)"%(df_stats['mean_hv'][0]), source=df_stats)
-
-p.line(y='mean_embed', x='width', line_color = "pink", line_dash='dotted', line_width= 2, alpha=0.5, 
-       legend_label="Mean fraction of Helioviewer.org Embed requests (%.3f)"%(df_stats['mean_embed'][0]), source=df_stats)
-
-p.line(y='mean_Jhv', x='width', line_color = "cyan", line_dash='dotted', line_width= 2, alpha=0.5, 
-       legend_label="Mean fraction of JHelioviewer movie requests (%.3f)"%(df_stats['mean_Jhv'][0]), source=df_stats)
-
-# p.xaxis.ticks = frac['index'].iloc[::]
-p.xaxis.major_label_overrides = {i: date.strftime('%Y %b %d') for i, date in enumerate(frac['date'])}
-
-p.x_range.range_padding = 0.00
-p.y_range.range_padding = 0.00
-
-p.legend.background_fill_alpha = 0.3
-p.legend.location='top_left'
-p.border_fill_color = "whitesmoke"
-
-# show(p)
-save(p, filename='%s/hv_services.html'%directory, title='Daily fractional usage of helioviewer services')
-print("Helioviewer service usage fraction plot done.")
-
+try:
+    date_start = min(hv['hv_movies']['date'].min(), hv['embed']['date'].min(), hv['Jhv_movies']['date'].min())
+    date_end = max(hv['hv_movies']['date'].max(), hv['embed']['date'].max(), hv['Jhv_movies']['date'].max())
+
+    # In[ ]:
+    
+    
+    for key in hv.keys():
+        if skip_empty_table(hv[key], key):
+            continue
+    
+    #     print(key)
+        df = hv[key].copy()
+        df = df.set_index('date')
+        df = df.reindex(pd.date_range(date_start, date_end, freq='D').to_period('D').to_timestamp(),
+                                      fill_value=0)
+        df['date'] = df.index
+        df = df.reset_index(drop=True)
+        hv[key] = df
+    
+    
+    # In[ ]:
+    
+    
+    for key in hv.keys():
+        hv[key].loc[(hv['Jhv_movies']['count']==0) & (hv['embed']['count']==0) & (hv['hv_movies']['count']==0), 'bottom_frac'] = np.nan
+        hv[key].loc[(hv['Jhv_movies']['count']==0) & (hv['embed']['count']==0) & (hv['hv_movies']['count']==0), 'top_frac'] = np.nan    
+        hv[key].loc[(hv['Jhv_movies']['count']==0) & (hv['embed']['count']==0) & (hv['hv_movies']['count']==0), 'fraction'] = np.nan
+    
+    
+    # In[ ]:
+    
+    
+    # total_count = (hv['hv_movies']['count'] + hv['embed']['count'] + hv['Jhv_movies']['count'])
+    
+    # hv['hv_movies']['bottom_frac'] = 0
+    # hv['hv_movies']['top_frac'] = hv['hv_movies']['count']/total_count
+    # hv['hv_movies']['fraction'] = hv['hv_movies']['top_frac'] - hv['hv_movies']['bottom_frac']
+    
+    # hv['embed']['bottom_frac'] = hv['hv_movies']['top_frac'] 
+    # hv['embed']['top_frac'] = hv['embed']['bottom_frac'] + hv['embed']['count']/total_count
+    # hv['embed']['fraction'] = hv['embed']['top_frac'] - hv['embed']['bottom_frac']
+    
+    # hv['Jhv_movies']['bottom_frac'] = hv['embed']['top_frac']
+    # hv['Jhv_movies']['top_frac'] = 1
+    # hv['Jhv_movies']['fraction'] = hv['Jhv_movies']['top_frac'] - hv['Jhv_movies']['bottom_frac']
+    
+    
+    # In[ ]:
+    
+    
+    frac = pd.DataFrame()
+    
+    frac['date'] = pd.date_range(date_start, date_end, freq='D').to_period('D').to_timestamp()
+    
+    frac['total_count'] = (hv['hv_movies']['count'] + hv['embed']['count'] + hv['Jhv_movies']['count'])
+    
+    frac['hv_frac'] = hv['hv_movies']['count']/frac['total_count']
+    frac['hv_perc'] = frac['hv_frac']*100
+    frac['em_frac'] = hv['embed']['count']/frac['total_count']
+    frac['em_perc'] = frac['em_frac']*100
+    frac['Jhv_frac'] = hv['Jhv_movies']['count']/frac['total_count']
+    frac['Jhv_perc'] = frac['Jhv_frac']*100
+    
+    frac['hv_bottom'] = 1e-6
+    frac['hv_top'] = frac['hv_frac']
+    
+    frac['em_bottom'] = frac['hv_top'] 
+    frac['em_top'] = frac['em_bottom'] + frac['em_frac']
+    
+    frac['Jhv_bottom'] = frac['em_top']
+    frac['Jhv_top'] = frac['Jhv_bottom'] + frac['Jhv_frac']
+    
+    
+    # In[ ]:
+    
+    
+    frac['date_str'] = frac['date'].astype(str)
+    frac = frac.fillna(0)
+    frac['index'] = frac.index
+    frac
+    
+    
+    # In[ ]:
+    
+    
+    frac['year_dec'] = frac['date'].dt.year + frac['date'].dt.day/pd.to_datetime(dict(year=frac['date'].dt.year, month=12, day=31)).dt.strftime('%j').astype(int)
+    
+    
+    # In[ ]:
+    
+    
+    print("Preparing plot for helioviewer services comparison...")
+    
+    directory='service_usage'
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    
+    TOOLS = "save, pan, box_zoom, reset, wheel_zoom"
+    
+    p = figure(plot_height=250, output_backend='webgl',
+               tools=TOOLS,
+               sizing_mode="scale_width", min_border_left = 0,
+    #            tooltips="$name @date: @$name"
+    #            y_axis_type="log", #y_range = (1, 10**(-4))
+              )
+    
+    p.add_layout(Title(text = "Daily fractional usage of helioviewer services", text_font_size = "16pt", text_font_style="bold"), 
+                 place = 'above')
+    p.add_layout(Title(text = "Date Range: %s - %s"%(date_start.strftime('%Y, %b %d'),date_end.strftime('%Y, %b %d'))), 
+                 place = 'above')
+    
+    p.background_fill_color="#f5f5f5"
+    p.grid.grid_line_color="white"
+    p.xaxis.axis_label = 'Date'
+    p.yaxis.axis_label = 'Fractional usage'
+    p.axis.axis_line_color = None
+    
+    stacks = ['hv_frac', 'em_frac', 'Jhv_frac']
+    
+    p_hv = p.vbar_stack(stackers=stacks,
+                        x='index', width=0.75, 
+    #                     alpha = 0.5,
+                        color = bp.Category10[max(3,len(stacks))][:len(stacks)],#bp.Viridis[3],
+    #                     hover_color = bp.Viridis[3],
+                        source=ColumnDataSource(frac), 
+                        legend_label=["Fraction of Helioviewer.org movie requests",
+                                      "Fraction of Embedded Helioviewer.org requests",
+                                      "Fraction of JHelioviewer movie requests"])
+    
+    # p_hv = p.vbar(x='index', width=0.75,
+    #               bottom='hv_bottom', 
+    #               top='hv_top',
+    # #               hover_alpha = 0.5,
+    #               color = 'blue',
+    # #               hover_color='blue',
+    #               source=frac, legend_label="Fraction of Helioviewer.org requests")
+    
+    # p_em = p.vbar(x='index', width=0.75, 
+    #               bottom='em_bottom', top='em_top',
+    #               hover_alpha = 0.5,
+    #               color = 'orange',
+    #               hover_color='orange',
+    #               source=frac, legend_label="Fraction of embedded Helioviewer.org requests")
+    
+    # p_Jh = p.vbar(x='index', width=0.75, 
+    #               bottom='Jhv_bottom', top='Jhv_top',
+    #               hover_alpha = 0.5,
+    #               color = 'green',
+    #               hover_color='green',
+    #               source=frac, legend_label="Fraction of JHelioviewer movie requests")
+    
+    
+    p.add_tools(HoverTool(renderers=p_hv,#, p_em, p_Jh],
+                          tooltips=[('Date', '@date_str'),
+                                    ('JHelioviewer', '@Jhv_perc{0.00}%'),
+                                    ('Embed Helioviewer.org', '@em_perc{0.00}%'),
+                                    ('Helioviewer.org', '@hv_perc{0.00}%'),
+                                    ('Total hits', '@total_count')
+                                   ],
+    #                       formatters={'@date' : 'datetime', # use 'datetime' formatter for 'date' field
+    #                                  },
+                         ))
+    
+    # frac['date'].dt.year + frac['date'].dt.day/pd.to_datetime(dict(year=frac['date'].dt.year, month=12, day=31)).dt.strftime('%j').astype(int)
+    
+    def dt2ind(dt):
+    #     y = dt.year + dt.day/int(pd.Timestamp(dt.year,12,31).strftime('%j'))
+        return frac.loc[frac['date']==dt].index[0]
+    
+    p.line(y=[0,1.1], x=dt2ind(pd.Timestamp('2011/06/07')), line_width=1.5, line_dash='dotdash', color='red', alpha=1, legend_label= "failed eruption (2011/06/07)")
+    p.line(y=[0,1.1], x=dt2ind(pd.Timestamp('2013/11/28')), line_width=1.5, line_dash='dotdash', color='purple', alpha=1, legend_label= "Comet ISON (2013/11/28)")
+    p.harea(y=[0,1.1], x1=dt2ind(pd.Timestamp('2017/09/06')), x2=dt2ind(pd.Timestamp('2017/09/10')), fill_color='black', fill_alpha=1, legend_label= "large flares (2017/09/06-09)")
+    
+    p.harea(y=[0,1.1], x1=dt2ind(pd.Timestamp('2011/08/11')), x2=dt2ind(pd.Timestamp('2011/09/18')), fill_color='gray', fill_alpha=0.3, legend_label= "GSFC server repair (2011/08/11 - 2011/09/18)")
+    p.harea(y=[0,1.1], x1=dt2ind(pd.Timestamp('2013/10/01')), x2=dt2ind(pd.Timestamp('2013/10/16')), fill_color='green', fill_alpha=0.3, legend_label= "U.S. Fed. Gov. shutdown (2013/10/01 - 2013/10/16)")
+    p.harea(y=[0,1.1], x1=dt2ind(pd.Timestamp('2015/02/04')), x2=dt2ind(pd.Timestamp('2015/09/23')), fill_color='red', fill_alpha=0.3, legend_label= "GSFC server down (2015/02/04 - 2015/09/23)")
+    
+    
+    df_stats = pd.DataFrame({'width': np.linspace(frac['index'].min()-100, frac['index'].max()+100, 2),
+                             'mean_hv':np.nanmean(frac['hv_frac']), 'mean_embed':np.nanmean(frac['em_frac']), 'mean_Jhv':np.nanmean(frac['Jhv_frac'])})
+    
+    p.line(y='mean_hv', x='width', line_color = "red", line_dash='dotted', line_width= 2, alpha=0.5,
+           legend_label="Mean fraction of Helioviewer.org movie requests (%.3f)"%(df_stats['mean_hv'][0]), source=df_stats)
+    
+    p.line(y='mean_embed', x='width', line_color = "pink", line_dash='dotted', line_width= 2, alpha=0.5, 
+           legend_label="Mean fraction of Helioviewer.org Embed requests (%.3f)"%(df_stats['mean_embed'][0]), source=df_stats)
+    
+    p.line(y='mean_Jhv', x='width', line_color = "cyan", line_dash='dotted', line_width= 2, alpha=0.5, 
+           legend_label="Mean fraction of JHelioviewer movie requests (%.3f)"%(df_stats['mean_Jhv'][0]), source=df_stats)
+    
+    # p.xaxis.ticks = frac['index'].iloc[::]
+    p.xaxis.major_label_overrides = {i: date.strftime('%Y %b %d') for i, date in enumerate(frac['date'])}
+    
+    p.x_range.range_padding = 0.00
+    p.y_range.range_padding = 0.00
+    
+    p.legend.background_fill_alpha = 0.3
+    p.legend.location='top_left'
+    p.border_fill_color = "whitesmoke"
+    
+    # show(p)
+    save(p, filename='%s/hv_services.html'%directory, title='Daily fractional usage of helioviewer services')
+    print("Helioviewer service usage fraction plot done.")
+except TypeError: # Occurs when any of the above tables are empty
+    print("Skipping service comparison because some data is empty")
 
 # ## HV endpoints' fractional usage breakdown
 
@@ -2250,6 +2286,10 @@ for stat in heirarchy.keys():
         df.index = hv.index
         df[heirarchy[stat]] = hv[heirarchy[stat]].div(df['total'], axis=0)*100
         df= df.fillna(0)
+
+    if skip_empty_table(df, stat):
+        continue
+
     df = df.reindex(pd.date_range(df.index.min(), df.index.max(), freq='D'), fill_value=0).reset_index().rename(columns = {'index':'date'})
     #     df['date_str'] = df['date'].astype(str)
     df.index = df['date']
@@ -2350,7 +2390,6 @@ print("Helioviewer endpoints' fractional usage breakdown plot done.")
 
 # In[ ]:
 
-
 tot=pd.DataFrame()
 frac=pd.DataFrame()
 for stat in heirarchy.keys():
@@ -2382,193 +2421,171 @@ frac['date_str'] = frac['date_str'].astype(str)
 print("Preparing plot for HV usage comparison of endpoint categories...")
 panels=[]
 df=tot
-TOOLS = "save, pan, box_zoom, reset, wheel_zoom"
-
-p = figure(plot_height=250, output_backend='webgl',
-           tools=TOOLS,
-           sizing_mode="scale_width", min_border_left = 0,
-#            tooltips="$name @date: @$name"
-          )
-
-p.add_layout(Title(text = "Helioviewer total usage comparison of endpoint categories", text_font_size = "16pt", text_font_style="bold"), 
-             place = 'above')
-p.add_layout(Title(text = "Date Range: %s - %s"%(df['date'].min().strftime('%Y, %b %d'),df['date'].max().strftime('%Y, %b %d'))), 
-             place = 'above')
-
-p.background_fill_color="#f5f5f5"
-p.grid.grid_line_color="white"
-p.xaxis.axis_label = 'Date'
-p.yaxis.axis_label = 'Total usage'
-p.axis.axis_line_color = None
-
-
-
-stacks = df.columns.values[4:]
-
-p_hv = p.vbar_stack(stackers=stacks,
-                    x='index', width=0.75, 
-                    color = bp.Category20[max(3,len(stacks))][:len(stacks)],
-                    source=ColumnDataSource(df),
-                    legend_label=["%s"%string for string in stacks])
-
-p.add_tools(HoverTool(renderers=p_hv,
-                      tooltips=[('Date', '@date_str'), ('Total', '@total')] + [(string, '@{%s}{0}'%string) for string in stacks],
-#                       formatters={'@date_str' : 'datetime', # use 'datetime' formatter for 'date' field
-#                                  },
-                     ))
-
-# def dt2ind(dt):
-# #     y = dt.year + dt.day/int(pd.Timestamp(dt.year,12,31).strftime('%j'))
-#     return df.loc[df['date']==dt].index[0]
-
-# p.line(y=[0,1], x=dt2ind(pd.Timestamp('2011/06/07')), line_width=1.5, line_dash='dotdash', color='red', alpha=1, legend_label= "failed eruption (2011/06/07)")
-# p.line(y=[0,1], x=dt2ind(pd.Timestamp('2013/11/28')), line_width=1.5, line_dash='dotdash', color='purple', alpha=1, legend_label= "Comet ISON (2013/11/28)")
-# p.harea(y=[0,1], x1=dt2ind(pd.Timestamp('2017/09/06')), x2=dt2ind(pd.Timestamp('2017/09/10')), fill_color='teal', fill_alpha=1, legend_label= "large flares (2017/09/06-09)")
-
-# p.harea(y=[0,1], x1=dt2ind(pd.Timestamp('2011/08/11')), x2=dt2ind(pd.Timestamp('2011/09/18')), fill_color='gray', fill_alpha=0.3, legend_label= "GSFC server repair (2011/08/11 - 2011/09/18)")
-# p.harea(y=[0,1], x1=dt2ind(pd.Timestamp('2013/10/01')), x2=dt2ind(pd.Timestamp('2013/10/16')), fill_color='green', fill_alpha=0.3, legend_label= "U.S. Fed. Gov. shutdown (2013/10/01 - 2013/10/16)")
-# p.harea(y=[0,1], x1=dt2ind(pd.Timestamp('2015/02/04')), x2=dt2ind(pd.Timestamp('2015/09/23')), fill_color='red', fill_alpha=0.3, legend_label= "GSFC server down (2015/02/04 - 2015/09/23)")
-
-
-# df_stats = pd.DataFrame({'width': np.linspace(df['index'].min(), df['index'].max(), 2),
-#                          'mean_hv':np.nanmean(df['hv_frac']), 'mean_embed':np.nanmean(df['em_frac']), 'mean_Jhv':np.nanmean(df['Jhv_frac'])})
-
-# p.line(y='mean_hv', x='width', line_color = "red", line_dash='dotted', line_width= 2, alpha=0.5,
-#        legend_label="Mean fraction of Helioviewer.org movie requests (%.3f)"%(df_stats['mean_hv'][0]), source=df_stats)
-
-# p.line(y='mean_embed', x='width', line_color = "pink", line_dash='dotted', line_width= 2, alpha=0.5, 
-#        legend_label="Mean fraction of Helioviewer.org Embed requests (%.3f)"%(df_stats['mean_embed'][0]), source=df_stats)
-
-# p.line(y='mean_Jhv', x='width', line_color = "cyan", line_dash='dotted', line_width= 2, alpha=0.5, 
-#        legend_label="Mean fraction of JHelioviewer movie requests (%.3f)"%(df_stats['mean_Jhv'][0]), source=df_stats)
-
-p.xaxis.major_label_overrides = {i: date.strftime('%Y %b %d') for i, date in enumerate(df['date'])}
-
-p.x_range.range_padding = 0.06
-p.y_range.range_padding = 0.02
-
-p.legend.background_fill_alpha = 0.6
-p.border_fill_color = "whitesmoke"
-p.legend.location='top_left'
-# show(p)
-panel = Panel(child=p, title='Total')
-panels.append(panel)
+if not df.empty:
+    TOOLS = "save, pan, box_zoom, reset, wheel_zoom"
+    
+    p = figure(plot_height=250, output_backend='webgl',
+               tools=TOOLS,
+               sizing_mode="scale_width", min_border_left = 0,
+    #            tooltips="$name @date: @$name"
+              )
+    
+    p.add_layout(Title(text = "Helioviewer total usage comparison of endpoint categories", text_font_size = "16pt", text_font_style="bold"), 
+                 place = 'above')
+    p.add_layout(Title(text = "Date Range: %s - %s"%(df['date'].min().strftime('%Y, %b %d'),df['date'].max().strftime('%Y, %b %d'))), 
+                 place = 'above')
+    
+    p.background_fill_color="#f5f5f5"
+    p.grid.grid_line_color="white"
+    p.xaxis.axis_label = 'Date'
+    p.yaxis.axis_label = 'Total usage'
+    p.axis.axis_line_color = None
+    
+    
+    
+    stacks = df.columns.values[4:]
+    
+    p_hv = p.vbar_stack(stackers=stacks,
+                        x='index', width=0.75, 
+                        color = bp.Category20[max(3,len(stacks))][:len(stacks)],
+                        source=ColumnDataSource(df),
+                        legend_label=["%s"%string for string in stacks])
+    
+    p.add_tools(HoverTool(renderers=p_hv,
+                          tooltips=[('Date', '@date_str'), ('Total', '@total')] + [(string, '@{%s}{0}'%string) for string in stacks],
+    #                       formatters={'@date_str' : 'datetime', # use 'datetime' formatter for 'date' field
+    #                                  },
+                         ))
+    
+    # def dt2ind(dt):
+    # #     y = dt.year + dt.day/int(pd.Timestamp(dt.year,12,31).strftime('%j'))
+    #     return df.loc[df['date']==dt].index[0]
+    
+    # p.line(y=[0,1], x=dt2ind(pd.Timestamp('2011/06/07')), line_width=1.5, line_dash='dotdash', color='red', alpha=1, legend_label= "failed eruption (2011/06/07)")
+    # p.line(y=[0,1], x=dt2ind(pd.Timestamp('2013/11/28')), line_width=1.5, line_dash='dotdash', color='purple', alpha=1, legend_label= "Comet ISON (2013/11/28)")
+    # p.harea(y=[0,1], x1=dt2ind(pd.Timestamp('2017/09/06')), x2=dt2ind(pd.Timestamp('2017/09/10')), fill_color='teal', fill_alpha=1, legend_label= "large flares (2017/09/06-09)")
+    
+    # p.harea(y=[0,1], x1=dt2ind(pd.Timestamp('2011/08/11')), x2=dt2ind(pd.Timestamp('2011/09/18')), fill_color='gray', fill_alpha=0.3, legend_label= "GSFC server repair (2011/08/11 - 2011/09/18)")
+    # p.harea(y=[0,1], x1=dt2ind(pd.Timestamp('2013/10/01')), x2=dt2ind(pd.Timestamp('2013/10/16')), fill_color='green', fill_alpha=0.3, legend_label= "U.S. Fed. Gov. shutdown (2013/10/01 - 2013/10/16)")
+    # p.harea(y=[0,1], x1=dt2ind(pd.Timestamp('2015/02/04')), x2=dt2ind(pd.Timestamp('2015/09/23')), fill_color='red', fill_alpha=0.3, legend_label= "GSFC server down (2015/02/04 - 2015/09/23)")
+    
+    
+    # df_stats = pd.DataFrame({'width': np.linspace(df['index'].min(), df['index'].max(), 2),
+    #                          'mean_hv':np.nanmean(df['hv_frac']), 'mean_embed':np.nanmean(df['em_frac']), 'mean_Jhv':np.nanmean(df['Jhv_frac'])})
+    
+    # p.line(y='mean_hv', x='width', line_color = "red", line_dash='dotted', line_width= 2, alpha=0.5,
+    #        legend_label="Mean fraction of Helioviewer.org movie requests (%.3f)"%(df_stats['mean_hv'][0]), source=df_stats)
+    
+    # p.line(y='mean_embed', x='width', line_color = "pink", line_dash='dotted', line_width= 2, alpha=0.5, 
+    #        legend_label="Mean fraction of Helioviewer.org Embed requests (%.3f)"%(df_stats['mean_embed'][0]), source=df_stats)
+    
+    # p.line(y='mean_Jhv', x='width', line_color = "cyan", line_dash='dotted', line_width= 2, alpha=0.5, 
+    #        legend_label="Mean fraction of JHelioviewer movie requests (%.3f)"%(df_stats['mean_Jhv'][0]), source=df_stats)
+    
+    p.xaxis.major_label_overrides = {i: date.strftime('%Y %b %d') for i, date in enumerate(df['date'])}
+    
+    p.x_range.range_padding = 0.06
+    p.y_range.range_padding = 0.02
+    
+    p.legend.background_fill_alpha = 0.6
+    p.border_fill_color = "whitesmoke"
+    p.legend.location='top_left'
+    # show(p)
+    panel = Panel(child=p, title='Total')
+    panels.append(panel)
 
 
 # In[ ]:
 
 
 df = frac
-TOOLS = "save, pan, box_zoom, reset, wheel_zoom"
-
-p = figure(plot_height=250, output_backend='webgl',
-           tools=TOOLS,
-           sizing_mode="scale_width", min_border_left = 0,
-#            tooltips="$name @date: @$name"
-          )
-
-p.add_layout(Title(text = "Helioviewer fractional usage comparison of endpoint categories", text_font_size = "16pt", text_font_style="bold"), 
-             place = 'above')
-p.add_layout(Title(text = "Date Range: %s - %s"%(df['date'].min().strftime('%Y, %b %d'),df['date'].max().strftime('%Y, %b %d'))), 
-             place = 'above')
-
-p.background_fill_color="#f5f5f5"
-p.grid.grid_line_color="white"
-p.xaxis.axis_label = 'Date'
-p.yaxis.axis_label = 'Fractional usage (%)'
-p.axis.axis_line_color = None
-
-
-
-stacks = df.columns.values[4:]
-color_palette = bp.Category20[max(3,len(stacks))][:len(stacks)]
-
-p_hv = p.vbar_stack(stackers=stacks,
-                    x='index', width=0.75, 
-                    color = color_palette,
-                    source=ColumnDataSource(df),
-                    legend_label=["%s"%string for string in stacks])
-
-p.add_tools(HoverTool(renderers=p_hv,
-                      tooltips=[('Date', '@date_str'), ('Total', '@total')] + [(string, '@{%s}{0.00}%%'%string) for string in stacks],
-#                       formatters={'@date_str' : 'datetime', # use 'datetime' formatter for 'date' field
-#                                  },
-                     ))
-
-# def dt2ind(dt):
-# #     y = dt.year + dt.day/int(pd.Timestamp(dt.year,12,31).strftime('%j'))
-#     return df.loc[df['date']==dt].index[0]
-
-# p.line(y=[0,1], x=dt2ind(pd.Timestamp('2011/06/07')), line_width=1.5, line_dash='dotdash', color='red', alpha=1, legend_label= "failed eruption (2011/06/07)")
-# p.line(y=[0,1], x=dt2ind(pd.Timestamp('2013/11/28')), line_width=1.5, line_dash='dotdash', color='purple', alpha=1, legend_label= "Comet ISON (2013/11/28)")
-# p.harea(y=[0,1], x1=dt2ind(pd.Timestamp('2017/09/06')), x2=dt2ind(pd.Timestamp('2017/09/10')), fill_color='teal', fill_alpha=1, legend_label= "large flares (2017/09/06-09)")
-
-# p.harea(y=[0,1], x1=dt2ind(pd.Timestamp('2011/08/11')), x2=dt2ind(pd.Timestamp('2011/09/18')), fill_color='gray', fill_alpha=0.3, legend_label= "GSFC server repair (2011/08/11 - 2011/09/18)")
-# p.harea(y=[0,1], x1=dt2ind(pd.Timestamp('2013/10/01')), x2=dt2ind(pd.Timestamp('2013/10/16')), fill_color='green', fill_alpha=0.3, legend_label= "U.S. Fed. Gov. shutdown (2013/10/01 - 2013/10/16)")
-# p.harea(y=[0,1], x1=dt2ind(pd.Timestamp('2015/02/04')), x2=dt2ind(pd.Timestamp('2015/09/23')), fill_color='red', fill_alpha=0.3, legend_label= "GSFC server down (2015/02/04 - 2015/09/23)")
-
-
-# df_stats = pd.DataFrame({'width': np.linspace(df['index'].min(), df['index'].max(), 2),
-#                          'mean_hv':np.nanmean(df['hv_frac']), 'mean_embed':np.nanmean(df['em_frac']), 'mean_Jhv':np.nanmean(df['Jhv_frac'])})
-
-# p.line(y='mean_hv', x='width', line_color = "red", line_dash='dotted', line_width= 2, alpha=0.5,
-#        legend_label="Mean fraction of Helioviewer.org movie requests (%.3f)"%(df_stats['mean_hv'][0]), source=df_stats)
-
-# p.line(y='mean_embed', x='width', line_color = "pink", line_dash='dotted', line_width= 2, alpha=0.5, 
-#        legend_label="Mean fraction of Helioviewer.org Embed requests (%.3f)"%(df_stats['mean_embed'][0]), source=df_stats)
-
-# p.line(y='mean_Jhv', x='width', line_color = "cyan", line_dash='dotted', line_width= 2, alpha=0.5, 
-#        legend_label="Mean fraction of JHelioviewer movie requests (%.3f)"%(df_stats['mean_Jhv'][0]), source=df_stats)
-
-p.xaxis.major_label_overrides = {i: date.strftime('%Y %b %d') for i, date in enumerate(df['date'])}
-
-p.x_range.range_padding = 0.06
-p.y_range.range_padding = 0.02
-
-p.legend.background_fill_alpha = 0.6
-p.border_fill_color = "whitesmoke"
-p.legend.location='top_left'
-
-panel = Panel(child=p, title='Fractional')
-panels.append(panel)
-# panels[1] = panel
-tabs = Tabs(tabs=panels)
-# show(tabs)
-
-
-# In[ ]:
-
-
-save(tabs, filename='%s/hv_endpoints_categorical.html'%directory, title='Helioviewer usage comparison of endpoint categories')
-print("Helioviewer usage comparison of endpoint categories completed")
+if not df.empty:
+    TOOLS = "save, pan, box_zoom, reset, wheel_zoom"
+    
+    p = figure(plot_height=250, output_backend='webgl',
+               tools=TOOLS,
+               sizing_mode="scale_width", min_border_left = 0,
+    #            tooltips="$name @date: @$name"
+              )
+    
+    p.add_layout(Title(text = "Helioviewer fractional usage comparison of endpoint categories", text_font_size = "16pt", text_font_style="bold"), 
+                 place = 'above')
+    p.add_layout(Title(text = "Date Range: %s - %s"%(df['date'].min().strftime('%Y, %b %d'),df['date'].max().strftime('%Y, %b %d'))), 
+                 place = 'above')
+    
+    p.background_fill_color="#f5f5f5"
+    p.grid.grid_line_color="white"
+    p.xaxis.axis_label = 'Date'
+    p.yaxis.axis_label = 'Fractional usage (%)'
+    p.axis.axis_line_color = None
+    
+    
+    
+    stacks = df.columns.values[4:]
+    color_palette = bp.Category20[max(3,len(stacks))][:len(stacks)]
+    
+    p_hv = p.vbar_stack(stackers=stacks,
+                        x='index', width=0.75, 
+                        color = color_palette,
+                        source=ColumnDataSource(df),
+                        legend_label=["%s"%string for string in stacks])
+    
+    p.add_tools(HoverTool(renderers=p_hv,
+                          tooltips=[('Date', '@date_str'), ('Total', '@total')] + [(string, '@{%s}{0.00}%%'%string) for string in stacks],
+    #                       formatters={'@date_str' : 'datetime', # use 'datetime' formatter for 'date' field
+    #                                  },
+                         ))
+    
+    # def dt2ind(dt):
+    # #     y = dt.year + dt.day/int(pd.Timestamp(dt.year,12,31).strftime('%j'))
+    #     return df.loc[df['date']==dt].index[0]
+    
+    # p.line(y=[0,1], x=dt2ind(pd.Timestamp('2011/06/07')), line_width=1.5, line_dash='dotdash', color='red', alpha=1, legend_label= "failed eruption (2011/06/07)")
+    # p.line(y=[0,1], x=dt2ind(pd.Timestamp('2013/11/28')), line_width=1.5, line_dash='dotdash', color='purple', alpha=1, legend_label= "Comet ISON (2013/11/28)")
+    # p.harea(y=[0,1], x1=dt2ind(pd.Timestamp('2017/09/06')), x2=dt2ind(pd.Timestamp('2017/09/10')), fill_color='teal', fill_alpha=1, legend_label= "large flares (2017/09/06-09)")
+    
+    # p.harea(y=[0,1], x1=dt2ind(pd.Timestamp('2011/08/11')), x2=dt2ind(pd.Timestamp('2011/09/18')), fill_color='gray', fill_alpha=0.3, legend_label= "GSFC server repair (2011/08/11 - 2011/09/18)")
+    # p.harea(y=[0,1], x1=dt2ind(pd.Timestamp('2013/10/01')), x2=dt2ind(pd.Timestamp('2013/10/16')), fill_color='green', fill_alpha=0.3, legend_label= "U.S. Fed. Gov. shutdown (2013/10/01 - 2013/10/16)")
+    # p.harea(y=[0,1], x1=dt2ind(pd.Timestamp('2015/02/04')), x2=dt2ind(pd.Timestamp('2015/09/23')), fill_color='red', fill_alpha=0.3, legend_label= "GSFC server down (2015/02/04 - 2015/09/23)")
+    
+    
+    # df_stats = pd.DataFrame({'width': np.linspace(df['index'].min(), df['index'].max(), 2),
+    #                          'mean_hv':np.nanmean(df['hv_frac']), 'mean_embed':np.nanmean(df['em_frac']), 'mean_Jhv':np.nanmean(df['Jhv_frac'])})
+    
+    # p.line(y='mean_hv', x='width', line_color = "red", line_dash='dotted', line_width= 2, alpha=0.5,
+    #        legend_label="Mean fraction of Helioviewer.org movie requests (%.3f)"%(df_stats['mean_hv'][0]), source=df_stats)
+    
+    # p.line(y='mean_embed', x='width', line_color = "pink", line_dash='dotted', line_width= 2, alpha=0.5, 
+    #        legend_label="Mean fraction of Helioviewer.org Embed requests (%.3f)"%(df_stats['mean_embed'][0]), source=df_stats)
+    
+    # p.line(y='mean_Jhv', x='width', line_color = "cyan", line_dash='dotted', line_width= 2, alpha=0.5, 
+    #        legend_label="Mean fraction of JHelioviewer movie requests (%.3f)"%(df_stats['mean_Jhv'][0]), source=df_stats)
+    
+    p.xaxis.major_label_overrides = {i: date.strftime('%Y %b %d') for i, date in enumerate(df['date'])}
+    
+    p.x_range.range_padding = 0.06
+    p.y_range.range_padding = 0.02
+    
+    p.legend.background_fill_alpha = 0.6
+    p.border_fill_color = "whitesmoke"
+    p.legend.location='top_left'
+    
+    panel = Panel(child=p, title='Fractional')
+    panels.append(panel)
+    # panels[1] = panel
+    tabs = Tabs(tabs=panels)
+    # show(tabs)
+    
+    
+    # In[ ]:
+    
+    
+    save(tabs, filename='%s/hv_endpoints_categorical.html'%directory, title='Helioviewer usage comparison of endpoint categories')
+    print("Helioviewer usage comparison of endpoint categories completed")
 
 
 # In[ ]:
 
 
 print("ALL PROCSESSES COMPLETED in %d minutes" %((time.time()-master_time)/60))
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
 
