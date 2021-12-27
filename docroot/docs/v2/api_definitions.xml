@@ -3325,6 +3325,43 @@ Full source code for the entire Helioviewer Project can be found at https://gith
 }]]></example>
     </response>
     </endpoint>
+    <endpoint name="getStatus" group="JPEG2000" http="GET">
+        <route>/v2/getStatus/</route>
+        <description><![CDATA[Returns information about how far behind the latest available JPEG2000 images.]]></description>
+        <response code="200" type="string" subtype="JSON">
+            <description><![CDATA[JSON response to "getStatus"]]></description>
+            <example query_string="?">
+<![CDATA[
+{
+  "AIA": {
+      "time":"2021-12-08T10:00:06Z",
+      "level":5,
+      "secondsBehind":1676970
+  },
+  "COSMO": {
+      "time":"2021-12-18T21:59:56Z",
+      "level":5,
+      "secondsBehind":769780
+  },
+  "HMI": {
+      "time":"2021-12-08T10:01:53Z",
+      "level":5,
+      "secondsBehind":1676863
+  },
+  "LASCO": {
+      "time":"2021-12-10T15:30:07Z",
+      "level":5,
+      "secondsBehind":1484369
+  },
+  "SECCHI": {
+      "time":"2021-12-07T23:56:00Z",
+      "level":5,
+      "secondsBehind":1713216
+  }
+}]]>
+          </example>
+        </response>
+    </endpoint>
     <endpoint name="getNewsFeed" group="Web Site" http="GET">
         <route>/v2/getNewsFeed/</route>
         <description><![CDATA[Get the XML RSS feed of the official Helioviewer Project Blog.]]></description>
