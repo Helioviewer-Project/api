@@ -1330,6 +1330,13 @@ class Module_WebClient implements Module {
                 'dates'    => array()
             );
             break;
+        case 'getDataCoverageTimeline':
+            $expected = array(
+                'optional' => array('resolution', 'endDate'),
+                'alphanum' => array(),
+                'dates'    => array('endDate')
+            );
+            break;
         case 'updateDataCoverage':
             $expected = array(
                 'optional' => array('period', 'callback'),
