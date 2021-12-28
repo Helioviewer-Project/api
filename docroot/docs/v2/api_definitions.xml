@@ -3740,6 +3740,46 @@ Full source code for the entire Helioviewer Project can be found at https://gith
 }]]></example>
         </response>
     </endpoint>
+    <endpoint name="getDataCoverageTimeline" group="JPEG2000" http="GET">
+        <route>/v2/getDataCoverageTimeline/</route>
+        <description><![CDATA[Returns information about server API usage.]]></description>
+        <parameters>
+            <parameter type="string" optional="true" name="resolution" default="daily">
+                <description><![CDATA[The resolution to use when grouping data. Allowed options are [30m, 1h, 1D, 1W, 1M, 1Y] representing [30 minutes, hourly, daily, weekly, monthly, or yearly] respectively]]></description>
+                <example><![CDATA[1M]]></example>
+            </parameter>
+            <parameter type="date" optional="true" name="endDate">
+                <description><![CDATA[End date for the data range. The start date is determined by a predetermined amount before this end date.]]></description>
+                <example><![CDATA[2021-12-28T00:00:00Z]]></example>
+            </parameter>
+        </parameters>
+        <response code="200" type="string" subtype="JSON">
+            <description><![CDATA[Gets usage stats.]]></description>
+            <example query_string="?resolution=1M&amp;dateEnd=2021-12-28T00:00:00Z"><![CDATA[{
+"sourceId13": {
+    "sourceId": "13",
+    "label": "SDO AIA 304",
+    "data": [
+      {
+        "Jan 2019": 0
+      },
+      {
+        "Feb 2019": 0
+      },
+      ...
+      {
+        "Nov 2021": 41504
+      },
+      {
+        "Dec 2021": 67248
+      }
+    ]
+  },
+"sourceId14": { ... },
+...
+}]]></example>
+        </response>
+    </endpoint>
     <model name="Error">
         <description><![CDATA[A JSON object containing a numerical error code and a textual error message.]]></description>
         <example><![CDATA[{
