@@ -3698,6 +3698,48 @@ Full source code for the entire Helioviewer Project can be found at https://gith
             <example query_string="?imageScale=2.42044088&amp;sourceIds=[13]&amp;startDate=2021-12-27T00:00:00Z&amp;endDate=2021-12-28T00:00:00Z&amp;lang=sunpy"><![CDATA[helioviewer_sunpy_20211227_000000__20211228_000000.py]]></example>
         </response>
     </endpoint>
+    <endpoint name="getUsageStatistics" group="JPEG2000" http="GET">
+        <route>/v2/getUsageStatistics/</route>
+        <description><![CDATA[Returns information about server API usage.]]></description>
+        <parameters>
+            <parameter type="string" optional="true" name="resolution" default="daily">
+                <description><![CDATA[hourly, daily, weekly, monthly, yearly, or custom. Custom will return 24 steps in the given date range]]></description>
+                <example><![CDATA[daily]]></example>
+            </parameter>
+            <parameter type="date" optional="true" name="dateStart">
+                <description><![CDATA[Only used if resolution is custom. Start of date range to collect stats for.]]></description>
+                <example><![CDATA[2021-12-27T00:00:00Z]]></example>
+            </parameter>
+            <parameter type="date" optional="true" name="dateEnd">
+                <description><![CDATA[Only used if resolution is custom. End of date range to collect stats for.]]></description>
+                <example><![CDATA[2021-12-28T00:00:00Z]]></example>
+            </parameter>
+        </parameters>
+        <response code="200" type="string" subtype="JSON">
+            <description><![CDATA[Gets uage stats.]]></description>
+            <example query_string="?resolution=custom&amp;dateStart=2021-12-27T00:00:00Z&amp;dateEnd=2021-12-27T00:00:00Z"><![CDATA[{
+  "total": [
+    {
+      "2021-12-28 00:00:00": 16917
+    },
+    {
+      "2021-12-28 00:51:31": 6288
+    },
+    ...
+    ],
+  "downloadScreenshot": [
+    {
+      "2021-12-28 00:00:00": 0
+    },
+    {
+      "2021-12-28 00:51:31": 1
+    },
+    ...
+  ]
+  ...
+}]]></example>
+        </response>
+    </endpoint>
     <model name="Error">
         <description><![CDATA[A JSON object containing a numerical error code and a textual error message.]]></description>
         <example><![CDATA[{
