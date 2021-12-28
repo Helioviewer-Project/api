@@ -938,7 +938,8 @@ class Module_WebClient implements Module {
         // Iterate through instruments
         foreach( $instruments as $inst => $dataSources ) {
 
-            $oldest = new DateTime('2035-01-01');
+            $newest = null;
+            $measurement = null;
 
             // Keep track of which datasource is the furthest behind
             foreach( $dataSources as $dataSource ) {
@@ -955,21 +956,25 @@ class Module_WebClient implements Module {
                 $date = DateTime::createFromFormat($format, $dateStr);
 
                 // Store if older
-                if ($date < $oldest) {
-                    $oldest = $date;
+                if ((is_null($newest)) || ($newest < $date)) {
+                    $newest = $date;
+                    $measurement = $dataSource['name'];
                 }
             }
 
-            // Get elapsed time
-            $delta = $now->getTimestamp() - $oldest->getTimestamp();
+            if (!is_null($newest)) {
+                // Get elapsed time
+                $delta = $now->getTimestamp() - $newest->getTimestamp();
 
-            // Add to result array
-            if ( $delta > 0 ) {
-                $statuses[$inst] = array(
-                    'time' => toISOString($oldest),
-                    'level' => $this->_computeStatusLevel($delta, $inst),
-                    'secondsBehind' => $delta
-                );
+                // Add to result array
+                if ( $delta > 0 ) {
+                    $statuses[$inst] = array(
+                        'time' => toISOString($newest),
+                        'level' => $this->_computeStatusLevel($delta, $inst),
+                        'secondsBehind' => $delta,
+                        'measurement' => $measurement
+                    );
+                }
             }
         }
 
