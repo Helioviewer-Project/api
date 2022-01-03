@@ -857,6 +857,8 @@ def create_screenshots_table(cursor):
       `scaleY`            FLOAT DEFAULT '0',
       `numLayers`         TINYINT UNSIGNED NOT NULL DEFAULT 1,
       `switchSources`     TINYINT(1) NOT NULL DEFAULT 0,
+      `celestialBodiesLabels` VARCHAR(372),
+      `celestialBodiesTrajectories` VARCHAR(372),
        PRIMARY KEY (`id`)
     ) DEFAULT CHARSET=utf8;""")
 
