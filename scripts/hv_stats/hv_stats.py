@@ -59,13 +59,14 @@ master_time = time.time()
 
 # get credentials for accessing sql database
 cred={}
-if os.path.exists("/var/www/api.helioviewer.org/install/settings/settings.cfg"):
+exists = os.path.exists("/var/www/api.helioviewer.org/install/settings/settings.cfg")
+if exists:
     configFilePath = "/var/www/api.helioviewer.org/install/settings/settings.cfg"
-    configParser = configparser.RawConfigParser()   
+    configParser = configparser.RawConfigParser()
     configParser.read(configFilePath)
 elif os.path.exists("/home/varun/cred.cfg"):
     configFilePath = "/home/varun/cred.cfg"
-    configParser = configparser.RawConfigParser()   
+    configParser = configparser.RawConfigParser()
     configParser.read(configFilePath)
 else:
     print("ERROR: Please provide a config file with database credentials.")
@@ -75,7 +76,7 @@ cred['dbhost'] = configParser.get('database', 'dbhost')
 cred['dbname'] = configParser.get('database', 'dbname')
 cred['dbuser'] = configParser.get('database', 'dbuser')
 cred['dbpass'] = configParser.get('database', 'dbpass')
-        
+
 def skip_empty_table(table, title):
     """
     Prints a message to indicate this table is empty and returns
@@ -106,8 +107,8 @@ def sql_query(sql_select_Query):
         print("Error reading data from MySQL table", e)
     finally:
         connection.close()
-        return pd.DataFrame(records, columns=column_names) 
-    
+        return pd.DataFrame(records, columns=column_names)
+
 
 # preapring hv dataframe
 def hv_prepare(df, sourceId, obs=None):
@@ -117,9 +118,9 @@ def hv_prepare(df, sourceId, obs=None):
     df = df.sort_values('date').reset_index(drop=True)
     df['date'] = pd.to_datetime(df['date']) # convert string dates to datetime
     df = df.set_index('date')
-    df = df.reindex(pd.date_range(df.index.min(), df.index.max(), freq='D').to_period('D').to_timestamp(), 
+    df = df.reindex(pd.date_range(df.index.min(), df.index.max(), freq='D').to_period('D').to_timestamp(),
                 fill_value=0) # fill date gaps with 0
-    df = df.reindex(pd.date_range(df.index.min().replace(day=1), (df.index.max() + pd.tseries.offsets.MonthEnd(1)), freq='D').to_period('D').to_timestamp(), 
+    df = df.reindex(pd.date_range(df.index.min().replace(day=1), (df.index.max() + pd.tseries.offsets.MonthEnd(1)), freq='D').to_period('D').to_timestamp(),
                 fill_value=-1) # fill with dummy dates to complete first and last month and fill with -1
     df['count'] = df['count'].astype(int)
     df['date'] = df.index
@@ -127,7 +128,7 @@ def hv_prepare(df, sourceId, obs=None):
     df.loc[df['count']<0, 'count'] = np.nan # change count of dummy dates to nan
     df['Year'] = df['date'].dt.year.astype(str) + ' ' + df['date'].dt.month_name() # Year column with year month
     df['Day'] = df['date'].dt.day.astype(str) # day of the month
-    df['SOURCE_ID'] = sourceId 
+    df['SOURCE_ID'] = sourceId
     df['OBS'] = obs
     return df
 
@@ -136,7 +137,7 @@ def major_features(pp, df):
     t1 = pd.Timestamp('2011/06/07')
     if((t1 >= df['date'].min()) & (t1 <= df['date'].max())):
         pp.line(y=np.arange(0, np.nanmax(df['count'])+1), x=t1, line_width=1.5, line_dash='dotdash', color='red', alpha=1, legend_label= "Failed eruption (2011/06/07)")
-    t1 = pd.Timestamp('2013/11/28') 
+    t1 = pd.Timestamp('2013/11/28')
     if((t1 >= df['date'].min()) & (t1 <= df['date'].max())):
         pp.line(y=np.arange(0, np.nanmax(df['count'])+1), x=t1, line_width=1.5, line_dash='dotdash', color='purple', alpha=1, legend_label= "Comet ISON (2013/11/28)")
     t1 = pd.Timestamp('2017/09/06')
@@ -183,26 +184,26 @@ hv_sid = pd.DataFrame(columns=['OBS','SOURCE_ID'])
 
 for key1 in hv_keys.keys():
     for key2 in hv_keys[key1].keys():
-        if 'sourceId' in hv_keys[key1][key2].keys(): 
+        if 'sourceId' in hv_keys[key1][key2].keys():
             hv_sid.loc[len(hv_sid)] = " ".join([key1, key2]), hv_keys[key1][key2]['sourceId']
         else:
             for key3 in hv_keys[key1][key2].keys():
-                if 'sourceId' in hv_keys[key1][key2][key3].keys(): 
+                if 'sourceId' in hv_keys[key1][key2][key3].keys():
                     hv_sid.loc[len(hv_sid)] = " ".join([key1, key2, key3]), hv_keys[key1][key2][key3]['sourceId']
                 else:
                     for key4 in hv_keys[key1][key2][key3].keys():
-                        if 'sourceId' in hv_keys[key1][key2][key3][key4].keys(): 
+                        if 'sourceId' in hv_keys[key1][key2][key3][key4].keys():
                             hv_sid.loc[len(hv_sid)] = " ".join([key1, key2, key3, key4]), hv_keys[key1][key2][key3][key4]['sourceId']
                         else:
                             for key5 in hv_keys[key1][key2][key3][key4].keys():
-                                if 'sourceId' in hv_keys[key1][key2][key3][key4][key5].keys(): 
+                                if 'sourceId' in hv_keys[key1][key2][key3][key4][key5].keys():
                                     hv_sid.loc[len(hv_sid)] = " ".join([key1, key2, key3, key4, key5]), hv_keys[key1][key2][key3][key4][key5]['sourceId']
                                 else:
                                     for key6 in hv_keys[key1][key2][key3][key4][key5].keys():
-                                        if 'sourceId' in hv_keys[key1][key2][key3][key4][key5][key6].keys(): 
-                                            hv_sid.loc[len(hv_sid)] = " ".join([key1, key2, key3, key4, key5,key6]), hv_keys[key1][key2][key3][key4][key5][key6]['sourceId']    
+                                        if 'sourceId' in hv_keys[key1][key2][key3][key4][key5][key6].keys():
+                                            hv_sid.loc[len(hv_sid)] = " ".join([key1, key2, key3, key4, key5,key6]), hv_keys[key1][key2][key3][key4][key5][key6]['sourceId']
 
-hv_sid = hv_sid.sort_values(['SOURCE_ID']).reset_index(drop=True)                            
+hv_sid = hv_sid.sort_values(['SOURCE_ID']).reset_index(drop=True)
 
 
 # In[5]:
@@ -225,7 +226,7 @@ hv_sid.loc[(hv_sid['OBS'].str.contains('SDO HMI')), 'DATA_FREQ'] = 45
 
 
 # add columns for date of last observation to hv_sid in onder to stop data gap filling after mission has ended
-# it is also used to calculate expected files in the middle of the day 
+# it is also used to calculate expected files in the middle of the day
 hv_sid['LAST_DATE'] = pd.Timestamp('now')
 
 for ind, df in hv_sid.iterrows():
@@ -276,7 +277,7 @@ for (i, df), (ind, sid) in zip(enumerate(results), hv_sid.iterrows()):
 #         hv_sid = hv_sid.drop(index = hv_sid.index[hv_sid.index == i])
 #         continue
 #     hv[hv_sid.iloc[i]['SOURCE_ID']] = results[i]
-# # ind = np.random.choice(list(hv.keys())), 
+# # ind = np.random.choice(list(hv.keys())),
 # hv[np.random.choice(list(hv.keys()))]
 
 
@@ -296,10 +297,10 @@ h = hv_sid.loc[hv_sid['OBS'].str.match('SDO AIA')].iloc[:].reset_index(drop=True
 for ind, df_obs in h.iterrows():
     sid = df_obs['SOURCE_ID']
     df = hv[sid].copy()#.dropna()
-        
+
     name = df_obs['OBS']
     name_ = name.replace(" ", "_")
-    
+
     df = df.dropna().reset_index(drop=True)
     index_latest = df.loc[df['date']==df_obs['LAST_DATE'].to_period('D').to_timestamp()].index[0]
     df_latest = df.iloc[index_latest]
@@ -308,11 +309,11 @@ for ind, df_obs in h.iterrows():
     gap_threshold = gapfill_percentage / 100 * freq_perday
     df = df.loc[df['count'] <= gap_threshold].reset_index(drop=True)
     df_gaps = pd.concat([df_gaps, df]).reset_index(drop=True)
-    
+
     if not df_latest.empty:
         gap_threshold = (df_obs['LAST_DATE'] - df_latest['date']) / pd.Timedelta(days=1) * freq_perday * gapfill_percentage / 100
         if ((df_latest['count'] < gap_threshold).any()):
-            df_gaps = pd.concat([df_gaps, df_latest]).reset_index(drop=True)    
+            df_gaps = pd.concat([df_gaps, df_latest]).reset_index(drop=True)
 
 
 # In[ ]:
@@ -351,13 +352,13 @@ df_gaps.to_csv('AIA_data_gaps.csv', columns=["date", "end"], index=False, sep=',
 #     name = df_obs['OBS']
 #     name_ = name.replace(" ", "_")
 #     df = df.dropna().reset_index(drop=True)
-    
+
 #     freq_perday = (pd.Timedelta(days=1)/pd.Timedelta(seconds=df_obs['DATA_FREQ']))
 #     gap_threshold = gapfill_percentage / 100 * freq_perday
 #     df = df.loc[df['count'] <= gap_threshold].reset_index(drop=True)
 #     df['startDate'] = df['date']
 #     df['endDate'] = df['startDate'] + pd.Timedelta(days=1)
-    
+
 #     f = open("./%s/%d_%s.csv"%(directory, sid, name_), mode='w')
 #     f.write("# %s\n"%name)
 #     f.write("# Source Id %d\n"%sid)
@@ -369,7 +370,7 @@ df_gaps.to_csv('AIA_data_gaps.csv', columns=["date", "end"], index=False, sep=',
 #     df = hv[sid].copy()
 #     name = df['OBS'].unique()[0]
 #     name_ = name.replace(" ", "_")
-    
+
 #     df = df.dropna().reset_index(drop=True)
 #     f = open("./csv_files/%d_%s.csv"%(sid, name_), mode='w')
 #     f.write("# %s\n"%name)
@@ -387,11 +388,11 @@ print("Preparing coverage plots...")
 directory = './coverages'
 if not os.path.exists(directory):
     os.makedirs(directory)
-    
+
 for observatory in hv_keys.keys():
     panels_obs=[]
     for ind, df_obs in hv_sid[hv_sid['OBS'].str.match(observatory)].iterrows():
-        
+
         df = hv[df_obs['SOURCE_ID']].copy()
         df['index'] = (df['date'].dt.year - df['date'].min().year)*12 + (df['date'].dt.month - df['date'].min().month)
         sid = df['SOURCE_ID'].unique()[0]
@@ -417,11 +418,11 @@ for observatory in hv_keys.keys():
                        x_axis_label="Year Month", y_axis_label="Date",
                        tools=TOOLS, output_backend="webgl", toolbar_location='above',
                        tooltips=[('Date', '@Year @Day'), ('#Data Files', '@count{0,0}')])
-                       
+
 
             total_days = (hv[sid]['count']>=0).sum()
             total_files = (hv[sid]['count']).sum()
-            
+
             p.add_layout(Title(text="%s Coverage"%(name), text_font_size='14pt'), 'above')
             p.add_layout(Title(text="Date Range: %s - %s"%(df.dropna()['date'].min().strftime("%Y, %b %d"), df.dropna()['date'].max().strftime("%Y, %b %d"))), 'above')
             p.add_layout(Title(text="Total Files: {:,.0f} | Total Days: {:,.0f} | Source ID: {:,.0f}".format(total_files, total_days, df['SOURCE_ID'].unique()[0]), text_font_style="italic"), 'above')
@@ -445,17 +446,17 @@ for observatory in hv_keys.keys():
 
 
             p.rect(x="index", y="Day", width=1, height=1,
-                   source=df, 
+                   source=df,
                    hover_alpha=0.3,
                    hover_color="navy",#{'field': 'count', 'transform': mapper(palette=colors, low=0.1, high=np.nanmax(df['count']))},
                    color={'field': 'count', 'transform': mapper(palette=colors, low=0.1, high=np.nanmax(df['count']))},
-                   line_color=None, 
+                   line_color=None,
                    dilate=True)
-            
+
             num_ticks=10
             if (len(df[df['count']>0]['count'].unique()) <= 10):
                 num_ticks = len(df[df['count']>0]['count'].unique())
-            color_bar = ColorBar(color_mapper = mapper(palette=colors, low=0.1, high=np.nanmax(df['count'])), 
+            color_bar = ColorBar(color_mapper = mapper(palette=colors, low=0.1, high=np.nanmax(df['count'])),
                                  major_label_text_font_size="10px",
                                  ticker=ticker(desired_num_ticks=num_ticks),
                                  formatter=NumeralTickFormatter(format="0,0"),
@@ -463,7 +464,7 @@ for observatory in hv_keys.keys():
             p.add_layout(color_bar, 'right')
             interval_months = 3
             inter_thresh = 12
-            if(len(years)<inter_thresh): 
+            if(len(years)<inter_thresh):
                 interval_months = 1
             p.xaxis.ticker = df['index'].unique()[::interval_months]
             p.xaxis.major_tick_line_color = 'black'
@@ -479,7 +480,7 @@ for observatory in hv_keys.keys():
 #         show(tabs)
         panel_obs = Panel(child=tabs, title=name.replace(observatory+' ',''))
         panels_obs.append(panel_obs)
-        
+
     tabs_obs = Tabs(tabs=panels_obs)
 #     show(tabs_obs)
 #     export_png(tabs_obs, filename='test.png')
@@ -501,7 +502,7 @@ if not os.path.exists(directory):
 for observatory in hv_keys.keys():
     panels_obs=[]
     for ind, df_obs in hv_sid[hv_sid['OBS'].str.match(observatory)].iloc[:].iterrows():
-        
+
         df = hv[df_obs['SOURCE_ID']].copy()
         sid = df['SOURCE_ID'].unique()[0]
         name = df['OBS'][0]
@@ -543,14 +544,14 @@ for observatory in hv_keys.keys():
 
         for axis_type in ["log","linear"]:
             p = figure(y_axis_type = axis_type,
-                       x_axis_label = 'No. of Data files', y_axis_label = 'Day count', 
+                       x_axis_label = 'No. of Data files', y_axis_label = 'Day count',
                        background_fill_color="#fafafa",
                        y_range = (0.9, df_hist['count'].max() + df_hist['count'].max()//10))
 
             # Add a quad glyph with source this time
             p.quad(bottom=0.9, top='count', left='left', right='right', source=hist_src, fill_color='navy', alpha=0.5,
                    hover_fill_color='navy', hover_fill_alpha=0.2, line_color='white', legend_label='Histogram')
-            
+
             df_stats = pd.DataFrame({'height': np.linspace(0.5, df_hist['count'].max(), 2),
                                      'mean':np.nanmean(counts), 'median': np.nanmedian(counts), 'mode':stats.mode(counts)[0][0]})
             p.line(x='mean', y='height', line_color="black", line_dash='solid', line_width = 4, legend_label="Mean (%.2f)"%(df_stats['mean'][0]), source=df_stats)
@@ -559,8 +560,8 @@ for observatory in hv_keys.keys():
 
             total_days = (counts>=0).sum()
             total_files = counts.sum()
-            
-            p.add_layout(Title(text = "Histogram for %s"%title, text_font_size = "16pt", text_font_style="bold"), 
+
+            p.add_layout(Title(text = "Histogram for %s"%title, text_font_size = "16pt", text_font_style="bold"),
                          place = 'above')
             p.add_layout(Title(text="Date range: %s - %s"%(df['date'].min().strftime('%Y, %b %d'),df['date'].max().strftime('%Y, %b %d'))),
                          place = 'above')
@@ -580,23 +581,23 @@ for observatory in hv_keys.keys():
                               mode= 'vline')
 
             p.add_tools(hover)
-            
+
             # Add style to the plot
             if (df_hist['count'].max() - df_hist['count'].min())<=10:
                 p.yaxis.visible = False
                 ticker = SingleIntervalTicker(interval=1, num_minor_ticks=10)
                 yaxis = LinearAxis(ticker=ticker)
                 p.add_layout(yaxis, 'left')
-            
+
             if (df_hist['right'].max() - df_hist['left'].min())<=10:
                 p.xaxis.visible = False
                 ticker = SingleIntervalTicker(interval=1, num_minor_ticks=10)
                 yaxis = LinearAxis(ticker=ticker)
                 p.add_layout(yaxis, 'below')
-            
+
             p.yaxis[0].formatter = NumeralTickFormatter(format='0,0')
             p.xaxis[0].formatter = NumeralTickFormatter(format='0,0')
-            
+
             p.yaxis.axis_label = "Day Count"
             p.xaxis.axis_label = "No. of Data Files"
             p.title.align = 'center'
@@ -609,11 +610,11 @@ for observatory in hv_keys.keys():
             p.legend.background_fill_alpha = 0.3
             p.border_fill_color = "whitesmoke"
             p.x_range.range_padding = 0.05
-            
+
             ### Cumulative distribution plot
             p2 = figure(y_axis_type=axis_type,
                        background_fill_color="#fafafa")
-                       
+
 
             p2_line = p2.line(x='x', y='count_cum', line_color='#036564', line_width=3, source=cum_src, legend_label="Cumulative distribution")
             p2.add_layout(Title(text = "Cumulative Distribution for %s"%title, text_font_size = "16pt", text_font_style="bold"), place = 'above')
@@ -621,19 +622,19 @@ for observatory in hv_keys.keys():
             p2.add_layout(Title(text="Total Files: {:,.0f} | Total Days: {:,.0f} | Source ID: {}".format(total_files, total_days, sid), text_font_style="italic"), 'above')
 
             # Add the hover tool to the graph
-            hover = HoverTool(line_policy='nearest', 
-                              tooltips = [('#Data files', '<@x{0,0}'), 
-                                          ('Cumulative Day count', '@count_cum{0,0}')], 
+            hover = HoverTool(line_policy='nearest',
+                              tooltips = [('#Data files', '<@x{0,0}'),
+                                          ('Cumulative Day count', '@count_cum{0,0}')],
                               mode='vline')
             p2.add_tools(hover)
-            
+
             # Mean, median, mode statistics
             df_cumstats = pd.DataFrame({'height': np.linspace(df_cum['count_cum'].min(),df_cum['count_cum'].max(),2),
                                         'mean':np.nanmean(counts), 'median': np.nanmedian(counts), 'mode':stats.mode(counts)[0][0]})
             p2.line(x='mean', y='height', line_color="black", line_dash='solid', line_width = 2, legend_label="Mean (%.2f)"%(df_cumstats['mean'][0]), source=df_cumstats)
             p2.line(x='median', y='height', line_color = "red", line_dash='dashed', line_width=2, legend_label="Median (%.2f)"%(df_cumstats['median'][0]), source=df_cumstats)
 #             p2.line(x='mode', y='height', line_color = "lightgreen", line_dash = 'dashdot',line_width=2,legend_label="Mode (%.2f)"%(df_cumstats['mode'][0]), source=df_cumstats)
-        
+
 
             # Add styling to the plot
             if (df_cum['count_cum'].max() - df_cum['count_cum'].min())<=10:
@@ -641,16 +642,16 @@ for observatory in hv_keys.keys():
                 ticker = SingleIntervalTicker(interval=1, num_minor_ticks=10)
                 yaxis = LinearAxis(ticker=ticker)
                 p2.add_layout(yaxis, 'left')
-            
+
             if (df_cum['x'].max() - df_cum['x'].min())<=10:
                 p2.xaxis.visible = False
                 ticker = SingleIntervalTicker(interval=1, num_minor_ticks=10)
                 yaxis = LinearAxis(ticker=ticker)
                 p2.add_layout(yaxis, 'below')
-            
+
             p2.yaxis[0].formatter = NumeralTickFormatter(format='0,0')
             p2.xaxis[0].formatter = NumeralTickFormatter(format='0,0')
-            
+
             p2.yaxis.axis_label = "Day Count"
             p2.xaxis.axis_label = "No. of Data Files"
             p2.title.align = 'center'
@@ -663,7 +664,7 @@ for observatory in hv_keys.keys():
             p2.legend.background_fill_alpha = 0.3
             p2.border_fill_color = "whitesmoke"
             p2.x_range.range_padding = 0.05
-            
+
             grid = gridplot([[p, p2]], sizing_mode='stretch_both')# width_policy='max', height_policy='max')#,plot_width=1200, plot_height=1000, sizing_mode='scale_width')#, plot_width=250, plot_height=250)
             panel = Panel(child=grid, title=axis_type)
             panels.append(panel)
@@ -726,14 +727,16 @@ print("Preparing histogram for movie lengths...")
 directory = 'hv_movies'
 if not os.path.exists(directory):
     os.makedirs(directory)
-    
+
 panels_pov=[]
-for pov, ref, bin_size, unit, unit2, conversion_factor in zip(['reqDuration','genDuration'], 
+for pov, ref, bin_size, unit, unit2, conversion_factor in zip(['reqDuration','genDuration'],
                                                               ['requested','generated'],
-                                                              [1, 10],['days','seconds'], ['years', 'days'], 
+                                                              [1, 10],['days','seconds'], ['years', 'days'],
                                                               [365, 60*60*24]):
 
     counts = df[pov]
+    if (counts.empty):
+        continue
 
     arr_hist, edges = np.histogram(counts, bins=np.arange(0, counts.max()+bin_size, bin_size))
     cum_bin_size = max(bin_size//10, 1)
@@ -758,7 +761,7 @@ for pov, ref, bin_size, unit, unit2, conversion_factor in zip(['reqDuration','ge
     panels = []
     for axis_type in ["log","linear"]:
         p = figure(y_axis_type = axis_type,
-                   x_axis_label = 'Length of movies (%s)'%(unit), y_axis_label = 'Movie count', 
+                   x_axis_label = 'Length of movies (%s)'%(unit), y_axis_label = 'Movie count',
                    background_fill_color="#fafafa",
                    y_range = (0.5, df_hist['count'].max() + df_hist['count'].max()//10)
                   )
@@ -766,7 +769,7 @@ for pov, ref, bin_size, unit, unit2, conversion_factor in zip(['reqDuration','ge
         # Add a quad glyph with source this time
         p_hist = p.quad(bottom=0.5, top='count', left='left', right='right', source=hist_src, fill_color='navy', alpha=0.5,
                hover_fill_color='navy', hover_fill_alpha=0.2, line_color='white', legend_label='Histogram')
-        
+
     #         p.add_layout(Span(location=1800, dimension='height'))#, legend_label='Expected date file count'))
         df_stats = pd.DataFrame({'height': np.linspace(min(df_hist['count'].min(),0.5),df_hist['count'].max(),2),
                                  'mean':np.nanmean(counts), 'median': np.nanmedian(counts), 'mode':stats.mode(counts)[0][0]})
@@ -777,14 +780,14 @@ for pov, ref, bin_size, unit, unit2, conversion_factor in zip(['reqDuration','ge
         total_days = len(counts)
         total_files = counts.sum()
 
-        p.add_layout(Title(text = "Histogram for length of movies %s"%(ref), text_font_size = "16pt", text_font_style="bold"), 
+        p.add_layout(Title(text = "Histogram for length of movies %s"%(ref), text_font_size = "16pt", text_font_style="bold"),
                      place = 'above')
-        p.add_layout(Title(text="%s during: %s - %s"%(ref, df['date'].min().strftime('%Y, %b %d'),df['date'].max().strftime('%Y, %b %d'))), 
+        p.add_layout(Title(text="%s during: %s - %s"%(ref, df['date'].min().strftime('%Y, %b %d'),df['date'].max().strftime('%Y, %b %d'))),
                      place = 'above')
         if((ref=='generated') & (not outlier_count.empty)):
-            p.add_layout(Title(text="(Movie of length %d seconds %s on %s was discarded)"%(outlier_count, ref, outlier_date), text_font_style="italic"), 
+            p.add_layout(Title(text="(Movie of length %d seconds %s on %s was discarded)"%(outlier_count, ref, outlier_date), text_font_style="italic"),
                           place = 'above')
-        p.add_layout(Title(text="Total length of movies {}: {:,.2f} {} ({:,.2f} {}) | Total Movies: {:,} ".format(ref, total_files, unit, total_files/conversion_factor, unit2, total_days), text_font_style="italic"), 
+        p.add_layout(Title(text="Total length of movies {}: {:,.2f} {} ({:,.2f} {}) | Total Movies: {:,} ".format(ref, total_files, unit, total_files/conversion_factor, unit2, total_days), text_font_style="italic"),
                      place = 'above')
 
         p.legend.location = "top_right"
@@ -803,7 +806,7 @@ for pov, ref, bin_size, unit, unit2, conversion_factor in zip(['reqDuration','ge
 
         # Add the hover tool to the graph
         p.add_tools(hover)
-        
+
         # Add style to the plot
         p.title.align = 'center'
         p.title.text_font_size = '18pt'
@@ -816,28 +819,28 @@ for pov, ref, bin_size, unit, unit2, conversion_factor in zip(['reqDuration','ge
         p.border_fill_color = "whitesmoke"
         p.legend.background_fill_alpha = 0.3
         p.x_range.range_padding = 0.05
-        
-        
+
+
         p2 = figure(y_axis_type=axis_type,
-                           x_axis_label = 'Length of movies (%s)'%(unit), 
+                           x_axis_label = 'Length of movies (%s)'%(unit),
                            y_axis_label = 'Movie count',
                            background_fill_color="#fafafa")
 
 
         p2_line = p2.line(x='x', y='count_cum', line_color='#036564', line_width=3, source=cum_src, legend_label="Cumulative distribution")
     #         p2_circle = p2.circle(x='x', y='count_cum', line_color='#036564', line_width=5, source=cum_src, hover_line_alpha=0.5, legend_label="Cumulative distribution" )
-        p2.add_layout(Title(text = "Cumulative distribution for length of movies %s"%(ref), text_font_size = "16pt", text_font_style="bold"), 
+        p2.add_layout(Title(text = "Cumulative distribution for length of movies %s"%(ref), text_font_size = "16pt", text_font_style="bold"),
                       place = 'above')
-        p2.add_layout(Title(text="%s during: %s - %s"%(ref, df['date'].min().strftime('%Y, %b %d'),df['date'].max().strftime('%Y, %b %d'))), 
+        p2.add_layout(Title(text="%s during: %s - %s"%(ref, df['date'].min().strftime('%Y, %b %d'),df['date'].max().strftime('%Y, %b %d'))),
                       place = 'above')
         if((ref=='generated') & (not outlier_count.empty)):
-            p2.add_layout(Title(text="(Movie of length %d seconds %s on %s was discarded)"%(outlier_count, ref, outlier_date), text_font_style="italic"), 
+            p2.add_layout(Title(text="(Movie of length %d seconds %s on %s was discarded)"%(outlier_count, ref, outlier_date), text_font_style="italic"),
                           place = 'above')
-        p2.add_layout(Title(text="Total length of movies {}: {:,.2f} {} ({:,.2f} {}) | Total Movies: {:,} ".format(ref, total_files, unit, total_files/conversion_factor, unit2, total_days), text_font_style="italic"), 
+        p2.add_layout(Title(text="Total length of movies {}: {:,.2f} {} ({:,.2f} {}) | Total Movies: {:,} ".format(ref, total_files, unit, total_files/conversion_factor, unit2, total_days), text_font_style="italic"),
                      place = 'above')
 
-        hover = HoverTool(line_policy='nearest', 
-                          tooltips = [('Length of movies %s'%(ref), '<@x{0.2f} %s'%unit), 
+        hover = HoverTool(line_policy='nearest',
+                          tooltips = [('Length of movies %s'%(ref), '<@x{0.2f} %s'%unit),
                                       ('Percentage of %s'%(ref), '<@f_percent'),
                                       ('Cumulative Day count', '@count_cum{0,0}')],
                           mode='vline')
@@ -848,7 +851,7 @@ for pov, ref, bin_size, unit, unit2, conversion_factor in zip(['reqDuration','ge
         p2.line(x='median', y='height', line_color = "red", line_dash='dashed', line_width=3, legend_label="Median (%.2f %s)"%(df_cumstats['median'][0], unit), source=df_cumstats)
 #         p2.line(x='mode', y='height', line_color = "lightgreen", line_dash = 'dashdot',line_width=2,legend_label="Mode (%.2f %s)"%(df_cumstats['mode'][0], unit), source=df_cumstats)
 #         p2.add_layout(Span(location=10, dimension='height', legend_label='Expected date file count'))
-        
+
         # Add the hover tool to the graph
         p2.add_tools(hover)
         p2.title.align = 'center'
@@ -863,7 +866,7 @@ for pov, ref, bin_size, unit, unit2, conversion_factor in zip(['reqDuration','ge
         p2.border_fill_color = "whitesmoke"
         p2.legend.background_fill_alpha = 0.3
         p2.x_range.range_padding = 0.05
-        
+
 
         grid = gridplot([[p, p2]], sizing_mode='stretch_both')# width_policy='max', height_policy='max')#,plot_width=1200, plot_height=1000, sizing_mode='scale_width')#, plot_width=250, plot_height=250)
         panel = Panel(child=grid, title=axis_type)
@@ -901,7 +904,7 @@ hv['hv_movies'] = sql_query(query.format('movies'))
 hv['Jhv_movies'] = sql_query(query.format('movies_jpx'))
 
 hv['embed_service'] = sql_query(query.format("statistics WHERE action=\'embed\'"))
-hv['embed_service']['date'] = pd.to_datetime(hv['embed_service']['date'])  
+hv['embed_service']['date'] = pd.to_datetime(hv['embed_service']['date'])
 #df_em = pd.read_csv('embed.csv')
 #df_em['timestamp'] = pd.to_datetime(df_em['timestamp'])
 #df_em = pd.DataFrame(df_em.groupby(by=df_em['timestamp'].dt.date).count()['id'])
@@ -921,7 +924,7 @@ print("Query completed in %d seconds."%(time.time()-start_time))
 # In[9]:
 
 
-titles = ["Helioviewer.org Movies generated", "Helioviewer.org Screenshots generated", 
+titles = ["Helioviewer.org Movies generated", "Helioviewer.org Screenshots generated",
           "JHelioviewer Movies generated", "Times Embedded Helioviewer.org service was used",
          "Student Helioviewer Movies generated"]
 services= ["Movies", "Screenshots", "Movies", "Embed usage", "Movies"]
@@ -954,14 +957,14 @@ for key, title, service in zip(hv.keys(), titles, services):
     print(key)
     if not os.path.exists(directory):
         os.makedirs(directory)
-        
+
     df = hv[key].copy()
     df = df.set_index('date')
     df = df.reindex(pd.date_range(df.index.min(), df.index.max(), freq='D').to_period('D').to_timestamp(),
                                   fill_value=0)
     df['date'] = df.index
     df = df.reset_index(drop=True)
-    
+
     df_0 = df.loc[df['count']==0].reset_index(drop=True)
 
     df.loc[(df['date'] >= pd.Timestamp('2011/08/11')) & (df['date'] <= pd.Timestamp('2011/09/18')), 'count'] = np.nan
@@ -972,16 +975,16 @@ for key, title, service in zip(hv.keys(), titles, services):
 
     df_src = ColumnDataSource(df)
 
-    p = figure(plot_height=250, x_axis_type="datetime", 
+    p = figure(plot_height=250, x_axis_type="datetime",
                tools=TOOLS,
                sizing_mode="scale_width", min_border_left = 0)
 
 
-    p.add_layout(Title(text = "Number of %s every day"%title, text_font_size = "16pt", text_font_style="bold"), 
+    p.add_layout(Title(text = "Number of %s every day"%title, text_font_size = "16pt", text_font_style="bold"),
                  place = 'above')
-    p.add_layout(Title(text = "Date Range: %s - %s"%(df['date'].min().strftime('%Y, %b %d'),df['date'].max().strftime('%Y, %b %d'))), 
+    p.add_layout(Title(text = "Date Range: %s - %s"%(df['date'].min().strftime('%Y, %b %d'),df['date'].max().strftime('%Y, %b %d'))),
                  place = 'above')
-    p.add_layout(Title(text="Total {}: {:,.0f} | Total Days: {:,} (excluding {:,} days of server downtime) ".format(title, df['count'].sum(), len(df.dropna()), len(df)-len(df.dropna())), text_font_style="italic"), 
+    p.add_layout(Title(text="Total {}: {:,.0f} | Total Days: {:,} (excluding {:,} days of server downtime) ".format(title, df['count'].sum(), len(df.dropna()), len(df)-len(df.dropna())), text_font_style="italic"),
                  place = 'above')
 
     p.background_fill_color="#f5f5f5"
@@ -989,13 +992,13 @@ for key, title, service in zip(hv.keys(), titles, services):
     p.xaxis.axis_label = 'Date'
     p.yaxis.axis_label = 'No. of %s'%title
     p.axis.axis_line_color = None
-    
+
     p.x_range.start = df['date'].min() - (df['date'].max()-df['date'].min())*0.02
     p.x_range.end = df['date'].max() + (df['date'].max()-df['date'].min())*0.02
-    
+
 #     p.x_range.range_padding = 0.02
     p.y_range.range_padding = 0.05
-    
+
     p.yaxis[0].formatter = NumeralTickFormatter(format='0,0')
 #     p.xaxis[0].formatter = DatetimeTickFormatter(days=["%b %d, %Y %H"])
     p.xaxis.ticker = YearsTicker(desired_num_ticks=10)#, num_minor_ticks=12)
@@ -1003,10 +1006,10 @@ for key, title, service in zip(hv.keys(), titles, services):
 
     p_line = p.line(x='date', y='count', line_width=2, color='#ebbd5b', source=df_src)
     p_0 = p.circle(x='date', y='count', size=2, color='red', source = df_0, legend_label='Zero %s (%d days)'%(service, len(df_0)))
-    
+
     p = service_pause(p, df)
     p = major_features(p, df)
-    
+
     p.add_tools(HoverTool(renderers=[p_line],
                           tooltips=[( 'date',   '@date{%F}'),
         #               ( 'close',  '$@{adj close}{%0.2f}' ), # use @{ } for field names with spaces
@@ -1025,7 +1028,7 @@ for key, title, service in zip(hv.keys(), titles, services):
     p.line(y='median', x='height', line_color = "black", line_dash='dashed', line_width=1, legend_label="Median ({:,.2f})".format(df_stats['median'][0]), source=df_stats)
     p.legend.background_fill_alpha = 0.3
     p.border_fill_color = "whitesmoke"
-    
+
 #     show(p)
 #     break
     save(p, filename='./%s/time_series.html'%key, title='%s every day'%title)
@@ -1045,14 +1048,14 @@ for key, title, service in zip(hv.keys(), titles, services):
     directory = key
     if not os.path.exists(directory):
         os.makedirs(directory)
-        
+
     df = hv[key].copy()
     df = df.set_index('date')
     df = df.reindex(pd.date_range(df.index.min(), df.index.max(), freq='D').to_period('D').to_timestamp(),
                                   fill_value=0)
     df['date'] = df.index
     df = df.reset_index(drop=True)
-    
+
     df.loc[(df['date'] >= pd.Timestamp('2011/08/11')) & (df['date'] <= pd.Timestamp('2011/09/18')), 'count'] = np.nan
     df.loc[(df['date'] >= pd.Timestamp('2013/10/01')) & (df['date'] <= pd.Timestamp('2013/10/16')), 'count'] = np.nan
     df.loc[(df['date'] >= pd.Timestamp('2015/02/04')) & (df['date'] <= pd.Timestamp('2015/09/23')), 'count'] = np.nan
@@ -1083,7 +1086,7 @@ for key, title, service in zip(hv.keys(), titles, services):
     panels = []
     for axis_type in ["log","linear"]:
         p = figure(y_axis_type = axis_type,
-                   x_axis_label = 'No. of %s'%title, y_axis_label = 'Day count', 
+                   x_axis_label = 'No. of %s'%title, y_axis_label = 'Day count',
                    background_fill_color="#fafafa",
                    y_range = (0.9, df_hist['count'].max() + df_hist['count'].max()//10))
 
@@ -1098,16 +1101,16 @@ for key, title, service in zip(hv.keys(), titles, services):
         p.xaxis.major_label_text_font_size = '12pt'
         p.yaxis.axis_label_text_font_size = '12pt'
         p.yaxis.major_label_text_font_size = '12pt'
-        
+
         p.yaxis[0].formatter = NumeralTickFormatter(format='0,0')
         p.xaxis[0].formatter = NumeralTickFormatter(format='0,0')
-        
+
         df_stats = pd.DataFrame({'height': np.linspace(0.5, df_hist['count'].max(), 2),
                                  'mean':np.nanmean(counts), 'median': np.nanmedian(counts), 'mode':stats.mode(counts)[0][0]})
         p.line(x='mean', y='height', line_color="black", line_dash='solid', line_width = 4, legend_label="Mean (%.2f)"%(df_stats['mean'][0]), source=df_stats)
         p.line(x='median', y='height', line_color = "red", line_dash='dashed', line_width=3, legend_label="Median (%.2f)"%(df_stats['median'][0]), source=df_stats)
 #         p.line(x='mode', y='height', line_color = "lightgreen", line_dash = 'dashdot',line_width=2,legend_label="Mode (%.2f)"%(df_stats['mode'][0]), source=df_stats)
-        
+
         total_days = (counts>=0).sum()
         total_files = counts.sum()
 
@@ -1118,7 +1121,7 @@ for key, title, service in zip(hv.keys(), titles, services):
         p.legend.location = "top_right"
         p.legend.background_fill_alpha = 0.3
         p.border_fill_color = "whitesmoke"
-        
+
     #     p.grid.grid_line_color="white"
 
     #     text_source = ColumnDataSource(dict(x=[x_bins.max()*3/4],y=[df_hist['count'].max()*3/4],text=['Total Day Count = \n %d'%total]))
@@ -1134,7 +1137,7 @@ for key, title, service in zip(hv.keys(), titles, services):
         # Add the hover tool to the graph
         p.add_tools(hover)
         p2 = figure(y_axis_type=axis_type,
-                           x_axis_label = 'No. of %s'%key, 
+                           x_axis_label = 'No. of %s'%key,
                            y_axis_label = 'Day count',
                            background_fill_color="#fafafa")
 
@@ -1144,20 +1147,20 @@ for key, title, service in zip(hv.keys(), titles, services):
         p2.add_layout(Title(text="Date range: %s - %s"%(df['date'].min().strftime('%Y, %b %d'),df['date'].max().strftime('%Y, %b %d'))), 'above')
         p2.add_layout(Title(text="Total {} generated: {:,.0f} | Total Days: {:,} (excluding {:,} days of server downtime)".format(service, total_files, total_days, len(df)-len(df.dropna())), text_font_style="italic"), 'above')
 
-        hover = HoverTool(line_policy='nearest', 
-                          tooltips = [('#%s generated'%service, '<@x{0,0}'), 
+        hover = HoverTool(line_policy='nearest',
+                          tooltips = [('#%s generated'%service, '<@x{0,0}'),
                                       ('Percentage of %s generated'%service, '<@f_percent'),
                                       ('Cumulative Day count', '@count_cum{0,0}')],
                           mode='vline')
 
     #         p2.add_layout(Span(location=1800, dimension='height'))#, legend_label='Expected date file count'))
-        
+
         df_cumstats = pd.DataFrame({'height': np.linspace(df_cum['count_cum'].min(),df_cum['count_cum'].max(),2),
                                     'mean':np.nanmean(counts), 'median': np.nanmedian(counts), 'mode':stats.mode(counts)[0][0]})
         p2.line(x='mean', y='height', line_color="black", line_dash='solid', line_width = 4, legend_label="Mean ({:,.2f})".format(df_cumstats['mean'][0]), source=df_cumstats)
         p2.line(x='median', y='height', line_color = "red", line_dash='dashed', line_width=3, legend_label="Median ({:,.2f})".format(df_cumstats['median'][0]), source=df_cumstats)
 #         p2.line(x='mode', y='height', line_color = "lightgreen", line_dash = 'dashdot',line_width=2,legend_label="Mode (%.2f)"%(df_cumstats['mode'][0]), source=df_cumstats)
-        
+
         # Add the hover tool to the graph
         p2.add_tools(hover)
         p2.title.align = 'center'
@@ -1170,9 +1173,9 @@ for key, title, service in zip(hv.keys(), titles, services):
         p2.xaxis[0].formatter = NumeralTickFormatter(format='0,0')
         p2.border_fill_color = "whitesmoke"
         p2.legend.background_fill_alpha = 0.3
-        p2.legend.location = "bottom_right"        
+        p2.legend.location = "bottom_right"
         p2.x_range.range_padding = 0.05
-        
+
         grid = gridplot([[p, p2]], sizing_mode='stretch_both')# width_policy='max', height_policy='max')#,plot_width=1200, plot_height=1000, sizing_mode='scale_width')#, plot_width=250, plot_height=250)
         panel = Panel(child=grid, title=axis_type)
         panels.append(panel)
@@ -1196,28 +1199,28 @@ for key, title, service in zip(hv.keys(), titles, services):
     directory = key
     if not os.path.exists(directory):
         os.makedirs(directory)
-        
+
     df = hv[key].copy()
-    
+
     df_na = df.copy()
     df_na = df_na.set_index('date')
     df_na = df_na.reindex(pd.date_range(df_na.index.min(),df_na.index.max(), freq='D').to_period('D').to_timestamp(),
                                   fill_value=0)
     df_na['date'] = df_na.index
     df_na = df_na.reset_index(drop=True)
-    
+
     df_na.loc[(df_na['date'] >= pd.Timestamp('2011/08/11')) & (df_na['date'] <= pd.Timestamp('2011/09/18')), 'count'] = np.nan
     df_na.loc[(df_na['date'] >= pd.Timestamp('2013/10/01')) & (df_na['date'] <= pd.Timestamp('2013/10/16')), 'count'] = np.nan
     df_na.loc[(df_na['date'] >= pd.Timestamp('2015/02/04')) & (df_na['date'] <= pd.Timestamp('2015/09/23')), 'count'] = np.nan
-    
+
     server_downtime_days = len(df_na)-len(df_na.dropna())
-    
+
     df['weekday'] = df['date'].dt.day_name()
     df = df.groupby('weekday').sum().reindex(weekdays)
     df['weekday'] = df.index
     df = df.reset_index(drop=True)
     df['index'] = df.index
-    
+
     # Column data source
     df['percent'] = np.float64(["%.2f"%(count/df['count'].sum()*100) for count in df['count']])
     df['percent%'] = df['percent'].astype(str)+"%"
@@ -1227,14 +1230,14 @@ for key, title, service in zip(hv.keys(), titles, services):
     for axis_type in ["linear","log"]:
         p = figure(#x_range = df['weekday'],
                    y_axis_type = axis_type,
-                   x_axis_label = 'Weekdays', y_axis_label = '%s count'%service, 
+                   x_axis_label = 'Weekdays', y_axis_label = '%s count'%service,
                    background_fill_color="#fafafa", aspect_ratio=16/9, plot_width=1000)
 
         # Add a quad glyph with source this time
         p.vbar(x='index', top='count', width=0.75, source=df_src, bottom=0.1,
                hover_fill_alpha = 0.5, line_color='white', legend_field="weekday",
                fill_color = factor_cmap('weekday', palette=bp.Spectral7, factors=df['weekday']),
-               hover_fill_color=factor_cmap('weekday', palette=bp.Spectral7, factors=df['weekday']), 
+               hover_fill_color=factor_cmap('weekday', palette=bp.Spectral7, factors=df['weekday']),
               )
         # Add style to the plot
         p.title.align = 'center'
@@ -1244,11 +1247,11 @@ for key, title, service in zip(hv.keys(), titles, services):
         p.yaxis.axis_label_text_font_size = '12pt'
         p.yaxis.major_label_text_font_size = '12pt'
         p.xgrid.grid_line_color = None
-        
+
         p.y_range.start = 0.1
         p.y_range.end = df['count'].max()*1.5
         p.yaxis[0].formatter = NumeralTickFormatter(format='0,0')
-        
+
         if(axis_type=="log"): p.y_range.end = df['count'].max()**1.5
 
         p.add_layout(Title(text = "Frequency of %s per weekday"%title, text_font_size = "16pt", text_font_style="bold"), place = 'above')
@@ -1259,7 +1262,7 @@ for key, title, service in zip(hv.keys(), titles, services):
         p.legend.orientation = "horizontal"
         p.legend.location = "top_center"
         p.grid.grid_line_color="white"
-        
+
         labels = LabelSet(x='index', y='count', text='percent%', level='glyph',
                           x_offset=-30, y_offset=0, source=df_src)#, render_mode='canvas')
         p.add_layout(labels)
@@ -1273,10 +1276,10 @@ for key, title, service in zip(hv.keys(), titles, services):
     #     Add the hover tool to the graph
         p.add_tools(hover)
         p.xaxis.major_label_overrides = {i: day for i, day in enumerate(df['weekday'])}
-        p.xaxis.minor_tick_line_color = None 
-        
+        p.xaxis.minor_tick_line_color = None
+
         p.border_fill_color = "whitesmoke"
-        
+
         panel = Panel(child=p, title=axis_type)
         panels.append(panel)
     tabs = Tabs(tabs=panels)
@@ -1310,36 +1313,36 @@ for key, title, service in zip(hv.keys(), titles, services):
     directory = key
     if not os.path.exists(directory):
         os.makedirs(directory)
-    
+
     df = hv[key].copy()
-    
+
     df = df.set_index('date')
     df = df.reindex(pd.date_range(df.index.min(),df.index.max(), freq='D').to_period('D').to_timestamp(),
                     fill_value=0)
-    
-#     df = df.reindex(pd.date_range(df.index.min() + pd.Timedelta(days=-df.index.min().weekday()), 
+
+#     df = df.reindex(pd.date_range(df.index.min() + pd.Timedelta(days=-df.index.min().weekday()),
 #                                   df.index.max() + pd.Timedelta(days=7-df.index.max().weekday())),
 #                    fill_value=np.nan)
-    
+
     df.loc[(df.index >= pd.Timestamp('2011/08/11')) & (df.index <= pd.Timestamp('2011/09/18')), 'count'] = np.nan
     df.loc[(df.index >= pd.Timestamp('2013/10/01')) & (df.index <= pd.Timestamp('2013/10/16')), 'count'] = np.nan
     df.loc[(df.index >= pd.Timestamp('2015/02/04')) & (df.index <= pd.Timestamp('2015/09/23')), 'count'] = np.nan
-    
+
     server_downtime_days = len(df)-len(df.dropna())
     df_na = df.copy()
     df = df.dropna()
-    
-    df = pd.concat([df.reindex(pd.date_range(df.index.min() + pd.Timedelta(days=-df.index.min().weekday()), 
+
+    df = pd.concat([df.reindex(pd.date_range(df.index.min() + pd.Timedelta(days=-df.index.min().weekday()),
                                              df.index.min() + pd.Timedelta(days=-1)),
-                          fill_value=np.nan), 
+                          fill_value=np.nan),
                     df,
-                    df.reindex(pd.date_range(df.index.max() + pd.Timedelta(days=1), 
+                    df.reindex(pd.date_range(df.index.max() + pd.Timedelta(days=1),
                                              df.index.max() + pd.Timedelta(days=6-df.index.max().weekday())),
                           fill_value=np.nan)])
-    
+
     df['date'] = df.index
     df = df.reset_index(drop=True)
-    
+
     df['weekday'] = df['date'].dt.day_name()
     df['weeknumber'] = ((df['date']-df['date'][0]).dt.days/7).astype(int)
     df_service['weeknumber'] = ((df_service['date']-df['date'][0]).dt.days/7).astype(int)
@@ -1357,8 +1360,8 @@ for key, title, service in zip(hv.keys(), titles, services):
     for mapper_type, mapper, ticker in zip(["log", "linear"],
                                            [LogColorMapper, LinearColorMapper],
                                            [LogTicker, BasicTicker]):
-        p = figure(y_range=list(reversed(weekdays)),#x_range=weeknumber, 
-                   x_axis_location=None, sizing_mode='stretch_both',# width_policy='max', height_policy='max',#, 
+        p = figure(y_range=list(reversed(weekdays)),#x_range=weeknumber,
+                   x_axis_location=None, sizing_mode='stretch_both',# width_policy='max', height_policy='max',#,
     #                plot_width=2000,
                    x_axis_label="Weeks since first data", y_axis_label="Weekday",
                    tools=TOOLS)
@@ -1368,9 +1371,9 @@ for key, title, service in zip(hv.keys(), titles, services):
                         color={'field': 'count', 'transform': mapper(palette=colors, low=0.1, high=np.nanmax(df['count']))},
                         hover_fill_alpha=0.2)
 
-        p.add_tools(HoverTool(renderers = [p_rect], 
-                              tooltips=[('Week Number', '@weeknumber'), 
-                                        ('#%s'%service, '@count{0,0}'), 
+        p.add_tools(HoverTool(renderers = [p_rect],
+                              tooltips=[('Week Number', '@weeknumber'),
+                                        ('#%s'%service, '@count{0,0}'),
                                         ('Date','@date{%F}')],
                               formatters={'@date': 'datetime'}
         ))
@@ -1390,32 +1393,32 @@ for key, title, service in zip(hv.keys(), titles, services):
         p.xgrid.visible = False
         p.ygrid.visible = False
         p.x_range.range_padding = 0.0
-        p.y_range.range_padding = 0.0  
+        p.y_range.range_padding = 0.0
         p.x_range.start = 0
-        
+
 
         p.xaxis.major_label_text_font_size = "8pt"
         p.yaxis.major_label_text_font_size = "10pt"
 
-        
+
         p.add_layout(Title(text = "Weekday frequency against week number for %s"%title, text_font_size = "16pt", text_font_style="bold"), place = 'above')
         p.add_layout(Title(text="Date range: %s - %s"%(hv[key]['date'].min().strftime('%Y, %b %d'),hv[key]['date'].max().strftime('%Y, %b %d'))), 'above')
         p.add_layout(Title(text="Total {} generated: {:,} | Total days: {:,} (excluding {:,} days of server downtime)"
                            .format(service, df['count'].sum(), len(df_na.dropna()), server_downtime_days), text_font_style="italic"), 'above')
-        
+
         p_service = p.rect(x="weeknumber", y="weekday", width=1, height=1,
                            source=df_service,
                            fill_color='red', fill_alpha=0.5, hover_fill_alpha=0.2, line_color=None)
-        p.add_tools(HoverTool(renderers = [p_service], 
-                              tooltips=[('Week Number', '@weeknumber'), 
-                                        ('Shutdown', '@reason'), 
+        p.add_tools(HoverTool(renderers = [p_service],
+                              tooltips=[('Week Number', '@weeknumber'),
+                                        ('Shutdown', '@reason'),
                                         ('Date','@date{%F}')],
                               formatters={'@date': 'datetime'}))
 
         num_ticks=10
         if (len(df[df['count']>0]['count'].unique()) <= 10):
             num_ticks = len(df[df['count']>0]['count'].unique())
-        color_bar = ColorBar(color_mapper = mapper(palette=colors, low=0.1, high=np.nanmax(df['count'])), 
+        color_bar = ColorBar(color_mapper = mapper(palette=colors, low=0.1, high=np.nanmax(df['count'])),
                              major_label_text_font_size="10px",
                              ticker=ticker(desired_num_ticks=num_ticks),
                              formatter=NumeralTickFormatter(format="0,0"),
@@ -1433,94 +1436,98 @@ for key, title, service in zip(hv.keys(), titles, services):
 print("Weekday frequency against weeknumber distribution done.")
 
 
-# ## Weekly weekday distribution
+## Weekly weekday distribution
 
 # In[18]:
 
 
-print("Making weekly weekday distribution of movies generated per day...")
+print("------------------Making weekly weekday distribution of movies generated per day...")
 TOOLS = "save, pan, box_zoom, reset, wheel_zoom"
-for key, title, service in zip(hv.keys(), titles, services):
+for key, title, service in zip(["hv_movies"], titles, services):
     if skip_empty_table(hv[key], key):
         continue
-    
+
     directory = key
     if not os.path.exists(directory):
         os.makedirs(directory)
-        
+
     df = hv[key].copy()
     df = df.set_index('date')
     df = df.reindex(pd.date_range(df.index.min(), df.index.max(), freq='D').to_period('D').to_timestamp(),
                                   fill_value=0)
     df['date'] = df.index
     df = df.reset_index(drop=True)
-    
+
     df_0 = df.loc[df['count']==0].reset_index(drop=True)
-    
+
     df.loc[(df['date'] >= pd.Timestamp('2011/08/11')) & (df['date'] <= pd.Timestamp('2011/09/18')), 'count'] = np.nan
     df.loc[(df['date'] >= pd.Timestamp('2013/10/01')) & (df['date'] <= pd.Timestamp('2013/10/16')), 'count'] = np.nan
     df.loc[(df['date'] >= pd.Timestamp('2015/02/04')) & (df['date'] <= pd.Timestamp('2015/09/23')), 'count'] = np.nan
-    
+
 #     df = df.dropna()
-    
+
     df['weekday'] = df['date'].dt.day_name()
     df['weeknumber'] = ((df['date']-df['date'][0]).dt.days/7).astype(int)
-    
-    df_0['weekday'] = df_0['date'].dt.day_name()
-    df_0['weeknumber'] = ((df_0['date']-df_0['date'][0]).dt.days/7).astype(int)
-    
+
+    if (not df_0.empty):
+        df_0['weekday'] = df_0['date'].dt.day_name()
+        df_0['weeknumber'] = ((df_0['date']-df_0['date'][0]).dt.days/7).astype(int)
+
     df_service['weeknumber'] = ((df_service['date']-df['date'][0]).dt.days/7).astype(int)
     # df = df.groupby(['weeknumber','weekday']).sum().reset_index()
     weeknumber = np.array(df['weeknumber'].unique())# hv_cov.index.values#.astype(str)
-   
+
     color = {weekdays[i]:bp.Spectral7[i] for i in range(len(weekdays))}
     p_wd=[]
     panels=[]
     for wd in weekdays:
         df_wd = df.loc[df['weekday']==wd]
-        df_0_wd = df_0.loc[df_0['weekday']==wd]
-        p = figure(plot_height=250, x_axis_type="datetime", 
-                   tools=TOOLS,
-                   sizing_mode="scale_width", min_border_left = 0,
-                   x_axis_label="Date", 
-                   y_axis_label="No. of %s"%service)
-        
-        p.background_fill_color="#f5f5f5"
-        p.grid.grid_line_color="white"
-    
-        server_downtime_days = len(df_wd)-len(df_wd.dropna())
-        
-        p.add_layout(Title(text = "Weekly coverage of %s for %s"%(title, wd), text_font_size = "16pt", text_font_style="bold"), place = 'above')
-        p.add_layout(Title(text="Date range: %s - %s"%(hv[key]['date'].min().strftime('%Y, %b %d'),hv[key]['date'].max().strftime('%Y, %b %d'))), 'above')
-        p.add_layout(Title(text="Total {} generated on {}: {:,} | Total {}s: {:,} (excluding {:,} {}s of server downtime)"
-                           .format(service, wd, df_wd['count'].sum(), wd, len(df_wd.dropna()), server_downtime_days, wd), text_font_style="italic"), 'above')
-        
-        p_0 = p.circle(x='date', y='count', size=2, color='red', source = df_0_wd, legend_label='Zero %s (%s %ss)'%(service, len(df_0_wd), wd))
-        
-        
-        p.title.text_font_size = '16pt'
-        
-        p.x_range.start = df_wd['date'].min() - (df_wd['date'].max()-df_wd['date'].min())*0.02
-        p.x_range.end = df_wd['date'].max() + (df_wd['date'].max()-df_wd['date'].min())*0.02
+        if not df_wd.empty:
+            if (not df_0.empty):
+                df_0_wd = df_0.loc[df_0['weekday']==wd]
+            p = figure(plot_height=250, x_axis_type="datetime",
+                    tools=TOOLS,
+                    sizing_mode="scale_width", min_border_left = 0,
+                    x_axis_label="Date",
+                    y_axis_label="No. of %s"%service)
 
-#         p.x_range.range_padding = 0.02
-        p.y_range.range_padding = 0.05       
-        
-        p = service_pause(p, df_wd)
-        p = major_features(p, df_wd)
-        
-        p.line(x='date', y='count', source=df_wd, legend_label="#%s on %s"%(service, wd), color='#ebbd5b')
-        
-        p.add_tools(HoverTool(tooltips=[('Week Number', '@weeknumber'), 
-                                        ('Date','@date{%F}'),
-                                        ('#%s'%service,'@count')],
-                              formatters={'@date': 'datetime'},
-                              mode='vline'))
-        p.legend.background_fill_alpha = 0.3
-        p.border_fill_color = "whitesmoke"
-        
-        panel=Panel(child = p, title=wd)
-        panels.append(panel)
+            p.background_fill_color="#f5f5f5"
+            p.grid.grid_line_color="white"
+
+            server_downtime_days = len(df_wd)-len(df_wd.dropna())
+
+            p.add_layout(Title(text = "Weekly coverage of %s for %s"%(title, wd), text_font_size = "16pt", text_font_style="bold"), place = 'above')
+            p.add_layout(Title(text="Date range: %s - %s"%(hv[key]['date'].min().strftime('%Y, %b %d'),hv[key]['date'].max().strftime('%Y, %b %d'))), 'above')
+            p.add_layout(Title(text="Total {} generated on {}: {:,} | Total {}s: {:,} (excluding {:,} {}s of server downtime)"
+                            .format(service, wd, df_wd['count'].sum(), wd, len(df_wd.dropna()), server_downtime_days, wd), text_font_style="italic"), 'above')
+
+            if (not df_0.empty):
+                p_0 = p.circle(x='date', y='count', size=2, color='red', source = df_0_wd, legend_label='Zero %s (%s %ss)'%(service, len(df_0_wd), wd))
+
+
+            p.title.text_font_size = '16pt'
+
+            p.x_range.start = df_wd['date'].min() - (df_wd['date'].max()-df_wd['date'].min())*0.02
+            p.x_range.end = df_wd['date'].max() + (df_wd['date'].max()-df_wd['date'].min())*0.02
+
+    #         p.x_range.range_padding = 0.02
+            p.y_range.range_padding = 0.05
+
+            p = service_pause(p, df_wd)
+            p = major_features(p, df_wd)
+
+            p.line(x='date', y='count', source=df_wd, legend_label="#%s on %s"%(service, wd), color='#ebbd5b')
+
+            p.add_tools(HoverTool(tooltips=[('Week Number', '@weeknumber'),
+                                            ('Date','@date{%F}'),
+                                            ('#%s'%service,'@count')],
+                                formatters={'@date': 'datetime'},
+                                mode='vline'))
+            p.legend.background_fill_alpha = 0.3
+            p.border_fill_color = "whitesmoke"
+
+            panel=Panel(child = p, title=wd)
+            panels.append(panel)
     tabs=Tabs(tabs=panels)
 #     grid = gridplot(list(np.array([p_wd]).T), sizing_mode="scale_width")
 #     show(tabs)
@@ -1540,7 +1547,7 @@ print("### Stats for movies per day done. ###")
 # In[ ]:
 
 
-print("### Popularity plots ###") 
+print("### Popularity plots ###")
 
 
 # ## Popularity of solar time
@@ -1551,24 +1558,24 @@ print("### Popularity plots ###")
 def obs_popularity(database, df_obs):
     hv={}
     obs = df_obs['OBS']
-    
+
     sid = df_obs['SOURCE_ID']
     if(sql_query("SELECT count(*) from data WHERE sourceId=%d"%(sid)).values==0):
         return pd.DataFrame(columns=['date','count']), 0
-    
+
     if(database=='movies'):
         query = "SELECT startDate, endDate FROM movies WHERE dataSourceString LIKE '%{}%' OR dataSourceString='[{}]';".format(obs.replace(' ','%'), sid)
         hv = sql_query(query)
     if(database=='movies_jpx'):
         query = "SELECT reqstartDate as startDate, reqEndDate as endDate FROM movies_jpx WHERE sourceId={};".format(df_obs['SOURCE_ID'])
         hv = sql_query(query)
-        
+
     hv = hv.dropna().reset_index(drop=True)
-    
+
     first_obs, last_obs = sql_query("SELECT min(date) as min_date, max(date) as max_date from data WHERE sourceId=%d"%sid).iloc[0]
-    
+
     hv = hv.loc[((hv['startDate'] >= first_obs) & (hv['startDate'] <= last_obs)) & ((hv['endDate'] >=first_obs) & (hv['endDate'] <= last_obs))]
-    
+
     if(hv.empty):
         return hv, len(hv)
 #         df = pd.DataFrame({'date': pd.date_range(first_obs, last_obs, freq='M')})
@@ -1602,29 +1609,29 @@ def obs_popularity(database, df_obs):
 
 
 def popularity_plot(df_obs, df, size, service):
-    
+
     key='movies'
     name = df_obs['OBS']
     name_ = name.replace(" ","_")
-    
+
     df_0 = df.loc[df['count']==0].reset_index(drop=True)
 
 #     df.loc[(df['date'] >= pd.Timestamp('2011/08/11')) & (df['date'] <= pd.Timestamp('2011/09/18')), 'count'] = np.nan
 #     df.loc[(df['date'] >= pd.Timestamp('2013/10/01')) & (df['date'] <= pd.Timestamp('2013/10/16')), 'count'] = np.nan
 #     df.loc[(df['date'] >= pd.Timestamp('2015/02/04')) & (df['date'] <= pd.Timestamp('2015/09/23')), 'count'] = np.nan
-    
+
     TOOLS = "save, pan, box_zoom, reset, wheel_zoom"
 
-    p = figure(plot_height=250, x_axis_type="datetime", 
+    p = figure(plot_height=250, x_axis_type="datetime",
                tools=TOOLS, output_backend='webgl',
                sizing_mode="scale_width", min_border_left = 0)
 
-    p.add_layout(Title(text = "Solar popularity of %s in %s %s"%(name, service, key), text_font_size = "16pt", text_font_style="bold"), 
+    p.add_layout(Title(text = "Solar popularity of %s in %s %s"%(name, service, key), text_font_size = "16pt", text_font_style="bold"),
                  place = 'above')
-    p.add_layout(Title(text = "Date Range: %s - %s"%(df['date'].min().strftime('%Y, %b %d'),df['date'].max().strftime('%Y, %b %d'))), 
+    p.add_layout(Title(text = "Date Range: %s - %s"%(df['date'].min().strftime('%Y, %b %d'),df['date'].max().strftime('%Y, %b %d'))),
                  place ='above')
     p.add_layout(Title(text="Total (solar hour) occurrences in {}: {:,} | Total hours of data observed: {:,} | Total number of movies generated: {:,} "
-                       .format(key,df['count'].sum(), len(df.loc[df['count']!=0]), size), text_font_style="italic"), 
+                       .format(key,df['count'].sum(), len(df.loc[df['count']!=0]), size), text_font_style="italic"),
                  place = 'above')
 
     p.background_fill_color="#f5f5f5"
@@ -1635,7 +1642,7 @@ def popularity_plot(df_obs, df, size, service):
     p.x_range.range_padding = 0.02
     p.x_range.range_padding = 0.02
     p.y_range.range_padding = 0.02
-    
+
     p.yaxis.formatter = NumeralTickFormatter(format='0,0')
 #     p.xaxis.formatter = DatetimeTickFormatter(minutes=["%d %b %Y"],
 #                                               hours=["%d %b %Y"],
@@ -1648,7 +1655,8 @@ def popularity_plot(df_obs, df, size, service):
     p = service_pause(p, df)
 
     p_line = p.line(x='date', line_width=2, y='count', color='#ebbd5b', source=df, legend_label="Data Popularity")
-    p_0 = p.circle(x='date', y='count', size=2, color='red', source = df_0, legend_label='Zero movie occurences (%d hours)'%len(df_0))
+    if (not df_0.empty):
+        p_0 = p.circle(x='date', y='count', size=2, color='red', source = df_0, legend_label='Zero movie occurences (%d hours)'%len(df_0))
 
     p.add_tools(HoverTool(renderers=[p_line],
                           tooltips=[('date', '@date{%F %T}'),
@@ -1663,19 +1671,19 @@ def popularity_plot(df_obs, df, size, service):
                          ))
     df_stats = pd.DataFrame({'height': pd.date_range(df['date'].min(),df['date'].max(),periods=2),
                              'mean':np.nanmean(df['count']), 'median': np.nanmedian(df['count']), 'mode':stats.mode(df['count'])[0][0]})
-    
+
     p.line(y='mean', x='height', line_color = "blue", line_dash='dotted', line_width= 1, alpha=0.5, legend_label="Mean (%.2f)"%(df_stats['mean'][0]), source=df_stats)
     p.line(y='median', x='height', line_color = "black", line_dash='dashed', line_width=1, alpha=0.5, legend_label="Median (%.2f)"%(df_stats['median'][0]), source=df_stats)
-    
+
     p.x_range.start = df['date'].min() - (df['date'].max()-df['date'].min())*0.03
     p.x_range.end = df['date'].max() + (df['date'].max()-df['date'].min())*0.03
-    
+
 #     p.x_range.range_padding = 0.1
     p.y_range.range_padding = 0.05
     p.legend.background_fill_alpha = 0.3
     p.legend.location='top_left'
     p.border_fill_color = "whitesmoke"
-    
+
     panel = Panel(child=p, title=name.replace(name.split(" ")[0]+' ', ''))
     return panel
 #     show(p)
@@ -1773,7 +1781,7 @@ def obs_popularity(database, df_obs):
     data_freq = df_obs['DATA_FREQ']
     if(sql_query("SELECT count(*) from data WHERE sourceId=%d"%(sid)).values==0):
         return pd.DataFrame(columns=['date','count']), 0
-    
+
     if(database=='movies'):
         query = "SELECT startDate, endDate FROM movies WHERE dataSourceString LIKE '%{}%' OR dataSourceString='[{}]';".format(obs.replace(' ','%'), sid)
         hv = sql_query(query)
@@ -1811,29 +1819,29 @@ def obs_popularity(database, df_obs):
 
 
 def popularity_plot(df_obs, df, size, service):
-    
+
     key='movies'
     name = df_obs['OBS']
     name_ = name.replace(" ","_")
-    
+
     df_0 = df.loc[df['count']==0].reset_index(drop=True)
 
 #     df.loc[(df['date'] >= pd.Timestamp('2011/08/11')) & (df['date'] <= pd.Timestamp('2011/09/18')), 'count'] = np.nan
 #     df.loc[(df['date'] >= pd.Timestamp('2013/10/01')) & (df['date'] <= pd.Timestamp('2013/10/16')), 'count'] = np.nan
 #     df.loc[(df['date'] >= pd.Timestamp('2015/02/04')) & (df['date'] <= pd.Timestamp('2015/09/23')), 'count'] = np.nan
-    
+
     TOOLS = "save, pan, box_zoom, reset, wheel_zoom"
 
-    p = figure(plot_height=250, x_axis_type="datetime", 
+    p = figure(plot_height=250, x_axis_type="datetime",
                tools=TOOLS, output_backend='webgl',
                sizing_mode="scale_width", min_border_left = 0)
 
-    p.add_layout(Title(text = "Data popularity of %s in %s %s"%(name, service, key), text_font_size = "16pt", text_font_style="bold"), 
+    p.add_layout(Title(text = "Data popularity of %s in %s %s"%(name, service, key), text_font_size = "16pt", text_font_style="bold"),
                  place = 'above')
-    p.add_layout(Title(text = "Date Range: %s - %s"%(df['date'].min().strftime('%Y, %b %d'),df['date'].max().strftime('%Y, %b %d'))), 
+    p.add_layout(Title(text = "Date Range: %s - %s"%(df['date'].min().strftime('%Y, %b %d'),df['date'].max().strftime('%Y, %b %d'))),
                  place ='above')
     p.add_layout(Title(text="Total frames used in all {}: {:,} | Total hours of data observed: {:,} | Total number of movies generated: {:,} "
-                       .format(key,df['count'].sum(), len(df.loc[df['count']!=0]), size), text_font_style="italic"), 
+                       .format(key,df['count'].sum(), len(df.loc[df['count']!=0]), size), text_font_style="italic"),
                  place = 'above')
 
     p.background_fill_color="#f5f5f5"
@@ -1844,7 +1852,7 @@ def popularity_plot(df_obs, df, size, service):
     p.x_range.range_padding = 0.02
     p.x_range.range_padding = 0.02
     p.y_range.range_padding = 0.02
-    
+
     p.yaxis.formatter = NumeralTickFormatter(format='0,0')
 #     p.xaxis.formatter = DatetimeTickFormatter(minutes=["%d %b %Y"],
 #                                               hours=["%d %b %Y"],
@@ -1857,7 +1865,8 @@ def popularity_plot(df_obs, df, size, service):
     p = service_pause(p, df)
 
     p_line = p.line(x='date', line_width=2, y='count', color='#ebbd5b', source=df, legend_label="Data Popularity")
-    p_0 = p.circle(x='date', y='count', size=2, color='red', source = df_0, legend_label='Zero movie occurences (%d hours)'%len(df_0))
+    if (not df_0.empty):
+        p_0 = p.circle(x='date', y='count', size=2, color='red', source = df_0, legend_label='Zero movie occurences (%d hours)'%len(df_0))
 
     p.add_tools(HoverTool(renderers=[p_line],
                           tooltips=[('date', '@date{%F %T}'),
@@ -1872,19 +1881,19 @@ def popularity_plot(df_obs, df, size, service):
                          ))
     df_stats = pd.DataFrame({'height': pd.date_range(df['date'].min(),df['date'].max(),periods=2),
                              'mean':np.nanmean(df['count']), 'median': np.nanmedian(df['count']), 'mode':stats.mode(df['count'])[0][0]})
-    
+
     p.line(y='mean', x='height', line_color = "blue", line_dash='dotted', line_width= 1, alpha=0.5, legend_label="Mean (%.2f)"%(df_stats['mean'][0]), source=df_stats)
     p.line(y='median', x='height', line_color = "black", line_dash='dashed', line_width=1, alpha=0.5, legend_label="Median (%.2f)"%(df_stats['median'][0]), source=df_stats)
-    
+
     p.x_range.start = df['date'].min() - (df['date'].max()-df['date'].min())*0.03
     p.x_range.end = df['date'].max() + (df['date'].max()-df['date'].min())*0.03
-    
+
 #     p.x_range.range_padding = 0.02
     p.y_range.range_padding = 0.05
     p.legend.background_fill_alpha = 0.3
     p.legend.location='top_left'
     p.border_fill_color = "whitesmoke"
-    
+
     panel = Panel(child=p, title=name.replace(name.split(" ")[0]+' ', ''))
     return panel
 #     show(p)
@@ -1902,7 +1911,7 @@ if not os.path.exists(directory):
     os.makedirs(directory)
 if not os.path.exists("./%s/popularity_data"%directory):
     os.makedirs("./%s/popularity_data"%directory)
-    
+
 print("Making data popularity plots for helioviewer movies...")
 
 for observatory in ['SDO']:#hv_keys.keys():
@@ -1922,7 +1931,7 @@ for observatory in ['SDO']:#hv_keys.keys():
     save(tabs, filename='./%s/popularity_data/%s_popularity.html'%(directory, observatory), title='Data Popularity of %s in Helioviewer.org movies'%(observatory))
     print("%s popularity done in %d seconds"%(observatory, time.time()-start_time))
     break
-print("Popularity plot done.")    
+print("Popularity plot done.")
 
 
 # In[ ]:
@@ -1941,7 +1950,7 @@ popularity=[]
 #     os.makedirs(directory)
 # if not os.path.exists("./%s/popularity_data"%directory):
 #     os.makedirs("./%s/popularity_data"%directory)
-    
+
 # print("Making data popularity plots for Jhelioviewer movies...")
 
 # for observatory in hv_keys.keys():
@@ -1978,7 +1987,7 @@ print("ALL popularity plots done.")
 print("Service comparison...")
 
 
-# ## HV, JHV, embed comparison 
+# ## HV, JHV, embed comparison
 
 # In[ ]:
 
@@ -2024,12 +2033,12 @@ try:
     date_end = max(hv['hv_movies']['date'].max(), hv['embed']['date'].max(), hv['Jhv_movies']['date'].max())
 
     # In[ ]:
-    
-    
+
+
     for key in hv.keys():
         if skip_empty_table(hv[key], key):
             continue
-    
+
     #     print(key)
         df = hv[key].copy()
         df = df.set_index('date')
@@ -2038,140 +2047,140 @@ try:
         df['date'] = df.index
         df = df.reset_index(drop=True)
         hv[key] = df
-    
-    
+
+
     # In[ ]:
-    
-    
+
+
     for key in hv.keys():
         hv[key].loc[(hv['Jhv_movies']['count']==0) & (hv['embed']['count']==0) & (hv['hv_movies']['count']==0), 'bottom_frac'] = np.nan
-        hv[key].loc[(hv['Jhv_movies']['count']==0) & (hv['embed']['count']==0) & (hv['hv_movies']['count']==0), 'top_frac'] = np.nan    
+        hv[key].loc[(hv['Jhv_movies']['count']==0) & (hv['embed']['count']==0) & (hv['hv_movies']['count']==0), 'top_frac'] = np.nan
         hv[key].loc[(hv['Jhv_movies']['count']==0) & (hv['embed']['count']==0) & (hv['hv_movies']['count']==0), 'fraction'] = np.nan
-    
-    
+
+
     # In[ ]:
-    
-    
+
+
     # total_count = (hv['hv_movies']['count'] + hv['embed']['count'] + hv['Jhv_movies']['count'])
-    
+
     # hv['hv_movies']['bottom_frac'] = 0
     # hv['hv_movies']['top_frac'] = hv['hv_movies']['count']/total_count
     # hv['hv_movies']['fraction'] = hv['hv_movies']['top_frac'] - hv['hv_movies']['bottom_frac']
-    
-    # hv['embed']['bottom_frac'] = hv['hv_movies']['top_frac'] 
+
+    # hv['embed']['bottom_frac'] = hv['hv_movies']['top_frac']
     # hv['embed']['top_frac'] = hv['embed']['bottom_frac'] + hv['embed']['count']/total_count
     # hv['embed']['fraction'] = hv['embed']['top_frac'] - hv['embed']['bottom_frac']
-    
+
     # hv['Jhv_movies']['bottom_frac'] = hv['embed']['top_frac']
     # hv['Jhv_movies']['top_frac'] = 1
     # hv['Jhv_movies']['fraction'] = hv['Jhv_movies']['top_frac'] - hv['Jhv_movies']['bottom_frac']
-    
-    
+
+
     # In[ ]:
-    
-    
+
+
     frac = pd.DataFrame()
-    
+
     frac['date'] = pd.date_range(date_start, date_end, freq='D').to_period('D').to_timestamp()
-    
+
     frac['total_count'] = (hv['hv_movies']['count'] + hv['embed']['count'] + hv['Jhv_movies']['count'])
-    
+
     frac['hv_frac'] = hv['hv_movies']['count']/frac['total_count']
     frac['hv_perc'] = frac['hv_frac']*100
     frac['em_frac'] = hv['embed']['count']/frac['total_count']
     frac['em_perc'] = frac['em_frac']*100
     frac['Jhv_frac'] = hv['Jhv_movies']['count']/frac['total_count']
     frac['Jhv_perc'] = frac['Jhv_frac']*100
-    
+
     frac['hv_bottom'] = 1e-6
     frac['hv_top'] = frac['hv_frac']
-    
-    frac['em_bottom'] = frac['hv_top'] 
+
+    frac['em_bottom'] = frac['hv_top']
     frac['em_top'] = frac['em_bottom'] + frac['em_frac']
-    
+
     frac['Jhv_bottom'] = frac['em_top']
     frac['Jhv_top'] = frac['Jhv_bottom'] + frac['Jhv_frac']
-    
-    
+
+
     # In[ ]:
-    
-    
+
+
     frac['date_str'] = frac['date'].astype(str)
     frac = frac.fillna(0)
     frac['index'] = frac.index
     frac
-    
-    
+
+
     # In[ ]:
-    
-    
+
+
     frac['year_dec'] = frac['date'].dt.year + frac['date'].dt.day/pd.to_datetime(dict(year=frac['date'].dt.year, month=12, day=31)).dt.strftime('%j').astype(int)
-    
-    
+
+
     # In[ ]:
-    
-    
+
+
     print("Preparing plot for helioviewer services comparison...")
-    
+
     directory='service_usage'
     if not os.path.exists(directory):
         os.makedirs(directory)
-    
+
     TOOLS = "save, pan, box_zoom, reset, wheel_zoom"
-    
+
     p = figure(plot_height=250, output_backend='webgl',
                tools=TOOLS,
                sizing_mode="scale_width", min_border_left = 0,
     #            tooltips="$name @date: @$name"
     #            y_axis_type="log", #y_range = (1, 10**(-4))
               )
-    
-    p.add_layout(Title(text = "Daily fractional usage of helioviewer services", text_font_size = "16pt", text_font_style="bold"), 
+
+    p.add_layout(Title(text = "Daily fractional usage of helioviewer services", text_font_size = "16pt", text_font_style="bold"),
                  place = 'above')
-    p.add_layout(Title(text = "Date Range: %s - %s"%(date_start.strftime('%Y, %b %d'),date_end.strftime('%Y, %b %d'))), 
+    p.add_layout(Title(text = "Date Range: %s - %s"%(date_start.strftime('%Y, %b %d'),date_end.strftime('%Y, %b %d'))),
                  place = 'above')
-    
+
     p.background_fill_color="#f5f5f5"
     p.grid.grid_line_color="white"
     p.xaxis.axis_label = 'Date'
     p.yaxis.axis_label = 'Fractional usage'
     p.axis.axis_line_color = None
-    
+
     stacks = ['hv_frac', 'em_frac', 'Jhv_frac']
-    
+
     p_hv = p.vbar_stack(stackers=stacks,
-                        x='index', width=0.75, 
+                        x='index', width=0.75,
     #                     alpha = 0.5,
                         color = bp.Category10[max(3,len(stacks))][:len(stacks)],#bp.Viridis[3],
     #                     hover_color = bp.Viridis[3],
-                        source=ColumnDataSource(frac), 
+                        source=ColumnDataSource(frac),
                         legend_label=["Fraction of Helioviewer.org movie requests",
                                       "Fraction of Embedded Helioviewer.org requests",
                                       "Fraction of JHelioviewer movie requests"])
-    
+
     # p_hv = p.vbar(x='index', width=0.75,
-    #               bottom='hv_bottom', 
+    #               bottom='hv_bottom',
     #               top='hv_top',
     # #               hover_alpha = 0.5,
     #               color = 'blue',
     # #               hover_color='blue',
     #               source=frac, legend_label="Fraction of Helioviewer.org requests")
-    
-    # p_em = p.vbar(x='index', width=0.75, 
+
+    # p_em = p.vbar(x='index', width=0.75,
     #               bottom='em_bottom', top='em_top',
     #               hover_alpha = 0.5,
     #               color = 'orange',
     #               hover_color='orange',
     #               source=frac, legend_label="Fraction of embedded Helioviewer.org requests")
-    
-    # p_Jh = p.vbar(x='index', width=0.75, 
+
+    # p_Jh = p.vbar(x='index', width=0.75,
     #               bottom='Jhv_bottom', top='Jhv_top',
     #               hover_alpha = 0.5,
     #               color = 'green',
     #               hover_color='green',
     #               source=frac, legend_label="Fraction of JHelioviewer movie requests")
-    
-    
+
+
     p.add_tools(HoverTool(renderers=p_hv,#, p_em, p_Jh],
                           tooltips=[('Date', '@date_str'),
                                     ('JHelioviewer', '@Jhv_perc{0.00}%'),
@@ -2182,44 +2191,44 @@ try:
     #                       formatters={'@date' : 'datetime', # use 'datetime' formatter for 'date' field
     #                                  },
                          ))
-    
+
     # frac['date'].dt.year + frac['date'].dt.day/pd.to_datetime(dict(year=frac['date'].dt.year, month=12, day=31)).dt.strftime('%j').astype(int)
-    
+
     def dt2ind(dt):
     #     y = dt.year + dt.day/int(pd.Timestamp(dt.year,12,31).strftime('%j'))
         return frac.loc[frac['date']==dt].index[0]
-    
+
     p.line(y=[0,1.1], x=dt2ind(pd.Timestamp('2011/06/07')), line_width=1.5, line_dash='dotdash', color='red', alpha=1, legend_label= "failed eruption (2011/06/07)")
     p.line(y=[0,1.1], x=dt2ind(pd.Timestamp('2013/11/28')), line_width=1.5, line_dash='dotdash', color='purple', alpha=1, legend_label= "Comet ISON (2013/11/28)")
     p.harea(y=[0,1.1], x1=dt2ind(pd.Timestamp('2017/09/06')), x2=dt2ind(pd.Timestamp('2017/09/10')), fill_color='black', fill_alpha=1, legend_label= "large flares (2017/09/06-09)")
-    
+
     p.harea(y=[0,1.1], x1=dt2ind(pd.Timestamp('2011/08/11')), x2=dt2ind(pd.Timestamp('2011/09/18')), fill_color='gray', fill_alpha=0.3, legend_label= "GSFC server repair (2011/08/11 - 2011/09/18)")
     p.harea(y=[0,1.1], x1=dt2ind(pd.Timestamp('2013/10/01')), x2=dt2ind(pd.Timestamp('2013/10/16')), fill_color='green', fill_alpha=0.3, legend_label= "U.S. Fed. Gov. shutdown (2013/10/01 - 2013/10/16)")
     p.harea(y=[0,1.1], x1=dt2ind(pd.Timestamp('2015/02/04')), x2=dt2ind(pd.Timestamp('2015/09/23')), fill_color='red', fill_alpha=0.3, legend_label= "GSFC server down (2015/02/04 - 2015/09/23)")
-    
-    
+
+
     df_stats = pd.DataFrame({'width': np.linspace(frac['index'].min()-100, frac['index'].max()+100, 2),
                              'mean_hv':np.nanmean(frac['hv_frac']), 'mean_embed':np.nanmean(frac['em_frac']), 'mean_Jhv':np.nanmean(frac['Jhv_frac'])})
-    
+
     p.line(y='mean_hv', x='width', line_color = "red", line_dash='dotted', line_width= 2, alpha=0.5,
            legend_label="Mean fraction of Helioviewer.org movie requests (%.3f)"%(df_stats['mean_hv'][0]), source=df_stats)
-    
-    p.line(y='mean_embed', x='width', line_color = "pink", line_dash='dotted', line_width= 2, alpha=0.5, 
+
+    p.line(y='mean_embed', x='width', line_color = "pink", line_dash='dotted', line_width= 2, alpha=0.5,
            legend_label="Mean fraction of Helioviewer.org Embed requests (%.3f)"%(df_stats['mean_embed'][0]), source=df_stats)
-    
-    p.line(y='mean_Jhv', x='width', line_color = "cyan", line_dash='dotted', line_width= 2, alpha=0.5, 
+
+    p.line(y='mean_Jhv', x='width', line_color = "cyan", line_dash='dotted', line_width= 2, alpha=0.5,
            legend_label="Mean fraction of JHelioviewer movie requests (%.3f)"%(df_stats['mean_Jhv'][0]), source=df_stats)
-    
+
     # p.xaxis.ticks = frac['index'].iloc[::]
     p.xaxis.major_label_overrides = {i: date.strftime('%Y %b %d') for i, date in enumerate(frac['date'])}
-    
+
     p.x_range.range_padding = 0.00
     p.y_range.range_padding = 0.00
-    
+
     p.legend.background_fill_alpha = 0.3
     p.legend.location='top_left'
     p.border_fill_color = "whitesmoke"
-    
+
     # show(p)
     save(p, filename='%s/hv_services.html'%directory, title='Daily fractional usage of helioviewer services')
     print("Helioviewer service usage fraction plot done.")
@@ -2315,9 +2324,9 @@ for stat in frac.keys():
     #            tooltips="$name @date: @$name"
               )
 
-    p.add_layout(Title(text = "Helioviewer endpoints' fractional usage breakdown", text_font_size = "16pt", text_font_style="bold"), 
+    p.add_layout(Title(text = "Helioviewer endpoints' fractional usage breakdown", text_font_size = "16pt", text_font_style="bold"),
                  place = 'above')
-    p.add_layout(Title(text = "Date Range: %s - %s"%(df['date'].min().strftime('%Y, %b %d'),df['date'].max().strftime('%Y, %b %d'))), 
+    p.add_layout(Title(text = "Date Range: %s - %s"%(df['date'].min().strftime('%Y, %b %d'),df['date'].max().strftime('%Y, %b %d'))),
                  place = 'above')
 
     p.background_fill_color="#f5f5f5"
@@ -2325,13 +2334,13 @@ for stat in frac.keys():
     p.xaxis.axis_label = 'Date'
     p.yaxis.axis_label = 'Fractional usage (%)'
     p.axis.axis_line_color = None
-    
-    
-    
+
+
+
     stacks = df.columns.values[4:]
 
     p_hv = p.vbar_stack(stackers=stacks,
-                        x='index', width=0.75, 
+                        x='index', width=0.75,
                         color = bp.Category20[max(3,len(stacks))][:len(stacks)],
                         source=ColumnDataSource(df),
                         legend_label=["%s"%string for string in stacks])
@@ -2361,10 +2370,10 @@ for stat in frac.keys():
     # p.line(y='mean_hv', x='width', line_color = "red", line_dash='dotted', line_width= 2, alpha=0.5,
     #        legend_label="Mean fraction of Helioviewer.org movie requests (%.3f)"%(df_stats['mean_hv'][0]), source=df_stats)
 
-    # p.line(y='mean_embed', x='width', line_color = "pink", line_dash='dotted', line_width= 2, alpha=0.5, 
+    # p.line(y='mean_embed', x='width', line_color = "pink", line_dash='dotted', line_width= 2, alpha=0.5,
     #        legend_label="Mean fraction of Helioviewer.org Embed requests (%.3f)"%(df_stats['mean_embed'][0]), source=df_stats)
 
-    # p.line(y='mean_Jhv', x='width', line_color = "cyan", line_dash='dotted', line_width= 2, alpha=0.5, 
+    # p.line(y='mean_Jhv', x='width', line_color = "cyan", line_dash='dotted', line_width= 2, alpha=0.5,
     #        legend_label="Mean fraction of JHelioviewer movie requests (%.3f)"%(df_stats['mean_Jhv'][0]), source=df_stats)
 
     p.xaxis.major_label_overrides = {i: date.strftime('%Y %b %d') for i, date in enumerate(df['date'])}
@@ -2423,70 +2432,70 @@ panels=[]
 df=tot
 if not df.empty:
     TOOLS = "save, pan, box_zoom, reset, wheel_zoom"
-    
+
     p = figure(plot_height=250, output_backend='webgl',
                tools=TOOLS,
                sizing_mode="scale_width", min_border_left = 0,
     #            tooltips="$name @date: @$name"
               )
-    
-    p.add_layout(Title(text = "Helioviewer total usage comparison of endpoint categories", text_font_size = "16pt", text_font_style="bold"), 
+
+    p.add_layout(Title(text = "Helioviewer total usage comparison of endpoint categories", text_font_size = "16pt", text_font_style="bold"),
                  place = 'above')
-    p.add_layout(Title(text = "Date Range: %s - %s"%(df['date'].min().strftime('%Y, %b %d'),df['date'].max().strftime('%Y, %b %d'))), 
+    p.add_layout(Title(text = "Date Range: %s - %s"%(df['date'].min().strftime('%Y, %b %d'),df['date'].max().strftime('%Y, %b %d'))),
                  place = 'above')
-    
+
     p.background_fill_color="#f5f5f5"
     p.grid.grid_line_color="white"
     p.xaxis.axis_label = 'Date'
     p.yaxis.axis_label = 'Total usage'
     p.axis.axis_line_color = None
-    
-    
-    
+
+
+
     stacks = df.columns.values[4:]
-    
+
     p_hv = p.vbar_stack(stackers=stacks,
-                        x='index', width=0.75, 
+                        x='index', width=0.75,
                         color = bp.Category20[max(3,len(stacks))][:len(stacks)],
                         source=ColumnDataSource(df),
                         legend_label=["%s"%string for string in stacks])
-    
+
     p.add_tools(HoverTool(renderers=p_hv,
                           tooltips=[('Date', '@date_str'), ('Total', '@total')] + [(string, '@{%s}{0}'%string) for string in stacks],
     #                       formatters={'@date_str' : 'datetime', # use 'datetime' formatter for 'date' field
     #                                  },
                          ))
-    
+
     # def dt2ind(dt):
     # #     y = dt.year + dt.day/int(pd.Timestamp(dt.year,12,31).strftime('%j'))
     #     return df.loc[df['date']==dt].index[0]
-    
+
     # p.line(y=[0,1], x=dt2ind(pd.Timestamp('2011/06/07')), line_width=1.5, line_dash='dotdash', color='red', alpha=1, legend_label= "failed eruption (2011/06/07)")
     # p.line(y=[0,1], x=dt2ind(pd.Timestamp('2013/11/28')), line_width=1.5, line_dash='dotdash', color='purple', alpha=1, legend_label= "Comet ISON (2013/11/28)")
     # p.harea(y=[0,1], x1=dt2ind(pd.Timestamp('2017/09/06')), x2=dt2ind(pd.Timestamp('2017/09/10')), fill_color='teal', fill_alpha=1, legend_label= "large flares (2017/09/06-09)")
-    
+
     # p.harea(y=[0,1], x1=dt2ind(pd.Timestamp('2011/08/11')), x2=dt2ind(pd.Timestamp('2011/09/18')), fill_color='gray', fill_alpha=0.3, legend_label= "GSFC server repair (2011/08/11 - 2011/09/18)")
     # p.harea(y=[0,1], x1=dt2ind(pd.Timestamp('2013/10/01')), x2=dt2ind(pd.Timestamp('2013/10/16')), fill_color='green', fill_alpha=0.3, legend_label= "U.S. Fed. Gov. shutdown (2013/10/01 - 2013/10/16)")
     # p.harea(y=[0,1], x1=dt2ind(pd.Timestamp('2015/02/04')), x2=dt2ind(pd.Timestamp('2015/09/23')), fill_color='red', fill_alpha=0.3, legend_label= "GSFC server down (2015/02/04 - 2015/09/23)")
-    
-    
+
+
     # df_stats = pd.DataFrame({'width': np.linspace(df['index'].min(), df['index'].max(), 2),
     #                          'mean_hv':np.nanmean(df['hv_frac']), 'mean_embed':np.nanmean(df['em_frac']), 'mean_Jhv':np.nanmean(df['Jhv_frac'])})
-    
+
     # p.line(y='mean_hv', x='width', line_color = "red", line_dash='dotted', line_width= 2, alpha=0.5,
     #        legend_label="Mean fraction of Helioviewer.org movie requests (%.3f)"%(df_stats['mean_hv'][0]), source=df_stats)
-    
-    # p.line(y='mean_embed', x='width', line_color = "pink", line_dash='dotted', line_width= 2, alpha=0.5, 
+
+    # p.line(y='mean_embed', x='width', line_color = "pink", line_dash='dotted', line_width= 2, alpha=0.5,
     #        legend_label="Mean fraction of Helioviewer.org Embed requests (%.3f)"%(df_stats['mean_embed'][0]), source=df_stats)
-    
-    # p.line(y='mean_Jhv', x='width', line_color = "cyan", line_dash='dotted', line_width= 2, alpha=0.5, 
+
+    # p.line(y='mean_Jhv', x='width', line_color = "cyan", line_dash='dotted', line_width= 2, alpha=0.5,
     #        legend_label="Mean fraction of JHelioviewer movie requests (%.3f)"%(df_stats['mean_Jhv'][0]), source=df_stats)
-    
+
     p.xaxis.major_label_overrides = {i: date.strftime('%Y %b %d') for i, date in enumerate(df['date'])}
-    
+
     p.x_range.range_padding = 0.06
     p.y_range.range_padding = 0.02
-    
+
     p.legend.background_fill_alpha = 0.6
     p.border_fill_color = "whitesmoke"
     p.legend.location='top_left'
@@ -2501,85 +2510,85 @@ if not df.empty:
 df = frac
 if not df.empty:
     TOOLS = "save, pan, box_zoom, reset, wheel_zoom"
-    
+
     p = figure(plot_height=250, output_backend='webgl',
                tools=TOOLS,
                sizing_mode="scale_width", min_border_left = 0,
     #            tooltips="$name @date: @$name"
               )
-    
-    p.add_layout(Title(text = "Helioviewer fractional usage comparison of endpoint categories", text_font_size = "16pt", text_font_style="bold"), 
+
+    p.add_layout(Title(text = "Helioviewer fractional usage comparison of endpoint categories", text_font_size = "16pt", text_font_style="bold"),
                  place = 'above')
-    p.add_layout(Title(text = "Date Range: %s - %s"%(df['date'].min().strftime('%Y, %b %d'),df['date'].max().strftime('%Y, %b %d'))), 
+    p.add_layout(Title(text = "Date Range: %s - %s"%(df['date'].min().strftime('%Y, %b %d'),df['date'].max().strftime('%Y, %b %d'))),
                  place = 'above')
-    
+
     p.background_fill_color="#f5f5f5"
     p.grid.grid_line_color="white"
     p.xaxis.axis_label = 'Date'
     p.yaxis.axis_label = 'Fractional usage (%)'
     p.axis.axis_line_color = None
-    
-    
-    
+
+
+
     stacks = df.columns.values[4:]
     color_palette = bp.Category20[max(3,len(stacks))][:len(stacks)]
-    
+
     p_hv = p.vbar_stack(stackers=stacks,
-                        x='index', width=0.75, 
+                        x='index', width=0.75,
                         color = color_palette,
                         source=ColumnDataSource(df),
                         legend_label=["%s"%string for string in stacks])
-    
+
     p.add_tools(HoverTool(renderers=p_hv,
                           tooltips=[('Date', '@date_str'), ('Total', '@total')] + [(string, '@{%s}{0.00}%%'%string) for string in stacks],
     #                       formatters={'@date_str' : 'datetime', # use 'datetime' formatter for 'date' field
     #                                  },
                          ))
-    
+
     # def dt2ind(dt):
     # #     y = dt.year + dt.day/int(pd.Timestamp(dt.year,12,31).strftime('%j'))
     #     return df.loc[df['date']==dt].index[0]
-    
+
     # p.line(y=[0,1], x=dt2ind(pd.Timestamp('2011/06/07')), line_width=1.5, line_dash='dotdash', color='red', alpha=1, legend_label= "failed eruption (2011/06/07)")
     # p.line(y=[0,1], x=dt2ind(pd.Timestamp('2013/11/28')), line_width=1.5, line_dash='dotdash', color='purple', alpha=1, legend_label= "Comet ISON (2013/11/28)")
     # p.harea(y=[0,1], x1=dt2ind(pd.Timestamp('2017/09/06')), x2=dt2ind(pd.Timestamp('2017/09/10')), fill_color='teal', fill_alpha=1, legend_label= "large flares (2017/09/06-09)")
-    
+
     # p.harea(y=[0,1], x1=dt2ind(pd.Timestamp('2011/08/11')), x2=dt2ind(pd.Timestamp('2011/09/18')), fill_color='gray', fill_alpha=0.3, legend_label= "GSFC server repair (2011/08/11 - 2011/09/18)")
     # p.harea(y=[0,1], x1=dt2ind(pd.Timestamp('2013/10/01')), x2=dt2ind(pd.Timestamp('2013/10/16')), fill_color='green', fill_alpha=0.3, legend_label= "U.S. Fed. Gov. shutdown (2013/10/01 - 2013/10/16)")
     # p.harea(y=[0,1], x1=dt2ind(pd.Timestamp('2015/02/04')), x2=dt2ind(pd.Timestamp('2015/09/23')), fill_color='red', fill_alpha=0.3, legend_label= "GSFC server down (2015/02/04 - 2015/09/23)")
-    
-    
+
+
     # df_stats = pd.DataFrame({'width': np.linspace(df['index'].min(), df['index'].max(), 2),
     #                          'mean_hv':np.nanmean(df['hv_frac']), 'mean_embed':np.nanmean(df['em_frac']), 'mean_Jhv':np.nanmean(df['Jhv_frac'])})
-    
+
     # p.line(y='mean_hv', x='width', line_color = "red", line_dash='dotted', line_width= 2, alpha=0.5,
     #        legend_label="Mean fraction of Helioviewer.org movie requests (%.3f)"%(df_stats['mean_hv'][0]), source=df_stats)
-    
-    # p.line(y='mean_embed', x='width', line_color = "pink", line_dash='dotted', line_width= 2, alpha=0.5, 
+
+    # p.line(y='mean_embed', x='width', line_color = "pink", line_dash='dotted', line_width= 2, alpha=0.5,
     #        legend_label="Mean fraction of Helioviewer.org Embed requests (%.3f)"%(df_stats['mean_embed'][0]), source=df_stats)
-    
-    # p.line(y='mean_Jhv', x='width', line_color = "cyan", line_dash='dotted', line_width= 2, alpha=0.5, 
+
+    # p.line(y='mean_Jhv', x='width', line_color = "cyan", line_dash='dotted', line_width= 2, alpha=0.5,
     #        legend_label="Mean fraction of JHelioviewer movie requests (%.3f)"%(df_stats['mean_Jhv'][0]), source=df_stats)
-    
+
     p.xaxis.major_label_overrides = {i: date.strftime('%Y %b %d') for i, date in enumerate(df['date'])}
-    
+
     p.x_range.range_padding = 0.06
     p.y_range.range_padding = 0.02
-    
+
     p.legend.background_fill_alpha = 0.6
     p.border_fill_color = "whitesmoke"
     p.legend.location='top_left'
-    
+
     panel = Panel(child=p, title='Fractional')
     panels.append(panel)
     # panels[1] = panel
     tabs = Tabs(tabs=panels)
     # show(tabs)
-    
-    
+
+
     # In[ ]:
-    
-    
+
+
     save(tabs, filename='%s/hv_endpoints_categorical.html'%directory, title='Helioviewer usage comparison of endpoint categories')
     print("Helioviewer usage comparison of endpoint categories completed")
 
@@ -2588,4 +2597,3 @@ if not df.empty:
 
 
 print("ALL PROCSESSES COMPLETED in %d minutes" %((time.time()-master_time)/60))
-
