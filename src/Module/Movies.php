@@ -17,7 +17,7 @@ require_once 'interface.Module.php';
 
 class Module_Movies implements Module {
 
-    const YOUTUBE_THUMBNAIL_FORMAT = "https://i.ytimg.com/vi/{VideoID}/hqdefault.jpg";
+    const YOUTUBE_THUMBNAIL_FORMAT = "https://i.ytimg.com/vi/{VideoID}/{Quality}default.jpg";
     private $_params;
     private $_options;
 
@@ -998,8 +998,8 @@ class Module_Movies implements Module {
 	                'id'  => $publicId,
 	                'url' => 'http://www.youtube.com/watch?v='.$youtubeId,
 	                'thumbnails' => array(
-		                'small' => $this->_generate_thumbnail_url($youtubeId),
-		                'medium' => $this->_generate_thumbnail_url($youtubeId)
+		                'small' => $this->_generate_thumbnail_url($youtubeId, false),
+		                'medium' => $this->_generate_thumbnail_url($youtubeId, true)
 	                ),
 	                'published'  => $video['timestamp'],
 	                'title'  => $name.' ('.$video['startDate'].' - '.$video['endDate'].' UTC)',
@@ -1223,9 +1223,12 @@ class Module_Movies implements Module {
      * Generates a youtube movie thumbnail link from the Movie's youtube Id
      *
      * @param string youtubeId the Movie's youtube ID.
+     * @param bool highQuality Returns a high quality URL if true, otherwise returns a lower quality version
      */
-    private function _generate_thumbnail_url($youtubeId) {
-        return str_replace("{VideoID}", $youtubeId, Module_Movies::YOUTUBE_THUMBNAIL_FORMAT);
+    private function _generate_thumbnail_url($youtubeId, $highQuality) {
+        $url = str_replace("{VideoID}", $youtubeId, Module_Movies::YOUTUBE_THUMBNAIL_FORMAT);
+        $quality = str_replace("{Quality}", $highQuality ? "hq" : "", $url);
+        return $quality;
     }
 
     /**
