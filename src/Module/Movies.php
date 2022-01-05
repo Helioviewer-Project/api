@@ -17,6 +17,7 @@ require_once 'interface.Module.php';
 
 class Module_Movies implements Module {
 
+    const YOUTUBE_THUMBNAIL_FORMAT = "https://i.ytimg.com/vi/{VideoID}/hqdefault.jpg";
     private $_params;
     private $_options;
 
@@ -57,7 +58,7 @@ class Module_Movies implements Module {
         include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerEvents.php';
         include_once HV_ROOT_DIR.'/../src/Database/MovieDatabase.php';
         include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
-        
+
         // Connect to redis
         $redis = new Redisent('localhost');
 
@@ -99,7 +100,7 @@ class Module_Movies implements Module {
             "followViewport"  => 0,
             "reqStartTime"  => $this->_params['startTime'],
             "reqEndTime"  => $this->_params['endTime'],
-            "reqObservationDate"  => null, 
+            "reqObservationDate"  => null,
             "switchSources" => false,
             "celestialBodies" => $celestialBodies
         );
@@ -361,7 +362,7 @@ class Module_Movies implements Module {
             'counter' => $updateCounter
         );
         $token = Resque::enqueue(HV_MOVIE_QUEUE, 'Job_MovieBuilder', $args, true);
-		
+
 
         // Create entries for each version of the movie in the movieFormats
         // table
@@ -696,7 +697,7 @@ class Module_Movies implements Module {
 	            $status = new Resque_Job_Status($this->_params['token']);
 	            $jobStatus = $status->get();
             }
-		
+
             $response = array(
                 'status'   => $movie->status,
                 'statusLabel' => $this->getStatusLabel($movie->status),
@@ -811,7 +812,7 @@ class Module_Movies implements Module {
     public function uploadMovieToYouTube() {
         include_once HV_ROOT_DIR.'/../src/Movie/HelioviewerMovie.php';
         include_once HV_ROOT_DIR.'/../src/Movie/YouTube.php';
-		
+
 		if(empty($this->_params['id'])){
 			session_start();
 			if(isset($_SESSION['video-id'])){
@@ -819,7 +820,7 @@ class Module_Movies implements Module {
 			}else{
 				throw new Exception('Video ID no found. Please try again.', 41);
 			}
-			
+
 		}
 
         // Process request
@@ -955,7 +956,7 @@ class Module_Movies implements Module {
         include_once HV_ROOT_DIR.'/../lib/alphaID/alphaID.php';
 		include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerLayers.php';
 		include_once HV_ROOT_DIR.'/../src/Helper/RegionOfInterest.php';
-		
+
         $movies = new Database_MovieDatabase();
 
         // Default options
@@ -979,7 +980,7 @@ class Module_Movies implements Module {
 
             // Load movie
             $movie = new Movie_HelioviewerMovie($publicId);
-	            
+
             $layers = new Helper_HelioviewerLayers($video['dataSourceString']);
 			$layersArray = $layers->toArray();
 			$name = '';
@@ -989,16 +990,16 @@ class Module_Movies implements Module {
 				}
 			}
 			$name = substr($name, 0, -2);
-			
+
 			// Regon of interest
 			$roiObject = Helper_RegionOfInterest::parsePolygonString($video['roi'], $video['imageScale']);
-			
+
             array_push($videos, array(
 	                'id'  => $publicId,
 	                'url' => 'http://www.youtube.com/watch?v='.$youtubeId,
 	                'thumbnails' => array(
-		                'small' => $video['thumbnail'],
-		                'medium' => $video['thumbnail']
+		                'small' => $this->_generate_thumbnail_url($youtubeId),
+		                'medium' => $this->_generate_thumbnail_url($youtubeId)
 	                ),
 	                'published'  => $video['timestamp'],
 	                'title'  => $name.' ('.$video['startDate'].' - '.$video['endDate'].' UTC)',
@@ -1023,15 +1024,15 @@ class Module_Movies implements Module {
 					)
                 )
             );
-            
+
         }
 
         $this->_printJSON(json_encode($videos));
     }
-	
+
 	public function isYouTubeVideoExist($videoID) {
 	    include_once HV_ROOT_DIR.'/../src/Net/Proxy.php';
-		
+
 		$theURL = "http://www.youtube.com/oembed?url=http://www.youtube.com/watch?v=$videoID&format=json";
         $proxy = new Net_Proxy($theURL);
 	    $data = json_decode($proxy->query(array(), true), true);
@@ -1042,7 +1043,7 @@ class Module_Movies implements Module {
 	        return false;
 	    }
 	}
-	
+
     /**
      *
      *
@@ -1164,8 +1165,8 @@ class Module_Movies implements Module {
 	    <source type="video/webm" src="<?=$urlFolder?>/<?=$filename?>.webm" />
 	    <!--<source type="video/ogg" src="myvideo.ogv" />-->
 	    <object width="<?=$options['width']?>" height="<?=($options['height'] - 20)?>" type="application/x-shockwave-flash" data="<?php echo HV_WEB_ROOT_URL; ?>/lib/mediaelement-2.22.0/build/flashmediaelement.swf">
-	        <param name="movie" value="<?php echo HV_WEB_ROOT_URL; ?>/lib/mediaelement-2.22.0/build/flashmediaelement.swf" /> 
-	        <param name="flashvars" value="controls=true&amp;poster=<?=$urlFolder?>/preview-full.png&amp;file=<?=$urlFolder?>/<?=$filename?>.mp4" />        
+	        <param name="movie" value="<?php echo HV_WEB_ROOT_URL; ?>/lib/mediaelement-2.22.0/build/flashmediaelement.swf" />
+	        <param name="flashvars" value="controls=true&amp;poster=<?=$urlFolder?>/preview-full.png&amp;file=<?=$urlFolder?>/<?=$filename?>.mp4" />
 	        <img src="<?=$urlFolder?>/preview-full.png" width="<?=$options['width']?>" height="<?=$options['height']?>" title="No video playback capabilities" />
 	    </object>
 	</video>
@@ -1216,6 +1217,15 @@ class Module_Movies implements Module {
 
         // Print result
         echo $json;
+    }
+
+    /**
+     * Generates a youtube movie thumbnail link from the Movie's youtube Id
+     *
+     * @param string youtubeId the Movie's youtube ID.
+     */
+    private function _generate_thumbnail_url($youtubeId) {
+        return str_replace("{VideoID}", $youtubeId, Module_Movies::YOUTUBE_THUMBNAIL_FORMAT);
     }
 
     /**
