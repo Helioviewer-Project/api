@@ -513,8 +513,6 @@ class ImageRetrievalDaemon:
         """Sends an email notification to the Helioviewer admin(s) when a
         one of the data sources becomes unreachable."""
         # If no server was specified, don't do anything
-        print(message)
-        return
         if self.email_server is "":
             return
 
