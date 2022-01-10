@@ -284,6 +284,18 @@ class Module_Movies implements Module {
                 }
             }
         }
+        else
+        {
+            // If forcing a rebuild of a movie, then need to delete the current
+            // status from the DB, and also remove that movie info from the
+            // cache
+            $movieDatabase = new Database_MovieDatabase();
+            $movieDatabase->deleteMovieFormats($movieId);
+            // Rebuild the public ID so we're not using unsanitized user provided
+            // id.
+            $publicId = alphaId($movieId, false, 5, HV_MOVIE_ID_PASS);
+            Movie_HelioviewerMovie::DeleteFromCache($publicId);
+        }
 
         // Get movie metadata from database
         $movieDatabase = new Database_MovieDatabase();

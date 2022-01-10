@@ -124,5 +124,13 @@ class Helper_Serialize {
         return true;
     }
 
+    /**
+     * If this cached file exists, then deletes the item from cache
+     *
+     */
+    public function deleteFromCache() {
+        // Delete the cache file.
+        unlink($this->_path.'/'.$this->_filename);
+    }
 }
 ?>
