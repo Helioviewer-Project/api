@@ -297,12 +297,10 @@ class ImageRetrievalDaemon:
             logging.info('Number of new URLS = ' + str(len(extra_filtered)))
 
             ################################
-            if self.servers[0].name == 'LMSAL2':
+            if self.servers[0].name in ['LMSAL', 'LMSAL2']:
                 new_urls.append(extra_filtered)
             else:
                 new_urls.append(filtered)
-            print(new_urls)
-
 
         # check disk space
         if not self.sent_diskspace_warning:
