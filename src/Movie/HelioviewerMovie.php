@@ -38,6 +38,7 @@ require_once HV_ROOT_DIR . '/../src/Helper/Serialize.php';
 
 class Movie_HelioviewerMovie {
 
+    const CACHE_DIR = 'api/HelioviewerMovie';
     public $id;
     public $frameRate;
     public $movieLength;
@@ -89,7 +90,7 @@ class Movie_HelioviewerMovie {
     public function __construct($publicId, $format='mp4') {
         $this->_db       = false;
 
-        $this->_cachedir = 'api/HelioviewerMovie';
+        $this->_cachedir = Movie_HelioviewerMovie::CACHE_DIR;
         $this->_filename = urlencode($publicId.'.cache');
         $this->_filepath = $this->_cachedir.'/'.$this->_filename;
 
@@ -131,7 +132,7 @@ class Movie_HelioviewerMovie {
         $this->watermark    = (bool)$info['watermark'];
         $this->eventsLabels = (bool)$info['eventsLabels'];
         $this->movieIcons   = (bool)$info['movieIcons'];
-        $this->celestialBodies = array( 
+        $this->celestialBodies = array(
             'labels'        => $info['celestialBodiesLabels'],
             'trajectories'  => $info['celestialBodiesTrajectories']
         );
@@ -432,7 +433,7 @@ class Movie_HelioviewerMovie {
             try {
                 $screenshot = new Image_Composite_HelioviewerMovieFrame(
                     $filepath, $this->_layers, $this->_events,
-                    $this->eventsLabels, $this->movieIcons, $this->celestialBodies, 
+                    $this->eventsLabels, $this->movieIcons, $this->celestialBodies,
                     $this->scale, $this->scaleType, $this->scaleX, $this->scaleY,
                     $time, $this->_roi, $options);
 
@@ -566,7 +567,7 @@ class Movie_HelioviewerMovie {
         // Limit frame-rate floating-point precision
         // https://bugs.launchpad.net/helioviewer.org/+bug/979231
         $frameRate = round($this->frameRate, 1);
-		
+
 		if($this->size == 1){
 	        $this->width = 1280;
 	        $this->height = 720;
@@ -580,7 +581,7 @@ class Movie_HelioviewerMovie {
 	        $this->width = 3840;
 	        $this->height = 2160;
         }
-		
+
         // Create and FFmpeg encoder instance
         $ffmpeg = new Movie_FFMPEGEncoder(
             $this->directory, $filename, $frameRate, $this->width,
@@ -740,7 +741,7 @@ class Movie_HelioviewerMovie {
         }
 
         $this->_setMovieDimensions();
-		
+
 		if($this->size == 1){
 	        $width = 1280;
 	        $height = 720;
@@ -791,6 +792,16 @@ class Movie_HelioviewerMovie {
                             'height' => $height);
 
         return $dimensions;
+    }
+
+    /**
+     *  Deletes a movie's cached information.
+     */
+    public static function DeleteFromCache($publicId) {
+        $cachedir = Movie_HelioviewerMovie::CACHE_DIR;
+        $filename = urlencode($publicId.'.cache');
+        $cache = new Helper_Serialize($cachedir, $filename, 60);
+        $cache->deleteFromCache();
     }
 
     /**
