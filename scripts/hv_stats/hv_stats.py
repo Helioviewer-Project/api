@@ -2198,14 +2198,26 @@ try:
     #     y = dt.year + dt.day/int(pd.Timestamp(dt.year,12,31).strftime('%j'))
         return frac.loc[frac['date']==dt].index[0]
 
-    p.line(y=[0,1.1], x=dt2ind(pd.Timestamp('2011/06/07')), line_width=1.5, line_dash='dotdash', color='red', alpha=1, legend_label= "failed eruption (2011/06/07)")
-    p.line(y=[0,1.1], x=dt2ind(pd.Timestamp('2013/11/28')), line_width=1.5, line_dash='dotdash', color='purple', alpha=1, legend_label= "Comet ISON (2013/11/28)")
-    p.harea(y=[0,1.1], x1=dt2ind(pd.Timestamp('2017/09/06')), x2=dt2ind(pd.Timestamp('2017/09/10')), fill_color='black', fill_alpha=1, legend_label= "large flares (2017/09/06-09)")
+    def add_line_if_timestamp_in_range(time_str, color, label):
+        timestamp = pd.Timestamp(time_str)
+        if date_start < timestamp and timestamp < date_end:
+            p.line(y=[0,1.1], x=dt2ind(timestamp), line_width=1.5, line_dash='dotdash', color=color, alpha=1, legend_label=label)
 
-    p.harea(y=[0,1.1], x1=dt2ind(pd.Timestamp('2011/08/11')), x2=dt2ind(pd.Timestamp('2011/09/18')), fill_color='gray', fill_alpha=0.3, legend_label= "GSFC server repair (2011/08/11 - 2011/09/18)")
-    p.harea(y=[0,1.1], x1=dt2ind(pd.Timestamp('2013/10/01')), x2=dt2ind(pd.Timestamp('2013/10/16')), fill_color='green', fill_alpha=0.3, legend_label= "U.S. Fed. Gov. shutdown (2013/10/01 - 2013/10/16)")
-    p.harea(y=[0,1.1], x1=dt2ind(pd.Timestamp('2015/02/04')), x2=dt2ind(pd.Timestamp('2015/09/23')), fill_color='red', fill_alpha=0.3, legend_label= "GSFC server down (2015/02/04 - 2015/09/23)")
+    def add_harea_if_timestamp_in_range(start_time, end_time, color, alpha, label):
+        start_timestamp = pd.Timestamp(start_time)
+        end_timestamp = pd.Timestamp(end_time)
+        # make sure start and end times are in range
+        if date_start < start_timestamp and start_timestamp < date_end:
+            if date_start < end_timestamp and end_timestamp < date_end:
+                p.harea(y=[0,1.1], x1=dt2ind(start_timestamp), x2=dt2ind(end_timestamp), fill_color=color, fill_alpha=alpha, legend_label=label)
 
+    add_line_if_timestamp_in_range('2011/06/07', 'red', "failed eruption (2011/06/07)")
+    add_line_if_timestamp_in_range('2013/11/28', 'purple', "Comet ISON (2013/11/28)")
+    add_harea_if_timestamp_in_range('2017/09/06', '2017/09/10', 'black', 1, "large flares (2017/09/06-09)")
+
+    add_harea_if_timestamp_in_range('2011/08/11', '2011/09/18', 'gray', 0.3, "GSFC server repair (2011/08/11 - 2011/09/18)")
+    add_harea_if_timestamp_in_range('2013/10/01', '2013/10/16', 'green', 0.3, "U.S. Fed. Gov. shutdown (2013/10/01 - 2013/10/16)")
+    add_harea_if_timestamp_in_range('2015/02/04', '2015/09/23', 'red', 0.3, "GSFC server down (2015/02/04 - 2015/09/23)")
 
     df_stats = pd.DataFrame({'width': np.linspace(frac['index'].min()-100, frac['index'].max()+100, 2),
                              'mean_hv':np.nanmean(frac['hv_frac']), 'mean_embed':np.nanmean(frac['em_frac']), 'mean_Jhv':np.nanmean(frac['Jhv_frac'])})
