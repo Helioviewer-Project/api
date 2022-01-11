@@ -2279,9 +2279,10 @@ heirarchy = {
 
 hv['date'] = pd.to_datetime(hv['date'])
 
-hv = hv.pivot_table(values='count', columns='action', index = ['date'])
-hv.columns.name = None
-hv=hv.fillna(0)
+if not hv['date'].empty:
+    hv = hv.pivot_table(values='count', columns='action', index = ['date'])
+    hv.columns.name = None
+    hv=hv.fillna(0)
 
 
 # In[ ]:
