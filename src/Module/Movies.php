@@ -1132,8 +1132,10 @@ class Module_Movies implements Module {
 
         // Get filepath
         $filepath = $movie->getFilepath($options['hq']);
-        $filename = basename($filepath);
-        $filename = basename($filepath, '.flv');
+        $file_info = pathinfo($filepath);
+        // Gets the filename without the extension. Extension is added
+        // in the HTML code below
+        $filename = $file_info['filename'];
 
         // Return an error if movie is not available
         if ( !@file_exists($filepath) ) {
