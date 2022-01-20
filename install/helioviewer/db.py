@@ -984,7 +984,7 @@ def update_image_table_index(cursor):
 
 def mark_as_corrupt(cursor, filename, note):
     """Adds an image to the 'corrupt' database table"""
-    sql = "INSERT INTO corrupt VALUES (NULL, NULL, '%s', '%s');" % (filename,
+    sql = "INSERT INTO corrupt(filename, note) VALUES ('%s', '%s');" % (filename,
                                                                     note)
 
     cursor.execute(sql)
