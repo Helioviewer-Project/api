@@ -133,20 +133,12 @@ class Image_ImageType_CORImage extends Image_HelioviewerImage {
         } else {
             $maskScaleFactor = 1;
         }
-		
-		$offsetX = $this->offsetX;
-		$offsetY = $this->offsetY;
-		
-		if($this->followViewport){
-			$offsetX = $this->originalOffsetX;
-			$offsetY = $this->originalOffsetY;
-		}
 
         $maskTopLeftX = ($this->imageSubRegion['left'] +
-                        ($maskWidth  - $this->jp2->getWidth()) /2 - $offsetX)
+                        ($maskWidth  - $this->jp2->getWidth()) /2)
                         * $maskScaleFactor;
         $maskTopLeftY = ($this->imageSubRegion['top']  +
-                        ($maskHeight - $this->jp2->getHeight())/2 - $offsetY)
+                        ($maskHeight - $this->jp2->getHeight())/2)
                         * $maskScaleFactor;
 
         $width  = $this->subfieldWidth  * $maskScaleFactor;
