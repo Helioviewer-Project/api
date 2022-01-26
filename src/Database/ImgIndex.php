@@ -415,12 +415,12 @@ class Database_ImgIndex {
         $this->_dbConnect();
 
         $datestr = isoDateToMySQL($date);
-		
+
         $sql = sprintf(
                    "SELECT id, sourceId, filepath, filename, date FROM ("
                  . "( SELECT "
                  .        "id, sourceId, filepath, filename, date "
-                 .   "FROM data FORCE INDEX (date_index) "
+                 .   "FROM data "
                  .   "WHERE "
                  .       "".$this->getDatasourceIDsString($sourceId)." AND "
                  .       "date "     . " <'%s' "
@@ -429,7 +429,7 @@ class Database_ImgIndex {
                  . "UNION ALL "
                  . "( SELECT "
                  .        "id, sourceId, filepath, filename, date "
-                 .   "FROM data FORCE INDEX (date_index) "
+                 .   "FROM data "
                  .   "WHERE "
                  .       "".$this->getDatasourceIDsString($sourceId)." AND "
                  .       "date "     . ">='%s' "
@@ -442,7 +442,7 @@ class Database_ImgIndex {
                  $this->_dbConnection->link->real_escape_string($datestr),
                  $this->_dbConnection->link->real_escape_string($datestr),
                  $this->_dbConnection->link->real_escape_string($datestr)
-               ); 
+               );
         try {
             $result = $this->_dbConnection->query($sql);
         }
@@ -458,8 +458,8 @@ class Database_ImgIndex {
 	        $source = $this->_getDataSourceName($data['sourceId']);
 	        $data['name'] = $source;
         }
-		
-		
+
+
         return $data;
     }
 
@@ -481,7 +481,7 @@ class Database_ImgIndex {
 
         $sql = sprintf(
                    "SELECT filepath, filename, date "
-                 . "FROM data FORCE INDEX (date_index) "
+                 . "FROM data "
                  . "WHERE "
                  .     "sourceId " . " = %d AND "
                  .     "date "     . "<='%s' "
@@ -526,7 +526,7 @@ class Database_ImgIndex {
 
         $sql = sprintf(
                    "SELECT filepath, filename, date "
-                 . "FROM data FORCE INDEX (date_index) "
+                 . "FROM data "
                  . "WHERE "
                  .     "sourceId " . " = %d AND "
                  .     "date "     . ">='%s' "
@@ -596,9 +596,9 @@ class Database_ImgIndex {
         $endDate   = isoDateToMySQL($end);
         $middleDate = '';
         $sourceId2 = 3;
-        
+
         $dataSplit = false;
-		
+
 		if($switchSources){
 			if($sourceId == 13){
 				if(strtotime($end) < strtotime('2010-06-02 00:05:39')){
@@ -647,7 +647,7 @@ class Database_ImgIndex {
 				}
 			}
 		}
-		
+
 		if($dataSplit){
 			$sql = sprintf(
 	                   "SELECT COUNT(id) as count FROM data WHERE (".$this->getDatasourceIDsString($sourceId)." AND date BETWEEN '%s' AND '%s') OR (".$this->getDatasourceIDsString($sourceId2)." AND date BETWEEN '%s' AND '%s') LIMIT 1;",
@@ -656,15 +656,15 @@ class Database_ImgIndex {
 					   $this->_dbConnection->link->real_escape_string($middleDate),
 					   $this->_dbConnection->link->real_escape_string($endDate)
 	                );
-		}else{	
+		}else{
 			$sql = sprintf(
                    "SELECT COUNT(id) as count FROM data WHERE ".$this->getDatasourceIDsString($sourceId)." AND date BETWEEN '%s' AND '%s' LIMIT 1;",
 				   $this->_dbConnection->link->real_escape_string($startDate),
 				   $this->_dbConnection->link->real_escape_string($endDate)
                 );
 		}
-		
-        
+
+
         try {
             $result = $this->_dbConnection->query($sql);
         }
@@ -696,9 +696,9 @@ class Database_ImgIndex {
         $endDate   = isoDateToMySQL($end);
         $middleDate = '';
         $sourceId2 = 3;
-        
+
         $dataSplit = false;
-		
+
 		if($switchSources){
 			if($sourceId == 13){
 				if(strtotime($end) < strtotime('2010-06-02 00:05:39')){
@@ -747,8 +747,8 @@ class Database_ImgIndex {
 				}
 			}
 		}
-		
-		
+
+
 		if($dataSplit){
 			$sql = sprintf(
 	                   "SELECT * FROM data WHERE (".$this->getDatasourceIDsString($sourceId)." AND date BETWEEN '%s' AND '%s') OR (".$this->getDatasourceIDsString($sourceId2)." AND date BETWEEN '%s' AND '%s') ORDER BY date ASC;",
@@ -757,14 +757,14 @@ class Database_ImgIndex {
 					   $this->_dbConnection->link->real_escape_string($middleDate),
 					   $this->_dbConnection->link->real_escape_string($endDate)
 	                );
-		}else{	
+		}else{
         	$sql = sprintf(
                    "SELECT * FROM data WHERE ".$this->getDatasourceIDsString($sourceId)." AND date BETWEEN '%s' AND '%s' ORDER BY date ASC;",
                  $this->_dbConnection->link->real_escape_string($startDate),
                  $this->_dbConnection->link->real_escape_string($endDate)
                );
         }
-        
+
         try {
             $result = $this->_dbConnection->query($sql);
         }
@@ -779,7 +779,7 @@ class Database_ImgIndex {
 
         return $data;
     }
-    
+
     /**
      * Return an array of data from a given data source within the specified
      * time range.
@@ -799,7 +799,7 @@ class Database_ImgIndex {
         $startDate = date("Y-m-d H:i:s", $start);
         $endDate   = date("Y-m-d H:i:s", $end);
         $midDate   = date("Y-m-d H:i:s", $mid);
-		
+
         $sql = sprintf("SELECT * FROM
 				(
 				  ( SELECT *, TIMESTAMPDIFF(SECOND, '%s', `date`) as diff
@@ -827,7 +827,7 @@ class Database_ImgIndex {
         catch (Exception $e) {
             return false;
         }
-		
+
 		$data = $result->fetch_array(MYSQLI_ASSOC);
 
         return $data;
@@ -947,7 +947,7 @@ class Database_ImgIndex {
             if($previousAttr != $property || $property == 'Any'){
 	            $i = intval($i);
 	            $property = $this->_dbConnection->link->real_escape_string($property);
-	
+
 	            $select_clause[] = $letters[$i].'.label AS '.$letters[$i].'_label';
 	            $from_clause[]  = 'datasource_property '.$letters[$i];
 	            if ($i > 0) {
@@ -1097,7 +1097,7 @@ class Database_ImgIndex {
      */
     public function getOldestData($sourceId) {
         $this->_dbConnect();
-		
+
 		$sql = 'SELECT date FROM data WHERE '.$this->getDatasourceIDsString($sourceId).' ORDER BY date ASC LIMIT 1;';
 
         try {
@@ -1121,9 +1121,9 @@ class Database_ImgIndex {
      */
     public function getNewestData($sourceId) {
         $this->_dbConnect();
-		
+
 		$sql = 'SELECT date FROM data WHERE '.$this->getDatasourceIDsString($sourceId).' ORDER BY date DESC LIMIT 1;';
-		
+
         try {
             $result = $this->_dbConnection->query($sql);
         }
