@@ -123,7 +123,6 @@ class ImageRetrievalDaemon:
         # @TODO: Send email notification when HVpull stops/exits for any reason?
 
         # Determine starttime and endtime to use
-        endtime = datetime.datetime.utcnow()
         if backfill is None:
             if starttime is not None:
                 starttime = datetime.datetime.strptime(starttime, date_fmt)
@@ -140,8 +139,7 @@ class ImageRetrievalDaemon:
             else:
                 # Otherwise, first query from start -> now
                 now = datetime.datetime.utcnow()
-                endtime = now
-                self.query(starttime, endtime)
+                self.query(starttime, now)
                 self.sleep()
         else:
             # Backfill process has been requested.  Look for data in the last
@@ -158,12 +156,10 @@ class ImageRetrievalDaemon:
             self.query(starttime, endtime)
             self.stop()
 
-        # The very first endtime is determined above
-        last_time = endtime
+        # Begin main loop
         while not self.shutdown_requested:
             now = datetime.datetime.utcnow()
-            starttime = last_time
-            last_time = now
+            starttime = self.servers[0].get_starttime()
 
             # get a list of files available
             self.query(starttime, now)
