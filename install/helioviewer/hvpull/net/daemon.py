@@ -162,7 +162,9 @@ class ImageRetrievalDaemon:
             starttime = self.servers[0].get_starttime()
 
             # get a list of files available
-            self.query(starttime, now)
+            # self.newest_timestamp gets set by query() during the first run
+            # before the main loop.
+            self.query(self.newest_timestamp, now)
 
             self.sleep()
 
@@ -299,8 +301,10 @@ class ImageRetrievalDaemon:
             ################################
             if self.servers[0].name in ['LMSAL', 'LMSAL2']:
                 new_urls.append(extra_filtered)
+                self.newest_timestamp = self._get_newest_image(extra_filtered)
             else:
                 new_urls.append(filtered)
+                self.newest_timestamp = self._get_newest_image(filtered)
 
         # check disk space
         if not self.sent_diskspace_warning:
@@ -308,6 +312,17 @@ class ImageRetrievalDaemon:
 
         # acquire the data files
         self.acquire(new_urls)
+
+    def _get_newest_image(self, image_list):
+        """
+        Returns the newest image out of the given list of image file names
+        """
+        newest = self._get_datetime_from_file(image_list[0])
+        for image in image_list:
+            image_time = self._get_datetime_from_file(image)
+            if (image_time > newest):
+                newest = image_time
+        return newest
 
     def _get_datetime_from_file(self, file):
         url_filename = os.path.basename(file)
