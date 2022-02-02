@@ -108,6 +108,15 @@ class ImageRetrievalDaemon:
         # Shutdown switch
         self.shutdown_requested = False
 
+    def is_sdo(self):
+        """
+        Returns true if the current server is an SDO server
+        """
+        return self.servers[0].name in ['LMSAL', 'LMSAL2']
+
+    def get_sdo_processing_delay(self):
+        return {"aia": datetime.timedelta(minutes=0), "hmi": datetime.timedelta(minutes=4*60)}
+
     def start(self, starttime=None, endtime=None, backfill=None):
         """Start daemon operation."""
         logging.info("Initializing HVPull")
@@ -253,7 +262,7 @@ class ImageRetrievalDaemon:
             high_volume_instruments = ('aia', 'hmi')
 
             # Some of these high volume data are slower behind real time than others
-            processing_delay = {"aia": datetime.timedelta(minutes=0), "hmi": datetime.timedelta(minutes=4*60)}
+            processing_delay = self.get_sdo_processing_delay()
 
             # Storage for the ub-sampled URLs
             strided = dict()
@@ -286,7 +295,6 @@ class ImageRetrievalDaemon:
                 logging.info('Number of files from ' + instrument + ' = ' + str(n))
 
             high_volume_instrument_string = ' '.join([str(elem) for elem in high_volume_instruments])
-            print("Why are there so many?")
             logging.info('Number of files available in time range from high volume instruments= ' + str(len(filtered)))
             logging.info('High volume instruments are = ' + high_volume_instrument_string)
             logging.info('Stride value = ' + str(stride))
@@ -337,10 +345,19 @@ class ImageRetrievalDaemon:
         hours:minutes:seconds time.
         """
         filtered_list = []
+        hmi_delay = self.get_sdo_processing_delay()['hmi']
         for file in files:
             timestamp = self._get_datetime_from_file(file)
             if (timestamp > starttime) and (timestamp < endtime):
                 filtered_list.append(file)
+            if self.is_sdo():
+                # SDO contains AIA and HMI, while AIA is up-to-date, HMI lags by
+                # roughly 4 hours, so this accounts for that when using the LMSAL
+                # data servers
+                modified_start = starttime - hmi_delay
+                modified_end = endtime - hmi_delay
+                if (timestamp > modified_start) and (timestamp < modified_end):
+                    filtered_list.append(file)
         return filtered_list
 
     def query_server(self, browser, starttime, endtime):
