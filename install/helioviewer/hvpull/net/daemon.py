@@ -244,7 +244,7 @@ class ImageRetrievalDaemon:
             # Also the look-back time should not exceed the time between searches
 
             # Sample size
-            stride = 10
+            stride = 20
 
             # Number of strided files
             n_strided = 0
