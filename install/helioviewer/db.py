@@ -183,7 +183,10 @@ def create_data_table(cursor):
       KEY `groupThree` (`groupThree`),
       KEY `groupTwo` (`groupTwo`),
       KEY `date_2` (`date`,`groupTwo`),
-      KEY `date_3` (`date`,`groupThree`)
+      KEY `date_3` (`date`,`groupThree`),
+      INDEX `group_one_date` (`groupOne`, `date`),
+      INDEX `group_two_date` (`groupTwo`, `date`),
+      INDEX `group_three_date` (`groupThree`, `date`)
     ) ENGINE=MyISAM DEFAULT CHARSET=utf8;"""
     cursor.execute(sql)
 
