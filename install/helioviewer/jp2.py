@@ -70,7 +70,7 @@ def insert_images(images, sources, rootdir, db, cursor, mysql, step_function=Non
     step_function : function
         function to call after each insert query
     """
-    
+
     # TEMPORARY SOLUTION
     # Because of database tables changes in Helioviewer v2 and Helioviewer v3
     # we need have same data on both databases we need to insert image information into both databases
@@ -90,12 +90,12 @@ def insert_images(images, sources, rootdir, db, cursor, mysql, step_function=Non
 
         prev = ""
         source = sources
-        
+
         if img['observatory'] == "Hinode":
             leafs = ["observatory", "instrument", "detector", "filter1", "filter2"]
         else:
             leafs = ["observatory", "instrument", "detector", "measurement"]
-            
+
         for leaf in leafs:
 
             if img[leaf] != prev:
@@ -109,14 +109,14 @@ def insert_images(images, sources, rootdir, db, cursor, mysql, step_function=Non
         groups = getImageGroup(source['id'])
 
         # insert into database
-        queryStr = "(NULL, '%s', '%s', '%s', NULL, %d, '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', 1, %d, %d, %d),"  
-                
+        queryStr = "(NULL, '%s', '%s', '%s', NULL, %d, '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', 1, %d, %d, %d),"
+
         query += queryStr % (path, filename, img["date"], source['id'],
                   img["scale"], img["width"], img["height"], img["refPixelX"], img["refPixelY"], img["layeringOrder"],
                   img["DSUN_OBS"], img["SOLAR_R"], img["RADIUS"], img["CDELT1"], img["CDELT2"],
                   img["CRVAL1"], img["CRVAL2"], img["CRPIX1"], img["CRPIX2"], img["XCEN"], img["YCEN"],
                   img["CROTA1"], groups["groupOne"], groups["groupTwo"], groups["groupThree"])
-        
+
         query_v2 += "(NULL, '%s', '%s', '%s', %d)," % (path, filename, img["date"], source['id'])
 
         # Progressbar
@@ -134,7 +134,7 @@ def insert_images(images, sources, rootdir, db, cursor, mysql, step_function=Non
         db.commit()
     except Exception as e:
         print("Error: " + e.args[1])
-    
+
     if cursor_v2:
         try:
             cursor_v2.execute(query_v2)
@@ -156,129 +156,40 @@ class BadImage(ValueError):
 
 def getImageGroup(sourceId):
     """Create data object of XRT groups
-    
+
     TODO: move groupId definition to the database
     """
     groups = dict()
-    
+    groups["groupOne"] = 0
+    groups["groupTwo"] = 0
+    groups["groupThree"] = 0
+
     if sourceId > 37 and sourceId < 75:
         groups["groupOne"] = 10001
-    else:
-        groups["groupOne"] = 0
-        
-    if sourceId == 38:
-        groups["groupTwo"] = 10002
-        groups["groupThree"] = 10008
-    elif sourceId == 38:
-        groups["groupTwo"] = 10003
-        groups["groupThree"] = 10008
-    elif sourceId == 38:
-        groups["groupTwo"] = 10004
-        groups["groupThree"] = 10008
-    elif sourceId == 38:
-        groups["groupTwo"] = 10005
-        groups["groupThree"] = 10008
-    elif sourceId == 38:
-        groups["groupTwo"] = 10006
-        groups["groupThree"] = 10008
-    elif sourceId == 38:
-        groups["groupTwo"] = 10007
-        groups["groupThree"] = 10008
-    elif sourceId == 38:
-        groups["groupTwo"] = 10002
-        groups["groupThree"] = 10009
-    elif sourceId == 38:
-        groups["groupTwo"] = 10003
-        groups["groupThree"] = 10009
-    elif sourceId == 38:
-        groups["groupTwo"] = 10004
-        groups["groupThree"] = 10009
-    elif sourceId == 38:
-        groups["groupTwo"] = 10005
-        groups["groupThree"] = 10009
-    elif sourceId == 38:
-        groups["groupTwo"] = 10006
-        groups["groupThree"] = 10009
-    elif sourceId == 38:
-        groups["groupTwo"] = 10007
-        groups["groupThree"] = 10009
-    elif sourceId == 38:
-        groups["groupTwo"] = 10002
-        groups["groupThree"] = 10010
-    elif sourceId == 38:
-        groups["groupTwo"] = 10003
-        groups["groupThree"] = 10010
-    elif sourceId == 38:
-        groups["groupTwo"] = 10004
-        groups["groupThree"] = 10010
-    elif sourceId == 38:
-        groups["groupTwo"] = 10005
-        groups["groupThree"] = 10010
-    elif sourceId == 38:
-        groups["groupTwo"] = 10006
-        groups["groupThree"] = 10010
-    elif sourceId == 38:
-        groups["groupTwo"] = 10007
-        groups["groupThree"] = 10010
-    elif sourceId == 38:
-        groups["groupTwo"] = 10002
-        groups["groupThree"] = 10011
-    elif sourceId == 38:
-        groups["groupTwo"] = 10003
-        groups["groupThree"] = 10011
-    elif sourceId == 38:
-        groups["groupTwo"] = 10004
-        groups["groupThree"] = 10011
-    elif sourceId == 38:
-        groups["groupTwo"] = 10005
-        groups["groupThree"] = 10011
-    elif sourceId == 38:
-        groups["groupTwo"] = 10006
-        groups["groupThree"] = 10011
-    elif sourceId == 38:
-        groups["groupTwo"] = 10007
-        groups["groupThree"] = 10011
-    elif sourceId == 38:
-        groups["groupTwo"] = 10002
-        groups["groupThree"] = 10012
-    elif sourceId == 38:
-        groups["groupTwo"] = 10003
-        groups["groupThree"] = 10012
-    elif sourceId == 38:
-        groups["groupTwo"] = 10004
-        groups["groupThree"] = 10012
-    elif sourceId == 38:
-        groups["groupTwo"] = 10005
-        groups["groupThree"] = 10012
-    elif sourceId == 38:
-        groups["groupTwo"] = 10006
-        groups["groupThree"] = 10012
-    elif sourceId == 38:
-        groups["groupTwo"] = 10007
-        groups["groupThree"] = 10012
-    elif sourceId == 38:
-        groups["groupTwo"] = 0
-        groups["groupThree"] = 0
-    elif sourceId == 38:
-        groups["groupTwo"] = 10002
-        groups["groupThree"] = 10013
-    elif sourceId == 38:
-        groups["groupTwo"] = 10003
-        groups["groupThree"] = 10013
-    elif sourceId == 38:
-        groups["groupTwo"] = 10004
-        groups["groupThree"] = 10013
-    elif sourceId == 38:
-        groups["groupTwo"] = 10005
-        groups["groupThree"] = 10013
-    elif sourceId == 38:
-        groups["groupTwo"] = 10006
-        groups["groupThree"] = 10013
-    elif sourceId == 38:
-        groups["groupTwo"] = 10007
-        groups["groupThree"] = 10013
-    else:
-        groups["groupTwo"] = 0
-        groups["groupThree"] = 0
+
+        # ID 68 messes up the math because it doesn't fit the pattern.
+        # So for values > 68 offset it by 1 so we basically ignore it
+        # in the math. This is confirmed to work via test_jp2.py
+        offset = sourceId
+        if sourceId > 68:
+            offset = sourceId - 1
+
+        # sourceId 68 doesn't follow the pattern. groups 2 and 3 should
+        # be 0 for 68, so exclude it here.
+        if sourceId != 68:
+            # thanks to the pattern of how the data is laid out
+            # group 2 follows a modulus of 10002 - 10007 and repeats
+            # i.e. 38 -> 10002 ... 43 -> 10007, 44 -> 10002 ... 49 -> 10007, etc
+            # So group 2 can be set with a modulus
+            groups["groupTwo"] = ((offset - 38) % 6) + 10002
+
+            # Group 3 has a similar pattern, every 6 share a group and then
+            # the group is incremented by one.
+            # i.e. 38 -> 10008 ... 43 -> 10008, 44 -> 10009 ... 49 -> 10009, etc
+            # Count on integer division to drop the result in the correct bucket
+            # 38 to 43 when subtracted will return 0 - 5, when divided by 6 returns 0.
+            # 44 to 49 when subtracted will return 6 - 11, when divided by 6 returns 1.
+            # etc.
+            groups["groupThree"] = ((offset - 38) // 6) + 10008
 
     return groups
