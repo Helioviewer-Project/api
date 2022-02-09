@@ -417,28 +417,26 @@ class Database_ImgIndex {
         $datestr = isoDateToMySQL($date);
 
         $sql = sprintf(
-                   "SELECT id, sourceId, filepath, filename, date FROM ("
-                 . "( SELECT "
-                 .        "id, sourceId, filepath, filename, date "
-                 .   "FROM data "
-                 .   "WHERE "
-                 .       "".$this->getDatasourceIDsString($sourceId)." AND "
-                 .       "date "     . " <'%s' "
-                 .   "ORDER BY date DESC "
-                 .   "LIMIT 1 ) "
-                 . "UNION ALL "
-                 . "( SELECT "
-                 .        "id, sourceId, filepath, filename, date "
-                 .   "FROM data "
-                 .   "WHERE "
-                 .       "".$this->getDatasourceIDsString($sourceId)." AND "
-                 .       "date "     . ">='%s' "
-                 .   "ORDER BY date ASC "
-                 .   "LIMIT 1 ) "
-                 . ")t "
-                 . "ORDER BY "
-                 .     "ABS(TIMESTAMPDIFF(MICROSECOND, date, '%s') "
-                 . ") LIMIT 1;",
+                "SELECT id, sourceId, filepath, filename, date
+                 FROM ( (SELECT id, sourceId, filepath, filename, date
+                            FROM data
+                            WHERE ".$this->getDatasourceIDsString($sourceId)."
+                            AND date = (SELECT MAX(date)
+                                        FROM data
+                                        WHERE ".$this->getDatasourceIDsString($sourceId)."
+                                        AND date < '%s'))
+                        UNION ALL
+                         (SELECT id, sourceId, filepath, filename, date
+                          FROM data
+                          WHERE ".$this->getDatasourceIDsString($sourceId)."
+                          AND date = (SELECT MIN(date)
+                                      FROM data
+                                      WHERE ".$this->getDatasourceIDsString($sourceId)."
+                                      AND date >= '%s'))
+                        ) t
+                 ORDER BY
+                 ABS(TIMESTAMPDIFF(MICROSECOND, date, '%s'))
+                 LIMIT 1;",
                  $this->_dbConnection->link->real_escape_string($datestr),
                  $this->_dbConnection->link->real_escape_string($datestr),
                  $this->_dbConnection->link->real_escape_string($datestr)
