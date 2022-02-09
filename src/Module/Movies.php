@@ -624,6 +624,10 @@ class Module_Movies implements Module {
             echo @file_get_contents($filepath);
         }
         else {
+            // Reload movie, since it may have been requeued and the status may
+            // have changed.
+            $movie = new Movie_HelioviewerMovie($this->_params['id'],
+                                                $this->_params['format']);
             switch ($movie->status) {
             case 0:
                 header('Content-type: application/json');
