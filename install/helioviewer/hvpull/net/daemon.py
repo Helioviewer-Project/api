@@ -137,6 +137,7 @@ class ImageRetrievalDaemon:
                 starttime = datetime.datetime.strptime(starttime, date_fmt)
             else:
                 starttime = self.servers[0].get_starttime()
+            self.newest_timestamp = starttime
 
             # If end time is specified, fill in data from start to end
             if endtime is not None:
@@ -162,6 +163,7 @@ class ImageRetrievalDaemon:
             # process, and should be run as a cron job.
             starttime = datetime.datetime.utcnow() - datetime.timedelta(days=backfill[0])
             endtime = datetime.datetime.utcnow() - datetime.timedelta(days=backfill[1])
+            self.newest_timestamp = starttime
             self.query(starttime, endtime)
             self.stop()
 
@@ -309,10 +311,12 @@ class ImageRetrievalDaemon:
             ################################
             if self.servers[0].name in ['LMSAL', 'LMSAL2']:
                 new_urls.append(extra_filtered)
-                self.newest_timestamp = self._get_newest_image(extra_filtered)
+                if len(extra_filtered) > 0:
+                    self.newest_timestamp = self._get_newest_image(extra_filtered)
             else:
                 new_urls.append(filtered)
-                self.newest_timestamp = self._get_newest_image(filtered)
+                if len(filtered) > 0:
+                    self.newest_timestamp = self._get_newest_image(filtered)
 
         # check disk space
         if not self.sent_diskspace_warning:
