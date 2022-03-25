@@ -309,7 +309,7 @@ class ImageRetrievalDaemon:
             logging.info('Number of new URLS = ' + str(len(extra_filtered)))
 
             ################################
-            if self.servers[0].name in ['LMSAL', 'LMSAL2']:
+            if self.servers[0].name in ['LMSAL2']:
                 new_urls.append(extra_filtered)
                 if len(extra_filtered) > 0:
                     self.newest_timestamp = self._get_newest_image(extra_filtered)
