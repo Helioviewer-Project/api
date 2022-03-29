@@ -6,6 +6,7 @@ __MACOSX
 .pydevproject
 .settings
 .env
+.venv
 .vscode
 *.pyc
 api/docs
