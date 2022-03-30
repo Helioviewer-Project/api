@@ -18,7 +18,7 @@ then
 fi
 
 # Attempt to load helioviewer.org via curl
-curl $HV_FEED_HOST --output helioviewer.html
+curl -s $HV_FEED_HOST --output helioviewer.html
 # If curl returns a non-zero exit code
 if [ ! $? = 0 ]
 then
