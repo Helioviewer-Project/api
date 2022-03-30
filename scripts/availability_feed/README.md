@@ -26,6 +26,9 @@ Now create a cronjob that runs health check. This doesn't need to run very often
 0 * * * * cd /path/to/api/scripts/availability_feed; ./health_check.sh
 ```
 
+If an error is detected a lock file is created to prevent the cron job from
+spamming the feed. Remove the lock file to allow the job to continue
+
 ## health_check.sh
 `health_check.sh` is a bash script that is intended to be run
 as a cron job. It performs several health checks in order to
@@ -51,13 +54,6 @@ should be made aware of this.
 
 The script will return a message indicating which image source is behind.
 This message can be dropped directly into the RSS feed.
-
-## helioviewer_is_back.sh
-`helioviewer_is_back.sh` is used to quickly and easily update the feed to
-report that the previous problem has been resolved. It pushes a generic message
-to the feed that states the previous error has been resolved. It also removes
-`feed.lock` so once a problem is fixed, we can simply execte `helioviewer_is_back.sh`
-and the health check script can continue running.
 
 ## gen_feed.py
 `gen_feed.py` is the script use to generate the RSS Feed file
