@@ -12,8 +12,8 @@ import requests
 # If AIA seconds behind is greater than this value, then it is a problem.
 # AIA should not be more than 2 hours behind since helioviewer.org pulls
 # every hour.
-AIA_LAG_THRESHOLD_S    =   7200    # 2 hours
-LASCO_LAG_THRESHOLD_S  =  14400 # 4 hours
+AIA_LAG_THRESHOLD_S    =   7200 # 2 hours
+LASCO_LAG_THRESHOLD_S  =  57600 # 16 hours
 SECCHI_LAG_THRESHOLD_S = 259200 # 3 days
 
 def query_status_api():
