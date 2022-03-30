@@ -6,6 +6,7 @@ __MACOSX
 .pydevproject
 .settings
 .env
+.venv
 .vscode
 *.pyc
 api/docs
@@ -64,3 +65,4 @@ docroot/statistics/bokeh/Jhv_movies
 docroot/statistics/bokeh/service_usage
 docroot/resources/JSON/celestial-objects*
 docroot/resources/JSON/celestial-bodies*
+docroot/status.xml
