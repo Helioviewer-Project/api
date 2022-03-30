@@ -65,14 +65,14 @@ and the health check script can continue running.
 
 Usage:
 ```bash
-python gen_feed.py /path/to/status.xml "Service Up/Down" "Description of what went wrong (or right)"
+python gen_feed.py /path/to/status.xml -t "Service Up/Down" -d "Description of what went wrong (or right)"
 ```
 
 This simple usage will create a new entry in the RSS feed.
 The timestamp for the entry will be the time the command was run.
 The first command line argument is the status.xml file to be created or updated.
-The next is the `<title>` of the RSS entry
-Lastly, the third parameter is for the `<description>` tag.
+The next is the `<title>` of the RSS entry and requires the `-t`
+Lastly, the third parameter is for the `<description>` tag and requires the leading `-d`.
 
 ### Important Notes
 `gen_feed.py` uses the feedgen python library. This library doesn't have

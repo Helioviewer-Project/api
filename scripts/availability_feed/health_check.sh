@@ -22,7 +22,7 @@ curl $HV_FEED_HOST --output helioviewer.html
 # If curl returns a non-zero exit code
 if [ ! $? = 0 ]
 then
-    python3 gen_feed.py ../../docroot/status.xml "Helioviewer is unreachable." "Helioviewer health check failed to reach $HV_FEED_HOST"
+    python3 gen_feed.py ../../docroot/status.xml -t "Helioviewer is unreachable." -d "Helioviewer health check failed to reach $HV_FEED_HOST"
 fi
 rm helioviewer.html
 
@@ -30,5 +30,5 @@ rm helioviewer.html
 result=`python3 check_status.py`
 if [ ! -z "$result" ]
 then
-    python3 gen_feed.py ../../docroot/status.xml "Helioviewer images are behind schedule." "$result"
+    python3 gen_feed.py ../../docroot/status.xml -t "Helioviewer images are behind schedule." -d "$result"
 fi

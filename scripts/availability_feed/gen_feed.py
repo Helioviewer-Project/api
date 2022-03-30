@@ -94,7 +94,9 @@ def add_service_notice(feed: FeedGenerator, title: str, description: str):
     entry = feed.add_entry()
     entry.title(title)
     entry.description(description)
-    entry.pubDate(formatRFC2822(datetime.now(timezone.utc)))
+    update_time = datetime.now(timezone.utc)
+    entry.pubDate(formatRFC2822(update_time))
+    feed.updated(update_time)
 
 def main(rss_xml_file: str, title: str, description: str):
     feed = get_feed()
