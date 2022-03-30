@@ -20,6 +20,7 @@ HV_FEED_HOST="https://api.helioviewer.org"
 import argparse
 import pickle
 import os
+import sys
 
 from feedgen.feed import FeedGenerator
 from feedgen.util import formatRFC2822
@@ -30,10 +31,17 @@ PICKLE_FEED="feed.pickle"
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Create or update a simple RSS feed")
+    parser.add_argument("--init", action="store_true", default=False, help="Create the initial feed file")
     parser.add_argument("feed", type=str, help="Path to the rss.xml file to create or update")
-    parser.add_argument("title", type=str, help="Title for the new feed entry.")
-    parser.add_argument("description", type=str, help="Description of what occurred")
-    return parser.parse_args()
+    # Title and description are not required for --init, so we need some
+    # extra argparse logic to handle this.
+    # Set required=False so that `gen_feed.py --init feed.xml` doesn't fail
+    parser.add_argument("-t", "--title", required=False, type=str, help="Title for the new feed entry.")
+    parser.add_argument("-d", "--descr", required=False, type=str, help="Description of what occurred")
+    args = parser.parse_args()
+    if (not args.init) and not (args.title and args.descr):
+        parser.error("title and description are required to update the RSS feed")
+    return args
 
 def get_feed() -> FeedGenerator:
     """
@@ -96,5 +104,11 @@ def main(rss_xml_file: str, title: str, description: str):
 
 if __name__ == "__main__":
     args = parse_args()
-    main(args.feed, args.title, args.description)
+    # Initialize a brand new feed without any updates.
+    if args.init:
+        feed = create_new_feed()
+        feed.rss_file(args.feed)
+        save_feed(feed)
+    else:
+        main(args.feed, args.title, args.descr)
     pass

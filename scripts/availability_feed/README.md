@@ -13,6 +13,19 @@ All scripts mentioned below are expected to be run this `availability_feed`
 directory. The scripts create some local temporary files and reference other
 parts of the repository via relative paths.
 
+Get started with the following commands:
+```bash
+# Install required python dependencies
+pip install -r requirements.txt
+# create the initial feed in the public directory
+python gen_feed.py --init ../../docroot/status.xml
+```
+
+Now create a cronjob that runs health check. This doesn't need to run very often.
+```cron
+0 * * * * cd /path/to/api/scripts/availability_feed; ./health_check.sh
+```
+
 ## health_check.sh
 `health_check.sh` is a bash script that is intended to be run
 as a cron job. It performs several health checks in order to
