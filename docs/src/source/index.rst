@@ -6,10 +6,6 @@
 Welcome to Helioviewer API V2's documentation!
 ==============================================
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
 `The Helioviewer Project <https://helioviewer.org/>`_ maintains a set of Public
 APIs with the goal of improving access to solar and heliospheric datasets to
 scientists, educators, developers, and the general public. This site contains
@@ -18,9 +14,14 @@ descriptions of each API endpoint and examples of usage.
 Browse APIs by category using the sidebar, or consult the Appendix for more
 about the available datasources and working with coordinates.
 
-Indices and tables
-==================
+.. toctree::
+   :maxdepth: 2
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   api/index.rst
+
+.. Indices and tables
+.. ==================
+
+.. * :ref:`genindex`
+.. * :ref:`modindex`
+.. * :ref:`search`
