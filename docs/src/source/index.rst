@@ -15,9 +15,10 @@ Browse APIs by category using the sidebar, or consult the Appendix for more
 about the available datasources and working with coordinates.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 8
 
    api/index.rst
+   appendix.rst
 
 .. Indices and tables
 .. ==================

@@ -1,5 +1,5 @@
 getJP2Header
-------------
+^^^^^^^^^^^^
 GET /v2/getJP2Header/
 
 Get the XML header embedded in a JPEG2000 image. Includes the FITS header as
@@ -16,7 +16,7 @@ well as a section of Helioviewer-specific metadata.
     +-----------+----------+---------+----------------------+---------------------------------------------------------------+
 
 Example: string (XML)
-^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block::
     :caption: Example Request:

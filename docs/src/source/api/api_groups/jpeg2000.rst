@@ -1,5 +1,5 @@
 JPEG 2000
-=========
+---------
 
 Helioviewer.org and JHelioviewer operate off of JPEG2000 formatted image data
 generated from science-quality FITS files. Use the APIs below to interact

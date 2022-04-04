@@ -1,5 +1,5 @@
 getJPX
-------
+^^^^^^
 GET /v2/getJPX/
 
 Generate and (optionally) download a custom JPX movie of the specified datasource.
@@ -27,7 +27,7 @@ Generate and (optionally) download a custom JPX movie of the specified datasourc
 If no cadence is specified, the server will attempt to select an optimal cadence.
 
 Example: binary (JPX movie data)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 By default, JPX binary movie data is returned. This assumes that the `jpip`
 and `verbose` parameters are omitted or set to `false`.
@@ -38,7 +38,7 @@ and `verbose` parameters are omitted or set to `false`.
     https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14
 
 Example: string (JPIP link to JPX movie)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If the `jpip` parameter is set to `true` (and the `verbose` parameter is
 omitted or set to `false`) the reponse is a a JPIP-protocol link to the JPX
@@ -56,7 +56,7 @@ movie as a plain text string.
 
 
 Example: JPIP JPX Movie (JSON)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If request parameters `jpip` and `verbose` are both set to `true`, the response
 is a JSON object containing a JPIP-protocol link to the JPX movie plus the
@@ -99,7 +99,7 @@ the server.
     +-----------+----------+--------------+--------------------------------------------------------+
 
 Example: HTTP JPX Movie (JSON)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If request parameters `verbose` is set to `true` and `jpip` is omitted or set to
 `false`, the reponse is a JSON object containing an HTTP-protocol link to the

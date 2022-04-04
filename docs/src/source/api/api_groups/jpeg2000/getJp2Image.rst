@@ -1,5 +1,5 @@
 getJP2Image
------------
+^^^^^^^^^^^
 GET /v2/getJP2Image
 
 Download a JP2 image for the specified datasource that is the closest match in
@@ -20,7 +20,7 @@ time to the \`date\` requested.
     +-----------+----------+---------+----------------------+-------------------------------------------------------------------------------------+
 
 Example: binary (JPEG2000 image data)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 By default, JPEG2000 binary image data is returned. This assumes that the `jpip`
 parameter is omitted or set to `false`.
 
@@ -30,7 +30,7 @@ parameter is omitted or set to `false`.
     https://api.helioviewer.org/v2/getJP2Image/?date=2014-01-01T23:59:59Z&sourceId=14
 
 Example: string (JPIP link to JP2 Image)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If request parameter `jpip` is set to `true` (and the `json` parameter is
 omitted or set to `false`) the reponse is a plain text string.
@@ -47,7 +47,7 @@ omitted or set to `false`) the reponse is a plain text string.
 
 
 Example: JP2 Image (JSON)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If request parameters `jpip` and `json` are both set to `true`, the reponse is
 a JSON object.

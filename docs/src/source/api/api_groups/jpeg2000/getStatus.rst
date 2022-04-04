@@ -1,11 +1,11 @@
 getStatus
----------
+^^^^^^^^^
 GET /v2/getStatus/
 
 Returns information about how far behind the latest available JPEG2000 images.
 
 Example: string (JSON)
-^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block::
     :caption: Example Request

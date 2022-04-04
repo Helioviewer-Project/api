@@ -1,5 +1,5 @@
 Movies
-======
+------
 
 The movie APIs can be used to generate custom videos of up to three image
 datasource layers composited together. Solar feature/event markers pins,
@@ -27,3 +27,6 @@ used by Helioviewer.org.
 
 .. include:: movies/queueMovie.rst
 .. include:: movies/reQueueMovie.rst
+.. include:: movies/getMovieStatus.rst
+.. include:: movies/downloadMovie.rst
+.. include:: movies/playMovie.rst

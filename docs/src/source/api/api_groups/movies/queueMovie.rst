@@ -1,5 +1,5 @@
 queueMovie
-----------
+^^^^^^^^^^
 GET /v2/queueMovie/
 
 Create a custom movie by submitting a request to the movie generation queue.
@@ -77,7 +77,7 @@ and to download your movie (via `downloadMovie <#downloadmovie>`_).
     +--------------------+----------+---------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 Example: Queued Movie (JSON)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 JSON response to "`queueMovie <#queuemovie>`_" and "`reQueueMovie <#id2>`_" API requests.
 

@@ -1,5 +1,5 @@
 reQueueMovie
-------------
+^^^^^^^^^^^^
 GET /v2/reQueueMovie/
 
 Re-generate a custom movie that is no longer cached on disk. Once the movie has
@@ -17,7 +17,7 @@ the status of the movie (via `getMovieStatus <#getmoviestatus>`_) and to downloa
     +-----------+----------+--------+---------+-------------------------------------------------------------------------------+
 
 Example: Queued Movie (JSON)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 JSON response to `queueMovie <#queuemovie>`_ and `reQueueMovie <#id2>`_ API requests.
 

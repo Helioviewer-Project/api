@@ -5,7 +5,7 @@ The API is organized into several groups related to performing specific tasks.
 These are the available groups of APIs:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 10
    :caption: Contents:
 
    api_groups/jpeg2000
