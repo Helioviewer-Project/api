@@ -210,8 +210,17 @@ class ImageRetrievalDaemon:
                                                     endtime.strftime(fmt))
 
         for browser in self.browsers:
+            # For LMSAL, HMI is queried at a 4 hour lag. We need to
+            # make sure this query will include images 4 hours behind.
+            # More specifically this resolves a problem where we query
+            # a time range around 00:00:00 to 04:00:00. In this case,
+            # the previous day is not queried, and so HMI images that are
+            # still from the day before (because they're 4 hours behind starttime)
+            # are would be ignored
+            query_start_time = self._get_query_starttime(starttime)
+
             #print(browser, starttime, endtime)
-            matches = self.query_server(browser, starttime, endtime)
+            matches = self.query_server(browser, query_start_time, endtime)
             #print(matches)
             if len(matches) > 0:
                 urls.append(matches)
@@ -309,7 +318,7 @@ class ImageRetrievalDaemon:
             logging.info('Number of new URLS = ' + str(len(extra_filtered)))
 
             ################################
-            if self.servers[0].name in ['LMSAL', 'LMSAL2']:
+            if self.servers[0].name in ['LMSAL2']:
                 new_urls.append(extra_filtered)
                 if len(extra_filtered) > 0:
                     self.newest_timestamp = self._get_newest_image(extra_filtered)
@@ -324,6 +333,18 @@ class ImageRetrievalDaemon:
 
         # acquire the data files
         self.acquire(new_urls)
+
+    def _get_query_starttime(self, starttime):
+        """
+        Returns the starttime that should be queried from the data sources.
+        i.e. starttime may be 2022-03-25 00:00:00, but we should still query
+        2022-03-24 in order to catch HMI images from the day before.
+        """
+        if self.servers[0].name in ['LMSAL', 'LMSAL2']:
+            hmi_delay = self.get_sdo_processing_delay()['hmi']
+            return starttime - hmi_delay
+        else:
+            return starttime
 
     def _get_newest_image(self, image_list):
         """

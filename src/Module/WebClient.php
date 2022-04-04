@@ -1377,7 +1377,7 @@ class Module_WebClient implements Module {
             $expected = array(
                 "required" => array('imageScale', 'sourceIds',
                                     'startDate', 'endDate',
-                                    'lang', 'provider'),
+                                    'lang'),
                 "optional" => array('x0','y0', 'width', 'height',
                                     'x1','y1', 'x2','y2',
                                     'callback'),
@@ -1385,7 +1385,7 @@ class Module_WebClient implements Module {
                                     'x1','y1','x2','y2'),
                 "ints"     => array('width', 'height'),
                 "dates"    => array('startDate', 'endDate'),
-                "alphanum" => array('provider', 'callback')
+                "alphanum" => array('callback')
             );
             break;
         default:
