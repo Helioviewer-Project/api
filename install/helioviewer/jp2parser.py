@@ -72,8 +72,14 @@ class JP2parser:
             if self._is_string(value):
                 if value.lower() == 'nan' or value.lower() == '-nan':
                     image[key] = 'NULL'
-        
-        image['nickname'] = imageData.nickname
+
+        # In sunpy V3, the nickname changed to include the filter.
+        # Having the space in it breaks how helioviewer loads images due to
+        # the space in the file name. To prevent this problem we're selecting
+        # the phrase before the first space only.
+        # As an example, "LASCO-C2 Orange" -> "LASCO-C2" which is
+        # consistent with our current naming.
+        image['nickname'] = imageData.nickname.split(" ")[0]
         image['observatory'] = imageData.observatory.replace(" ","_")
         image['instrument'] = imageData.instrument.split(" ")[0]
         image['detector'] = imageData.detector
