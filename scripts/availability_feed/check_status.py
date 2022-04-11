@@ -14,7 +14,7 @@ import requests
 # every hour.
 AIA_LAG_THRESHOLD_S    =   7200 # 2 hours
 LASCO_LAG_THRESHOLD_S  =  57600 # 16 hours
-SECCHI_LAG_THRESHOLD_S = 259200 # 3 days
+SECCHI_LAG_THRESHOLD_S = 345600 # 4 days
 
 def query_status_api():
     host = get_host()
