@@ -18,8 +18,10 @@ class Helper_ImageBrightness {
       * 
       * @return void
       */
-   public function __construct($datetime,$wavelength){
+   public function __construct($datetime,$wavelength) {
 
+      $this->wavelength = $wavelength;
+       
       //from aia_rescaling_data.json
       $this->availableWavelengths = array("304");
 

@@ -668,6 +668,10 @@ class Module_WebClient implements Module {
 
         // set some utility variables
 		$range = $end - $start;
+        // Add extra logging for this warning:
+        // PHP Notice:  A non well formed numeric value encountered in WebClient.php
+        error_log("Got start time: $start");
+        error_log("Got end time $end");
 		$startDate = gmstrftime('%Y-%m-%d %H:%M:%S', $start / 1000) + 60;
 		$endDate = gmstrftime('%Y-%m-%d %H:%M:%S', $end / 1000) - 60;
 

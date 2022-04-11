@@ -70,8 +70,7 @@ class Module_SolarBodies implements Module {
         $this->_glossary = array( "version" => $this->_version,
                                 "observers" => $solarObservers,
                       "enabledTrajectories" => $this->_enabledTrajectories,
-                                     "mods" => $this->_mods,
-                         "enabledByDefault" => $this->_enabledByDefault);
+                                     "mods" => $this->_mods);
 
         $this->_printJSON(json_encode($this->_glossary));
     }
