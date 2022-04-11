@@ -1131,6 +1131,13 @@ class Database_ImgIndex {
         }
 
         $data = $result->fetch_array(MYSQLI_ASSOC);
+        // For extra logging. It has been observed in the log file that this is
+        // sometimes null. This extra log is to identify the cases where it's
+        // null so we can take the appropriate action.
+        if (is_null($data)) {
+            error_log("Got null from the following sql in getNewestData");
+            error_log($sql);
+        }
         return $data['date'];
     }
 
