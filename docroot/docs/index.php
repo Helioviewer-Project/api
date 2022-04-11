@@ -15,7 +15,7 @@
 
     // Script was called directly.  Redirect to an API-version specific URL.
     if (realpath(__FILE__) == $_SERVER['SCRIPT_FILENAME']) {
-        require_once dirname(realpath(__FILE__)).'/../src/Config.php';
+        require_once dirname(realpath(__FILE__)).'/../../src/Config.php';
         $config = new Config(dirname(realpath(__FILE__))
                 . '/../../settings/Config.ini');
         header('Location: '.HV_WEB_ROOT_URL.'/docs/'.$api_version);
