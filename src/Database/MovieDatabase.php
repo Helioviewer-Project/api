@@ -43,6 +43,8 @@ class Database_MovieDatabase {
      * Insert a new movie entry into the `movies` table and returns its
      * identifier.
      *
+     * @note $layerBitMask must be passed in as an unsigned integer value.
+     *
      * @return int  Identifier in the `movies` table or boolean false
      */
     public function insertMovie($startTime, $endTime, $reqObservationDate, $imageScale, $roi,
@@ -104,7 +106,7 @@ class Database_MovieDatabase {
                  (int)$maxFrames,
                  (bool)$watermark,
                  $this->_dbConnection->link->real_escape_string($layerString),
-                 bindec($this->_dbConnection->link->real_escape_string((binary)$layerBitMask ) ),
+                 $layerBitMask,
                  $this->_dbConnection->link->real_escape_string($eventString),
                  (bool)$eventsLabels,
                  (bool)$movieIcons,
