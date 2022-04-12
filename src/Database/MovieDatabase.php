@@ -404,7 +404,7 @@ class Database_MovieDatabase {
                  (int)$num
                );
         }
-        
+
         try {
             $result = $this->_dbConnection->query($sql);
         }
@@ -421,11 +421,18 @@ class Database_MovieDatabase {
 				$theURL = "http://www.youtube.com/oembed?url=http://www.youtube.com/watch?v=$videoID&format=json";
 		        $proxy = new Net_Proxy($theURL);
 			    $response = $proxy->query(array(), true);
-		
+
 			    if($response == 'Not Found' || $response == 'Unauthorized'){
 			        $this->_dbConnection->query('UPDATE youtube SET shared = 0 WHERE id = '.$row['id'].'');
 			    } else {
+                    // For debugging PHP Notice:  Undefined index: thumbnail_url
 			        $data = json_decode($response, true);
+
+                    if (!array_key_exists("thumbnail_url", $data)) {
+                        error_log("Unexpected youtube data");
+                        error_log($response);
+                    }
+
 			        $row['thumbnail'] = $data['thumbnail_url'];
 			        $this->_dbConnection->query('UPDATE youtube SET thumbnail = "'.$data['thumbnail_url'].'", checked=NOW() WHERE id = '.$row['id'].'');
 			        array_push($videos, $row);

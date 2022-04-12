@@ -588,9 +588,16 @@ class Module_Movies implements Module {
     public function downloadMovie() {
         include_once HV_ROOT_DIR.'/../src/Movie/HelioviewerMovie.php';
 
+        // _verifyMediaExists may override the given _params in order to redirect
+        // the request to reQueueMovie if the request movie needs to be regenerated.
+        // This results in some unexpected behavior if _params are used later in
+        // this function.
+        $params = $this->_params; // Arrays are fully copied by default, not referenced.
+
         // Load movie
-        $movie = new Movie_HelioviewerMovie($this->_params['id'],
-                                            $this->_params['format']);
+        $movie = new Movie_HelioviewerMovie($params['id'],
+                                            $params['format']);
+
 
         if ( $this->_verifyMediaExists($movie, $allowRegeneration=true) ) {
             ini_set('memory_limit', '1024M');
@@ -614,10 +621,10 @@ class Module_Movies implements Module {
                 $filename . '"');
             header('Content-Transfer-Encoding: binary');
             header('Content-Length: ' . @filesize($filepath));
-            if($this->_params['format'] == 'gif'){
+            if($params['format'] == 'gif'){
 	            header('Content-type: image/gif');
             }else{
-	            header('Content-type: video/'.$this->_params['format']);
+	            header('Content-type: video/'.$params['format']);
             }
 
             // Return movie data
@@ -626,8 +633,8 @@ class Module_Movies implements Module {
         else {
             // Reload movie, since it may have been requeued and the status may
             // have changed.
-            $movie = new Movie_HelioviewerMovie($this->_params['id'],
-                                                $this->_params['format']);
+            $movie = new Movie_HelioviewerMovie($params['id'],
+                                                $params['format']);
             switch ($movie->status) {
             case 0:
                 header('Content-type: application/json');
