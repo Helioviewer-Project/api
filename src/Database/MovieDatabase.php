@@ -418,7 +418,7 @@ class Database_MovieDatabase {
 			if(strtotime($row['checked']) < (time() - 30*24*60*60) || empty($row['thumbnail'])){
 				//Check if Video is still exist/shared on YouTube
 				$videoID = $row['youtubeId'];
-				$theURL = "http://www.youtube.com/oembed?url=http://www.youtube.com/watch?v=$videoID&format=json";
+				$theURL = "https://www.youtube.com/oembed?url=http://www.youtube.com/watch?v=$videoID&format=json";
 		        $proxy = new Net_Proxy($theURL);
 			    $response = $proxy->query(array(), true);
 
