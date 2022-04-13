@@ -5,7 +5,6 @@ include_once __DIR__.'/../../src/Module/WebClient.php';
 include_once __DIR__.'/../../src/Validation/InputValidator.php';
 include_once __DIR__.'/../../src/Database/ImgIndex.php';
 
-
 $params = array(
     'action'   => 'getClosestImage',
     'date'     => '2014-01-01T23:59:59Z',
