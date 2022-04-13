@@ -302,6 +302,8 @@ class Database_Statistics {
     public function getUsageStatistics($resolution, $dateStart = null, $dateEnd = null) {
 		require_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
 		require_once HV_ROOT_DIR.'/../src/Helper/HelioviewerLayers.php';
+        // TODO: Need to optimize this function so this absurdly high upper limit isn't required.
+        set_time_limit(600);
 
 		$redis = new Redis();
 		$redis->connect(HV_REDIS_HOST,HV_REDIS_PORT);
