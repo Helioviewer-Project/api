@@ -11,6 +11,6 @@
 
 // Load Helioviewer Configuration. This defines all the HV_* variables
 // seen throughout the project
-require_once __DIR__ . '/../src/Config.php';
-$config = new Config(__DIR__ . '/../settings/Config.ini');
+require_once __DIR__ . '/../../src/Config.php';
+$config = new Config(__DIR__ . '/../../settings/Config.ini');
 
