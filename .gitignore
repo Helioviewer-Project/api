@@ -1,5 +1,7 @@
 __MACOSX
 *~
+#*
+.ac-php-conf.json
 .buildpath
 .DS_Store
 .directory
