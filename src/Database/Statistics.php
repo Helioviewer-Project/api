@@ -296,7 +296,8 @@ class Database_Statistics {
      * Get latest usage statistics as JSON
      *
      * @param  string  Time resolution
-     *
+     * @param  string $dateStart In the format like this 2022-04-13 00:00:00
+     * @param  string $dateEnd   In the same format as $dateStart
      * @return str  JSON
      */
     public function getUsageStatistics($resolution, $dateStart = null, $dateEnd = null) {
