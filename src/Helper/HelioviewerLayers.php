@@ -205,6 +205,10 @@ class Helper_HelioviewerLayers {
 	        }
 
             $info = $this->_db->getDatasourceInformationFromNames($layerArray);
+            if ($info == false)
+            {
+                error_log("Failed with layer string: " . $layerString);
+            }
             $sourceId      = $info["id"];
             $name          = $info["name"];
             $layeringOrder = $layeringOrder;
