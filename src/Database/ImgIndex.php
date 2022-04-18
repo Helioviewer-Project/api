@@ -966,6 +966,7 @@ class Database_ImgIndex {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            error_log(print_r($property_array, true));
             error_log($e->getMessage());
 	        return false;
         }
