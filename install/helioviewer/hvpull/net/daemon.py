@@ -375,7 +375,7 @@ class ImageRetrievalDaemon:
             timestamp = self._get_datetime_from_file(file)
             if (timestamp > starttime) and (timestamp < endtime):
                 filtered_list.append(file)
-            if self.is_sdo():
+            elif self.is_sdo():
                 # SDO contains AIA and HMI, while AIA is up-to-date, HMI lags by
                 # roughly 4 hours, so this accounts for that when using the LMSAL
                 # data servers
