@@ -366,6 +366,13 @@ class Database_MovieDatabase {
         return $videos;
     }
 
+    public function getYoutubeVideo($videoId) {
+        $theURL = "https://www.youtube.com/oembed?url=http://www.youtube.com/watch?v=$videoId&format=json";
+        $proxy = new Net_Proxy($theURL);
+        $response = $proxy->query(array(), true);
+        return $response;
+    }
+
     /**
      * Get a list of movies recently shared on YouTube from a cache file
      * or from a live database query.
@@ -420,11 +427,9 @@ class Database_MovieDatabase {
 			if(strtotime($row['checked']) < (time() - 30*24*60*60) || empty($row['thumbnail'])){
 				//Check if Video is still exist/shared on YouTube
 				$videoID = $row['youtubeId'];
-				$theURL = "https://www.youtube.com/oembed?url=http://www.youtube.com/watch?v=$videoID&format=json";
-		        $proxy = new Net_Proxy($theURL);
-			    $response = $proxy->query(array(), true);
+                $response = $this->getYoutubeVideo($videoID);
 
-			    if($response == 'Not Found' || $response == 'Unauthorized'){
+			    if($response == 'Not Found' || $response == 'Unauthorized' || $response == 'Forbidden'){
 			        $this->_dbConnection->query('UPDATE youtube SET shared = 0 WHERE id = '.$row['id'].'');
 			    } else {
                     // For debugging PHP Notice:  Undefined index: thumbnail_url
