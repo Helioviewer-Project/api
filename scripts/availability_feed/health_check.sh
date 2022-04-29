@@ -2,7 +2,7 @@
 # This script is use to perform various status checks on helioviewer.org
 # and update the XML feed if a problem is detected.
 # this script is expected to run on a cron job.
-set -x
+
 # Exit the script if the lockfile exists. The lockfile is created once
 # an error is detected
 lockfile=feed.lock
