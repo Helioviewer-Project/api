@@ -175,7 +175,7 @@ class ImageRetrievalDaemon:
             # get a list of files available
             # self.newest_timestamp gets set by query() during the first run
             # before the main loop.
-            self.query(self.newest_timestamp, now)
+            self.query(starttime, now)
 
             self.sleep()
 
