@@ -14,7 +14,8 @@ import requests
 # every hour.
 AIA_LAG_THRESHOLD_S    =   7200 # 2 hours
 LASCO_LAG_THRESHOLD_S  =  57600 # 16 hours
-SECCHI_LAG_THRESHOLD_S = 345600 # 4 days
+SECCHI_LAG_THRESHOLD_S = 864000 # 10 days
+SWAP_LAG_THRESHOLD_S   = 172800 # 3 days
 
 def query_status_api():
     host = get_host()
@@ -39,6 +40,9 @@ def check_status(status):
     # this coveres STEREO
     secchi_seconds_behind = status['SECCHI']['secondsBehind']
     check_for_lag("STEREO Source", SECCHI_LAG_THRESHOLD_S, secchi_seconds_behind)
+    # SWAP
+    swap_seconds_behind = status['SWAP']['secondsBehind']
+    check_for_lag("SWAP", SWAP_LAG_THRESHOLD_S, swap_seconds_behind)
     pass
 
 if __name__ == "__main__":
