@@ -270,7 +270,7 @@ class Validation_InputValidator
             //       bots from bloating the log with invalid layer string errors
             foreach($separateLayers as $layer) {
                 $elements = explode(",", $layer);
-                if (count($elements) < 9) {
+                if (count($elements) < 8) {
                     throw new InvalidArgumentException(
                         "Invalid layer string."
                     );
