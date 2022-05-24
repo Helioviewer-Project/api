@@ -41,7 +41,8 @@ class Validation_InputValidator
             "encoded"  => "checkURLEncodedStrings",
             "urls"     => "checkURLs",
             "files"    => "checkFilePaths",
-            "uuids"    => "checkUUIDs"
+            "uuids"    => "checkUUIDs",
+            "layer"    => "checkLayerValidity"
         );
 
         // Run validation checks
@@ -249,6 +250,34 @@ class Validation_InputValidator
             }
         }
     }
+
+    /**
+     * Validates Layer Strings
+     *
+     * @param array list of fields that should be checked as layerstrings
+     * @param array &$params The parameters that were passed in
+     *
+     * @return void
+     */
+    public static function checkLayerValidity($fields, &$params)
+    {
+        foreach($fields as $field) {
+            $layerString = $params[$field];
+            // Split the layer string by ],[ to split by the separate layers
+            $separateLayers = explode("],[", $layerString);
+            // Now confirm each layer has 9 elements
+            foreach($separateLayers as $layer) {
+                $elements = explode(",", $layer);
+                // If a layer does not have 9 elements, then throw an exception
+                if (count($elements) != 9) {
+                    throw new InvalidArgumentException(
+                        "Invalid layer string."
+                    );
+                }
+            }
+        }
+    }
+
 
     /**
      * Typecasts validates URL parameters
