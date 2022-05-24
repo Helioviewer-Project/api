@@ -265,11 +265,12 @@ class Validation_InputValidator
             $layerString = $params[$field];
             // Split the layer string by ],[ to split by the separate layers
             $separateLayers = explode("],[", $layerString);
-            // Now confirm each layer has 9 elements
+            // Now confirm each layer has at least 9 elements
+            // Note: This is not comprehensive, but it is sufficient to keep the
+            //       bots from bloating the log with invalid layer string errors
             foreach($separateLayers as $layer) {
                 $elements = explode(",", $layer);
-                // If a layer does not have 9 elements, then throw an exception
-                if (count($elements) != 9) {
+                if (count($elements) < 9) {
                     throw new InvalidArgumentException(
                         "Invalid layer string."
                     );

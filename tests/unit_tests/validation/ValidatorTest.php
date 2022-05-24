@@ -48,7 +48,7 @@ final class ValidatorTest extends TestCase
     {
         // The expected layer string to be given
         $goodLayerData = array(
-            'layerstring' => '[SDO,AIA,304,1,100,0,60,1,2022-05-19T18:24:31.000Z],[SDO,AIA,304,1,100,0,60,1,2022-05-19T18:24:31.000Z]'
+            'layerstring' => '[SDO,AIA,304,1,100,0,60,1,2022-05-19T18:24:31.000Z],[STEREO_A,SECCHI,EUVI,171,2,100,0,60,1,2022-04-11T11:24:40.000Z]'
         );
 
         $expected = array(
