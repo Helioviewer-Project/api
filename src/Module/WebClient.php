@@ -1362,7 +1362,8 @@ class Module_WebClient implements Module {
                 'dates'    => array('date'),
                 'bools'    => array('display', 'watermark', 'eventLabels',
                                     'scale', 'movieIcons', 'switchSources'),
-                'alphanum' => array('scaleType', 'callback')
+                'alphanum' => array('scaleType', 'callback'),
+                'layer'    => array('layers')
             );
             break;
         case 'getStatus':
