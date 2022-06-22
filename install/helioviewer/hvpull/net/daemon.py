@@ -358,10 +358,7 @@ class ImageRetrievalDaemon:
         return newest
 
     def _get_datetime_from_file(self, file):
-        url_filename = os.path.basename(file)
-        url_datetime = url_filename[0:20]
-        return datetime.datetime.strptime(url_datetime, '%Y_%m_%d__%H_%M_%S')
-
+        return self.servers[0].get_datetime_from_file(file)
 
     def _filter_files_by_time(self, files, starttime, endtime):
         """
@@ -822,7 +819,8 @@ class ImageRetrievalDaemon:
             "trace": "TRACEDataServer",
             "xrt": "XRTDataServer",
             "kcor": "KCORDataServer",
-            "hv_kcor": "HVKCORDataServer"
+            "hv_kcor": "HVKCORDataServer",
+            "solar_orbiter": "SolarOrbiterDataServer"
         }
 
     @classmethod
