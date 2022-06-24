@@ -54,6 +54,12 @@ class DataServer:
         """Return the server URI"""
         return self.uri
 
+    def get_datetime_from_file(self, filename):
+        url_filename = os.path.basename(filename)
+        url_datetime = url_filename[0:20]
+        return datetime.datetime.strptime(url_datetime, '%Y_%m_%d__%H_%M_%S')
+
+
 class DataServerPauseDelayDefinesDefaultStartTime:
     """Class for interacting with data servers. In this class the
     pause defines the default start time. If real time is UTC, then
@@ -107,3 +113,9 @@ class DataServerPauseDelayDefinesDefaultStartTime:
     def get_uri(self):
         """Return the server URI"""
         return self.uri
+
+    def get_datetime_from_file(self, filename):
+        url_filename = os.path.basename(filename)
+        url_datetime = url_filename[0:20]
+        return datetime.datetime.strptime(url_datetime, '%Y_%m_%d__%H_%M_%S')
+
