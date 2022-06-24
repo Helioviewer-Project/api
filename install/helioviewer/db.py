@@ -387,6 +387,7 @@ INSERT INTO `datasource_property` (`sourceId`, `label`, `name`, `fitsName`, `des
 (34, 'Observatory', 'Yohkoh', 'Yohkoh', 'Yohkoh (Solar-A)', 1),
 (35, 'Observatory', 'Yohkoh', 'Yohkoh', 'Yohkoh (Solar-A)', 1),
 (84, 'Observatory', 'Solar_Orbiter', 'Solar_Orbiter', 'Solar Orbiter', 1),
+(85, 'Observatory', 'Solar_Orbiter', 'Solar_Orbiter', 'Solar Orbiter', 1),
 (0, 'Instrument', 'EIT', 'EIT', 'Extreme ultraviolet Imaging Telescope', 2),
 (1, 'Instrument', 'EIT', 'EIT', 'Extreme ultraviolet Imaging Telescope', 2),
 (2, 'Instrument', 'EIT', 'EIT', 'Extreme ultraviolet Imaging Telescope', 2),
@@ -424,6 +425,7 @@ INSERT INTO `datasource_property` (`sourceId`, `label`, `name`, `fitsName`, `des
 (34, 'Instrument', 'SXT', 'SXT', 'Soft X-ray Telescope', 2),
 (35, 'Instrument', 'SXT', 'SXT', 'Soft X-ray Telescope', 2),
 (84, 'Instrument', 'EUI', 'EUI', 'Extreme Ultraviolet Imager', 2),
+(85, 'Instrument', 'EUI', 'EUI', 'Extreme Ultraviolet Imager', 2),
 (4, 'Detector', 'C2', 'C2', 'Coronograph 2', 3),
 (5, 'Detector', 'C3', 'C3', 'Coronograph 3', 3),
 (20, 'Detector', 'EUVI', 'EUVI', 'Extreme Ultraviolet Imager', 3),
@@ -439,6 +441,7 @@ INSERT INTO `datasource_property` (`sourceId`, `label`, `name`, `fitsName`, `des
 (30, 'Detector', 'COR1', 'COR1', 'Coronograph 1', 3),
 (31, 'Detector', 'COR2', 'COR2', 'Coronograph 2', 3),
 (84, 'Detector', 'FSI', 'FSI', 'Full Sun Imager', 3),
+(85, 'Detector', 'FSI', 'FSI', 'Full Sun Imager', 3),
 (0, 'Measurement', '171', '171', '171 Ångström extreme ultraviolet', 3),
 (1, 'Measurement', '195', '195', '195 Ångström extreme ultraviolet', 3),
 (2, 'Measurement', '284', '284', '284 Ångström extreme ultraviolet', 3),
@@ -472,7 +475,8 @@ INSERT INTO `datasource_property` (`sourceId`, `label`, `name`, `fitsName`, `des
 (30, 'Measurement', 'white-light', 'white-light', 'White Light', 4),
 (31, 'Measurement', 'white-light', 'white-light', 'White Light', 4),
 (32, 'Measurement', '174', '174', '174 Ångström extreme ultraviolet', 3),
-(84, 'Measurement', '174', '174', '174 Ångströ extreme ultraviolet', 4);
+(84, 'Measurement', '174', '174', '174 Ångström extreme ultraviolet', 4);
+(85, 'Measurement', '304', '304', '304 Ångström extreme ultraviolet', 4);
 (33, 'Filter', 'AlMgMn', 'AlMgMn', 'Al/Mg/Mn filter (2.4 Å - 32 Å pass band)', 3),
 (34, 'Measurement', 'thin-Al', 'thin-Al', '11.6 μm Al filter (2.4 Å - 13 Å pass band)', 3),
 (35, 'Measurement', 'white-light', 'white-light', 'No filter', 3),
