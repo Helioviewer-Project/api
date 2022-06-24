@@ -53,8 +53,7 @@ class Image_ImageType_EUIImage extends Image_HelioviewerImage {
     public function getWaterMarkName() {
         $type = $this->uiLabels[2]['name'];
         $measurement = $this->uiLabels[3]['name'];
-        $watermark = 'EUI-'.$type.'-'.$measurement."\n";
-        error_log(print_r($watermark, true));
+        $watermark = 'EUI '.$type.' '.$measurement." Å\n";
         return $watermark;
     }
 }
