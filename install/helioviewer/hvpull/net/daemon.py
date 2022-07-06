@@ -5,6 +5,7 @@
 # pylint: disable=E1121
 import sys
 import stat
+import grp
 import datetime
 import time
 import logging
@@ -565,6 +566,22 @@ class ImageRetrievalDaemon:
         if len(corrupt) > 0:
             logging.info("Marked %d images as corrupt", len(corrupt))
 
+    def get_helioviewer_group(self):
+        """
+        Returns the linux group id of the group used
+        for managing the helioviewer archive. The group
+        name used is 'helioviewer' if the group does not
+        exist on the system, it will be created.
+        """
+        group_name = 'helioviewer'
+        try:
+            grp.getgrnam(group_name)
+        except KeyError:
+            # create the group if it doesn't exist
+            os.system('groupadd {}'.format(group_name))
+
+        return grp.getgrnam(group_name).gr_gid
+
     def create_image_directory(self, path):
         """
         Creates a directory with appropriate permissions
@@ -577,6 +594,8 @@ class ImageRetrievalDaemon:
         """
         if not os.path.exists(path):
             permissions = stat.S_IRWXU | stat.S_IRWXG | stat.S_IROTH | stat.S_IXOTH
+            group_id = self.get_helioviewer_group()
+            user_id = os.getuid()
             directories = path.split(os.sep)
             # Traverse the directories to be created so that
             # group write permissions can be set on each one.
@@ -591,6 +610,7 @@ class ImageRetrievalDaemon:
                     # create the directories and set appropriate permissions.
                     if not os.path.exists(fullpath):
                         os.mkdir(fullpath)
+                        os.chown(fullpath, user_id, group_id)
                         os.chmod(fullpath, mode=permissions)
                 except:
                     logging.error("Unable to create the directory '" +
