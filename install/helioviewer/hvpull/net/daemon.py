@@ -4,6 +4,7 @@
 # Author: Jack Ireland <jack.ireland@nasa.gov>
 # pylint: disable=E1121
 import sys
+import stat
 import datetime
 import time
 import logging
@@ -523,6 +524,13 @@ class ImageRetrievalDaemon:
                     self._transcode(filepath)
             except KduTranscodeError as e:
                 logging.error("kdu_transcode: " + e.get_message())
+                logging.error("Quitting due to kdu_transcode error")
+                # Don't continue from here, it's very likely that
+                # there's something else wrong causing the transcode
+                # step to fail that needs to be investigated. Transcoding
+                # is a required step for JHelioviewer to be able to use
+                # the images.
+                sys.exit(1)
 
             # Move to archive
             if image_params['observatory'] == "Hinode":
@@ -535,20 +543,16 @@ class ImageRetrievalDaemon:
             image_params['filepath'] = dest
 
             if not os.path.exists(directory):
-                try:
-                    os.makedirs(directory)
-                except OSError:
-                    logging.error("Unable to create the directory '" +
-                                  directory + "'. Please ensure that you "
-                                  "have the proper permissions and try again.")
-                    self.shutdown_requested = True
+                self.create_image_directory(directory)
 
             try:
                 shutil.move(filepath, dest)
             except IOError:
                 logging.error("Unable to move files to destination. Is there "
                               "enough free space?")
-                self.shutdown_requested = True
+                # Do not proceed to insert these images into the database if
+                # we were unable to move them to the image archive.
+                sys.exit(1)
 
             # Add to list to send to main database
             images.append(image_params)
@@ -560,6 +564,41 @@ class ImageRetrievalDaemon:
 
         if len(corrupt) > 0:
             logging.info("Marked %d images as corrupt", len(corrupt))
+
+    def create_image_directory(self, path):
+        """
+        Creates a directory with appropriate permissions
+        for storing images. All parent directories up to
+        and including PATH will be created with group
+        write permissions set.
+
+        args:
+          path - The full path & name of the directory to be created
+        """
+        if not os.path.exists(path):
+            permissions = stat.S_IRWXU | stat.S_IRWXG | stat.S_IROTH | stat.S_IXOTH
+            directories = path.split(os.sep)
+            # Traverse the directories to be created so that
+            # group write permissions can be set on each one.
+            fullpath = ""
+            for directory in directories:
+                try:
+                    fullpath += directory + os.sep
+                    # ignore trying to create /root
+                    if fullpath == '/':
+                        continue
+                    # Once the paths to be created are reached,
+                    # create the directories and set appropriate permissions.
+                    if not os.path.exists(fullpath):
+                        os.mkdir(fullpath)
+                        os.chmod(fullpath, mode=permissions)
+                except:
+                    logging.error("Unable to create the directory '" +
+                                  fullpath + "'. Please ensure that you "
+                                  "have the proper permissions and try again.")
+                    # Do not continue if we don't have a directory to place
+                    # the files into
+                    sys.exit(1)
 
     def send_email_alert(self, message):
         """Sends an email notification to the Helioviewer admin(s) when a
@@ -745,7 +784,7 @@ class ImageRetrievalDaemon:
             elif not (os.path.isdir(d) and os.access(d, os.W_OK)):
                 print("Unable to write to specified directories specified in "
                       "settings.cfg.")
-                sys.exit()
+                sys.exit(1)
 
     def _load_servers(self, names):
         """Loads a data server"""
