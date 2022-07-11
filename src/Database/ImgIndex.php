@@ -770,9 +770,20 @@ class Database_ImgIndex {
             return false;
         }
 
+        // Limit the number of rows we return to a max of 15,000
+        // by taking every Nth row where where N is the stride
+        // needed to reduce the result to 15000 rows.
+        $row_limit = HV_MAX_ROW_LIMIT;
+        $num_rows = $result->num_rows;
+        $stride = ceil($num_rows / $row_limit);
+        $row_index = 0;
+
         $result_array = Array();
         while ( $row = $result->fetch_array(MYSQLI_ASSOC) ) {
-            array_push($data, $row);
+            if (($row_index % $stride) == 0) {
+                array_push($data, $row);
+            }
+            $row_index += 1;
         }
 
         return $data;
@@ -968,7 +979,7 @@ class Database_ImgIndex {
         catch (Exception $e) {
             error_log(print_r($property_array, true));
             error_log($e->getMessage());
-	        return false;
+            return false;
         }
 
         $row = $result->fetch_array(MYSQLI_ASSOC);
