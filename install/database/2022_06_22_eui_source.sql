@@ -1,9 +1,9 @@
 INSERT INTO datasources (id, name, description, units, layeringOrder, enabled, sourceIdGroup, displayOrder)
 VALUES
-(84, 'EUI FSI 174 &#8491;', 'Solar Orbiter EUI FSI 174 Å',  NULL, 1, 1, '', 0),
-(85, 'EUI FSI 304 &#8491;', 'Solar Orbiter EUI FSI 304 Å',  NULL, 1, 1, '', 0),
-(86, 'EUI HRI 174 &#8491;', 'Solar Orbiter EUI HRI 174 Å',  NULL, 1, 1, '', 0),
-(87, 'EUI HRI 1216 &#8491;', 'Solar Orbiter EUI HRI 1216 Å',  NULL, 1, 1, '', 0);
+(84, 'EUI FSI 174', 'Solar Orbiter EUI FSI 174',  NULL, 1, 1, '', 0),
+(85, 'EUI FSI 304', 'Solar Orbiter EUI FSI 304',  NULL, 1, 1, '', 0),
+(86, 'EUI HRI 174', 'Solar Orbiter EUI HRI 174',  NULL, 1, 1, '', 0),
+(87, 'EUI HRI 1216', 'Solar Orbiter EUI HRI 1216',  NULL, 1, 1, '', 0);
 
 INSERT INTO datasource_property (sourceId, label, name, fitsName, description, uiOrder)
 VALUES
