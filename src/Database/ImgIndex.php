@@ -756,8 +756,17 @@ class Database_ImgIndex {
 					   $this->_dbConnection->link->real_escape_string($endDate)
 	                );
 		}else{
+            $count = $this->getDataCount($startDate, $endDate, $sourceId, $switchSources);
+            $stride = ceil($count / HV_MAX_ROW_LIMIT);
         	$sql = sprintf(
-                   "SELECT * FROM data WHERE ".$this->getDatasourceIDsString($sourceId)." AND date BETWEEN '%s' AND '%s' ORDER BY date ASC;",
+                   "SELECT *
+                    FROM (
+                        SELECT ROW_NUMBER() OVER (ORDER BY date ASC) row_id, data.*
+                        FROM data
+                        WHERE ".$this->getDatasourceIDsString($sourceId)."
+                        AND date BETWEEN '%s' AND '%s'
+                        ORDER BY date ASC) subquery
+                    WHERE subquery.row_id %% $stride = 0",
                  $this->_dbConnection->link->real_escape_string($startDate),
                  $this->_dbConnection->link->real_escape_string($endDate)
                );
@@ -968,7 +977,7 @@ class Database_ImgIndex {
         catch (Exception $e) {
             error_log(print_r($property_array, true));
             error_log($e->getMessage());
-	        return false;
+            return false;
         }
 
         $row = $result->fetch_array(MYSQLI_ASSOC);
