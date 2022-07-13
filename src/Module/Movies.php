@@ -501,6 +501,19 @@ class Module_Movies implements Module {
     }
 
     /**
+     * Returns the default Region of Interest rectangle for videos
+     * to use if the user does not provide their own.
+     */
+    private function _getDefaultROIOptions($scale) {
+        return array(
+            'x1' => -960 * $scale,
+            'y1' => -600 * $scale,
+            'x2' => 960 * $scale,
+            'y2' => 600 * $scale
+        );
+    }
+
+    /**
      * Returns the region of interest for the movie request or throws an error
      * if one was not properly specified.
      */
@@ -508,8 +521,20 @@ class Module_Movies implements Module {
         include_once HV_ROOT_DIR.'/../src/Helper/RegionOfInterest.php';
 
         // Region of interest (center in arcseconds and dimensions in pixels)
-        if (isset($options['x1']) && isset($options['y1']) &&
-            isset($options['x2']) && isset($options['y2'])) {
+        // If user did not specify any region of interest coordinates,
+        // then use the defaults
+        if (!isset($options['x1']) && !isset($options['y1']) &&
+            !isset($options['x2']) && !isset($options['y2']) &&
+            !isset($options['x0']) && !isset($options['y0']) &&
+            !isset($options['width']) && !isset($options['height']) ) {
+            $defaultOptions = $this->_getDefaultROIOptions($this->_params['imageScale']);
+            $x1 = $defaultOptions['x1'];
+            $y1 = $defaultOptions['y1'];
+            $x2 = $defaultOptions['x2'];
+            $y2 = $defaultOptions['y2'];
+        }
+        else if (isset($options['x1']) && isset($options['y1']) &&
+                 isset($options['x2']) && isset($options['y2'])) {
 
             $x1 = $options['x1'];
             $y1 = $options['y1'];
