@@ -115,7 +115,7 @@ class Image_JPEG2000_JP2Image {
         // Attempt JP2 extraction. If the command fails, retry up to two times
         while ( $attempts < 3 ) {
             // Execute the command
-            $result = exec(escapeshellcmd($cmd), $out, $ret);
+            $result = exec(escapeshellcmd($cmd) . " 2>&1", $out, $ret);
 
             // Succesfull conversions should have return code 0 and 6 lines
             // of output. If either of these conditions are not true the
