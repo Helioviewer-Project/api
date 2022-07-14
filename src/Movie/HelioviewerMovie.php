@@ -357,7 +357,7 @@ class Movie_HelioviewerMovie {
         $this->_db->markMovieAsInvalid($this->id, $procTime);
         $this->_cleanUp();
 
-        throw new Exception('Unable to create movie: '.$msg);
+        throw new Exception('Unable to create movie '.$this->publicId.': '.$msg);
     }
 
     /**
