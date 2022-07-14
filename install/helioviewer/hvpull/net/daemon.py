@@ -114,7 +114,7 @@ class ImageRetrievalDaemon:
         """
         Returns true if the current server is an SDO server
         """
-        return self.servers[0].name in ['LMSAL', 'LMSAL2']
+        return self.servers[0].name in ['LMSAL', 'LMSAL2', 'JSOC']
 
     def get_sdo_processing_delay(self):
         return {"aia": datetime.timedelta(minutes=0), "hmi": datetime.timedelta(minutes=4*60)}
