@@ -42,3 +42,11 @@ then
     python3 gen_feed.py ../../docroot/status.xml -t "Movie Generation is Down." -d "Movie queue workers are not running"
     touch $lockfile
 fi
+
+# Check that the jpip server is running
+server_processes=`ps -ax | grep esajpip | wc -l`
+if [ $server_processes -lt 3 ] 
+then
+    python3 gen_feed.py ../../docroot/status.xml -t "JPIP Server is not running" -d "esajpip processes not found"
+    touch $lockfile
+fi
