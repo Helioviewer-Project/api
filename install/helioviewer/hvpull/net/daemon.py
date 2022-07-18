@@ -139,7 +139,7 @@ class ImageRetrievalDaemon:
                 starttime = datetime.datetime.strptime(starttime, date_fmt)
             else:
                 starttime = self.servers[0].get_starttime()
-            self.newest_timestamp = starttime
+            self.oldest_timestamp = starttime
 
             # If end time is specified, fill in data from start to end
             if endtime is not None:
@@ -165,7 +165,7 @@ class ImageRetrievalDaemon:
             # process, and should be run as a cron job.
             starttime = datetime.datetime.utcnow() - datetime.timedelta(days=backfill[0])
             endtime = datetime.datetime.utcnow() - datetime.timedelta(days=backfill[1])
-            self.newest_timestamp = starttime
+            self.oldest_timestamp = starttime
             self.query(starttime, endtime)
             self.stop()
 
@@ -175,7 +175,7 @@ class ImageRetrievalDaemon:
             starttime = self.servers[0].get_starttime()
 
             # get a list of files available
-            # self.newest_timestamp gets set by query() during the first run
+            # self.oldest_timestamp gets set by query() during the first run
             # before the main loop.
             self.query(starttime, now)
 
@@ -323,11 +323,11 @@ class ImageRetrievalDaemon:
             if self.servers[0].name in ['LMSAL2']:
                 new_urls.append(extra_filtered)
                 if len(extra_filtered) > 0:
-                    self.newest_timestamp = self._get_newest_image(extra_filtered)
+                    self.oldest_timestamp = self._get_oldest_image(extra_filtered)
             else:
                 new_urls.append(filtered)
                 if len(filtered) > 0:
-                    self.newest_timestamp = self._get_newest_image(filtered)
+                    self.oldest_timestamp = self._get_oldest_image(filtered)
 
         # check disk space
         if not self.sent_diskspace_warning:
@@ -348,16 +348,16 @@ class ImageRetrievalDaemon:
         else:
             return starttime
 
-    def _get_newest_image(self, image_list):
+    def _get_oldest_image(self, image_list):
         """
-        Returns the newest image out of the given list of image file names
+        Returns the oldest image out of the given list of image file names
         """
-        newest = self._get_datetime_from_file(image_list[0])
+        oldest = self._get_datetime_from_file(image_list[0])
         for image in image_list:
             image_time = self._get_datetime_from_file(image)
-            if (image_time > newest):
-                newest = image_time
-        return newest
+            if (image_time < oldest):
+                oldest = image_time
+        return oldest
 
     def _get_datetime_from_file(self, file):
         return self.servers[0].get_datetime_from_file(file)
