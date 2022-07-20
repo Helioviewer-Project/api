@@ -84,6 +84,7 @@ class Image_JPEG2000_JP2Image {
 	 */
 	public function getMaxReduction() {
         if ($this->_maxReduction) {
+            // return from cache. Else proceed.
             return $this->_maxReduction;
         }
 		// Create a tmp file to use for kdu_expand output
