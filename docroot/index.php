@@ -74,7 +74,7 @@ function loadModule($params) {
         'getUsageStatistics'     	=> 'WebClient',
         'getDataCoverageTimeline'	=> 'WebClient',
         'getDataCoverage'        	=> 'WebClient',
-        'updateDataCoverage'     	=> 'WebClient',
+        'updateDataCoverage'     	=> 'WebClient', // Deprecated, remove in V3, replaced by management scripts
         'shortenURL'             	=> 'WebClient',
         'takeScreenshot'         	=> 'WebClient',
         'getRandomSeed'             => 'WebClient',
@@ -97,7 +97,7 @@ function loadModule($params) {
         'getFRMs'                	=> 'SolarEvents',
         'getDefaultEventTypes'   	=> 'SolarEvents',
         'getEvents'              	=> 'SolarEvents',
-        'importEvents'           	=> 'SolarEvents',
+        'importEvents'           	=> 'SolarEvents', // Deprecated, remove in V3, replaced by management scripts
         'getEventsByEventLayers' 	=> 'SolarEvents',
         'getEventGlossary'       	=> 'SolarEvents',
         'getSolarBodiesGlossary'    => 'SolarBodies',
