@@ -38,6 +38,7 @@ class Image_JPEG2000_JP2Image {
         $this->_width  = $width;
         $this->_height = $height;
         $this->_scale  = $scale;
+        $this->_maxReduction = null;
     }
 
     /**
@@ -76,6 +77,40 @@ class Image_JPEG2000_JP2Image {
         return $this->_height;
     }
 
+	/**
+	 * Analyzes the image to get the number of DWT compression
+	 * layers. This is the highest number that will succeed when
+	 * kdu_expand is called.
+	 */
+	public function getMaxReduction() {
+        if ($this->_maxReduction) {
+            return $this->_maxReduction;
+        }
+		// Create a tmp file to use for kdu_expand output
+		$tmpfile = tempnam('/tmp', 'kdu_');
+		// Execute kdu_expand with -record to get kdu to write file metadata to a file
+		// -no_decode skips actually decoding the image, drastically speeds up the command
+		// for just getting the record information
+        $cmd = HV_KDU_EXPAND . ' -no_decode -record ' . $tmpfile . ' -i '.$this->_file;
+		exec(escapeshellcmd($cmd) . " 2>&1", $out, $ret);
+		// $tmpfile should now contain some metadata that tells us the number of
+		// layers included in the image.
+		$metadata = file_get_contents($tmpfile);
+		// Find Clevels in the output
+		// preg_match returns 1 if the pattern matches. We expect to find it always.
+		if (preg_match("/Clevels=(\d+)/", $metadata, $matches) != 1) {
+			// If result is 0, that's bad, it means Clevels wasn't found.
+			$msg = "Couldn't determine the number of DWT levels in " . $this->_file;
+			// Above $msg is public, add extra internal data to the error log.
+			error_log($msg . " tmpfile is $tmpfile");
+			throw new Exception($msg, 14);
+		}
+
+		// The result from preg_match is the number of levels and cache the result.
+        $this->_maxReduction = $matches[1];
+		return $matches[1];
+	}
+
     /**
      * Extract a region using kdu_expand
      *
@@ -100,12 +135,20 @@ class Image_JPEG2000_JP2Image {
         // Nothing special to do...
 
         // Case 2: JP2 image resolution > desired resolution (use -reduce)
-        if ( $scaleFactor > 0 )
+        if ( $scaleFactor > 0 ) {
+            $maxReduction = $this->getMaxReduction();
+            // Make sure the image can be reduced to the desired scale.
+            if ($maxReduction < $scaleFactor) {
+                // Warn that someone is doing something wrong.
+                error_log("Desired reduction is too high for " . $this->_file . " using $maxReduction instead.");
+                $scaleFactor = $maxReduction;
+            }
+
             $cmd .= '-reduce '.$scaleFactor.' ';
+        }
 
         // Case 3: JP2 image resolution < desired resolution
         // Don't do anything...
-
         // Add desired region
         $cmd .= $this->_getRegionString($roi);
 
