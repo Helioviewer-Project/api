@@ -42,5 +42,5 @@ then
 fi
 
 # There are strange things with quotes happening, and passing them along
-bash -c "php import_events.php -u $1 $2"
+bash -c "php ../events/import_events.php -u $1 $2"
 
