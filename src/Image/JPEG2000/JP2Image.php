@@ -106,6 +106,9 @@ class Image_JPEG2000_JP2Image {
 			error_log($msg . " tmpfile is $tmpfile");
 			throw new Exception($msg, 14);
 		}
+		// Now that command was successful, delete the tmpfile
+		// Don't delete it earlier so we can debug in case something goes wrong.
+		unlink($tmpfile);
 
 		// The result from preg_match is the number of levels and cache the result.
         $this->_maxReduction = $matches[1];
