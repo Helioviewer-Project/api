@@ -129,6 +129,7 @@ class Database_MovieDatabase {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            error_log("Failed to insert movie: " . $e->getMessage());
             return false;
         }
 
@@ -161,6 +162,7 @@ class Database_MovieDatabase {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            error_log("Failed to insert movie formats: " . $e->getMessage());
             return false;
         }
 
@@ -199,6 +201,7 @@ class Database_MovieDatabase {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            error_log("Failed to insert youtube movie into database: " . $e->getMessage());
             return false;
         }
 
@@ -231,6 +234,7 @@ class Database_MovieDatabase {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            error_log("Failed to update youtube table: " . $e->getMessage());
             return false;
         }
 
@@ -267,6 +271,7 @@ class Database_MovieDatabase {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            error_log("Failed to get movie statistics: " . $e->getMessage());
             return false;
         }
 
@@ -348,6 +353,7 @@ class Database_MovieDatabase {
                 $result = $this->_dbConnection->query($sql);
             }
             catch (Exception $e) {
+                error_log("Failed to get youtube movie info: " . $e->getMessage());
                 return false;
             }
 
@@ -418,6 +424,7 @@ class Database_MovieDatabase {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            error_log("Failed to get shared movie info: " . $e->getMessage());
             return false;
         }
 
@@ -470,6 +477,7 @@ class Database_MovieDatabase {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            error_log("Failed to get movie metadata: " . $e->getMessage());
             return false;
         }
 
@@ -494,6 +502,7 @@ class Database_MovieDatabase {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            error_log("Failed to get movie formats: " . $e->getMessage());
             return false;
         }
 
@@ -524,6 +533,7 @@ class Database_MovieDatabase {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            error_log("Failed to delete movie formats: " . $e->getMessage());
             return false;
         }
 

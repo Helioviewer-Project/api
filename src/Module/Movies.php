@@ -203,13 +203,14 @@ class Module_Movies implements Module {
             'format'  => $options['format'],
             'counter' => $updateCounter
         );
-        $token = Resque::enqueue(HV_MOVIE_QUEUE, 'Job_MovieBuilder', $args, true);
 
         // Create entries for each version of the movie in the movieFormats
         // table
         foreach(array('mp4', 'webm') as $format) {
             $movieDb->insertMovieFormat($dbId, $format);
         }
+
+        $token = Resque::enqueue(HV_MOVIE_QUEUE, 'Job_MovieBuilder', $args, true);
 
         // Print response
         $response = array(
