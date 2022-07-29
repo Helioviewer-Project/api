@@ -202,6 +202,104 @@ class Module_WebClient implements Module {
     }
 
     /**
+     * Returns a full jpeg2000 image as a tif
+     */
+    public function downloadImage() {
+        include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
+        include_once HV_ROOT_DIR.'/../src/Image/JPEG2000/JP2Image.php';
+        include_once HV_ROOT_DIR.'/../src/Helper/RegionOfInterest.php';
+
+        $imgIndex = new Database_ImgIndex();
+        $image = $imgIndex->getImageInformation($this->_params['id']);
+        $jp2Filepath = HV_JP2_DIR.$image['filepath'].'/'.$image['filename'];
+        $jp2 = new Image_JPEG2000_JP2Image(
+            $jp2Filepath, $image['width'], $image['height'], 1
+        );
+
+        // 2 = 4k
+        // 4 = 2k
+        // 8 = 1024
+        // 16 = 512
+        // 32 = 256
+        $scale = intval($this->_params['scale']);
+        if ($scale == 0) {
+            $scale = 8;
+        }
+        $region = new Helper_RegionOfInterest(
+            -$image['width'], -$image['height'], $image['width'], $image['height'], $this->_params['scale']);
+
+        $filepath =  $this->_getImageCacheFilename($image['filepath'], $image['filename'], $this->_params['scale']);
+        // Reference pixel offset at the original image scale
+        $offsetX =   $image['refPixelX'] - ($image['width']  / 2);
+        $offsetY = -($image['refPixelY'] - ($image['height'] / 2));
+        // Create the tile
+        $classname = $this->_getImageClass($image);
+               $this->_options['date'] = $image['date'];
+        $tile = new $classname(
+            $jp2, $filepath, $region, $image['uiLabels'],
+            $offsetX, $offsetY, $this->_options,
+            $image['sunCenterOffsetParams']
+        );
+
+        // Save and display
+        $tile->save();
+        $tile->display();
+    }
+
+    /**
+     *
+     */
+    private function _getImageClass($image) {
+        // TODO 2011/04/18: Generalize process of choosing class to use
+        //error_log(json_encode($image['uiLabels']));
+        if ( count($image['uiLabels']) >= 3
+          && $image['uiLabels'][1]['name'] == 'SECCHI' ) {
+
+            if ( substr($image['uiLabels'][2]['name'], 0, 3) == 'COR' ) {
+                $type = 'CORImage';
+            }
+            else {
+                $type = strtoupper($image['uiLabels'][2]['name']).'Image';
+            }
+        }
+        else if ($image['uiLabels'][0]['name'] == 'TRACE') {
+            $type = strtoupper($image['uiLabels'][0]['name']).'Image';
+        }
+        else if ($image['uiLabels'][0]['name'] == 'Hinode') {
+            $type = 'XRTImage';
+        }
+        else if (count($image['uiLabels']) >=2) {
+            $type = strtoupper($image['uiLabels'][1]['name']).'Image';
+        }
+
+        include_once HV_ROOT_DIR.'/../src/Image/ImageType/'.$type.'.php';
+        $classname = 'Image_ImageType_'.$type;
+        return $classname;
+    }
+
+    /**
+     * Builds a filename for a cached image based on scale
+     * and scale
+     *
+     * @param string $directory  The directory containing the image
+     * @param float  $filename   The filename of the image
+     * @param float  $imageScale Scale of the image in arcseconds per pixel
+     *
+     * @return string Filepath to use when locating or creating the tile
+     */
+    private function _getImageCacheFilename($directory, $filename, $scale) {
+
+        $baseDirectory = HV_CACHE_DIR.'/tiles';
+        $baseFilename  = substr($filename, 0, -4);
+
+        return sprintf(
+            "%s%s/%s_full_image_%s.png", $baseDirectory, $directory,
+            $baseFilename, $scale
+        );
+    }
+
+
+    /**
      * Requests a single tile to be used in Helioviewer.org.
      *
      * TODO 2011/04/19: How much longer would it take to request tiles if
@@ -258,30 +356,7 @@ class Module_WebClient implements Module {
         $roi = $this->_tileCoordinatesToROI($params['x'], $params['y'], $params['imageScale'], $image['scale'], $tileSize, $offsetX, $offsetY);
 
         // Choose type of tile to create
-        // TODO 2011/04/18: Generalize process of choosing class to use
-        //error_log(json_encode($image['uiLabels']));
-        if ( count($image['uiLabels']) >= 3
-          && $image['uiLabels'][1]['name'] == 'SECCHI' ) {
-
-            if ( substr($image['uiLabels'][2]['name'], 0, 3) == 'COR' ) {
-                $type = 'CORImage';
-            }
-            else {
-                $type = strtoupper($image['uiLabels'][2]['name']).'Image';
-            }
-        }
-        else if ($image['uiLabels'][0]['name'] == 'TRACE') {
-            $type = strtoupper($image['uiLabels'][0]['name']).'Image';
-        }
-        else if ($image['uiLabels'][0]['name'] == 'Hinode') {
-            $type = 'XRTImage';
-        }
-        else if (count($image['uiLabels']) >=2) {
-            $type = strtoupper($image['uiLabels'][1]['name']).'Image';
-        }
-
-        include_once HV_ROOT_DIR.'/../src/Image/ImageType/'.$type.'.php';
-        $classname = 'Image_ImageType_'.$type;
+        $classname = $this->_getImageClass($image);
 
         //Difference JP2 File
         if(isset($params['difference']) && $params['difference'] > 0){
@@ -1408,6 +1483,13 @@ class Module_WebClient implements Module {
                 "alphanum" => array('callback')
             );
             break;
+        case 'downloadImage':
+            $expected = array(
+                'required' => array('id', 'scale')
+            );
+            break;
+
+
         default:
             break;
         }
