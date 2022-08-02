@@ -875,8 +875,13 @@ class Database_ImgIndex {
             // In order to handle these images, this
             // workaround attempts to detect those invalid image scales and
             // override them back to 0.6
-            if ($imageScale < 0.05) {
-                $imageScale = 0.6;
+            // The highest invalid image scale is this image below with a scale of 0.15404
+            // Anything below this value will have a scale set back to 0.6
+            // | 111318295 | 2010-12-06 13:14:41 |               0.15404 | HMI Int      |
+            $IMAGE_SCALE_OVERRIDE_THRESHOLD = 0.1541;
+            $IMAGE_SCALE_OVERRIDE_VALUE = 0.6;
+            if ($imageScale < $IMAGE_SCALE_OVERRIDE_THRESHOLD) {
+                $imageScale = $IMAGE_SCALE_OVERRIDE_VALUE;
             }
 
             $meta = array(
