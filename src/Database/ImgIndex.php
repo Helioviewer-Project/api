@@ -864,6 +864,21 @@ class Database_ImgIndex {
             // Normalize image scale
             $imageScale = $imageScale * ($dsun / HV_CONSTANT_AU);
 
+            // WORKAROUND FOR INVALID DSUN:
+            // Image scale is expected to be roughly 0.6, though it can be
+            // lower. However there are some images which have an invalid DSun
+            // value which results in an incorrect imageScale value which is
+            // very close to 0, even though the correct scale should still be
+            // somewhere around 0.6. The result is that helioviewer believes the
+            // image to be an extremely high resolution and attempts to scale the image
+            // down to a point that image magick can't process it.
+            // In order to handle these images, this
+            // workaround attempts to detect those invalid image scales and
+            // override them back to 0.6
+            if ($imageScale < 0.05) {
+                $imageScale = 0.6;
+            }
+
             $meta = array(
                 "scale"      => $imageScale,
                 "width"      => (int) $dimensions[0],
