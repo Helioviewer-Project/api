@@ -116,11 +116,13 @@ class Image_JPEG2000_JP2ImageXMLBox {
     private function _workaroundInvalidDsun($dsun) {
         $DSUN_OVERRIDE_THRESHOLD = HV_CONSTANT_AU * 0.04;
         if ($dsun <= $DSUN_OVERRIDE_THRESHOLD) {
-            // Add an informational log to see
+            // Add an informational log to let us know when this happens. It is expected
+            // in some older files, but not new ones.
             $inst = $this->_getElementValue('INSTRUME');
-            error_log("Patching dsun value to 1AU. Instrument: $inst, Old dsun: $dsun");
+            $date = $this->_getElementValue('DATE');
+            error_log("Patching dsun value to 1AU. Instrument: $inst, date: $date, Old dsun: $dsun");
             // Using 1AU as the default dsun since this
-            // this was already being used as a value for other
+            // was already being used as a value for other
             // cases where dsun is invalid.
             return HV_CONSTANT_AU;
         }

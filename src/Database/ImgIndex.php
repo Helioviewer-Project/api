@@ -1480,4 +1480,3 @@ class Database_ImgIndex {
     }
 }
 ?>
-
