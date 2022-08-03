@@ -109,7 +109,7 @@ class Image_JPEG2000_JP2ImageXMLBox {
      * In order to handle these images, this
      * workaround attempts to detect those invalid dsun values
      * and override them to a relatively safe DSUN value.
-     * Per Bogden's remark: https://github.com/Helioviewer-Project/api/issues/194#issuecomment-1203147423
+     * Per Bogdan's remark: https://github.com/Helioviewer-Project/api/issues/194#issuecomment-1203147423
      * We will use a DSUN threshold of 0.04 AUs, since we don't expect any telescopes
      * to get that close anytime soon.
      */
