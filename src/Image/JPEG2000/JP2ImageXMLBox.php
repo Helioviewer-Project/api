@@ -76,9 +76,9 @@ class Image_JPEG2000_JP2ImageXMLBox {
         //$this->_xml = new DOMDocument();
 
         //$this->_xml->loadXML($this->_xmlString);
-        
+
         $this->_xml = simplexml_load_string($this->_xmlString);
-        $json_string = json_encode($this->_xml);    
+        $json_string = json_encode($this->_xml);
 		$this->_array = json_decode($json_string, TRUE);
     }
 
@@ -97,6 +97,34 @@ class Image_JPEG2000_JP2ImageXMLBox {
     public function printXMLBox() {
         header('Content-type: text/xml');
         echo $this->_xmlString;
+    }
+
+    /**
+     * WORKAROUND FOR INVALID DSUN:
+     * There are some images which have an invalid DSun
+     * value which results in an incorrect imageScale.
+     * The result is that helioviewer believes the
+     * image to be an extremely high resolution and attempts to scale the image
+     * down to a point that image magick can't process it.
+     * In order to handle these images, this
+     * workaround attempts to detect those invalid dsun values
+     * and override them to a relatively safe DSUN value.
+     * Per Bogden's remark: https://github.com/Helioviewer-Project/api/issues/194#issuecomment-1203147423
+     * We will use a DSUN threshold of 0.04 AUs, since we don't expect any telescopes
+     * to get that close anytime soon.
+     */
+    private function _workaroundInvalidDsun($dsun) {
+        $DSUN_OVERRIDE_THRESHOLD = HV_CONSTANT_AU * 0.04;
+        if ($dsun <= $DSUN_OVERRIDE_THRESHOLD) {
+            // Add an informational log to see
+            $inst = $this->_getElementValue('INSTRUME');
+            error_log("Patching dsun value to 1AU. Instrument: $inst, Old dsun: $dsun");
+            // Using 1AU as the default dsun since this
+            // this was already being used as a value for other
+            // cases where dsun is invalid.
+            return HV_CONSTANT_AU;
+        }
+        return $dsun;
     }
 
     /**
@@ -149,6 +177,10 @@ class Image_JPEG2000_JP2ImageXMLBox {
         if ( !isset($dsun) || $dsun <= 0 ) {
             $dsun = HV_CONSTANT_AU;
         }
+
+        // A little more DSUN validation in the case that
+        // dsun is erroneously small, but not 0.
+        $dsun = $this->_workaroundInvalidDsun($dsun);
 
         // Check to make sure header information is valid
         if ( (filter_var($dsun, FILTER_VALIDATE_FLOAT) === false) ||
@@ -352,7 +384,7 @@ class Image_JPEG2000_JP2ImageXMLBox {
                 return $value;
             }
         }
-        
+
         /*$element = $this->_xml->getElementsByTagName($name);
 
         if ($element) {
