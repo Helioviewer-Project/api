@@ -17,8 +17,8 @@ final class JP2ImageTest extends TestCase
     {
 		// file => Clevels
 		$answers = array(
-		    '/var/www/jp2/HRI_EUV/2022/04/01/174/solo_L3_eui-hrieuv174-image_20220401T103005920_V01.jp2' => 5,
-			'/var/www/jp2/AIA/2022/01/01/193/2022_01_01__00_00_52_843__SDO_AIA_AIA_193.jp2' => 8
+		    HV_JP2_DIR . '/HRI_EUV/2022/04/01/174/solo_L3_eui-hrieuv174-image_20220401T103005920_V01.jp2' => 5,
+			HV_JP2_DIR . '/AIA/2022/01/01/193/2022_01_01__00_00_52_843__SDO_AIA_AIA_193.jp2' => 8
 			);
 
 		foreach ($answers as $file => $reduction) {
