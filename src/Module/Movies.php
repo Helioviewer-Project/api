@@ -285,18 +285,6 @@ class Module_Movies implements Module {
                 }
             }
         }
-        else
-        {
-            // If forcing a rebuild of a movie, then need to delete the current
-            // status from the DB, and also remove that movie info from the
-            // cache
-            $movieDatabase = new Database_MovieDatabase();
-            $movieDatabase->deleteMovieFormats($movieId);
-            // Rebuild the public ID so we're not using unsanitized user provided
-            // id.
-            $publicId = alphaId($movieId, false, 5, HV_MOVIE_ID_PASS);
-            Movie_HelioviewerMovie::DeleteFromCache($publicId);
-        }
 
         // Get movie metadata from database
         $movieDatabase = new Database_MovieDatabase();
@@ -314,14 +302,37 @@ class Module_Movies implements Module {
         // is allowed to proceed.
         $movieFormats = $movieDatabase->getMovieFormats($movieId);
         foreach ( $movieFormats as $movieFormat ) {
-            $seconds_ago = time() - strtotime($movieFormat['modified']);
-            $stale = 60 * 60 * 2;  // 2 hours
-
-            if ( $movieFormat['status'] < 2 && $seconds_ago < $stale ) {
-				//throw new Exception('Movie can be regenerated only once every 2 hours', 47);
-                //return;
+            if ($movieFormat['status'] == 0) {
+				throw new Exception('Movie is already in queue', 47);
+                return;
+            }
+            if ( $movieFormat['status'] == 1) {
+				throw new Exception('Movie is currently being processed', 47);
+                return;
             }
         }
+
+        // Check for force option after checking if movie
+        // is being queued or processing for processing option
+        // Even though force is true, we still shouldn't requeue
+        // if the movie is waiting in the queue (there's no point)
+        // or if the movie is processing (that process should not be
+        // interrupted). Force rebuild is only for rebuilding an already
+        // existing movie. One use case for this would be if
+        // helioviewer ingested new data so rebuilding a movie may
+        // make a better movie.
+        if ($options['force'] === true) {
+            // If forcing a rebuild of a movie, then need to delete the current
+            // status from the DB, and also remove that movie info from the
+            // cache
+            $movieDatabase = new Database_MovieDatabase();
+            $movieDatabase->deleteMovieFormats($movieId);
+            // Rebuild the public ID so we're not using unsanitized user provided
+            // id.
+            $publicId = alphaId($movieId, false, 5, HV_MOVIE_ID_PASS);
+            Movie_HelioviewerMovie::DeleteFromCache($publicId);
+        }
+
 
         $numPixels = $movie['width'] * $movie['height'];
         $maxFrames = min($this->_getMaxFrames($queueSize),
