@@ -52,19 +52,6 @@ final class reQueueMovieTest extends TestCase
     }
 
     /**
-     * Marks the movie as complete in the database and invalidates the cache
-     */
-    private function _markMovieAsComplete(Movie_HelioviewerMovie $movie) {
-        $db = new Database_ImgIndex();
-        $success = $db->markMovieAsFinished($movie->id, "mp4", 5);
-        if (!$success) {
-            $this->fail("Failed to mark movie as complete");
-        }
-        $movie->DeleteFromCache($movie->publicId);
-    }
-
-
-    /**
      * reQueueMovie test where movie already exists.
      * Should result in an error saying it will not requeue since
      * the movie is already there
