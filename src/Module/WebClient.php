@@ -14,6 +14,8 @@
  * @link     https://github.com/Helioviewer-Project
  */
 require_once "interface.Module.php";
+require_once HV_ROOT_DIR.'/../src/Validation/InputValidator.php';
+require_once HV_ROOT_DIR.'/../src/Helper/ErrorHandler.php';
 
 class Module_WebClient implements Module {
 
@@ -295,6 +297,7 @@ class Module_WebClient implements Module {
 				else{ $dateDiff = 'minute'; }
 
 				$date->modify('-'.$params['diffCount'].' '.$dateDiff);
+                $date = $this->_clampDate($date);
 				$dateStr = $date->format("Y-m-d\TH:i:s.000\Z");
 			}elseif($params['difference'] == 2){
 				$dateStr = $params['baseDiffTime'];
@@ -1254,6 +1257,24 @@ class Module_WebClient implements Module {
         // Regon of interest
         return new Helper_RegionOfInterest(
             $left, $top, $right, $bottom, $scale );
+    }
+
+    /**
+     * Used to set a given date to the helioviewer minimum date set in
+     * the configuration. If the date given is above the minimum date,
+     * then the same date is returned. If the date given is before
+     * the minimum date, then the date returned will be the minimum date.
+     *
+     * @param date The date to clamp to helioviewer's range
+     *
+     * @return date The date given, or the helioviewer minimum date.
+     */
+    private function _clampDate($date) {
+        $minDate = new DateTime(HV_MINIMUM_DATE);
+        if ($date < $minDate) {
+            return $minDate;
+        }
+        return $date;
     }
 
     /**
