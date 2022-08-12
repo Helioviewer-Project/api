@@ -663,7 +663,7 @@ class ImageRetrievalDaemon:
 
         # Base command
 
-        command ='%s -i %s -o %s' % (self.kdu_transcode, filepath, tmp)
+        command ='%s -i "%s" -o "%s"' % (self.kdu_transcode, filepath, tmp)
 
         # Corder
         if corder is not None:
@@ -879,7 +879,8 @@ class ImageRetrievalDaemon:
             "xrt": "XRTDataServer",
             "kcor": "KCORDataServer",
             "hv_kcor": "HVKCORDataServer",
-            "solar_orbiter": "SolarOrbiterDataServer"
+            "solar_orbiter": "SolarOrbiterDataServer",
+            "suvi": "SuviDataServer"
         }
 
     @classmethod
