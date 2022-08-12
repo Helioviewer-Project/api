@@ -18,10 +18,11 @@ class SuviDataServer(DataServer):
         months = self._get_months(dates)
         for month in months:
             for wavelength in wavelengths:
-                dirs.append(os.path.join(self.uri, str(wavelength), month))
                 # Special case: 195 and 303 have some files outside of the year folder.
                 if (wavelength == 195 or wavelength == 303):
                     dirs.append(os.path.join(self.uri, str(wavelength)))
+                else:
+                    dirs.append(os.path.join(self.uri, str(wavelength), month))
 
         return dirs
 
