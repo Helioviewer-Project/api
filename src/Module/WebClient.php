@@ -222,11 +222,11 @@ class Module_WebClient implements Module {
         // 16 = 512
         // 32 = 256
         $scale = intval($this->_params['scale']);
-        if ($scale == 0) {
-            $scale = 8;
+        if ($scale < 2) {
+            $scale = 2;
         }
         $region = new Helper_RegionOfInterest(
-            -$image['width'], -$image['height'], $image['width'], $image['height'], $this->_params['scale']);
+            -$image['width'] / 2, -$image['height'] / 2, $image['width'] / 2, $image['height'] / 2, $this->_params['scale']);
 
         $filepath =  $this->_getImageCacheFilename($image['filepath'], $image['filename'], $this->_params['scale']);
         // Reference pixel offset at the original image scale
