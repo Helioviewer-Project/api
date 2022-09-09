@@ -493,6 +493,7 @@ class Database_ImgIndex {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            error_log("Failed to get closest image before date: " . $e->getMessage());
             return false;
         }
 

@@ -15,6 +15,8 @@ the status of the movie (via `getMovieStatus <#getmoviestatus>`_) and to downloa
     +===========+==========+========+=========+===============================================================================+
     | id        | Required | string | VXvX5   | Unique movie identifier (provided by the response to a `queueMovie` request). |
     +-----------+----------+--------+---------+-------------------------------------------------------------------------------+
+    | force     | Optional | bool   | false   | Forces rebuilding of a movie. Useful if new data has been added.              |
+    +-----------+----------+--------+---------+-------------------------------------------------------------------------------+
 
 Example: Queued Movie (JSON)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

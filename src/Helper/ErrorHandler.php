@@ -81,9 +81,11 @@ function logErrorMsg($error, $prefix='') {
     if ( isset($_SERVER['HTTP_HOST']) && isset($_SERVER['REQUEST_URI']) ) {
         $source = $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
     }
-    else {
+    else if (isset($_SERVER['QUEUE'])) {
         // Resque worker errors
         $source = 'Resque: ' . $_SERVER['QUEUE'];
+    } else {
+        $source = "Other: ";
     }
 
     $log = HV_LOG_DIR.'/'.$prefix.date('Ymd_His').'.log';

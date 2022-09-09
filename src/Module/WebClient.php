@@ -14,6 +14,8 @@
  * @link     https://github.com/Helioviewer-Project
  */
 require_once "interface.Module.php";
+require_once HV_ROOT_DIR.'/../src/Validation/InputValidator.php';
+require_once HV_ROOT_DIR.'/../src/Helper/ErrorHandler.php';
 
 class Module_WebClient implements Module {
 
@@ -119,13 +121,13 @@ class Module_WebClient implements Module {
 
         $imgIndex = new Database_ImgIndex();
 
-		if(isset($this->_params['switchSources']) && $this->_params['switchSources']){
-			if($this->_params['sourceId'] == 13 && strtotime($this->_params['date']) < strtotime('2010-06-02 00:05:39')){$this->_params['sourceId'] = 3;}
-			if($this->_params['sourceId'] == 10 && strtotime($this->_params['date']) < strtotime('2010-06-02 00:05:36')){$this->_params['sourceId'] = 0;}
-			if($this->_params['sourceId'] == 11 && strtotime($this->_params['date']) < strtotime('2010-06-02 00:05:31')){$this->_params['sourceId'] = 1;}
-			if($this->_params['sourceId'] == 18 && strtotime($this->_params['date']) < strtotime('2010-12-06 06:53:41')){$this->_params['sourceId'] = 7;}
-			if($this->_params['sourceId'] == 19 && strtotime($this->_params['date']) < strtotime('2010-12-06 06:53:41')){$this->_params['sourceId'] = 6;}
-		}
+        if(isset($this->_params['switchSources']) && $this->_params['switchSources']){
+            if($this->_params['sourceId'] == 13 && strtotime($this->_params['date']) < strtotime('2010-06-02 00:05:39')){$this->_params['sourceId'] = 3;}
+            if($this->_params['sourceId'] == 10 && strtotime($this->_params['date']) < strtotime('2010-06-02 00:05:36')){$this->_params['sourceId'] = 0;}
+            if($this->_params['sourceId'] == 11 && strtotime($this->_params['date']) < strtotime('2010-06-02 00:05:31')){$this->_params['sourceId'] = 1;}
+            if($this->_params['sourceId'] == 18 && strtotime($this->_params['date']) < strtotime('2010-12-06 06:53:41')){$this->_params['sourceId'] = 7;}
+            if($this->_params['sourceId'] == 19 && strtotime($this->_params['date']) < strtotime('2010-12-06 06:53:41')){$this->_params['sourceId'] = 6;}
+        }
 
         $image = $imgIndex->getDataFromDatabase($this->_params['date'], $this->_params['sourceId']);
 
@@ -222,17 +224,17 @@ class Module_WebClient implements Module {
         $imgIndex = new Database_ImgIndex();
         $image = $imgIndex->getImageInformation($this->_params['id']);
 
-		//Difference Filepath
-		$difference = '';
-		if(isset($params['difference'])){
-			if($params['difference'] == 1){
-				$difference = '_running';
-			}elseif($params['difference'] == 2){
-				$difference = '_base';
-			}
-		}
+        //Difference Filepath
+        $difference = '';
+        if(isset($params['difference'])){
+            if($params['difference'] == 1){
+                $difference = '_running';
+            }elseif($params['difference'] == 2){
+                $difference = '_base';
+            }
+        }
 
-		$this->_options['date'] 		= $image['date'];
+        $this->_options['date']         = $image['date'];
 
         // Tile filepath
         $filepath =  $this->_getTileCacheFilename($image['filepath'], $image['filename'], $params['imageScale'], $params['x'], $params['y'], $difference);
@@ -281,34 +283,35 @@ class Module_WebClient implements Module {
         include_once HV_ROOT_DIR.'/../src/Image/ImageType/'.$type.'.php';
         $classname = 'Image_ImageType_'.$type;
 
-		//Difference JP2 File
-		if(isset($params['difference']) && $params['difference'] > 0){
-			if($params['difference'] == 1){
-				$date = new DateTime($image['date']);
+        //Difference JP2 File
+        if(isset($params['difference']) && $params['difference'] > 0){
+            if($params['difference'] == 1){
+                $date = new DateTime($image['date']);
 
-				if($params['diffTime'] == 6){ $dateDiff = 'year'; }
-				else if($params['diffTime'] == 5){ $dateDiff = 'month'; }
-				else if($params['diffTime'] == 4){ $dateDiff = 'week'; }
-				else if($params['diffTime'] == 3){ $dateDiff = 'day'; }
-				else if($params['diffTime'] == 2){ $dateDiff = 'hour'; }
-				else if($params['diffTime'] == 0){ $dateDiff = 'second'; }
-				else{ $dateDiff = 'minute'; }
+                if($params['diffTime'] == 6){ $dateDiff = 'year'; }
+                else if($params['diffTime'] == 5){ $dateDiff = 'month'; }
+                else if($params['diffTime'] == 4){ $dateDiff = 'week'; }
+                else if($params['diffTime'] == 3){ $dateDiff = 'day'; }
+                else if($params['diffTime'] == 2){ $dateDiff = 'hour'; }
+                else if($params['diffTime'] == 0){ $dateDiff = 'second'; }
+                else{ $dateDiff = 'minute'; }
 
-				$date->modify('-'.$params['diffCount'].' '.$dateDiff);
-				$dateStr = $date->format("Y-m-d\TH:i:s.000\Z");
-			}elseif($params['difference'] == 2){
-				$dateStr = $params['baseDiffTime'];
-			}
+                $date->modify('-'.$params['diffCount'].' '.$dateDiff);
+                $date = $this->_clampDate($date);
+                $dateStr = $date->format("Y-m-d\TH:i:s.000\Z");
+            }elseif($params['difference'] == 2){
+                $dateStr = $params['baseDiffTime'];
+            }
 
-			//Create difference JP2 image
-	        $imageDifference = $imgIndex->getClosestDataBeforeDate($dateStr, $image['sourceId']);
-	        $fileDifference   = HV_JP2_DIR.$imageDifference['filepath'].'/'.$imageDifference['filename'];
-	        $jp2Difference = new Image_JPEG2000_JP2Image($fileDifference, $image['width'], $image['height'], $image['scale']);
+            //Create difference JP2 image
+            $imageDifference = $imgIndex->getClosestDataBeforeDate($dateStr, $image['sourceId']);
+            $fileDifference   = HV_JP2_DIR.$imageDifference['filepath'].'/'.$imageDifference['filename'];
+            $jp2Difference = new Image_JPEG2000_JP2Image($fileDifference, $image['width'], $image['height'], $image['scale']);
 
-			$this->_options['jp2DiffPath']   =  $this->_getTileCacheFilename($image['filepath'], $imageDifference['filename'], $params['imageScale'], $params['x'], $params['y'], $difference);
-	        $this->_options['jp2Difference'] = $jp2Difference;
+            $this->_options['jp2DiffPath']   =  $this->_getTileCacheFilename($image['filepath'], $imageDifference['filename'], $params['imageScale'], $params['x'], $params['y'], $difference);
+            $this->_options['jp2Difference'] = $jp2Difference;
 
-		}
+        }
 
         // Create the tile
         $tile = new $classname(
@@ -540,32 +543,32 @@ class Module_WebClient implements Module {
 
         $proxy = new Net_Proxy('http://api.bitly.com/v3/shorten?');
 
-		$allowed = false;
+        $allowed = false;
 
-		if (stripos($this->_params['queryString'], HV_BITLY_ALLOWED_DOMAIN) !== false) {
-			$allowed = true;
-		}
+        if (stripos($this->_params['queryString'], HV_BITLY_ALLOWED_DOMAIN) !== false) {
+            $allowed = true;
+        }
 
-		if($allowed){
-			$longURL = urldecode($this->_params['queryString']);
+        if($allowed){
+            $longURL = urldecode($this->_params['queryString']);
 
-	        $params = array(
-	            'longUrl' => $longURL,
-	            'login'   => HV_BITLY_USER,
-	            'apiKey'  => HV_BITLY_API_KEY
-	        );
+            $params = array(
+                'longUrl' => $longURL,
+                'login'   => HV_BITLY_USER,
+                'apiKey'  => HV_BITLY_API_KEY
+            );
 
-	        $this->_printJSON($proxy->query($params, true));
-		}else{
-			$this->_printJSON(json_encode(array(
-				"status_code" => 200,
-				"status_txt" => "OK",
-				"data" => array(
-					"long_url" => $this->_params['queryString'],
-					"url" => $this->_params['queryString'],
-				))
-			));
-		}
+            $this->_printJSON($proxy->query($params, true));
+        }else{
+            $this->_printJSON(json_encode(array(
+                "status_code" => 200,
+                "status_txt" => "OK",
+                "data" => array(
+                    "long_url" => $this->_params['queryString'],
+                    "url" => $this->_params['queryString'],
+                ))
+            ));
+        }
 
     }
 
@@ -631,122 +634,122 @@ class Module_WebClient implements Module {
      * Retrieves the latest usage statistics from the database
      */
     public function getDataCoverage() {
-	    include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerLayers.php';
-	    include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerEvents.php';
+        include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerLayers.php';
+        include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerEvents.php';
 
-	    // Data Layers
-	    if(!empty($this->_options['imageLayers'])){
-		    $layers = new Helper_HelioviewerLayers($this->_options['imageLayers']);
-	    }else{
-		    $layers = null;
-	    }
+        // Data Layers
+        if(!empty($this->_options['imageLayers'])){
+            $layers = new Helper_HelioviewerLayers($this->_options['imageLayers']);
+        }else{
+            $layers = null;
+        }
 
         // Events Layers
-	    if(!empty($this->_options['eventLayers'])){
-		    $events = new Helper_HelioviewerEvents($this->_params['eventLayers']);
-	    }else{
-		    $events = null;
-	    }
+        if(!empty($this->_options['eventLayers'])){
+            $events = new Helper_HelioviewerEvents($this->_params['eventLayers']);
+        }else{
+            $events = null;
+        }
 
 
 
         $start = @$this->_options['startDate'];
-		if ($start && !preg_match('/^[0-9]+$/', $start)) {
-			die("Invalid start parameter: $start");
-		}
-		$end = @$this->_options['endDate'];
-		if ($end && !preg_match('/^[0-9]+$/', $end)) {
-			die("Invalid end parameter: $end");
-		}
-		$current = @$this->_options['currentDate'];
-		if ($current && !preg_match('/^[0-9]+$/', $current)) {
-			die("Invalid end parameter: $current");
-		}
-		if (!$start) $start = 0;
-		if (!$end) $end = time() * 1000;
-		if (!$current) $current = 0;
+        if ($start && !preg_match('/^[0-9]+$/', $start)) {
+            die("Invalid start parameter: $start");
+        }
+        $end = @$this->_options['endDate'];
+        if ($end && !preg_match('/^[0-9]+$/', $end)) {
+            die("Invalid end parameter: $end");
+        }
+        $current = @$this->_options['currentDate'];
+        if ($current && !preg_match('/^[0-9]+$/', $current)) {
+            die("Invalid end parameter: $current");
+        }
+        if (!$start) $start = 0;
+        if (!$end) $end = time() * 1000;
+        if (!$current) $current = 0;
 
         // set some utility variables
-		$range = $end - $start;
+        $range = $end - $start;
 
         // find the right range
-		if ($range < 105 * 60 * 1000) {
-			$resolution = 'm';
+        if ($range < 105 * 60 * 1000) {
+            $resolution = 'm';
 
-		// 12 hours range loads hourly data
-		} elseif  ($range < 12 * 3600 * 1000) {
-			$resolution = '5m';
+        // 12 hours range loads hourly data
+        } elseif  ($range < 12 * 3600 * 1000) {
+            $resolution = '5m';
 
-		// one month range loads hourly data
-		} elseif  ($range < 2 * 24 * 3600 * 1000) {
-			$resolution = '15m';
+        // one month range loads hourly data
+        } elseif  ($range < 2 * 24 * 3600 * 1000) {
+            $resolution = '15m';
 
-		// one month range loads hourly data
-		} elseif ($range < 10 * 24 * 3600 * 1000) {
-			$resolution = 'h';
+        // one month range loads hourly data
+        } elseif ($range < 10 * 24 * 3600 * 1000) {
+            $resolution = 'h';
 
-		// one year range loads daily data
-		} elseif ($range < 6 * 31 * 24 * 3600 * 1000) {
-			$resolution = 'D';
+        // one year range loads daily data
+        } elseif ($range < 6 * 31 * 24 * 3600 * 1000) {
+            $resolution = 'D';
 
-		// half year range loads daily data
-		} elseif ($range < 15 * 31 * 24 * 3600 * 1000) {
-			$resolution = 'W';
+        // half year range loads daily data
+        } elseif ($range < 15 * 31 * 24 * 3600 * 1000) {
+            $resolution = 'W';
 
-		// greater range loads monthly data
-		} else {
-			$resolution = 'M';
-		}
-		//$resolution = 'm';
+        // greater range loads monthly data
+        } else {
+            $resolution = 'M';
+        }
+        //$resolution = 'm';
 
         $dateEnd = new DateTime();
         if ( isset($this->_options['endDate']) ) {
             $dateEnd->setTimestamp( $this->_options['endDate']/1000);
         }else{
-	        $dateEnd->setTimestamp( $end/1000);
+            $dateEnd->setTimestamp( $end/1000);
         }
         $dateStart = new DateTime();
         if ( isset($this->_options['startDate']) ) {
             $dateStart->setTimestamp( $this->_options['startDate']/1000);
         }else{
-	        $dateStart->setTimestamp( $start/1000);
+            $dateStart->setTimestamp( $start/1000);
         }
         $dateCurrent = new DateTime();
         if ( isset($this->_options['currentDate']) ) {
             $dateCurrent->setTimestamp( $this->_options['currentDate']);
         }else{
-	        $dateCurrent->setTimestamp( $current);
+            $dateCurrent->setTimestamp( $current);
         }
 
         include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
         $statistics = new Database_Statistics();
 
         if($layers != null){
-	        $this->_printJSON(
-	            $statistics->getDataCoverage(
-		            $layers,
-	                $resolution,
-	                $dateStart,
-	                $dateEnd
-	            )
-	        );
+            $this->_printJSON(
+                $statistics->getDataCoverage(
+                    $layers,
+                    $resolution,
+                    $dateStart,
+                    $dateEnd
+                )
+            );
         }else if($events != null){
-	        if ($range < 24 * 60 * 60 * 1000) {
-				$resolution = 'm';
-			}
+            if ($range < 24 * 60 * 60 * 1000) {
+                $resolution = 'm';
+            }
 
-	        if($resolution == '5m' || $resolution == '15m' ){
-		        $resolution = '30m';
-	        }
-	        $this->_printJSON(
-	            $statistics->getDataCoverageEvents(
-		            $events,
-	                $resolution,
-	                $dateStart,
-	                $dateEnd,
-	                $dateCurrent
-	            )
-	        );
+            if($resolution == '5m' || $resolution == '15m' ){
+                $resolution = '30m';
+            }
+            $this->_printJSON(
+                $statistics->getDataCoverageEvents(
+                    $events,
+                    $resolution,
+                    $dateStart,
+                    $dateEnd,
+                    $dateCurrent
+                )
+            );
         }
 
 
@@ -1257,6 +1260,24 @@ class Module_WebClient implements Module {
     }
 
     /**
+     * Used to set a given date to the helioviewer minimum date set in
+     * the configuration. If the date given is above the minimum date,
+     * then the same date is returned. If the date given is before
+     * the minimum date, then the date returned will be the minimum date.
+     *
+     * @param date The date to clamp to helioviewer's range
+     *
+     * @return date The date given, or the helioviewer minimum date.
+     */
+    private function _clampDate($date) {
+        $minDate = new DateTime(HV_MINIMUM_DATE);
+        if ($date < $minDate) {
+            return $minDate;
+        }
+        return $date;
+    }
+
+    /**
      * Handles input validation
      *
      * @return bool Returns true if the input is valid with respect to the
@@ -1279,7 +1300,7 @@ class Module_WebClient implements Module {
                'required' => array('date', 'sourceId'),
                'dates'    => array('date'),
                'optional' => array('callback', 'switchSources'),
-               'bools'	  => array('switchSources'),
+               'bools'      => array('switchSources'),
                'alphanum' => array('callback'),
                'ints'     => array('sourceId')
             );

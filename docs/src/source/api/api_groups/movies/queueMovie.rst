@@ -107,5 +107,5 @@ JSON response to "`queueMovie <#queuemovie>`_" and "`reQueueMovie <#id2>`_" API 
     +-----------+----------+--------+--------------------------------------------------------------------+
     | queue     | Required | number | Position in movie generation queue                                 |
     +-----------+----------+--------+--------------------------------------------------------------------+
-    | token     | Required | string |                                                                    |
+    | token     | Required | string | Handle to job in the movie builder queue                           |
     +-----------+----------+--------+--------------------------------------------------------------------+

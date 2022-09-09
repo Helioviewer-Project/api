@@ -78,7 +78,7 @@ class Event_HEKAdapter {
 
         $this->_proxy = new Net_Proxy($this->_baseURL);
     }
-    
+
     /**
      * Return an JSON object of the Event
      *
@@ -93,13 +93,13 @@ class Event_HEKAdapter {
 	    include_once HV_ROOT_DIR.'/../src/Database/DbConnection.php';
         $dbConnection = new Database_DbConnection();
 	    $sql = '';
-	    
+
 	    if(!empty($kb_archivid)){
 	        $sql = sprintf( "SELECT *  FROM events WHERE kb_archivid LIKE '%s' LIMIT 1;", (string)$kb_archivid );
         }else if($id > 0){
 	        $sql = sprintf( "SELECT *  FROM events WHERE id = '%d' LIMIT 1;", (int)$id );
         }
-        
+
         if(!empty($sql)){
 	        try {
 	            $result = $dbConnection->query($sql);
@@ -107,14 +107,14 @@ class Event_HEKAdapter {
 	        catch (Exception $e) {
 	            return false;
 	        }
-	
+
 	        $event =  $result->fetch_array(MYSQLI_ASSOC);
         }
 
         if(isset($event['event_json']) && !empty($event['event_json'])){
 	        $event = json_decode($event['event_json']);
         }
-		
+
         return json_encode($event);
     }
 
@@ -127,11 +127,11 @@ class Event_HEKAdapter {
      * @return JSON List of event FRMs sorted by event type
      */
     public function getFRMsByType($startTime, $endTime, $events = '**') {
-	    
+
         if(empty($events)){
 	        $events = '**';
         }
-        
+
         $params = array(
             'event_starttime' => $startTime,
             'event_endtime'   => $endTime,
@@ -139,7 +139,7 @@ class Event_HEKAdapter {
             'result_limit'    => 200,
             'return'          => 'event_coordsys,event_starttime,event_type,obs_channelid,eventtype,obs_observatory,frm_institute,event_coordunit,obs_includesnrt,frm_specificid,event_title,obs_instrument,event_endtime,concept,frm_name'
         );
-        
+
         $decoded = json_decode($this->_proxy->query($params, true), true);
 
         // create an array to keep track of which FRMs have been added
@@ -157,10 +157,10 @@ class Event_HEKAdapter {
                 $sorted[$eventType]['label'] = $eventType;
 				$sorted[$eventType]['data'][] = array(strtotime($starttime)*1000, strtotime($endtime)*1000);
             }
-			
-			
+
+
         }
-		
+
         return $sorted;
     }
 
@@ -352,18 +352,18 @@ class Event_HEKAdapter {
             . '/' . str_pad($hourOffset,2,'0',STR_PAD_LEFT)
             .':00:00.000Z-'. str_pad($hourOffset+HEK_CACHE_WINDOW_HOURS-1, 2,
             '0', STR_PAD_LEFT) . ':59:59.999Z.json';
-		
-		$dateStartSql = 
+
+		$dateStartSql =
 			implode('-',
 	            Array( $dateArray['year'],
 	                   str_pad($dateArray['month'],2,'0',STR_PAD_LEFT),
 	                   str_pad($dateArray['day'],  2,'0',STR_PAD_LEFT) )
-	            ) . 
-	        ' ' . 
+	            ) .
+	        ' ' .
 	        implode(':', Array( $dateArray['hour'],
 	                   str_pad($dateArray['minute'],2,'0',STR_PAD_LEFT),
 	                   str_pad($dateArray['second'],  2,'0',STR_PAD_LEFT) )
-	    );	
+	    );
 
         include_once HV_ROOT_DIR.'/../scripts/rot_hpc.php';
 
@@ -374,13 +374,13 @@ class Event_HEKAdapter {
         // spacecraft's position at the timestamp of the image(s) used for F/E
         // detection.
         $au_scalar = sunearth_distance($startTime);
-		
+
 		if ( HV_DB_EVENTS == true ) {
 			include_once HV_ROOT_DIR.'/../src/Database/DbConnection.php';
 			$dbConnection = new Database_DbConnection();
-			
+
 			$sql = sprintf(
-                    "SELECT * FROM events FORCE INDEX (event_starttime_2) WHERE '%s' BETWEEN event_starttime AND event_endtime ". 
+                    "SELECT * FROM events FORCE INDEX (event_starttime_2) WHERE '%s' BETWEEN event_starttime AND event_endtime ".
                     "AND event_starttime >= DATE_ADD('%s',INTERVAL -1 MONTH) AND event_endtime <= DATE_ADD('%s',INTERVAL 1 MONTH) ".
                     "ORDER BY event_starttime;",
                     $dbConnection->link->real_escape_string($dateStartSql),
@@ -431,51 +431,51 @@ class Event_HEKAdapter {
 	            if ( count($response['result']) == 0 ) {
 	                return false;
 	            }
-	
+
 	            // Sort HEK results by parameter name for each event
 	            $data = Array();
 	            foreach ($response['result'] as $index => $event) {
-	
+
 	                if ( defined('PHP_VERSION_ID') && PHP_VERSION_ID >= 50400 ) {
 	                    ksort($event, SORT_NATURAL | SORT_FLAG_CASE);
 	                }
 	                else {
 	                    ksort($event, SORT_STRING);
 	                }
-	
+
 	                // Build array of key/value pairs to use in marker labels
 	                // and popups
 	                $event['hv_labels_formatted']=$this->_buildLabelArray($event);
-	
+
 	                $data[$index] = $event;
 	            }
-	
+
 	            if ( $response['overmax'] === true ) {
 	                // TODO  Handle case where there are more results to fetch
 	                $error = new stdClass;
 	                $error->overmax = $response['overmax'];
-	
+
 	                return($error);
 	            }
-	
+
 	            // Only cache if results exist
 	            if ( count($data) > 0 ) {
-	
+
 	                // Check existence of cache directory
 	                if ( !@file_exists($cache_base_dir) ) {
 	                    @mkdir($cache_base_dir, 0775, true);
 	                    @chmod($cache_base_dir, 0775);
 	                }
-	
+
 	                $count = count($data);
 	                for ( $i=0; $i<$count; $i++ ) {
-	
+
 	                    // Generate polygon PNG for events that have a chain code
 	                    if ( $data[$i]['hpc_boundcc'] != '' ) {
 	                        $this->drawPolygon($data[$i], $au_scalar,
 	                            $polyOffsetX, $polyOffsetY, $polyURL,
 	                            $polyWidth, $polyHeight);
-	
+
 	                        // Save polygon info into $data to be cached
 	                        $data[$i]['hv_poly_hpc_x_ul_scaled_norot']
 	                            = $polyOffsetX;
@@ -489,7 +489,7 @@ class Event_HEKAdapter {
 	                            = $polyHeight;
 	                    }
 	                }
-	
+
 	                // Write cache file
 	                $fh = @fopen($cache_filename, 'w');
 	                if ( $fh !== false ) {
@@ -499,7 +499,7 @@ class Event_HEKAdapter {
 	        }
 		}
 
-        
+
 
         // No output is desired for cacheOnly requests.
         // Also no need to calculate differential rotation or to
@@ -520,7 +520,7 @@ class Event_HEKAdapter {
             if ( gettype($event) == 'object') {
                 $event = (array) $event;
             }
-			
+
             $event_starttime = new DateTime($event['event_starttime'].'Z');
             $event_endtime   = new DateTime($event['event_endtime']  .'Z');
 
@@ -742,9 +742,65 @@ class Event_HEKAdapter {
         return $events;
     }
 
+	/**
+	 * Returns an array of event objects as a JSON string
+	 *
+	 * @param date $start Beginning of time range to query
+	 * @param date $end   End of time range to query
+	 *
+	 * @return JSON string
+	 */
+	public function importEventsOverRange($start, $end) {
+		ini_set('memory_limit', '8024M');
+		ini_set('max_execution_time', 0);
+
+		//Start and End dates
+		$tz = new DateTimeZone('UTC');
+		$eDate = new DateTimeImmutable($end, $tz);
+		$sDate = new DateTimeImmutable($start, $tz);
+
+		// Fetch data from live external API and write to local JSON cache
+		// HEK query parameters
+		$params = array(
+		    'event_starttime' => $sDate->format('Y-m-d\TH:i:s').'.000Z',
+		    'event_endtime'   => $eDate->format('Y-m-d\TH:i:s').'.000Z',
+		    'event_type'      => '**', // Fetch all event types always,
+		                               // filter by $options['event_type']
+		                               // later
+		    'showtests'       => 'hide',
+		    'page'       	  => 1,
+		    'result_limit'    => 1000
+		);
+		$overmax = true;
+		while ($overmax) {
+			// request payload from HEK as string
+			$query = $this->_proxy->query($params, true);
+			// correct malformed utf8 chars
+			$utf8_query = utf8_encode($query);
+			// log payload length
+			if( strpos($utf8_query,"<html>") == FALSE ){
+				$date = date("Y-m-d H:i:s");
+				echo "[".$date."]"." Response contains ".strlen($utf8_query)." characters and no <html>.\n";
+			}else{
+				$date = date("Y-m-d H:i:s");
+				echo "[".$date."]"." ERROR! Response contains html! \n".$utf8_query."\n";
+			}
+			// create object and parse
+			$response = json_decode($utf8_query, true);
+			$this->_parseEvents($response);
+			if($response['overmax'] == 'true'){
+				$overmax = true;
+			}else{
+				$overmax = false;
+			}
+			unset($response);
+			$params['page']++;
+		}
+	}
 
 	/**
      * Returns an array of event objects as a JSON string
+     * @deprecated Use importEventsOverRange instead
      *
      * @param date   $startTime Start time for which events should be retrieved
      * @param string $options   Optional parameters
@@ -754,7 +810,7 @@ class Event_HEKAdapter {
     public function importEvents($period) {
         ini_set('memory_limit', '8024M');
 		ini_set('max_execution_time', 0);
-		
+
 		if ( gettype($period) == 'string' &&
              preg_match('/^([0-9]+)([DMY])$/', $period, $matches) === 1 ) {
 
@@ -765,15 +821,15 @@ class Event_HEKAdapter {
             $magnitude   =  1;
             $period_abbr = 'D';
         }
-        
+
         //Start and End dates
         $eDate = new DateTime();
         $eDate->setTime(23, 59, 59);
-        
+
         $sDate = new DateTime();
         $sDate->setTime(0, 0, 0);
         $sDate->sub(new DateInterval("P".$magnitude.$period_abbr));
-		
+
 		// Fetch data from live external API and write to local JSON cache
         // HEK query parameters
         $params = array(
@@ -801,7 +857,7 @@ class Event_HEKAdapter {
         // create object and parse
         $response = json_decode($utf8_query, true);
 		$this->_parseEvents($response);
-		
+
 		//Check if response is not complete and we need to download more pages
 		if($response['overmax'] == 'true'){
 			$overmax = true;
@@ -809,7 +865,7 @@ class Event_HEKAdapter {
 			$overmax = false;
 		}
 		unset($response);
-		
+
 		$params['page']++;
 		while ($overmax == true) {
 		    // request payload from HEK as string
@@ -827,7 +883,7 @@ class Event_HEKAdapter {
             // create object and parse
             $response = json_decode($utf8_query, true);
 			$this->_parseEvents($response);
-			
+
 			if($response['overmax'] == 'true'){
 				$overmax = true;
 			}else{
@@ -837,7 +893,7 @@ class Event_HEKAdapter {
 			$params['page']++;
 		}
     }
-    
+
     private function _parseEvents($result){
 
         include_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
@@ -845,7 +901,7 @@ class Event_HEKAdapter {
         include_once HV_ROOT_DIR.'/../scripts/rot_hpc.php';
 		include_once HV_ROOT_DIR.'/../src/Database/DbConnection.php';
         $dbConnection = new Database_DbConnection();
-        
+
         //log number of received results
         $date = date("Y-m-d H:i:s");
         echo "[".$date."]"." Response object contains ".count($result['result'])." events."."\n";
@@ -855,29 +911,29 @@ class Event_HEKAdapter {
 			foreach($result['result'] as $k=>$event){
 				$event_starttime = new DateTime($event['event_starttime'].'Z');
 				$event_endtime   = new DateTime($event['event_endtime']  .'Z');
-				
+
 				//Cache dir location to store bounding boxes images
 				$cache_base_dir = HV_CACHE_DIR.'/events/'.$event_starttime->format('Y').'/'.$event_starttime->format('m').'/'.$event_starttime->format('d');
-				
+
 				// Scalar for normalizing HEK hpc_x and hpc_y coordinates based on the
 		        // apparent size of the Sun as seen from Earth at the specified timestamp.
 		        // A reasonable approximation in the absence of the appropriate
 		        // spacecraft's position at the timestamp of the image(s) used for F/E detection.
 		        $au_scalar = sunearth_distance($event['event_starttime'].'.000Z');
-		        
+
 		        // Get Unique ID for the event
 		        $event['hv_labels_formatted'] = $this->_buildLabelArray($event);
-		      
+
 		        // Generate polygon PNG for events that have a chain code
                 if ( $event['hpc_boundcc'] != '' ) {
                     $this->drawPolygon($event, $au_scalar, $polyOffsetX, $polyOffsetY, $polyURL, $polyWidth, $polyHeight);
-					
+
 					//Calculate event marker offset
 					$polyArray = polygonToArray($event['hpc_boundcc'], $au_scalar);
 					$markerXY = polylabel($polyArray['array']);
 					$event['hv_marker_offset_x'] = round($markerXY['x'] - $polyArray['width']/2);
 					$event['hv_marker_offset_y'] = round($markerXY['y'] - $polyArray['height']/2);
-					
+
                     // Save polygon info into $data to be cached
                     $event['hv_poly_hpc_x_ul_scaled_norot'] = $polyOffsetX;
                     $event['hv_poly_hpc_y_ul_scaled_norot'] = $polyOffsetY;
@@ -885,10 +941,10 @@ class Event_HEKAdapter {
                     $event['hv_poly_width_max_zoom_pixels'] = $polyWidth;
                     $event['hv_poly_height_max_zoom_pixels'] = $polyHeight;
                 }
-		        
+
 		        // Calculate radial distance for determining whether or not to apply differential rotation.
                 $event['hv_hpc_r_scaled'] = sqrt( pow($event['hpc_x'],2) + pow($event['hpc_y'],2) ) * $au_scalar;
-		        
+
 		        if ( $event['hv_hpc_r_scaled'] < 961.07064 ) {
 
                     // Differential rotation of the event marker's X,Y position
@@ -979,8 +1035,8 @@ class Event_HEKAdapter {
 						$event['hv_poly_hpc_y_final'] = $event['hv_poly_hpc_y_ul_scaled_norot'];
                     }
                 }
-		        
-		        
+
+
 		        // Sort HEK results by parameter name
 				if ( defined('PHP_VERSION_ID') && PHP_VERSION_ID >= 50400 ) {
                     ksort($event, SORT_NATURAL | SORT_FLAG_CASE);
@@ -988,61 +1044,61 @@ class Event_HEKAdapter {
                 else {
                     ksort($event, SORT_STRING);
                 }
-                
+
                 //Store Result in Database
-	            $sql = "REPLACE INTO `events` 
-	            		(`kb_archivid`, `frm_name`, `concept`, `frm_specificid`, 
-	            		`event_starttime`, `event_endtime`, `event_peaktime`, `event_type`, 
-	            		`event_before`, `event_after`, `hpc_boundcc`, 
-	            		`hv_labels_formatted`, `hv_poly_url`, `hv_event_starttime`, `hv_event_endtime`, 
-	            		`hv_rot_hpc_time_base`, `hv_rot_hpc_time_targ`, `hv_hpc_x_notscaled_rot`, 
-	            		`hv_hpc_y_notscaled_rot`, `hv_hpc_x_rot_delta_notscaled`, `hv_hpc_y_rot_delta_notscaled`, 
-	            		`hv_hpc_x_scaled_rot`, `hv_hpc_y_scaled_rot`, `hv_hpc_y_final`, 
-	            		`hv_hpc_x_final`, `hv_hpc_r_scaled`, `hv_poly_hpc_x_final`, 
-	            		`hv_poly_hpc_y_final`, `hv_poly_hpc_x_ul_scaled_rot`, 
-	            		`hv_poly_hpc_y_ul_scaled_rot`, `hv_poly_hpc_x_ul_scaled_norot`, 
-	            		`hv_poly_hpc_y_ul_scaled_norot`, `hv_poly_width_max_zoom_pixels`, 
-	            		`hv_poly_height_max_zoom_pixels`, `hv_marker_offset_x`, `hv_marker_offset_y`, `event_json`) 
-	            	VALUES ( 
-	            		'".str_replace("ivo://helio-informatics.org/", "", $event['kb_archivid'])."', 
-	            		'".(isset($event['frm_name']) ? $event['frm_name'] : '')."', 
-	            		'".(isset($event['concept']) ? $event['concept'] : '')."', 
-	            		'".(isset($event['frm_specificid']) ? $event['frm_specificid'] : '')."', 
-	            		".(isset($event['event_starttime']) ? "'".$event['event_starttime']."'" : 'null').", 
-	            		".(isset($event['event_endtime']) ? "'".$event['event_endtime']."'" : 'null').", 
-	            		".(isset($event['event_peaktime']) && !empty($event['event_peaktime']) ? "'".$event['event_peaktime']."'" : 'null').", 
-	            		'".(isset($event['event_type']) ? $event['event_type'] : '')."', 
-	            		'".(isset($event['event_before']) ? $event['event_before'] : '')."', 
-	            		'".(isset($event['event_after']) ? $event['event_after'] : '')."', 
-	            		'".(isset($event['hpc_boundcc']) ? $event['hpc_boundcc'] : '')."', 
-	            		'".json_encode($event['hv_labels_formatted'])."', 
-	            		'".(isset($event['hv_poly_url']) ? $event['hv_poly_url'] : '')."', 
-	            		".(isset($event['hv_event_starttime']) ? "'".$event['hv_event_starttime']."'" : 'null').", 
-	            		".(isset($event['hv_event_endtime']) ? "'".$event['hv_event_endtime']."'" : 'null').", 
-	            		".(isset($event['hv_rot_hpc_time_base']) ? "'".$event['hv_rot_hpc_time_base']."'" : 'null').", 
-	            		".(isset($event['hv_rot_hpc_time_targ']) ? "'".$event['hv_rot_hpc_time_targ']."'" : 'null').", 
-	            		".(isset($event['hv_hpc_x_notscaled_rot']) ? $event['hv_hpc_x_notscaled_rot'] : 'null').", 
-	            		".(isset($event['hv_hpc_y_notscaled_rot']) ? $event['hv_hpc_y_notscaled_rot'] : 'null').", 
-	            		".(isset($event['hv_hpc_x_rot_delta_notscaled']) ? $event['hv_hpc_x_rot_delta_notscaled'] : 'null').", 
-	            		".(isset($event['hv_hpc_y_rot_delta_notscaled']) ? $event['hv_hpc_y_rot_delta_notscaled'] : 'null').", 
-	            		".(isset($event['hv_hpc_x_scaled_rot']) ? $event['hv_hpc_x_scaled_rot'] : 'null').", 
-	            		".(isset($event['hv_hpc_y_scaled_rot']) ? $event['hv_hpc_y_scaled_rot'] : 'null').", 
-	            		".(isset($event['hv_hpc_y_final']) ? $event['hv_hpc_y_final'] : 'null').", 
-	            		".(isset($event['hv_hpc_x_final']) ? $event['hv_hpc_x_final'] : 'null').", 
-	            		".(isset($event['hv_hpc_r_scaled']) ? $event['hv_hpc_r_scaled'] : 'null').", 
-	            		".(isset($event['hv_poly_hpc_x_final']) ? $event['hv_poly_hpc_x_final'] : 'null').", 
-	            		".(isset($event['hv_poly_hpc_y_final']) ? $event['hv_poly_hpc_y_final'] : 'null').", 
-	            		".(isset($event['hv_poly_hpc_x_ul_scaled_rot']) ? $event['hv_poly_hpc_x_ul_scaled_rot'] : 'null').", 
-	            		".(isset($event['hv_poly_hpc_y_ul_scaled_rot']) ? $event['hv_poly_hpc_y_ul_scaled_rot'] : 'null').", 
-	            		".(isset($event['hv_poly_hpc_x_ul_scaled_norot']) ? $event['hv_poly_hpc_x_ul_scaled_norot'] : 'null').", 
-	            		".(isset($event['hv_poly_hpc_y_ul_scaled_norot']) ? $event['hv_poly_hpc_y_ul_scaled_norot'] : 'null').", 
-	            		".(isset($event['hv_poly_width_max_zoom_pixels']) ? $event['hv_poly_width_max_zoom_pixels'] : 'null').", 
-	            		".(isset($event['hv_poly_height_max_zoom_pixels']) ? $event['hv_poly_height_max_zoom_pixels'] : 'null').", 
+	            $sql = "REPLACE INTO `events`
+	            		(`kb_archivid`, `frm_name`, `concept`, `frm_specificid`,
+	            		`event_starttime`, `event_endtime`, `event_peaktime`, `event_type`,
+	            		`event_before`, `event_after`, `hpc_boundcc`,
+	            		`hv_labels_formatted`, `hv_poly_url`, `hv_event_starttime`, `hv_event_endtime`,
+	            		`hv_rot_hpc_time_base`, `hv_rot_hpc_time_targ`, `hv_hpc_x_notscaled_rot`,
+	            		`hv_hpc_y_notscaled_rot`, `hv_hpc_x_rot_delta_notscaled`, `hv_hpc_y_rot_delta_notscaled`,
+	            		`hv_hpc_x_scaled_rot`, `hv_hpc_y_scaled_rot`, `hv_hpc_y_final`,
+	            		`hv_hpc_x_final`, `hv_hpc_r_scaled`, `hv_poly_hpc_x_final`,
+	            		`hv_poly_hpc_y_final`, `hv_poly_hpc_x_ul_scaled_rot`,
+	            		`hv_poly_hpc_y_ul_scaled_rot`, `hv_poly_hpc_x_ul_scaled_norot`,
+	            		`hv_poly_hpc_y_ul_scaled_norot`, `hv_poly_width_max_zoom_pixels`,
+	            		`hv_poly_height_max_zoom_pixels`, `hv_marker_offset_x`, `hv_marker_offset_y`, `event_json`)
+	            	VALUES (
+	            		'".str_replace("ivo://helio-informatics.org/", "", $event['kb_archivid'])."',
+	            		'".(isset($event['frm_name']) ? $event['frm_name'] : '')."',
+	            		'".(isset($event['concept']) ? $event['concept'] : '')."',
+	            		'".(isset($event['frm_specificid']) ? $event['frm_specificid'] : '')."',
+	            		".(isset($event['event_starttime']) ? "'".$event['event_starttime']."'" : 'null').",
+	            		".(isset($event['event_endtime']) ? "'".$event['event_endtime']."'" : 'null').",
+	            		".(isset($event['event_peaktime']) && !empty($event['event_peaktime']) ? "'".$event['event_peaktime']."'" : 'null').",
+	            		'".(isset($event['event_type']) ? $event['event_type'] : '')."',
+	            		'".(isset($event['event_before']) ? $event['event_before'] : '')."',
+	            		'".(isset($event['event_after']) ? $event['event_after'] : '')."',
+	            		'".(isset($event['hpc_boundcc']) ? $event['hpc_boundcc'] : '')."',
+	            		'".json_encode($event['hv_labels_formatted'])."',
+	            		'".(isset($event['hv_poly_url']) ? $event['hv_poly_url'] : '')."',
+	            		".(isset($event['hv_event_starttime']) ? "'".$event['hv_event_starttime']."'" : 'null').",
+	            		".(isset($event['hv_event_endtime']) ? "'".$event['hv_event_endtime']."'" : 'null').",
+	            		".(isset($event['hv_rot_hpc_time_base']) ? "'".$event['hv_rot_hpc_time_base']."'" : 'null').",
+	            		".(isset($event['hv_rot_hpc_time_targ']) ? "'".$event['hv_rot_hpc_time_targ']."'" : 'null').",
+	            		".(isset($event['hv_hpc_x_notscaled_rot']) ? $event['hv_hpc_x_notscaled_rot'] : 'null').",
+	            		".(isset($event['hv_hpc_y_notscaled_rot']) ? $event['hv_hpc_y_notscaled_rot'] : 'null').",
+	            		".(isset($event['hv_hpc_x_rot_delta_notscaled']) ? $event['hv_hpc_x_rot_delta_notscaled'] : 'null').",
+	            		".(isset($event['hv_hpc_y_rot_delta_notscaled']) ? $event['hv_hpc_y_rot_delta_notscaled'] : 'null').",
+	            		".(isset($event['hv_hpc_x_scaled_rot']) ? $event['hv_hpc_x_scaled_rot'] : 'null').",
+	            		".(isset($event['hv_hpc_y_scaled_rot']) ? $event['hv_hpc_y_scaled_rot'] : 'null').",
+	            		".(isset($event['hv_hpc_y_final']) ? $event['hv_hpc_y_final'] : 'null').",
+	            		".(isset($event['hv_hpc_x_final']) ? $event['hv_hpc_x_final'] : 'null').",
+	            		".(isset($event['hv_hpc_r_scaled']) ? $event['hv_hpc_r_scaled'] : 'null').",
+	            		".(isset($event['hv_poly_hpc_x_final']) ? $event['hv_poly_hpc_x_final'] : 'null').",
+	            		".(isset($event['hv_poly_hpc_y_final']) ? $event['hv_poly_hpc_y_final'] : 'null').",
+	            		".(isset($event['hv_poly_hpc_x_ul_scaled_rot']) ? $event['hv_poly_hpc_x_ul_scaled_rot'] : 'null').",
+	            		".(isset($event['hv_poly_hpc_y_ul_scaled_rot']) ? $event['hv_poly_hpc_y_ul_scaled_rot'] : 'null').",
+	            		".(isset($event['hv_poly_hpc_x_ul_scaled_norot']) ? $event['hv_poly_hpc_x_ul_scaled_norot'] : 'null').",
+	            		".(isset($event['hv_poly_hpc_y_ul_scaled_norot']) ? $event['hv_poly_hpc_y_ul_scaled_norot'] : 'null').",
+	            		".(isset($event['hv_poly_width_max_zoom_pixels']) ? $event['hv_poly_width_max_zoom_pixels'] : 'null').",
+	            		".(isset($event['hv_poly_height_max_zoom_pixels']) ? $event['hv_poly_height_max_zoom_pixels'] : 'null').",
 	            		".(isset($event['hv_marker_offset_x']) ? $event['hv_marker_offset_x'] : '0').",
 	            		".(isset($event['hv_marker_offset_y']) ? $event['hv_marker_offset_y'] : '0').",
 	            		'".str_replace("'", "\'", json_encode($event))."');";
 	            $sqlStatus = $dbConnection->query($sql);
-                
+
                 if($sqlStatus == 1){
                     $successCount++;
                 }
@@ -1202,7 +1258,7 @@ class Event_HEKAdapter {
             }
         }
         else {
-	        
+
             $labelArray = Array('Event Type' => $event['concept']);
         }
         return $labelArray;

@@ -102,7 +102,9 @@ class Image_SubFieldImage {
 
         $this->desiredToActual = $this->desiredScale / $jp2->getScale();
         $this->scaleFactor     = log($this->desiredToActual, 2);
-        $this->reduce          = max(0, floor($this->scaleFactor));
+		// Make sure result >= 0 with max.
+		// Make sure result <= maxReduction with min.
+        $this->reduce          = min(max(0, floor($this->scaleFactor)), $jp2->getMaxReduction());
 
         $this->subfieldWidth   = $this->imageSubRegion['right'] - $this->imageSubRegion['left'];
         $this->subfieldHeight  = $this->imageSubRegion['bottom'] - $this->imageSubRegion['top'];
