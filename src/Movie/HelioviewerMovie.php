@@ -37,6 +37,10 @@ require_once HV_ROOT_DIR . '/../src/Helper/RegionOfInterest.php';
 require_once HV_ROOT_DIR . '/../src/Helper/Serialize.php';
 
 class Movie_HelioviewerMovie {
+    const STATUS_QUEUED = 0;
+    const STATUS_PROCESSING = 1;
+    const STATUS_COMPLETED = 2;
+    const STATUS_ERROR = 3;
 
     const CACHE_DIR = 'api/HelioviewerMovie';
     public $id;
