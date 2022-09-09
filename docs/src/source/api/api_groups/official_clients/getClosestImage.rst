@@ -40,6 +40,7 @@ closest temporal match for the specified datasource.
         "height": 4096,
         "refPixelX": 2048.5,
         "refPixelY": 2048.5,
+        "rsun": 1600,
         "sunCenterOffsetParams": [],
         "layeringOrder": 1
     }
@@ -62,6 +63,8 @@ closest temporal match for the specified datasource.
     | refPixelX             | Required | number | X-coordinate of reference pixel.                |
     +-----------------------+----------+--------+-------------------------------------------------+
     | refPixelY             | Required | number | Y-coordinate of reference pixel.                |
+    +-----------------------+----------+--------+-------------------------------------------------+
+    | rsun                  | Required | number | Solar radius in pixels.                         |
     +-----------------------+----------+--------+-------------------------------------------------+
     | sunCenterOffsetParams | Required | string | FITS header positioning metadata.               |
     +-----------------------+----------+--------+-------------------------------------------------+

@@ -129,6 +129,23 @@ class Image_JPEG2000_JP2ImageXMLBox {
         return $dsun;
     }
 
+    public function getRSun() {
+        try {
+            // First, try to return the R_SUN value from FITS
+            return $this->_getElementValue('R_SUN');
+        } catch (Exception $e) {
+            // If R_SUN is not in the header, then try to compute the R_SUN based on DSUN.
+            // Get DSUN first since it contains logic for correcting FITS data for different sources.
+            $dsun = $this->getDSun();
+            // Safe to get CDELT1 here. If CDELT1 doesn't exist, then getDSun will return an error.
+            $scale = $this->_getElementValue('CDELT1');
+            // Unroll the DSUN formula to solve for RSUN
+            // $dsun = (HV_CONSTANT_RSUN / ($rsun * $scale)) * HV_CONSTANT_AU;
+            $rsun = (HV_CONSTANT_AU * HV_CONSTANT_RSUN) / ($dsun * $scale);
+            return $rsun;
+        }
+    }
+
     /**
      * Returns the distance to the sun in meters
      *
