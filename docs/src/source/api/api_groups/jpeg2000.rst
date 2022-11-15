@@ -10,3 +10,4 @@ directly with these intermediary JPEG2000 files.
 .. include:: jpeg2000/getJpx.rst
 .. include:: jpeg2000/getJpxClosestToMidpoint.rst
 .. include:: jpeg2000/getStatus.rst
+.. include:: jpeg2000/downloadImage.rst
