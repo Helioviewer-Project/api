@@ -15,7 +15,7 @@ var colors = ["#D32F2F", "#9bd927", "#27d9be", "#6527d9", "#0091EA", "#FF6F00", 
 var heirarchy = {
     "Total":["total","rate_limit_exceeded"],
     "Client Sites":["standard","embed","minimal"],
-    "Images":["takeScreenshot","getTile","getClosestImage","getJP2Image-web","getJP2Image-jpip","getJP2Image","downloadScreenshot","getJPX","getJPXClosestToMidPoint"],
+    "Images":["takeScreenshot","getTile","getClosestImage","getJP2Image-web","getJP2Image-jpip","getJP2Image","downloadScreenshot","getJPX","getJPXClosestToMidPoint", "downloadImage"],
     "Movies":["buildMovie","getMovieStatus","queueMovie","reQueueMovie","playMovie","downloadMovie","getUserVideos","getObservationDateVideos","uploadMovieToYouTube","checkYouTubeAuth","getYouTubeAuth"],
     "Events":["getEventGlossary","getEvents","getFRMs","getEvent","getEventFRMs","getDefaultEventTypes","getEventsByEventLayers","importEvents"],
     "Data":["getRandomSeed","getDataSources","getJP2Header","getDataCoverage","getStatus","getNewsFeed","getDataCoverageTimeline","getClosestData","getSolarBodiesGlossary","getSolarBodies","getTrajectoryTime","sciScript-SSWIDL","sciScript-SunPy","getSciDataScript","updateDataCoverage"],
@@ -143,6 +143,38 @@ var computeTimeTilAutoRefresh = function (error=false) {
 }
 
 /**
+ * For new API endpoints, the data may not have values from 0 to <date API was introduced>.
+ * This range from 0 to the date must be backfilled with 0's for the rest of the script to behave properly.
+ * Not starting from 0 makes the object get treated like a JSON Object rather than an array,
+ * the script expects an array, so this function will return the resulting array.
+ */
+function _zero_fill_missing_dates(data) {
+    // If the data is an array, then return it. It's already the correct format
+    if (Array.isArray(data)) {
+        return data;
+    }
+    // Otherwise, convert the object into an array.
+    let indices = Object.keys(data).map((val) => parseInt(val));
+    // Sort the list to be safe, then reverse it so the highest value is first.
+    indices.sort().reverse();
+    // Get the final index
+    let end = indices[0];
+    let target = indices[0];
+    // Iterate from 0 to the end index, if the index doesn't exist, create a data point
+    // with 0 counts. If the data does exist, then use it. The result here is an array
+    // of data with all the correct statistical values.
+    let out = [];
+    for (let i = 0; i <= end; i++) {
+        if (data.hasOwnProperty(i)) {
+            out.push(data[i]);
+        } else {
+            out.push({"N/A": 0});
+        }
+    }
+    return out;
+}
+
+/**
  * Handles the actual rendering of the usage statistics for the requested period
  *
  * @param data          Usage statistics
@@ -205,6 +237,7 @@ var displayUsageStatistics = function (data, timeInterval) {
                 innerContent.className = "content columnChart";
                 var heading = document.getElementById(group);
                 barChartsDiv.append(innerContent);
+                data[key] = _zero_fill_missing_dates(data[key]);
                 console.log(key,data[key],key,barChartHeight,colors[colorIndex]);
                 createColumnChart(key,data[key],key,barChartHeight,colors[colorIndex]);
                 colorMod++;
