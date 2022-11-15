@@ -859,6 +859,7 @@ class Database_ImgIndex {
             $refPixel                = $xmlBox->getRefPixelCoords();
             $imageScale              = (float) $xmlBox->getImagePlateScale();
             $dsun                    = (float) $xmlBox->getDSun();
+            $rsun                    = (float) $xmlBox->getRSun();
             $sunCenterOffsetParams   = $xmlBox->getSunCenterOffsetParams();
             $layeringOrder           = $xmlBox->getLayeringOrder();
 
@@ -871,6 +872,7 @@ class Database_ImgIndex {
                 "height"     => (int) $dimensions[1],
                 "refPixelX"  => (float) $refPixel[0],
                 "refPixelY"  => (float) $refPixel[1],
+                "rsun"       => (float) $rsun,
                 "sunCenterOffsetParams" => $sunCenterOffsetParams,
                 "layeringOrder"         => $layeringOrder
             );

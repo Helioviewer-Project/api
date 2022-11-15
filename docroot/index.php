@@ -71,6 +71,7 @@ function loadModule($params) {
         'getStatus'              	=> 'WebClient',
         'getSciDataScript'       	=> 'WebClient',
         'getTile'                	=> 'WebClient',
+		'downloadImage'             => 'WebClient',
         'getUsageStatistics'     	=> 'WebClient',
         'getDataCoverageTimeline'	=> 'WebClient',
         'getDataCoverage'        	=> 'WebClient',
