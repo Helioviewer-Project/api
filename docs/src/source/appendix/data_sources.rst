@@ -14,3 +14,4 @@ parameter shown in the following tables.
 .. include:: data_sources/hinode.rst
 .. include:: data_sources/mlso.rst
 .. include:: data_sources/proba2.rst
+.. include:: data_sources/suvi.rst
