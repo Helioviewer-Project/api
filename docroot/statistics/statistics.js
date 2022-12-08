@@ -158,8 +158,7 @@ function _zero_fill_missing_dates(data) {
     // Sort the list to be safe, then reverse it so the highest value is first.
     indices.sort().reverse();
     // Get the final index
-    let end = indices[0];
-    let target = indices[0];
+    let end = Math.max.apply(Math, indices);
     // Iterate from 0 to the end index, if the index doesn't exist, create a data point
     // with 0 counts. If the data does exist, then use it. The result here is an array
     // of data with all the correct statistical values.
