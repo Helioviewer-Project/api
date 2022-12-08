@@ -2,8 +2,8 @@ import os
 import datetime
 from helioviewer.hvpull.servers import DataServer
 
-class SuviDataServer(DataServer):
-    """SolarOrbiter Datasource definition"""
+class SUVIDataServer(DataServer):
+    """GOES/SUVI Datasource definition"""
     def __init__(self):
         """Defines the root directory of where the data is kept at LMSAL."""
         DataServer.__init__(self, "http://swhv.oma.be/jp2/SUVI/", "SUVI")
@@ -21,8 +21,9 @@ class SuviDataServer(DataServer):
                 # Special case: 195 and 303 have some files outside of the year folder.
                 if (wavelength == 195 or wavelength == 303):
                     dirs.append(os.path.join(self.uri, str(wavelength)))
-                else:
-                    dirs.append(os.path.join(self.uri, str(wavelength), month))
+
+                # Besides those special cases above, the files follow a regular directory structure.
+                dirs.append(os.path.join(self.uri, str(wavelength), month))
 
         return dirs
 
