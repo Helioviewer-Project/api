@@ -42,7 +42,8 @@ class Validation_InputValidator
             "urls"     => "checkURLs",
             "files"    => "checkFilePaths",
             "uuids"    => "checkUUIDs",
-            "layer"    => "checkLayerValidity"
+            "layer"    => "checkLayerValidity",
+            "choices"  => "checkChoices"
         );
 
         // Run validation checks
@@ -349,6 +350,34 @@ class Validation_InputValidator
     {
         if (!preg_match("/^\d{4}[\/-]\d{2}[\/-]\d{2}T\d{2}:\d{2}:\d{2}\.?\d{0,6}?Z$/i", $date)) {
             throw new InvalidArgumentException("Invalid date string. Please enter a date of the form 2003-10-06T00:00:00.000Z", 25);
+        }
+    }
+
+    /**
+     * Checks that the values for the specified parameters have been picked from a set of choices
+     * $choices is in the format {parameter_name => [possible, choices], other_parameter_name => [other, choices]}
+     * The special value Null in possible choices means the parameter is also optional, i.e. doesn't need a value.
+     *
+     * @param array $choices Set of possible values for the given parameters
+     * @param array &$args The values that were passed in.
+     *
+     * @return void
+     */
+    public static function checkChoices($choices, &$args) {
+        // Get the names of the parameters that have a specific set of possible values
+        foreach (array_keys($choices) as $parameter) {
+            // If the value doesn't exist in $args, then skip it. It may not exist because the parameter is optional so it's allowed to be blank.
+            // If the parameter should not be blank, then the "required" validator will catch it.
+            if (!array_key_exists($parameter, $args)) {
+                continue;
+            }
+            // Options are the specific set of values that the argument must be
+            $options = $choices[$parameter];
+            // The value passed in by the user
+            $value = $args[$parameter];
+            if (!array_key_exists($value, $options)) {
+                throw new InvalidArgumentException("Invalid argument provided for $parameter, must be one of " . implode($options, ', '));
+            }
         }
     }
 }
