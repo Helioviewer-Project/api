@@ -1395,6 +1395,10 @@ class Module_WebClient implements Module {
                 'optional' => array('difference', 'diffCount', 'diffTime', 'baseDiffTime'),
                 'ints'     => array('id', 'x', 'y', 'difference', 'diffCount', 'diffTime')
             );
+            // baseDiffTime is required if difference == 2
+            if ($this->_params["difference"] == 2) {
+                array_push($expected['required'], 'baseDiffTime');
+            }
             break;
         case 'getJP2Header':
             $expected = array(
