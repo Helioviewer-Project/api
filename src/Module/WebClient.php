@@ -1393,7 +1393,8 @@ class Module_WebClient implements Module {
                 'dates'    => array('baseDiffTime'),
                 'floats'   => array('imageScale'),
                 'optional' => array('difference', 'diffCount', 'diffTime', 'baseDiffTime'),
-                'ints'     => array('id', 'x', 'y', 'difference', 'diffCount', 'diffTime')
+                'ints'     => array('id', 'x', 'y', 'difference', 'diffCount', 'diffTime'),
+                'choices'  => array('difference' => [0, 1, 2])
             );
             // baseDiffTime is required if difference == 2
             if ($this->_params["difference"] == 2) {
