@@ -17,6 +17,18 @@ LASCO_LAG_THRESHOLD_S  =  57600 # 16 hours
 SECCHI_LAG_THRESHOLD_S = 864000 # 10 days
 SWAP_LAG_THRESHOLD_S   = 172800 # 3 days
 
+try:
+    # thresholds is a file that can be created for specifying the desired lag thresholds.
+    # It's not a tracked file and must be manually created. It should simply define
+    # chosen variables listed above.
+    from thresholds import *
+except ImportError:
+    pass
+
+print("AIA Lag: ")
+print(AIA_LAG_THRESHOLD_S)
+
+
 def query_status_api():
     host = get_host()
     api_endpoint = host + "/v2/getStatus/"
