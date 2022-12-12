@@ -352,6 +352,23 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
     }
 
     /**
+     * Takes advantage of using array_unshift to insert objects into index 0 of the array.
+     * This checks if the item in question is the first element in the array.
+     *
+     * @param any $needle  Value to check
+     * @param array $haystack  Array to to check
+     *
+     * @return True/False
+     */
+    private function _fast_in_array($needle, $haystack) {
+        if ( (!$haystack || $haystack[0] != $needle) ) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    /**
      * Retrieve filepaths and timestamps for images at a specified cadence of
      * a given type between the specified start and end dates.
      *
@@ -377,9 +394,10 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
             $filepath = HV_JP2_DIR.$img['filepath'].'/'.$img['filename'];
 
             // Ignore redundant images
-            if ( !$images || $images[0] != $filepath ) {
+            $timestamp = toUnixTimestamp($img['date']);
+            if (!$this->_fast_in_array($filepath, $images) && !$this->_fast_in_array($timestamp, $dates)) {
                 array_unshift($images, $filepath);
-                array_unshift($dates, toUnixTimestamp($img['date']));
+                array_unshift($dates, $timestamp);
             }
             $time -= $this->_cadence;
         }
