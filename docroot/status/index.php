@@ -2,6 +2,18 @@
     date_default_timezone_set('UTC');
     $dt = new DateTime();
     $now = $dt->format('Y-m-d H:i:s');
+
+    function _pretty_time($time) {
+        $seconds = intval($time);
+        // Convert seconds to minutes:seconds
+        $minutes = floor($seconds / 60);
+        $seconds -= $minutes * 60;
+
+        // Convert minutes to hours:minutes
+        $hours = floor($minutes / 60);
+        $minutes -= $hours * 60;
+        return sprintf("%02d:%02d:%02d", $hours, $minutes, $seconds);
+    }
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -248,6 +260,29 @@
     $STEREO_weekly = date("M d Y H:i:s", filectime(HV_STEREO_WEEKLY_LOG));
     $STEREO_monthly = date("M d Y H:i:s", filectime(HV_STEREO_MONTHLY_LOG));
     ?>
+    </table>
+    <h3>Alert Thresholds</h3>
+    <table id='statuses'>
+        <tr id='status-headers'>
+            <th width='120'>Sources</th>
+            <th width='120'>Lag Threshold (HH:mm:ss)</th>
+        </tr>
+        <?php
+        $thresholds = parse_ini_file("../../scripts/availability_feed/thresholds.example.ini");
+        $user_thresholds = parse_ini_file("../../scripts/availability_feed/thresholds.ini");
+        // Get final thresholds by applying user overrides to the defaults.
+        foreach (array_keys($user_thresholds) as $override) {
+            $thresholds[$override] = $user_thresholds[$override];
+        }
+
+        // Render HTML for these thresholds
+        foreach (array_keys($thresholds) as $source) {
+            echo "<tr>";
+            echo "<td>$source</td>";
+            echo "<td>" . _pretty_time($thresholds[$source]) . "</td>";
+            echo "</tr>";
+        }
+        ?>
     </table>
     <h3>Data Backfill</h3>
     <table id='statuses'>

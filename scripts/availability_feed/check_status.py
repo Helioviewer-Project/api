@@ -37,18 +37,18 @@ def check_for_lag(source: str, threshold_seconds: float, seconds_behind: int):
 
 def check_status(status):
     aia_seconds_behind = status['AIA']['secondsBehind']
-    check_for_lag("AIA/HMI", _get_threshold('aia'), aia_seconds_behind)
+    check_for_lag("AIA/HMI", _get_threshold('SDO'), aia_seconds_behind)
 
     # this covers SOHO
     lasco_seconds_behind = status['LASCO']['secondsBehind']
-    check_for_lag("LASCO", _get_threshold('lasco'), lasco_seconds_behind)
+    check_for_lag("LASCO", _get_threshold('SOHO'), lasco_seconds_behind)
 
     # this coveres STEREO
     secchi_seconds_behind = status['SECCHI']['secondsBehind']
-    check_for_lag("STEREO Source", _get_threshold('secchi'), secchi_seconds_behind)
+    check_for_lag("STEREO Source", _get_threshold('STEREO'), secchi_seconds_behind)
     # SWAP
     swap_seconds_behind = status['SWAP']['secondsBehind']
-    check_for_lag("SWAP", _get_threshold('swap'), swap_seconds_behind)
+    check_for_lag("SWAP", _get_threshold('SWAP'), swap_seconds_behind)
     pass
 
 if __name__ == "__main__":
