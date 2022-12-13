@@ -1397,7 +1397,7 @@ class Module_WebClient implements Module {
                 'choices'  => array('difference' => [0, 1, 2])
             );
             // baseDiffTime is required if difference == 2
-            if ($this->_params["difference"] == 2) {
+            if (array_key_exists("difference", $this->_params) && $this->_params["difference"] == 2) {
                 array_push($expected['required'], 'baseDiffTime');
             }
             break;
