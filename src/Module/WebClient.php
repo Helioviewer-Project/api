@@ -228,7 +228,7 @@ class Module_WebClient implements Module {
         $region = new Helper_RegionOfInterest(
             -$image['width'] / 2, -$image['height'] / 2, $image['width'] / 2, $image['height'] / 2, $this->_params['scale']);
 
-        $filepath =  $this->_getImageCacheFilename($image['filepath'], $image['filename'], $this->_params['scale']) . ".jpg";
+        $filepath =  $this->_getImageCacheFilename($image['filepath'], $image['filename'], $this->_params['scale']);
         // Reference pixel offset at the original image scale
         $offsetX =   $image['refPixelX'] - ($image['width']  / 2);
         $offsetY = -($image['refPixelY'] - ($image['height'] / 2));
