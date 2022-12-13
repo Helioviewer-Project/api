@@ -27,7 +27,8 @@ Now create a cronjob that runs health check. This doesn't need to run very often
 ```
 
 If an error is detected a lock file is created to prevent the cron job from
-spamming the feed. Remove the lock file to allow the job to continue
+spamming the feed. Remove the lock file to allow the job to continue.
+It's a good idea to have the lock file removed by a cron job once a day.
 
 ## health_check.sh
 `health_check.sh` is a bash script that is intended to be run
@@ -35,8 +36,7 @@ as a cron job. It performs several health checks in order to
 confirm that helioviewer services are available. Currently it
 performs the following checks:
 
-- Check to see that accessing https://helioviewer.org returns a web page.
-- Checks https://api.helioviewer.org/v2/getStatus/ to verify that data being downloaded isn't lagging further behind than expected.
+- Uses https://api.helioviewer.org/v2/getStatus/ to verify that data being downloaded isn't lagging further behind the specified thresholds.
 
 When either of the above checks fail, then `gen_feed.py` is called
 to update the RSS file with a new status.
@@ -69,6 +69,11 @@ The timestamp for the entry will be the time the command was run.
 The first command line argument is the status.xml file to be created or updated.
 The next is the `<title>` of the RSS entry and requires the `-t`
 Lastly, the third parameter is for the `<description>` tag and requires the leading `-d`.
+
+## Configuring Alert Thresholds
+Thresholds are adjustable by creating a thresholds.ini file.
+The ini file must have a header titled `[thresholds]` followed by your desired thresholds for the sources being checked.
+The simplest way is to copy `thresholds.example.ini` to `thresholds.ini` and change the thresholds as needed.
 
 ### Important Notes
 `gen_feed.py` uses the feedgen python library. This library doesn't have

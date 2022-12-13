@@ -7,15 +7,21 @@ will be printed which indicates which image source is behind schedule.
 """
 
 from gen_feed import get_host
+from configparser import ConfigParser
 import requests
 
-# If AIA seconds behind is greater than this value, then it is a problem.
-# AIA should not be more than 2 hours behind since helioviewer.org pulls
-# every hour.
-AIA_LAG_THRESHOLD_S    =   7200 # 2 hours
-LASCO_LAG_THRESHOLD_S  =  57600 # 16 hours
-SECCHI_LAG_THRESHOLD_S = 864000 # 10 days
-SWAP_LAG_THRESHOLD_S   = 172800 # 3 days
+# Load thresholds from the config file
+config = ConfigParser()
+# First read the example ini, this is always expected to exist
+config.read('thresholds.example.ini')
+# Then override any of those values with the user created ini file.
+# Note, if this file doesn't exist, then this will have no effect
+config.read('thresholds.ini')
+# Create the threshold object.
+thresholds = config['thresholds']
+
+def _get_threshold(key):
+    return float(thresholds[key])
 
 def query_status_api():
     host = get_host()
@@ -31,18 +37,18 @@ def check_for_lag(source: str, threshold_seconds: float, seconds_behind: int):
 
 def check_status(status):
     aia_seconds_behind = status['AIA']['secondsBehind']
-    check_for_lag("AIA/HMI", AIA_LAG_THRESHOLD_S, aia_seconds_behind)
+    check_for_lag("AIA/HMI", _get_threshold('SDO'), aia_seconds_behind)
 
     # this covers SOHO
     lasco_seconds_behind = status['LASCO']['secondsBehind']
-    check_for_lag("LASCO", LASCO_LAG_THRESHOLD_S, lasco_seconds_behind)
+    check_for_lag("LASCO", _get_threshold('SOHO'), lasco_seconds_behind)
 
     # this coveres STEREO
     secchi_seconds_behind = status['SECCHI']['secondsBehind']
-    check_for_lag("STEREO Source", SECCHI_LAG_THRESHOLD_S, secchi_seconds_behind)
+    check_for_lag("STEREO Source", _get_threshold('STEREO'), secchi_seconds_behind)
     # SWAP
     swap_seconds_behind = status['SWAP']['secondsBehind']
-    check_for_lag("SWAP", SWAP_LAG_THRESHOLD_S, swap_seconds_behind)
+    check_for_lag("SWAP", _get_threshold('SWAP'), swap_seconds_behind)
     pass
 
 if __name__ == "__main__":
