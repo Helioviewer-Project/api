@@ -101,7 +101,11 @@ class Movie_HelioviewerMovie {
         if ( HV_DISABLE_CACHE !== true ) {
             $cache = new Helper_Serialize($this->_cachedir, $this->_filename, 60);
             $info = $cache->readCache($verifyAge=true);
-            if ( $info !== false ) {
+            // If cached movie is processing, don't load from cache so that
+            // users get the fastest notification of the movie being done.
+            // This also fixes an issue where the progress data breaks because the cached status
+            // is processing, but the movie is done.
+            if ( $info !== false && $info['status'] != self::STATUS_PROCESSING ) {
                 $this->_cached = true;
             }
         }
