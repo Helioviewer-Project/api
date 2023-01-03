@@ -1,49 +1,21 @@
-======================================================================
-
-DESCRIPTION:
-
-Helioviewer.org is a web application visualization tool for solar physics data
-based on the JPEG 2000 image compression standard.
+Helioviewer.org is a web application visualization tool for solar physics data based on the JPEG 2000 image compression standard.
 
 To request a new feature or to report a bug, visit 
   
-    https://github.com/Helioviewer-Project/
+https://github.com/Helioviewer-Project/helioviewer.org/issues
 
-For the most up-to-date documentation on Helioviewer.org and related efforts,
-see the official wiki at
-  
-    http://wiki.helioviewer.org/wiki/
+## Running Helioviewer:
 
-======================================================================
+To use Helioviewer, it is not neccessary to install any new software, simply visit http://www.helioviewer.org.
 
-REQUIREMENTS:
+## Installation
 
-To use Helioviewer, it is not neccessary to install any new software, simply 
-visit http://www.helioviewer.org.
-
-If you wish to run your own local copy of Helioviewer.org, you will need the
-following software:
-
-    * Apache
-    * MySQL
-    * PHP 5
-    * PHP-GD
-    * PHP Imagick
-    * Python
-    * Python-MySQLDb
-    * FFmpeg
-    * libx264
-    * libvpx
-    * ImageMagick 6.3.2+
+If you wish to run your own local copy of Helioviewer.org, you have 2 options.
+You may run it via the [container version](https://hub.docker.com/r/dgarciabriseno/helioviewer.org-docker).
+Or if you'd like to manually install it on your own webserver, the instructions can be found [here](https://helioviewer-project.github.io/install/)
     
-INSTALLATION:
+## License
 
-Instructions for installing Helioviewer.org are available online at
-http://wiki.helioviewer.org/wiki/Installing_Helioviewer.org
-
-LICENSE:
-
-Helioviewer.org is licensed under the Mozilla Public License. Software
-libraries used by Helioviewer.org and included with this distribution may
-include their own licenses. Please consult the documentation of the particular
-dependency for the details of it's licensing.
+Helioviewer.org is licensed under the Mozilla Public License.
+Software libraries used by Helioviewer.org and included with this distribution may include their own licenses.
+Please consult the documentation of the particular dependency for the details of it's licensing.
