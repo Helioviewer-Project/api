@@ -13,7 +13,7 @@ To use Helioviewer, it is not neccessary to install any new software, simply vis
 ## Installation
 
 If you wish to run your own local copy of Helioviewer.org, you have 2 options.
-- Through a [container](https://hub.docker.com/r/dgarciabriseno/helioviewer.org-docker).
+- Through the development [container](https://hub.docker.com/r/dgarciabriseno/helioviewer.org-docker).
 - Manual Installation with instructions [here](https://helioviewer-project.github.io/install/).
     
 ## License
