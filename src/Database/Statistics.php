@@ -875,8 +875,8 @@ class Database_Statistics {
             }
             $dateEnd = toMySQLDateString($date);
 
-            $sql = "SELECT sourceId, SUM(count) as count FROM data_coverage_30_min " .
-                   "WHERE date BETWEEN '$dateStart' AND '$dateEnd' GROUP BY sourceId;";
+            $sql = "SELECT sourceId, SUM(count) as count, DATE(date) as time FROM data_coverage_30_min " .
+                   "WHERE date BETWEEN '$dateStart' AND '$dateEnd' GROUP BY sourceId, time HAVING time = DATE('$dateStart');";
             //echo "\n<br />";
 
             $result = $this->_dbConnection->query($sql);
