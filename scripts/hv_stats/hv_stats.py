@@ -706,6 +706,11 @@ print("Query completed in %d seconds."%(time.time()-start_time))
 
 df = hv['hv_movies'].copy()
 
+# Timedelta.max.value is in nanoseconds. Divide by 10^9 to get the number of seconds supported
+max_timedelta_seconds = pd.Timedelta.max.value / 1e9
+# Set unsupported values to nan
+df['reqDuration'].loc[df['reqDuration'] > max_timedelta_seconds] = np.nan
+
 df['reqDuration'] = pd.to_timedelta(df['reqDuration'], unit='s')/pd.Timedelta(days=1)
 df['reqDuration'].loc[df['reqDuration']>30] = np.nan
 df['genDuration'] = pd.to_timedelta((df['numFrames']/df['frameRate']), unit='s')/pd.Timedelta(seconds=1)
