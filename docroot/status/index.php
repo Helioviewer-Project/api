@@ -51,9 +51,11 @@
     <table id='statuses'>
     <tr id='status-headers'>
         <th width='100'>Image</th>
-        <th width='120'>Latest Image</th>
-        <th width='120'>Source</th>
-        <th width='50' align='center'>Status <span id='info'>(?)</span></th>
+        <th width='150'>Latest Image</th>
+        <th width='150'>Source</th>
+        <th width='150'>Mission Dates</th>
+        <th width='150'>Home Page</th>
+        <th width='75' align='center'>Status <span id='info'>(?)</span></th>
     </tr>
     <?php
         include_once "../../src/Database/ImgIndex.php";
@@ -145,7 +147,7 @@
         // Get a list of the datasources grouped by instrument
         $instruments = $imgIndex->getDataSourcesByInstrument();
 
-        $tableRow = "<tr class='%s'><td>%s</td><td>%s</td><td>%s</td><td align='center'>%s</td></tr>";
+        $tableRow = "<tr class='%s'><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td><a href='%s'>%s</a></td><td align='center'>%s</td></tr>";
 
         // Create table of datasource statuses
         foreach($instruments as $name => $datasources) {
@@ -184,7 +186,7 @@
                 $classes = "datasource $name";
 
                 // create HTML for subtable row
-                $subTableHTML .= sprintf($tableRow, $classes, "&nbsp;&nbsp;&nbsp;&nbsp;" . $ds['name'], $datetime->format('M j Y H:i:s'), "", $icon);
+                $subTableHTML .= sprintf($tableRow, $classes, "&nbsp;&nbsp;&nbsp;&nbsp;" . $ds['name'], $datetime->format('M j Y H:i:s'), "", "", "", $icon);
 
                 // If the elapsed time is greater than previous max store it
                 if ($datetime > $newest['datetime']) {
@@ -213,16 +215,40 @@
                 "SECCHI" => $providers['sdac']
             );
 
+            $mission_dates = array (
+                "AIA" => "2020/01/01 - Today",
+                "COSMO" => "2020/01/01 - Today",
+                "EIT" => "2020/01/01 - Today",
+                "EUI" => "2020/01/01 - Today",
+                "HMI" => "2020/01/01 - Today",
+                "LASCO" => "2020/01/01 - Today",
+                "SECCHI" => "2020/01/01 - Today",
+                "SWAP" => "2020/01/01 - Today",
+                "SXT" => "2020/01/01 - Today",
+                "XRT" => "2020/01/01 - Today"
+            );
+
+            $mission_urls = array (
+                "AIA"    => array("url" => "#", "text" => "AIA"),
+                "COSMO"  => array("url" => "#", "text" => "COSMO"),
+                "EIT"    => array("url" => "#", "text" => "EIT"),
+                "EUI"    => array("url" => "#", "text" => "EUI"),
+                "HMI"    => array("url" => "#", "text" => "HMI"),
+                "LASCO"  => array("url" => "#", "text" => "LASCO"),
+                "SECCHI" => array("url" => "#", "text" => "SECCHI"),
+                "SWAP"   => array("url" => "#", "text" => "SWAP"),
+                "SXT"    => array("url" => "#", "text" => "SXT"),
+                "XRT"    => array("url" => "#", "text" => ""),
+            );
+
             // Only include datasources with data
             if ($newest['datetime'] and $name !=="MDI") {
-                if (isset($attributions[$name])) {
-                    $attribution = $attributions[$name];
-                } else {
-                    $attribution = "";
-                }
+                $attribution = $attributions[$name] ?? "";
+                $mission_range = $mission_dates[$name] ?? "";
+                $url = $mission_urls[$name] ?? "";
 
                 $datetime = $newest['datetime'];
-                printf($tableRow, "instrument", $name, $datetime->format('M j Y H:i:s'), $attribution, $newest['icon']);
+                printf($tableRow, "instrument", $name, $datetime->format('M j Y H:i:s'), $attribution, $mission_range, $url["url"], $url["text"], $newest['icon']);
                 print($subTableHTML);
             }
         }
