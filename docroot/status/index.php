@@ -149,22 +149,23 @@
 
         // Create table of datasource statuses
         foreach($instruments as $name => $datasources) {
-            $oldest = array(
+            $newest = array(
                 "level"    => 0,
-                "datetime" => new DateTime(),
+                // Use a sufficiently old date as the starting point
+                "datetime" => new DateTime("1950-01-01"),
                 "icon"     => null
             );
             $maxElapsed = 0;
-            $oldestDate = null;
+            $newestDate = null;
             $subTableHTML = "";
 
             // Create table row for a single datasource
             foreach($datasources as $ds) {
-				
+
 				if($ds['id'] >= 10000){
 					continue;
 				}
-				
+
                 // Determine status icon to use
                 $date = $imgIndex->getNewestData($ds['id']);
                 $elapsed = $now - strtotime($date);
@@ -186,8 +187,8 @@
                 $subTableHTML .= sprintf($tableRow, $classes, "&nbsp;&nbsp;&nbsp;&nbsp;" . $ds['name'], $datetime->format('M j Y H:i:s'), "", $icon);
 
                 // If the elapsed time is greater than previous max store it
-                if ($datetime < $oldest['datetime']) {
-                    $oldest = array(
+                if ($datetime > $newest['datetime']) {
+                    $newest = array(
                         'level'   => $level,
                         'datetime' => $datetime,
                         'icon'     => $icon
@@ -213,23 +214,23 @@
             );
 
             // Only include datasources with data
-            if ($oldest['datetime'] and $name !=="MDI") {
+            if ($newest['datetime'] and $name !=="MDI") {
                 if (isset($attributions[$name])) {
                     $attribution = $attributions[$name];
                 } else {
                     $attribution = "";
                 }
 
-                $datetime = $oldest['datetime'];
-                printf($tableRow, "instrument", $name, $datetime->format('M j Y H:i:s'), $attribution, $oldest['icon']);
+                $datetime = $newest['datetime'];
+                printf($tableRow, "instrument", $name, $datetime->format('M j Y H:i:s'), $attribution, $newest['icon']);
                 print($subTableHTML);
             }
         }
     ?>
     </table>
-    
+
     <br /><br />
-    
+
     <h3>Data Injection</h3>
     <table id='statuses'>
     <tr id='status-headers'>
@@ -239,7 +240,7 @@
     <?php
 	    $commands = unserialize(TERMINAL_COMMANDS);
 		$output = shell_exec('ps -ef | grep python');
-		
+
 		foreach($commands as $cmd => $name){
 	        if (strpos($output, $cmd) !== false) {
 		        echo '<tr><td>'.$name.'</td><td align="center"><img class="status-icon" src="icons/status_icon_green.png" alt="Data Injection script running" /></td></tr>';
@@ -247,7 +248,7 @@
 		        echo '<tr><td>'.$name.'</td><td align="center""><img class="status-icon" src="icons/status_icon_red.png" alt="Data Injection script not running" /></td></tr>';
 	        }
 	    }
-	    
+
     ?>
 
     <?php
@@ -310,7 +311,7 @@
         <tr class="monthly STEREO"><td>&nbsp&nbsp&nbsp&nbsp STEREO</td><td><?php echo $STEREO_monthly ?></td></tr>
     </table>
 
-    
+
     <br />
     <div id='footer'><strong>Upstream: </strong>
         <a class='provider-link' href='http://aia.lmsal.com/public/SDOcalendar.html'>SDO Calendar</a>,
