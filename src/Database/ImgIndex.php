@@ -421,18 +421,18 @@ class Database_ImgIndex {
                  FROM ( (SELECT id, sourceId, filepath, filename, date
                             FROM data
                             WHERE ".$this->getDatasourceIDsString($sourceId)."
-                            AND date = (SELECT date
+                            AND date = (SELECT max(date)
                                         FROM data
                                         WHERE ".$this->getDatasourceIDsString($sourceId)."
-                                        AND date < '%s' ORDER BY date DESC LIMIT 1))
+                                        AND date < '%s'))
                         UNION ALL
                          (SELECT id, sourceId, filepath, filename, date
                           FROM data
                           WHERE ".$this->getDatasourceIDsString($sourceId)."
-                          AND date = (SELECT date
+                          AND date = (SELECT min(date)
                                       FROM data
                                       WHERE ".$this->getDatasourceIDsString($sourceId)."
-                                      AND date >= '%s' ORDER BY date ASC LIMIT 1))
+                                      AND date >= '%s'))
                         ) t
                  ORDER BY
                  ABS(TIMESTAMPDIFF(MICROSECOND, date, '%s'))
