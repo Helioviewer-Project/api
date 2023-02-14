@@ -1,4 +1,5 @@
 <?php
+    const NO_ATTRIBUTION = "";
     date_default_timezone_set('UTC');
     $dt = new DateTime();
     $now = $dt->format('Y-m-d H:i:s');
@@ -51,11 +52,9 @@
     <table id='statuses'>
     <tr id='status-headers'>
         <th width='100'>Image</th>
-        <th width='150'>Latest Image</th>
-        <th width='150'>Source</th>
-        <th width='150'>Mission Dates</th>
-        <th width='150'>Home Page</th>
-        <th width='75' align='center'>Status <span id='info'>(?)</span></th>
+        <th width='120'>Dates Available</th>
+        <th width='120'>Source</th>
+        <th width='50' align='center'>Status <span id='info'>(?)</span></th>
     </tr>
     <?php
         include_once "../../src/Database/ImgIndex.php";
@@ -137,6 +136,19 @@
             return sprintf($icon, $levels[$level], $levels[$level]);
         }
 
+        function genTableRow($classes, $datasource, $newestDate, $attribution, $icon) {
+            $tableRow = "<tr class='%s'><td>%s</td><td>%s</td><td>%s</td><td align='center'>%s</td></tr>";
+            return sprintf($tableRow, $classes, $datasource, $newestDate->format('M j Y H:i:s'), $attribution, $icon);
+        }
+
+        function DateTimeFromString($date) {
+            $timestamp = strtotime($date);
+            $datetime = new DateTime();
+            $datetime->setTimestamp($timestamp);
+            return $datetime;
+        }
+
+
         $config = new Config("../../settings/Config.ini");
 
         // Current time
@@ -147,18 +159,16 @@
         // Get a list of the datasources grouped by instrument
         $instruments = $imgIndex->getDataSourcesByInstrument();
 
-        $tableRow = "<tr class='%s'><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td><a href='%s'>%s</a></td><td align='center'>%s</td></tr>";
 
         // Create table of datasource statuses
         foreach($instruments as $name => $datasources) {
-            $newest = array(
+            $oldest = array(
                 "level"    => 0,
-                // Use a sufficiently old date as the starting point
-                "datetime" => new DateTime("1950-01-01"),
+                "datetime" => new DateTime(),
                 "icon"     => null
             );
             $maxElapsed = 0;
-            $newestDate = null;
+            $oldestDate = null;
             $subTableHTML = "";
 
             // Create table row for a single datasource
@@ -177,20 +187,18 @@
                 $icon = getStatusIcon($level);
 
                 // Convert to human-readable date
-                $timestamp = strtotime($date);
-
-                $datetime = new DateTime();
-                $datetime->setTimestamp($timestamp);
+                $datetime = DateTimeFromString($date);
 
                 // CSS classes for row
                 $classes = "datasource $name";
 
                 // create HTML for subtable row
-                $subTableHTML .= sprintf($tableRow, $classes, "&nbsp;&nbsp;&nbsp;&nbsp;" . $ds['name'], $datetime->format('M j Y H:i:s'), "", "", "", $icon);
+
+                $subTableHTML .= genTableRow($classes, $ds['name'], $datetime, NO_ATTRIBUTION, $icon);
 
                 // If the elapsed time is greater than previous max store it
-                if ($datetime > $newest['datetime']) {
-                    $newest = array(
+                if ($datetime < $oldest['datetime']) {
+                    $oldest = array(
                         'level'   => $level,
                         'datetime' => $datetime,
                         'icon'     => $icon
@@ -215,40 +223,17 @@
                 "SECCHI" => $providers['sdac']
             );
 
-            $mission_dates = array (
-                "AIA" => "2020/01/01 - Today",
-                "COSMO" => "2020/01/01 - Today",
-                "EIT" => "2020/01/01 - Today",
-                "EUI" => "2020/01/01 - Today",
-                "HMI" => "2020/01/01 - Today",
-                "LASCO" => "2020/01/01 - Today",
-                "SECCHI" => "2020/01/01 - Today",
-                "SWAP" => "2020/01/01 - Today",
-                "SXT" => "2020/01/01 - Today",
-                "XRT" => "2020/01/01 - Today"
-            );
-
-            $mission_urls = array (
-                "AIA"    => array("url" => "#", "text" => "AIA"),
-                "COSMO"  => array("url" => "#", "text" => "COSMO"),
-                "EIT"    => array("url" => "#", "text" => "EIT"),
-                "EUI"    => array("url" => "#", "text" => "EUI"),
-                "HMI"    => array("url" => "#", "text" => "HMI"),
-                "LASCO"  => array("url" => "#", "text" => "LASCO"),
-                "SECCHI" => array("url" => "#", "text" => "SECCHI"),
-                "SWAP"   => array("url" => "#", "text" => "SWAP"),
-                "SXT"    => array("url" => "#", "text" => "SXT"),
-                "XRT"    => array("url" => "#", "text" => ""),
-            );
-
             // Only include datasources with data
-            if ($newest['datetime'] and $name !=="MDI") {
-                $attribution = $attributions[$name] ?? "";
-                $mission_range = $mission_dates[$name] ?? "";
-                $url = $mission_urls[$name] ?? "";
+            if ($oldest['datetime'] and $name !=="MDI") {
+                if (isset($attributions[$name])) {
+                    $attribution = $attributions[$name];
+                } else {
+                    $attribution = "";
+                }
 
-                $datetime = $newest['datetime'];
-                printf($tableRow, "instrument", $name, $datetime->format('M j Y H:i:s'), $attribution, $mission_range, $url["url"], $url["text"], $newest['icon']);
+                $datetime = $oldest['datetime'];
+                $row = genTableRow("instrument", $name, $datetime, $attribution, $oldest['icon']);
+                echo $row;
                 print($subTableHTML);
             }
         }
