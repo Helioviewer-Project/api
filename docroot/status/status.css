@@ -11,6 +11,7 @@
 #legend {display: none; width: 100%; text-align: center;}
 .instrument {font-weight: bold; cursor: pointer;}
 .datasource {display: none; color: gray;}
+.datasource td:first-child {padding-left: 20px;}
 .weekly {color: gray}
 .monthly {color: gray}
 .status-icon {width: 18px; height: 18px; vertical-align:text-bottom;}
