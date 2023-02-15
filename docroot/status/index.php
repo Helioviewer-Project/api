@@ -2,7 +2,11 @@
     const NO_ATTRIBUTION = "";
     date_default_timezone_set('UTC');
     $dt = new DateTime();
-    $now = $dt->format('Y-m-d H:i:s');
+    $now = formatDate($dt);
+
+    function formatDate(DateTime $date) {
+        return $date->format('M j Y H:i:s');
+    }
 
     function _pretty_time($time) {
         $seconds = intval($time);
@@ -152,10 +156,16 @@
             return sprintf($icon, $levels[$level], $levels[$level]);
         }
 
+        function genTableHeaderRow($classes, $datasource, $oldestDate, $newestDate, $attribution, $icon, $mission) {
+            // There's nothing different about the header or row, but semantically this helps understand this php script.
+            return genTableRow($classes, $datasource, $oldestDate, $newestDate, $attribution, $icon, $mission);
+        }
+
         function genTableRow($classes, $datasource, $oldestDate, $newestDate, $attribution, $icon, $mission) {
             $tableRow = "<tr class='%s'><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td align='center'>%s</td></tr>";
             return sprintf($tableRow, $classes, $datasource, $oldestDate, $newestDate, $attribution, $mission, $icon);
         }
+
 
         function DateTimeFromString($date) {
             $timestamp = strtotime($date);
@@ -171,7 +181,7 @@
                 return "N/A";
             } else {
                 $time = DateTimeFromString($date);
-                return $time->format('M j Y H:i:s');
+                return formatDate($time);
             }
         }
 
@@ -193,7 +203,6 @@
         // Get a list of the datasources grouped by instrument
         $instruments = $imgIndex->getDataSourcesByInstrument();
 
-
         // Create table of datasource statuses
         foreach($instruments as $name => $datasources) {
             $oldest = array(
@@ -201,6 +210,7 @@
                 "datetime" => new DateTime(),
                 "icon"     => null
             );
+            $newestForInstrument = null;
             $maxElapsed = 0;
             $oldestDate = null;
             $subTableHTML = "";
@@ -223,6 +233,9 @@
 
                 // Convert to human-readable date
                 $datetime = DateTimeFromString($date);
+                if (is_null($newestForInstrument)) {
+                    $newestForInstrument = $datetime;
+                }
 
                 // CSS classes for row
                 $classes = "datasource $name";
@@ -239,6 +252,9 @@
                         'datetime' => $datetime,
                         'icon'     => $icon
                     );
+                }
+                if ($datetime > $newestForInstrument) {
+                    $newestForInstrument = $datetime;
                 }
             }
 
@@ -269,7 +285,13 @@
 
                 $datetime = $oldest['datetime'];
                 $missionActive = MissionStatusMessage($name);
-                $row = genTableRow("instrument", $name, $oldestdate, $newestdate, $attribution, $oldest['icon'], $missionActive);
+                // There can't be a newest if there's no oldest
+                if ($oldestdate === "N/A") {
+                    $newest = "N/A";
+                } else {
+                    $newest = formatDate($newestForInstrument);
+                }
+                $row = genTableHeaderRow("instrument", $name, $oldestdate, $newest, $attribution, $oldest['icon'], $missionActive);
                 echo $row;
                 print($subTableHTML);
             }
