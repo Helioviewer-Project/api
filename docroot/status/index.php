@@ -66,7 +66,8 @@
     <table id='statuses'>
     <tr id='status-headers'>
         <th width='100'>Image</th>
-        <th width='280'>Dates Available</th>
+        <th width='140'>Oldest</th>
+        <th width='140'>Latest</th>
         <th width='120'>Source</th>
         <th width='70'>Mission</th>
         <th width='50' align='center'>Status <span id='info'>(?)</span></th>
@@ -152,7 +153,7 @@
         }
 
         function genTableRow($classes, $datasource, $oldestDate, $newestDate, $attribution, $icon, $mission) {
-            $tableRow = "<tr class='%s'><td>%s</td><td>%s - %s</td><td>%s</td><td>%s</td><td align='center'>%s</td></tr>";
+            $tableRow = "<tr class='%s'><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td align='center'>%s</td></tr>";
             return sprintf($tableRow, $classes, $datasource, $oldestDate, $newestDate, $attribution, $mission, $icon);
         }
 
