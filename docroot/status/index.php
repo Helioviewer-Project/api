@@ -10,7 +10,8 @@
         "proba2"   => genProviderLink("RoB PROBA2", "https://proba2.sidc.be"),
         "solo"     => genProviderLink("RoB SOLO", "https://www.sidc.be/EUI/intro"),
         "ncar"     => genProviderLink("NCAR", "https://www2.hao.ucar.edu/mlso/instruments/cosmo-k-coronagraph-k-cor"),
-        "harvard"  => genProviderLink("Harvard", "https://xrt.cfa.harvard.edu/")
+        "harvard"  => genProviderLink("Harvard", "https://xrt.cfa.harvard.edu/"),
+        "MSU"      => genProviderLink("MSU", "http://ylstone.physics.montana.edu/ylegacy/")
     );
 
     // Attribution
@@ -24,7 +25,8 @@
         "SWAP"   => $PROVIDERS['proba2'],
         "EUI"    => $PROVIDERS['solo'],
         "COSMO"  => $PROVIDERS['ncar'],
-        "XRT"    => $PROVIDERS['harvard']
+        "XRT"    => $PROVIDERS['harvard'],
+        "SXT"    => $PROVIDERS['MSU']
     );
 
     const COVERAGE = array (
