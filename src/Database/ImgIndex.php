@@ -1119,6 +1119,14 @@ class Database_ImgIndex {
             return false;
         }
 
+        // In some cases there may be no results for the requested data set.
+        // In this case the expected behavior is to return null.
+        // Null is being returned here explicitly to remove the php warning
+        // of trying access 'date' on a null object.
+        if ($result->num_rows == 0) {
+            return null;
+        }
+
         $data = $result->fetch_array(MYSQLI_ASSOC);
         return $data['date'];
     }
