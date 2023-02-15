@@ -1,8 +1,32 @@
 <?php
-    const NO_ATTRIBUTION = "";
     date_default_timezone_set('UTC');
-    $dt = new DateTime();
-    $now = formatDate($dt);
+    const NO_ATTRIBUTION = "";
+
+    // Data providers
+    $PROVIDERS = array(
+        "lmsal"    => genProviderLink("LMSAL", "https://www.lmsal.com"),
+        "stanford" => genProviderLink("Stanford", "http://jsoc.stanford.edu"),
+        "sdac"     => genProviderLink("SDAC", "https://umbra.nascom.nasa.gov"),
+        "proba2"   => genProviderLink("RoB PROBA2", "https://proba2.sidc.be"),
+        "solo"     => genProviderLink("RoB SOLO", "https://www.sidc.be/EUI/intro"),
+        "ncar"     => genProviderLink("NCAR", "https://www2.hao.ucar.edu/mlso/instruments/cosmo-k-coronagraph-k-cor"),
+        "harvard"  => genProviderLink("Harvard", "https://xrt.cfa.harvard.edu/")
+    );
+
+    // Attribution
+    $ATTRIBUTIONS = array(
+        "AIA"    => $PROVIDERS['lmsal'] . " / " . $PROVIDERS['stanford'],
+        "HMI"    => $PROVIDERS['lmsal'] . " / " . $PROVIDERS['stanford'],
+        "EIT"    => $PROVIDERS['sdac'],
+        "MDI"    => $PROVIDERS['sdac'],
+        "LASCO"  => $PROVIDERS['sdac'],
+        "SECCHI" => $PROVIDERS['sdac'],
+        "SWAP"  => $PROVIDERS['proba2'],
+        "EUI"    => $PROVIDERS['solo'],
+        "COSMO"  => $PROVIDERS['ncar'],
+        "XRT"    => $PROVIDERS['harvard']
+    );
+
 
     function formatDate(DateTime $date) {
         return $date->format('M j Y H:i:s');
@@ -33,6 +57,12 @@
         }
         return "Active";
     }
+
+    function genProviderLink($name, $url) {
+        return "<a class='provider-link' href='$url' target='_blank'>$name</a>";
+    }
+    $dt = new DateTime();
+    $now = formatDate($dt);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -258,27 +288,11 @@
                 }
             }
 
-            // Data providers
-            $providers = array(
-                "lmsal"    => "<a class='provider-link' href='http://www.lmsal.com/' target='_blank'>LMSAL</a>",
-                "stanford" => "<a class='provider-link' href='http://jsoc.stanford.edu/' target='_blank'>Stanford</a>",
-                "sdac"     => "<a class='provider-link' href='http://umbra.nascom.nasa.gov/' target='_blank'>SDAC</a>"
-            );
-
-            // Attribution
-            $attributions = array(
-                "AIA"    => $providers['lmsal'] . " / " . $providers['stanford'],
-                "HMI"    => $providers['lmsal'] . " / " . $providers['stanford'],
-                "EIT"    => $providers['sdac'],
-                "MDI"    => $providers['sdac'],
-                "LASCO"  => $providers['sdac'],
-                "SECCHI" => $providers['sdac']
-            );
 
             // Only include datasources with data
             if ($oldest['datetime'] and $name !=="MDI") {
-                if (isset($attributions[$name])) {
-                    $attribution = $attributions[$name];
+                if (isset($ATTRIBUTIONS[$name])) {
+                    $attribution = $ATTRIBUTIONS[$name];
                 } else {
                     $attribution = "";
                 }
