@@ -337,10 +337,10 @@
 
                 $datetime = $oldest['datetime'];
                 $missionActive = MissionStatusMessage($name);
-                $newest = formatDate($newestForInstrument);
-                $oldest = formatDate($oldestForInstrument);
+                $newestDateStr = formatDate($newestForInstrument);
+                $oldestDateStr = formatDate($oldestForInstrument);
 
-                $row = genTableHeaderRow("instrument", $name, $oldest, $newest, $attribution, $oldest['icon'], $missionActive);
+                $row = genTableHeaderRow("instrument", $name, $oldestDateStr, $newestDateStr, $attribution, $oldest['icon'], $missionActive);
                 echo $row;
                 print($subTableHTML);
             }
