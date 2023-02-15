@@ -50,7 +50,11 @@
     const TABLE_ROW_TEMPLATE = "<tr class='%s'><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td align='center'>%s</td></tr>";
 
     function formatDate(DateTime $date) {
-        return $date->format('M j Y H:i:s');
+        $str = $date->format('M j Y H:i:s');
+        if (explode(" ", $str)[2] == "1970") {
+            return "N/A";
+        }
+        return $str;
     }
 
     function _pretty_time($time) {
@@ -234,23 +238,22 @@
             return $datetime;
         }
 
-        function getDateString($sourceId, $getDateFn) {
+        function _getDate($sourceId, $getDateFn) {
             $imgIndex = new Database_ImgIndex();
             $date = $imgIndex->$getDateFn($sourceId);
             if ($date == null) {
-                return "N/A";
+                return new DateTime("1970-01-01 00:00:00");
             } else {
-                $time = DateTimeFromString($date);
-                return formatDate($time);
+                return DateTimeFromString($date);
             }
         }
 
-        function getNewestDateString($sourceId) {
-            return getDateString($sourceId, "getNewestData");
+        function getNewestDate($sourceId) {
+            return _getDate($sourceId, "getNewestData");
         }
 
-        function getOldestDateString($sourceId) {
-            return getDateString($sourceId, "getOldestData");
+        function getOldestDate($sourceId) {
+            return _getDate($sourceId, "getOldestData");
         }
 
         $config = new Config("../../settings/Config.ini");
@@ -271,6 +274,7 @@
                 "icon"     => null
             );
             $newestForInstrument = null;
+            $oldestForInstrument = null;
             $maxElapsed = 0;
             $oldestDate = null;
             $subTableHTML = "";
@@ -293,17 +297,14 @@
 
                 // Convert to human-readable date
                 $datetime = DateTimeFromString($date);
-                if (is_null($newestForInstrument)) {
-                    $newestForInstrument = $datetime;
-                }
 
                 // CSS classes for row
                 $classes = "datasource $name";
 
-                $oldestdate = getOldestDateString($ds['id']);
-                $newestdate = getNewestDateString($ds['id']);
+                $oldestdate = getOldestDate($ds['id']);
+                $newestdate = getNewestDate($ds['id']);
                 // create HTML for subtable row
-                $subTableHTML .= genTableRow($classes, $ds['name'], $oldestdate, $newestdate, NO_ATTRIBUTION, $icon, $missionActive);
+                $subTableHTML .= genTableRow($classes, $ds['name'], formatDate($oldestdate), formatDate($newestdate), NO_ATTRIBUTION, $icon, $missionActive);
 
                 // If the elapsed time is greater than previous max store it
                 if ($datetime < $oldest['datetime']) {
@@ -313,8 +314,15 @@
                         'icon'     => $icon
                     );
                 }
-                if ($datetime > $newestForInstrument) {
-                    $newestForInstrument = $datetime;
+                if (is_null($newestForInstrument)) {
+                    $newestForInstrument = $newestdate;
+                    $oldestForInstrument = $oldestdate;
+                }
+                if ($newestdate > $newestForInstrument) {
+                    $newestForInstrument = $newestdate;
+                }
+                if ($oldestdate < $oldestForInstrument) {
+                    $oldestForInstrument = $oldestDate;
                 }
             }
 
@@ -329,13 +337,10 @@
 
                 $datetime = $oldest['datetime'];
                 $missionActive = MissionStatusMessage($name);
-                // There can't be a newest if there's no oldest
-                if ($oldestdate === "N/A") {
-                    $newest = "N/A";
-                } else {
-                    $newest = formatDate($newestForInstrument);
-                }
-                $row = genTableHeaderRow("instrument", $name, $oldestdate, $newest, $attribution, $oldest['icon'], $missionActive);
+                $newest = formatDate($newestForInstrument);
+                $oldest = formatDate($oldestForInstrument);
+
+                $row = genTableHeaderRow("instrument", $name, $oldest, $newest, $attribution, $oldest['icon'], $missionActive);
                 echo $row;
                 print($subTableHTML);
             }
