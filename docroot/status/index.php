@@ -1,7 +1,36 @@
 <?php
     date_default_timezone_set('UTC');
-    $dt = new DateTime();
-    $now = $dt->format('Y-m-d H:i:s');
+    const NO_ATTRIBUTION = "";
+
+    // Data providers
+    $PROVIDERS = array(
+        "lmsal"    => genProviderLink("LMSAL", "https://www.lmsal.com"),
+        "stanford" => genProviderLink("Stanford", "http://jsoc.stanford.edu"),
+        "sdac"     => genProviderLink("SDAC", "https://umbra.nascom.nasa.gov"),
+        "proba2"   => genProviderLink("RoB PROBA2", "https://proba2.sidc.be"),
+        "solo"     => genProviderLink("RoB SOLO", "https://www.sidc.be/EUI/intro"),
+        "ncar"     => genProviderLink("NCAR", "https://www2.hao.ucar.edu/mlso/instruments/cosmo-k-coronagraph-k-cor"),
+        "harvard"  => genProviderLink("Harvard", "https://xrt.cfa.harvard.edu/")
+    );
+
+    // Attribution
+    $ATTRIBUTIONS = array(
+        "AIA"    => $PROVIDERS['lmsal'] . " / " . $PROVIDERS['stanford'],
+        "HMI"    => $PROVIDERS['lmsal'] . " / " . $PROVIDERS['stanford'],
+        "EIT"    => $PROVIDERS['sdac'],
+        "MDI"    => $PROVIDERS['sdac'],
+        "LASCO"  => $PROVIDERS['sdac'],
+        "SECCHI" => $PROVIDERS['sdac'],
+        "SWAP"  => $PROVIDERS['proba2'],
+        "EUI"    => $PROVIDERS['solo'],
+        "COSMO"  => $PROVIDERS['ncar'],
+        "XRT"    => $PROVIDERS['harvard']
+    );
+
+
+    function formatDate(DateTime $date) {
+        return $date->format('M j Y H:i:s');
+    }
 
     function _pretty_time($time) {
         $seconds = intval($time);
@@ -14,6 +43,26 @@
         $minutes -= $hours * 60;
         return sprintf("%02d:%02d:%02d", $hours, $minutes, $seconds);
     }
+    function starts_with(string $str, $start) {
+        return strpos($str, $start) === 0;
+    }
+
+    function MissionStatusMessage(string $instrument) {
+        if (starts_with($instrument, "EUVI-B") ||
+            starts_with($instrument, "COR1-B") ||
+            starts_with($instrument, "COR2-B") ||
+            starts_with($instrument, "TRACE")  ||
+            starts_with($instrument, "SXT")) {
+            return "Inactive";
+        }
+        return "Active";
+    }
+
+    function genProviderLink($name, $url) {
+        return "<a class='provider-link' href='$url' target='_blank'>$name</a>";
+    }
+    $dt = new DateTime();
+    $now = formatDate($dt);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -51,8 +100,10 @@
     <table id='statuses'>
     <tr id='status-headers'>
         <th width='100'>Image</th>
-        <th width='120'>Latest Image</th>
+        <th width='140'>Oldest</th>
+        <th width='140'>Latest</th>
         <th width='120'>Source</th>
+        <th width='70'>Mission</th>
         <th width='50' align='center'>Status <span id='info'>(?)</span></th>
     </tr>
     <?php
@@ -135,6 +186,43 @@
             return sprintf($icon, $levels[$level], $levels[$level]);
         }
 
+        function genTableHeaderRow($classes, $datasource, $oldestDate, $newestDate, $attribution, $icon, $mission) {
+            // There's nothing different about the header or row, but semantically this helps understand this php script.
+            return genTableRow($classes, $datasource, $oldestDate, $newestDate, $attribution, $icon, $mission);
+        }
+
+        function genTableRow($classes, $datasource, $oldestDate, $newestDate, $attribution, $icon, $mission) {
+            $tableRow = "<tr class='%s'><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td align='center'>%s</td></tr>";
+            return sprintf($tableRow, $classes, $datasource, $oldestDate, $newestDate, $attribution, $mission, $icon);
+        }
+
+
+        function DateTimeFromString($date) {
+            $timestamp = strtotime($date);
+            $datetime = new DateTime();
+            $datetime->setTimestamp($timestamp);
+            return $datetime;
+        }
+
+        function getDateString($sourceId, $getDateFn) {
+            $imgIndex = new Database_ImgIndex();
+            $date = $imgIndex->$getDateFn($sourceId);
+            if ($date == null) {
+                return "N/A";
+            } else {
+                $time = DateTimeFromString($date);
+                return formatDate($time);
+            }
+        }
+
+        function getNewestDateString($sourceId) {
+            return getDateString($sourceId, "getNewestData");
+        }
+
+        function getOldestDateString($sourceId) {
+            return getDateString($sourceId, "getOldestData");
+        }
+
         $config = new Config("../../settings/Config.ini");
 
         // Current time
@@ -145,8 +233,6 @@
         // Get a list of the datasources grouped by instrument
         $instruments = $imgIndex->getDataSourcesByInstrument();
 
-        $tableRow = "<tr class='%s'><td>%s</td><td>%s</td><td>%s</td><td align='center'>%s</td></tr>";
-
         // Create table of datasource statuses
         foreach($instruments as $name => $datasources) {
             $oldest = array(
@@ -154,17 +240,19 @@
                 "datetime" => new DateTime(),
                 "icon"     => null
             );
+            $newestForInstrument = null;
             $maxElapsed = 0;
             $oldestDate = null;
             $subTableHTML = "";
 
             // Create table row for a single datasource
             foreach($datasources as $ds) {
-				
+
 				if($ds['id'] >= 10000){
 					continue;
 				}
-				
+                $missionActive = MissionStatusMessage($ds['name']);
+
                 // Determine status icon to use
                 $date = $imgIndex->getNewestData($ds['id']);
                 $elapsed = $now - strtotime($date);
@@ -174,16 +262,18 @@
                 $icon = getStatusIcon($level);
 
                 // Convert to human-readable date
-                $timestamp = strtotime($date);
-
-                $datetime = new DateTime();
-                $datetime->setTimestamp($timestamp);
+                $datetime = DateTimeFromString($date);
+                if (is_null($newestForInstrument)) {
+                    $newestForInstrument = $datetime;
+                }
 
                 // CSS classes for row
                 $classes = "datasource $name";
 
+                $oldestdate = getOldestDateString($ds['id']);
+                $newestdate = getNewestDateString($ds['id']);
                 // create HTML for subtable row
-                $subTableHTML .= sprintf($tableRow, $classes, "&nbsp;&nbsp;&nbsp;&nbsp;" . $ds['name'], $datetime->format('M j Y H:i:s'), "", $icon);
+                $subTableHTML .= genTableRow($classes, $ds['name'], $oldestdate, $newestdate, NO_ATTRIBUTION, $icon, $missionActive);
 
                 // If the elapsed time is greater than previous max store it
                 if ($datetime < $oldest['datetime']) {
@@ -193,43 +283,38 @@
                         'icon'     => $icon
                     );
                 }
+                if ($datetime > $newestForInstrument) {
+                    $newestForInstrument = $datetime;
+                }
             }
 
-            // Data providers
-            $providers = array(
-                "lmsal"    => "<a class='provider-link' href='http://www.lmsal.com/' target='_blank'>LMSAL</a>",
-                "stanford" => "<a class='provider-link' href='http://jsoc.stanford.edu/' target='_blank'>Stanford</a>",
-                "sdac"     => "<a class='provider-link' href='http://umbra.nascom.nasa.gov/' target='_blank'>SDAC</a>"
-            );
-
-            // Attribution
-            $attributions = array(
-                "AIA"    => $providers['lmsal'] . " / " . $providers['stanford'],
-                "HMI"    => $providers['lmsal'] . " / " . $providers['stanford'],
-                "EIT"    => $providers['sdac'],
-                "MDI"    => $providers['sdac'],
-                "LASCO"  => $providers['sdac'],
-                "SECCHI" => $providers['sdac']
-            );
 
             // Only include datasources with data
             if ($oldest['datetime'] and $name !=="MDI") {
-                if (isset($attributions[$name])) {
-                    $attribution = $attributions[$name];
+                if (isset($ATTRIBUTIONS[$name])) {
+                    $attribution = $ATTRIBUTIONS[$name];
                 } else {
                     $attribution = "";
                 }
 
                 $datetime = $oldest['datetime'];
-                printf($tableRow, "instrument", $name, $datetime->format('M j Y H:i:s'), $attribution, $oldest['icon']);
+                $missionActive = MissionStatusMessage($name);
+                // There can't be a newest if there's no oldest
+                if ($oldestdate === "N/A") {
+                    $newest = "N/A";
+                } else {
+                    $newest = formatDate($newestForInstrument);
+                }
+                $row = genTableHeaderRow("instrument", $name, $oldestdate, $newest, $attribution, $oldest['icon'], $missionActive);
+                echo $row;
                 print($subTableHTML);
             }
         }
     ?>
     </table>
-    
+
     <br /><br />
-    
+
     <h3>Data Injection</h3>
     <table id='statuses'>
     <tr id='status-headers'>
@@ -239,7 +324,7 @@
     <?php
 	    $commands = unserialize(TERMINAL_COMMANDS);
 		$output = shell_exec('ps -ef | grep python');
-		
+
 		foreach($commands as $cmd => $name){
 	        if (strpos($output, $cmd) !== false) {
 		        echo '<tr><td>'.$name.'</td><td align="center"><img class="status-icon" src="icons/status_icon_green.png" alt="Data Injection script running" /></td></tr>';
@@ -247,7 +332,7 @@
 		        echo '<tr><td>'.$name.'</td><td align="center""><img class="status-icon" src="icons/status_icon_red.png" alt="Data Injection script not running" /></td></tr>';
 	        }
 	    }
-	    
+
     ?>
 
     <?php
@@ -310,7 +395,7 @@
         <tr class="monthly STEREO"><td>&nbsp&nbsp&nbsp&nbsp STEREO</td><td><?php echo $STEREO_monthly ?></td></tr>
     </table>
 
-    
+
     <br />
     <div id='footer'><strong>Upstream: </strong>
         <a class='provider-link' href='http://aia.lmsal.com/public/SDOcalendar.html'>SDO Calendar</a>,
