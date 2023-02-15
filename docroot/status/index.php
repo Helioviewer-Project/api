@@ -21,12 +21,31 @@
         "MDI"    => $PROVIDERS['sdac'],
         "LASCO"  => $PROVIDERS['sdac'],
         "SECCHI" => $PROVIDERS['sdac'],
-        "SWAP"  => $PROVIDERS['proba2'],
+        "SWAP"   => $PROVIDERS['proba2'],
         "EUI"    => $PROVIDERS['solo'],
         "COSMO"  => $PROVIDERS['ncar'],
         "XRT"    => $PROVIDERS['harvard']
     );
 
+    const COVERAGE = array (
+        "AIA"    => "SDO_coverage.html",
+        "HMI"    => "SDO_coverage.html",
+        "EIT"    => "SOHO_coverage.html",
+        "LASCO"  => "SOHO_coverage.html",
+        "COSMO"  => "MLSO_coverage.html",
+        "EUI"    => "SOLO_coverage.html",
+        "COR1-A" => "STEREO_A_coverage.html",
+        "COR2-A" => "STEREO_A_coverage.html",
+        "EUVI-A" => "STEREO_A_coverage.html",
+        "COR1-B" => "STEREO_B_coverage.html",
+        "COR2-B" => "STEREO_B_coverage.html",
+        "EUVI-B" => "STEREO_B_coverage.html",
+        "SWAP"   => "PROBA2_coverage.html",
+        "SXT"    => "Yohkoh_coverage.html",
+        "XRT"    => "Hinode_coverage.html"
+    );
+
+    const TABLE_ROW_TEMPLATE = "<tr class='%s'><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td align='center'>%s</td></tr>";
 
     function formatDate(DateTime $date) {
         return $date->format('M j Y H:i:s');
@@ -61,6 +80,17 @@
     function genProviderLink($name, $url) {
         return "<a class='provider-link' href='$url' target='_blank'>$name</a>";
     }
+
+    function genCoverageLink($source) {
+        $instrument = explode(" ", $source)[0];
+        if (array_key_exists($instrument, COVERAGE)) {
+            $coverage_page = "/statistics/bokeh/coverages/" . COVERAGE[$instrument];
+        } else {
+            $coverage_page = "#";
+        }
+        return "<a href=".$coverage_page.">$source</a>";
+    }
+
     $dt = new DateTime();
     $now = formatDate($dt);
 ?>
@@ -104,7 +134,7 @@
         <th width='140'>Latest</th>
         <th width='120'>Source</th>
         <th width='70'>Mission</th>
-        <th width='50' align='center'>Status <span id='info'>(?)</span></th>
+        <th width='60' align='center'>Status <span id='info'>(?)</span></th>
     </tr>
     <?php
         include_once "../../src/Database/ImgIndex.php";
@@ -187,13 +217,11 @@
         }
 
         function genTableHeaderRow($classes, $datasource, $oldestDate, $newestDate, $attribution, $icon, $mission) {
-            // There's nothing different about the header or row, but semantically this helps understand this php script.
-            return genTableRow($classes, $datasource, $oldestDate, $newestDate, $attribution, $icon, $mission);
+            return sprintf(TABLE_ROW_TEMPLATE, $classes, $datasource, $oldestDate, $newestDate, $attribution, $mission, $icon);
         }
 
         function genTableRow($classes, $datasource, $oldestDate, $newestDate, $attribution, $icon, $mission) {
-            $tableRow = "<tr class='%s'><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td align='center'>%s</td></tr>";
-            return sprintf($tableRow, $classes, $datasource, $oldestDate, $newestDate, $attribution, $mission, $icon);
+            return genTableHeaderRow($classes, genCoverageLink($datasource), $oldestDate, $newestDate, $attribution, $icon, $mission);
         }
 
 
