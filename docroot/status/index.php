@@ -15,6 +15,20 @@
         $minutes -= $hours * 60;
         return sprintf("%02d:%02d:%02d", $hours, $minutes, $seconds);
     }
+    function starts_with(string $str, $start) {
+        return strpos($str, $start) === 0;
+    }
+
+    function MissionStatusMessage(string $instrument) {
+        if (starts_with($instrument, "EUVI-B") ||
+            starts_with($instrument, "COR1-B") ||
+            starts_with($instrument, "COR2-B") ||
+            starts_with($instrument, "TRACE")  ||
+            starts_with($instrument, "SXT")) {
+            return "Inactive";
+        }
+        return "Active";
+    }
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -52,8 +66,9 @@
     <table id='statuses'>
     <tr id='status-headers'>
         <th width='100'>Image</th>
-        <th width='120'>Dates Available</th>
+        <th width='280'>Dates Available</th>
         <th width='120'>Source</th>
+        <th width='70'>Mission</th>
         <th width='50' align='center'>Status <span id='info'>(?)</span></th>
     </tr>
     <?php
@@ -136,9 +151,9 @@
             return sprintf($icon, $levels[$level], $levels[$level]);
         }
 
-        function genTableRow($classes, $datasource, $newestDate, $attribution, $icon) {
-            $tableRow = "<tr class='%s'><td>%s</td><td>%s</td><td>%s</td><td align='center'>%s</td></tr>";
-            return sprintf($tableRow, $classes, $datasource, $newestDate->format('M j Y H:i:s'), $attribution, $icon);
+        function genTableRow($classes, $datasource, $oldestDate, $newestDate, $attribution, $icon, $mission) {
+            $tableRow = "<tr class='%s'><td>%s</td><td>%s - %s</td><td>%s</td><td>%s</td><td align='center'>%s</td></tr>";
+            return sprintf($tableRow, $classes, $datasource, $oldestDate, $newestDate, $attribution, $mission, $icon);
         }
 
         function DateTimeFromString($date) {
@@ -148,6 +163,24 @@
             return $datetime;
         }
 
+        function getDateString($sourceId, $getDateFn) {
+            $imgIndex = new Database_ImgIndex();
+            $date = $imgIndex->$getDateFn($sourceId);
+            if ($date == null) {
+                return "N/A";
+            } else {
+                $time = DateTimeFromString($date);
+                return $time->format('M j Y H:i:s');
+            }
+        }
+
+        function getNewestDateString($sourceId) {
+            return getDateString($sourceId, "getNewestData");
+        }
+
+        function getOldestDateString($sourceId) {
+            return getDateString($sourceId, "getOldestData");
+        }
 
         $config = new Config("../../settings/Config.ini");
 
@@ -177,6 +210,7 @@
 				if($ds['id'] >= 10000){
 					continue;
 				}
+                $missionActive = MissionStatusMessage($ds['name']);
 
                 // Determine status icon to use
                 $date = $imgIndex->getNewestData($ds['id']);
@@ -192,9 +226,10 @@
                 // CSS classes for row
                 $classes = "datasource $name";
 
+                $oldestdate = getOldestDateString($ds['id']);
+                $newestdate = getNewestDateString($ds['id']);
                 // create HTML for subtable row
-
-                $subTableHTML .= genTableRow($classes, $ds['name'], $datetime, NO_ATTRIBUTION, $icon);
+                $subTableHTML .= genTableRow($classes, $ds['name'], $oldestdate, $newestdate, NO_ATTRIBUTION, $icon, $missionActive);
 
                 // If the elapsed time is greater than previous max store it
                 if ($datetime < $oldest['datetime']) {
@@ -232,7 +267,8 @@
                 }
 
                 $datetime = $oldest['datetime'];
-                $row = genTableRow("instrument", $name, $datetime, $attribution, $oldest['icon']);
+                $missionActive = MissionStatusMessage($name);
+                $row = genTableRow("instrument", $name, $oldestdate, $newestdate, $attribution, $oldest['icon'], $missionActive);
                 echo $row;
                 print($subTableHTML);
             }
