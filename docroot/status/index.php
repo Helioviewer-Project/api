@@ -304,10 +304,10 @@
                 // CSS classes for row
                 $classes = "datasource $name";
 
-                $oldestdate = getOldestDate($ds['id']);
-                $newestdate = getNewestDate($ds['id']);
+                $oldestDate = getOldestDate($ds['id']);
+                $newestDate = getNewestDate($ds['id']);
                 // create HTML for subtable row
-                $subTableHTML .= genTableRow($classes, $ds['name'], formatDate($oldestdate), formatDate($newestdate), NO_ATTRIBUTION, $icon, $missionActive);
+                $subTableHTML .= genTableRow($classes, $ds['name'], formatDate($oldestDate), formatDate($newestDate), NO_ATTRIBUTION, $icon, $missionActive);
 
                 // If the elapsed time is greater than previous max store it
                 if ($datetime < $oldest['datetime']) {
@@ -318,13 +318,13 @@
                     );
                 }
                 if (is_null($newestForInstrument)) {
-                    $newestForInstrument = $newestdate;
-                    $oldestForInstrument = $oldestdate;
+                    $newestForInstrument = $newestDate;
+                    $oldestForInstrument = $oldestDate;
                 }
-                if ($newestdate > $newestForInstrument) {
-                    $newestForInstrument = $newestdate;
+                if ($newestDate > $newestForInstrument) {
+                    $newestForInstrument = $newestDate;
                 }
-                if ($oldestdate < $oldestForInstrument) {
+                if ($oldestDate < $oldestForInstrument) {
                     $oldestForInstrument = $oldestDate;
                 }
             }
