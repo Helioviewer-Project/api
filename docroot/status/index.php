@@ -49,7 +49,10 @@
 
     const TABLE_ROW_TEMPLATE = "<tr class='%s'><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td align='center'>%s</td></tr>";
 
-    function formatDate(DateTime $date) {
+    function formatDate(?DateTime $date) {
+        if ($date == null) {
+            return "N/A";
+        }
         $str = $date->format('M j Y H:i:s');
         if (explode(" ", $str)[2] == "1970") {
             return "N/A";
@@ -301,10 +304,10 @@
                 // CSS classes for row
                 $classes = "datasource $name";
 
-                $oldestdate = getOldestDate($ds['id']);
-                $newestdate = getNewestDate($ds['id']);
+                $oldestDate = getOldestDate($ds['id']);
+                $newestDate = getNewestDate($ds['id']);
                 // create HTML for subtable row
-                $subTableHTML .= genTableRow($classes, $ds['name'], formatDate($oldestdate), formatDate($newestdate), NO_ATTRIBUTION, $icon, $missionActive);
+                $subTableHTML .= genTableRow($classes, $ds['name'], formatDate($oldestDate), formatDate($newestDate), NO_ATTRIBUTION, $icon, $missionActive);
 
                 // If the elapsed time is greater than previous max store it
                 if ($datetime < $oldest['datetime']) {
@@ -315,13 +318,13 @@
                     );
                 }
                 if (is_null($newestForInstrument)) {
-                    $newestForInstrument = $newestdate;
-                    $oldestForInstrument = $oldestdate;
+                    $newestForInstrument = $newestDate;
+                    $oldestForInstrument = $oldestDate;
                 }
-                if ($newestdate > $newestForInstrument) {
-                    $newestForInstrument = $newestdate;
+                if ($newestDate > $newestForInstrument) {
+                    $newestForInstrument = $newestDate;
                 }
-                if ($oldestdate < $oldestForInstrument) {
+                if ($oldestDate < $oldestForInstrument) {
                     $oldestForInstrument = $oldestDate;
                 }
             }
