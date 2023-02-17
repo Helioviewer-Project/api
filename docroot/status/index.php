@@ -50,6 +50,9 @@
     const TABLE_ROW_TEMPLATE = "<tr class='%s'><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td align='center'>%s</td></tr>";
 
     function formatDate(DateTime $date) {
+        if ($date == null) {
+            return "N/A";
+        }
         $str = $date->format('M j Y H:i:s');
         if (explode(" ", $str)[2] == "1970") {
             return "N/A";
