@@ -235,7 +235,7 @@
 
 
         function DateTimeFromString($date) {
-            $timestamp = strtotime($date);
+            $timestamp = strtotime($date ?? "");
             $datetime = new DateTime();
             $datetime->setTimestamp($timestamp);
             return $datetime;
@@ -292,7 +292,7 @@
 
                 // Determine status icon to use
                 $date = $imgIndex->getNewestData($ds['id']);
-                $elapsed = $now - strtotime($date);
+                $elapsed = $now - strtotime($date ?? "");
                 $level = computeStatusLevel($elapsed, $name);
 
                 // Create status icon

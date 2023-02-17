@@ -21,6 +21,7 @@ class Config {
     private $_ints   = array('build_num', 'ffmpeg_max_threads',
                              'max_jpx_frames', 'max_movie_frames');
     private $_floats = array();
+    private $config;
 
     /**
      * Creates an instance of the Config helper class
