@@ -49,7 +49,7 @@
 
     const TABLE_ROW_TEMPLATE = "<tr class='%s'><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td align='center'>%s</td></tr>";
 
-    function formatDate(DateTime $date) {
+    function formatDate(?DateTime $date) {
         if ($date == null) {
             return "N/A";
         }
