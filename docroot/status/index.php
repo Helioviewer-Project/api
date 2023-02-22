@@ -1,7 +1,6 @@
 <?php
     date_default_timezone_set('UTC');
     const NO_ATTRIBUTION = "";
-    const NULL_DATE = new DateTime("1970-01-01 00:00:00");
 
     // Data providers
     $PROVIDERS = array(
@@ -51,7 +50,7 @@
     const TABLE_ROW_TEMPLATE = "<tr class='%s'><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td align='center'>%s</td></tr>";
 
     function formatDate(?DateTime $date) {
-        if (($date == null) || ($date == NULL_DATE)) {
+        if ($date == null) {
             return "N/A";
         }
 
@@ -97,6 +96,18 @@
             $coverage_page = "#";
         }
         return "<a href=".$coverage_page.">$source</a>";
+    }
+
+    function safe_max($arr) {
+        if (count($arr) >= 1) {
+            return max($arr);
+        }
+    }
+
+    function safe_min($arr) {
+        if (count($arr) >= 1) {
+            return min($arr);
+        }
     }
 
     $dt = new DateTime();
@@ -243,9 +254,7 @@
         function _getDate($sourceId, $getDateFn) {
             $imgIndex = new Database_ImgIndex();
             $date = $imgIndex->$getDateFn($sourceId);
-            if ($date == null) {
-                return NULL_DATE;
-            } else {
+            if ($date != null) {
                 return DateTimeFromString($date);
             }
         }
@@ -256,6 +265,12 @@
 
         function getOldestDate($sourceId) {
             return _getDate($sourceId, "getOldestData");
+        }
+
+        function array_push_if_not_null(&$arr, $value) {
+            if (!is_null($value)) {
+                array_push($arr, $value);
+            }
         }
 
         $config = new Config("../../settings/Config.ini");
@@ -275,8 +290,8 @@
                 "datetime" => new DateTime(),
                 "icon"     => null
             );
-            $newestForInstrument = null;
-            $oldestForInstrument = null;
+            $newestForInstrument = array();
+            $oldestForInstrument = array();
             $maxElapsed = 0;
             $oldestDate = null;
             $subTableHTML = "";
@@ -316,16 +331,9 @@
                         'icon'     => $icon
                     );
                 }
-                if (is_null($newestForInstrument)) {
-                    $newestForInstrument = $newestDate;
-                    $oldestForInstrument = $oldestDate;
-                }
-                if ($newestDate > $newestForInstrument) {
-                    $newestForInstrument = $newestDate;
-                }
-                if (($oldestDate < $oldestForInstrument) && ($oldestDate != NULL_DATE)) {
-                    $oldestForInstrument = $oldestDate;
-                }
+
+                array_push_if_not_null($newestForInstrument, $newestDate);
+                array_push_if_not_null($oldestForInstrument, $oldestDate);
             }
 
 
@@ -339,8 +347,8 @@
 
                 $datetime = $oldest['datetime'];
                 $missionActive = MissionStatusMessage($name);
-                $newestDateStr = formatDate($newestForInstrument);
-                $oldestDateStr = formatDate($oldestForInstrument);
+                $newestDateStr = formatDate(safe_max($newestForInstrument));
+                $oldestDateStr = formatDate(safe_min($oldestForInstrument));
 
                 $row = genTableHeaderRow("instrument", $name, $oldestDateStr, $newestDateStr, $attribution, $oldest['icon'], $missionActive);
                 echo $row;
