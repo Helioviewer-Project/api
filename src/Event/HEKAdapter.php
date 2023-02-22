@@ -45,6 +45,7 @@ class Event_HEKAdapter {
     private $_proxy;
     private $_hostname;
     private $_docroot;
+    private $_defaultEventTypesJSONPath;
 
     /**
      * Creates a new HEKAdapter instance

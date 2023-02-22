@@ -11,6 +11,12 @@ class Module_SolarBodies implements Module {
 
     private $_params;
     private $_options;
+    private $_version;
+    private $_observers;
+    private $_bodies;
+    private $_mods;
+    private $_enabledTrajectories;
+    private $_glossary;
 
     /**
      * Solar Bodies Module constructor

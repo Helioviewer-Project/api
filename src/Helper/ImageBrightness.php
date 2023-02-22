@@ -12,6 +12,11 @@
  */
 
 class Helper_ImageBrightness {
+    private $wavelength;
+    private $availableWavelengths;
+    private $dataMax;
+    private $date;
+    private $localBrightness;
 
    /**
     * Creates a new ImageBrightness instance
