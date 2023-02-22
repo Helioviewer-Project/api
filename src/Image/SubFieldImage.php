@@ -45,6 +45,11 @@ class Image_SubFieldImage {
     protected $originalOffsetX;
     protected $originalOffsetY;
     protected $followViewport;
+    protected $colorTable;
+    protected $brightnessScalar;
+    protected $imageOptions;
+    protected $reduce;
+    protected $padding;
 
     /**
      * Creates an Image_SubFieldImage instance

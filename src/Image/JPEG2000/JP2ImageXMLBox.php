@@ -18,6 +18,7 @@ class Image_JPEG2000_JP2ImageXMLBox {
     private $_file;
     private $_xml;
     private $_array;
+    private $_xmlString;
 
     /**
      * Create an instance of Image_JPEG2000_JP2Image_XMLBox

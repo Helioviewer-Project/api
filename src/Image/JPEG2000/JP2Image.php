@@ -24,6 +24,7 @@ class Image_JPEG2000_JP2Image {
     private $_width;
     private $_height;
     private $_scale;
+    private $_maxReduction;
 
     /**
      * Creates a new Image_JPEG2000_JP2Image instance

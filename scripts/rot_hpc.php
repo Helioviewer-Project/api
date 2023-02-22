@@ -798,7 +798,7 @@
    function true_anomaly($t=null) {
       /* Returns the Sun's true anomaly (in degress). */
 
-      $result = (mean_anomaly($t) + equation_of_center($t)) % 360.0;
+      $result = (int)(mean_anomaly($t) + equation_of_center($t)) % 360.0;
 
       return $result;
    }
@@ -820,7 +820,7 @@
 
       $T = julian_centuries($t);
       $result = 358.475830 + 35999.049750 * $T - 0.0001500 * pow($T,2) - 0.00000330 * pow($T,3);
-      $result = $result % 360.0;
+      $result = (int)$result % 360;
 
       return $result;
    }
