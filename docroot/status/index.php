@@ -1,6 +1,7 @@
 <?php
     date_default_timezone_set('UTC');
     const NO_ATTRIBUTION = "";
+    const NULL_DATE = new DateTime("1970-01-01 00:00:00");
 
     // Data providers
     $PROVIDERS = array(
@@ -50,13 +51,11 @@
     const TABLE_ROW_TEMPLATE = "<tr class='%s'><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td align='center'>%s</td></tr>";
 
     function formatDate(?DateTime $date) {
-        if ($date == null) {
+        if (($date == null) || ($date == NULL_DATE)) {
             return "N/A";
         }
+
         $str = $date->format('M j Y H:i:s');
-        if (explode(" ", $str)[2] == "1970") {
-            return "N/A";
-        }
         return $str;
     }
 
@@ -245,7 +244,7 @@
             $imgIndex = new Database_ImgIndex();
             $date = $imgIndex->$getDateFn($sourceId);
             if ($date == null) {
-                return new DateTime("1970-01-01 00:00:00");
+                return NULL_DATE;
             } else {
                 return DateTimeFromString($date);
             }
@@ -324,7 +323,7 @@
                 if ($newestDate > $newestForInstrument) {
                     $newestForInstrument = $newestDate;
                 }
-                if ($oldestDate < $oldestForInstrument) {
+                if (($oldestDate < $oldestForInstrument) && ($oldestDate != NULL_DATE)) {
                     $oldestForInstrument = $oldestDate;
                 }
             }
