@@ -684,12 +684,14 @@ class ImageRetrievalDaemon:
         num_retries = 0
 
         while not os.path.isfile(tmp) and num_retries <= 5:
-            subprocess.call(command, shell=True)
+            result = subprocess.run(command, shell=True, capture_output=True)
             num_retries += 1
 
         # If transcode failed, raise an exception
         if not os.path.isfile(tmp):
             logging.info('File %s reported as not found.' % tmp)
+            logging.info(f'kdu_transcode stdout: {result.stdout}')
+            logging.info(f'kdu_transcode stderr: {result.stderr}')
             raise KduTranscodeError(filepath)
 
         # Remove old version and replace with transcoded one
