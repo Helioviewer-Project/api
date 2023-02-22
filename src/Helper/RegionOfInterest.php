@@ -24,6 +24,8 @@ class Helper_RegionOfInterest
     private $_bottom;
     private $_right;
     private $_scale;
+    private $_maxWidth;
+    private $_maxHeight;
     
     /**
      * Creates a new RegionOfInterest instance

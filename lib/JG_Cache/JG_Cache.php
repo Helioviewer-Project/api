@@ -4,6 +4,7 @@
  * http://www.jongales.com/blog/2009/02/18/simple-file-based-php-cache-class/
  */
 class JG_Cache {
+    private $dir;
 
     function __construct($dir)  
     {  
