@@ -3,7 +3,7 @@
  * Helper_ImageBrightness Class Definition
  * Helper for producing aestheically pleasing images to correct for sensor AIA degradation.
  * Based on data from: https://github.com/mjpauly/aia
- * 
+ *
  * @category Helper
  * @package  Helioviewer
  * @author   Kirill Vorobyev <kirill.g.vorobyev@nasa.gov>
@@ -17,16 +17,20 @@ class Helper_ImageBrightness {
     private $dataMax;
     private $date;
     private $localBrightness;
+    private $type;
+    private $startOfMissionBrightness;
+    private $ratio;
+    private $brightness;
 
    /**
     * Creates a new ImageBrightness instance
-      * 
+      *
       * @return void
       */
    public function __construct($datetime,$wavelength) {
 
       $this->wavelength = $wavelength;
-       
+
       //from aia_rescaling_data.json
       $this->availableWavelengths = array("304");
 
@@ -52,7 +56,7 @@ class Helper_ImageBrightness {
       if($this->localBrightness != null){
          $this->_computeScalar();
       }
-      
+
    }
 
    private function _findLocalBrightness(){
