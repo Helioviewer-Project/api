@@ -226,7 +226,7 @@ class Movie_HelioviewerMovie {
             }
         }
         catch (Exception $e) {
-            $this->_abort('Error encountered during movie frame compilation: ' . $e->getMessage() );
+            $this->_abort('Error encountered during movie frame compilation: ' . $e->getFile() . ":" . $e->getLine() . " - " . $e->getMessage() );
         }
 
         $t3 = time();
@@ -461,6 +461,7 @@ class Movie_HelioviewerMovie {
                     $this->numFrames--;
                 }
                 else {
+                    error_log("Movie creation error: " . $e->getFile() . ": " . $e->getLine());
                     // Otherwise proprogate exception to be logged
                     throw $e;
                 }
