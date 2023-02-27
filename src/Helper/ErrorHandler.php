@@ -69,6 +69,11 @@ function handleError($msg, $errorCode=255) {
     }
 }
 
+function logException(Exception $exception, string $prefix='') {
+    $message = $exception->getFile() . ":" . $exception->getLine() . " - " . $exception->getMessage();
+    logErrorMsg($message, $prefix);
+}
+
 /**
  * Logs an error message to the log whose location is specified in Config.ini
  *

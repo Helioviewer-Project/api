@@ -27,7 +27,7 @@ class Job_MovieBuilder
         } catch (Exception $e) {
             // Handle any errors encountered
             printf("Error processing movie %s\n", $this->args['movieId']);
-            logErrorMsg($e->getMessage(), "Resque_");
+            logException($e, "Resque_");
 
             // If counter was increased at queue time, decrement
             $this->_updateCounter();

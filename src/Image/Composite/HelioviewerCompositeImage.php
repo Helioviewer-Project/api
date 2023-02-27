@@ -1031,9 +1031,18 @@ class Image_Composite_HelioviewerCompositeImage {
         $behind = new ImagickPixel('#808080');
         $drawPoints = new IMagickDraw();
         $drawPoints->setFillColor($behind);
-        $drawTrajectories = new IMagickDraw();
-        $drawTrajectories->setStrokeColor($behind);
-        $drawTrajectories->setFillColor( new ImagickPixel( 'transparent' ) );
+        // Use solid lines for normal trajectories
+        $drawTrajectoriesSolid = new IMagickDraw();
+        $drawTrajectoriesSolid->setStrokeColor($behind);
+        $drawTrajectoriesSolid->setFillColor( new ImagickPixel( 'transparent' ) );
+        // Track whether solid or dashed should be used
+        $use_dashed = false;
+        // Use dashed lines for portions of the trajectory that are behind the sun
+        // Note: a 2nd imagick draw is needed due to a bug in the pecl extension that doesn't allow you to go back to a solid line.
+        //       See https://github.com/Imagick/imagick/issues/568
+        $drawTrajectoriesDashed = new IMagickDraw();
+        $drawTrajectoriesDashed->setStrokeColor($behind);
+        $drawTrajectoriesDashed->setFillColor( new ImagickPixel( 'transparent' ) );
         $r = 2; //radius for circles
         // Isolate the labels array
         $coordinates = $trajectories["trajectories"];
@@ -1061,12 +1070,13 @@ class Image_Composite_HelioviewerCompositeImage {
                         // Set the color based on planet position relative to plane of sun
                         if($lastPlaneState == "True"){
                             $drawPoints->setFillColor($behind);
-                            $drawTrajectories->setStrokeColor($behind);
-                            $drawTrajectories->setStrokeDashArray( [3,2] );//add dashes
+                            $drawTrajectoriesDashed->setStrokeColor($behind);
+                            $drawTrajectoriesDashed->setStrokeDashArray( [3,2] );//add dashes
+                            $use_dashed = true;
                         }else if($lastPlaneState == "False"){
                             $drawPoints->setFillColor($front);
-                            $drawTrajectories->setStrokeColor($front);
-                            $drawTrajectories->setStrokeDashArray( [null] );//clear dashes
+                            $drawTrajectoriesSolid->setStrokeColor($front);
+                            $use_dashed = false;
                         }
                         //process all timestamps
                         foreach($times as $time){
@@ -1093,10 +1103,14 @@ class Image_Composite_HelioviewerCompositeImage {
                                     // Assemble array of points for trajectory line
                                     array_push($trajectoryCoords, array(
                                         'x'=>$x,
-                                        'y'=>$y
+                                        'y'=>$y,
                                     ));
                                     // Create the trajectory line
-                                    $drawTrajectories->polyline($trajectoryCoords);
+                                    if ($use_dashed) {
+                                        $drawTrajectoriesDashed->polyline($trajectoryCoords);
+                                    } else {
+                                        $drawTrajectoriesSolid->polyline($trajectoryCoords);
+                                    }
                                     // Clear trajectory line
                                     $trajectoryCoords = array();
                                     // Assemble array of points for trajectory line
@@ -1107,12 +1121,13 @@ class Image_Composite_HelioviewerCompositeImage {
                                     // Set the color based on planet position relative to plane of sun
                                     if($coordinates[$observer][$body]->{$time}->{'behind_plane_of_sun'} == "True"){
                                         $drawPoints->setFillColor($behind);
-                                        $drawTrajectories->setStrokeColor($behind);
-                                        $drawTrajectories->setStrokeDashArray( [3,2] );//add dashes
+                                        $drawTrajectoriesDashed->setStrokeColor($behind);
+                                        $drawTrajectoriesDashed->setStrokeDashArray( [3,2] );//add dashes
+                                        $use_dashed = true;
                                     }else if($coordinates[$observer][$body]->{$time}->{'behind_plane_of_sun'} == "False"){
                                         $drawPoints->setFillColor($front);
-                                        $drawTrajectories->setStrokeColor($front);
-                                        $drawTrajectories->setStrokeDashArray( [null] );//clear dashes
+                                        $drawTrajectoriesSolid->setStrokeColor($front);
+                                        $use_dashed = false;
                                     }
                                 }else{
                                     // Assemble array of points for trajectory line
@@ -1129,13 +1144,18 @@ class Image_Composite_HelioviewerCompositeImage {
                             }
                         }
                         // Create the trajectory line
-                        $drawTrajectories->polyline($trajectoryCoords);
+                        if ($use_dashed) {
+                            $drawTrajectoriesDashed->polyline($trajectoryCoords);
+                        } else {
+                            $drawTrajectoriesSolid->polyline($trajectoryCoords);
+                        }
                     }
                 }
             }
         }
         // Composite trajectory lines to image
-        $imagickImage->drawImage($drawTrajectories);
+        $imagickImage->drawImage($drawTrajectoriesSolid);
+        $imagickImage->drawImage($drawTrajectoriesDashed);
         // Composite circles to image
         $imagickImage->drawImage($drawPoints);
 
@@ -1143,7 +1163,8 @@ class Image_Composite_HelioviewerCompositeImage {
         $front->destroy();
         $behind->destroy();
         $drawPoints->destroy();
-        $drawTrajectories->destroy();
+        $drawTrajectoriesSolid->destroy();
+        $drawTrajectoriesDashed->destroy();
     }
 
     /**
