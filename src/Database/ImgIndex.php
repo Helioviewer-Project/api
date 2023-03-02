@@ -369,6 +369,9 @@ class Database_ImgIndex {
         }
 
         $image = $result->fetch_array(MYSQLI_ASSOC);
+        if (is_null($image)) {
+            throw new Exception("No image found with id $dataId.", 24);
+        }
 
         // Fetch metadata from JP2 XML header
         $image_filepath = HV_JP2_DIR.$image['filepath'].'/'.$image['filename'];
