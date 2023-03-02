@@ -16,6 +16,8 @@
 
 class Validation_InputValidator
 {
+    const DATE_MESSAGE = "Please enter a date of the form 2003-10-06T00:00:00.000Z";
+
     /**
      * Validates and type-casts API Request parameters
      *
@@ -262,21 +264,17 @@ class Validation_InputValidator
      */
     public static function checkLayerValidity($fields, &$params)
     {
+        include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerLayers.php';
         foreach($fields as $field) {
             $layerString = $params[$field];
-            // Split the layer string by ],[ to split by the separate layers
-            $separateLayers = explode("],[", $layerString);
-            // Now confirm each layer has at least 9 elements
-            // Note: This is not comprehensive, but it is sufficient to keep the
-            //       bots from bloating the log with invalid layer string errors
-            foreach($separateLayers as $layer) {
-                $elements = explode(",", $layer);
-                // The most minimal layer string contains 3 elements [sourceId, visible, opacity]
-                if (count($elements) < 3) {
-                    throw new InvalidArgumentException(
-                        "Invalid layer string."
-                    );
-                }
+            // Attempt to parse the layer string
+            try {
+                $layerHelper = new Helper_HelioviewerLayers($layerString);
+                Validation_InputValidator::checkLayers($layerHelper->toArray());
+            } catch (InvalidArgumentException $e) {
+                throw $e;
+            } catch (Exception $e) {
+                throw new InvalidArgumentException("Couldn't parse layer string.");
             }
         }
     }
@@ -349,7 +347,7 @@ class Validation_InputValidator
     public static function checkUTCDate($date)
     {
         if (!preg_match("/^\d{4}[\/-]\d{2}[\/-]\d{2}T\d{2}:\d{2}:\d{2}\.?\d{0,6}?Z$/i", $date)) {
-            throw new InvalidArgumentException("Invalid date string. Please enter a date of the form 2003-10-06T00:00:00.000Z", 25);
+            throw new InvalidArgumentException("Invalid date string. " . self::DATE_MESSAGE, 25);
         }
     }
 
@@ -377,6 +375,22 @@ class Validation_InputValidator
             $value = $args[$parameter];
             if (!array_key_exists($value, $options)) {
                 throw new InvalidArgumentException("Invalid argument provided for $parameter, must be one of " . implode($options, ', '));
+            }
+        }
+    }
+
+    /**
+     * Checks that the given list of layers are valid
+     * @param array $layers Layers parsed by Helper_HelioviewerLayers
+     */
+    public static function checkLayers(array $layers) {
+        foreach ($layers as $layer) {
+            if (array_key_exists("baseDiffTime", $layer)) {
+                try {
+                    Validation_InputValidator::checkUTCDate($layer["baseDiffTime"]);
+                } catch (InvalidArgumentException $e) {
+                    throw new InvalidArgumentException("Invalid baseDiffTime in layer string: " . $layer["baseDiffTime"] . "<br/>" . self::DATE_MESSAGE);
+                }
             }
         }
     }
