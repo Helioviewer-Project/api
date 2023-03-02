@@ -45,6 +45,7 @@ class Module_WebClient implements Module {
                 $this->{$this->_params['action']}();
             }
             catch (Exception $e) {
+                logException($e, "WebClient_");
                 handleError($e->getMessage(), $e->getCode());
             }
         }
