@@ -1,3 +1,6 @@
 [submodule "src/Movie/GoogleSDK"]
 	path = src/Movie/GoogleSDK
 	url = https://github.com/google/google-api-php-client.git
+[submodule "src/flare-scoreboard"]
+	path = src/FlareScoreboard
+	url = git@github.com:dgarciabriseno/flare-scoreboard.git

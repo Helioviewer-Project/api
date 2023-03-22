@@ -500,8 +500,6 @@ class Event_HEKAdapter {
 	        }
 		}
 
-
-
         // No output is desired for cacheOnly requests.
         // Also no need to calculate differential rotation or to
         // filter results.
@@ -517,7 +515,6 @@ class Event_HEKAdapter {
         }
 
         foreach( (array)$data as $index => $event ) {
-
             if ( gettype($event) == 'object') {
                 $event = (array) $event;
             }
@@ -720,6 +717,7 @@ class Event_HEKAdapter {
                              $event['ar_noaanum'] == '' ||
                              $event['frm_name'] != 'NOAA SWPC Observer' ) {
 
+
                            continue;
                         }
 
@@ -741,6 +739,20 @@ class Event_HEKAdapter {
         }
 
         return $events;
+    }
+
+    public function importScoreboardEvents(string $start, string $end)
+    {
+        //Start and End dates
+		$tz = new DateTimeZone('UTC');
+		$eDate = new DateTimeImmutable($end, $tz);
+		$sDate = new DateTimeImmutable($start, $tz);
+
+        include_once __DIR__ . "/FlarePredictions.php";
+        $scoreboard_start = $sDate->format('Y-m-dTH:i:s');
+        $scoreboard_stop = $eDate->format('Y-m-dTH:i:s');
+        $scoreboard_events = FlarePredictions::getEvents($scoreboard_start, $scoreboard_stop);
+        $this->_parseEvents(array('result' => $scoreboard_events));
     }
 
 	/**
@@ -895,6 +907,141 @@ class Event_HEKAdapter {
 		}
     }
 
+    private function _precomputeEventDetails(array $event): ?array
+    {
+        // Scalar for normalizing HEK hpc_x and hpc_y coordinates based on the
+        // apparent size of the Sun as seen from Earth at the specified timestamp.
+        // A reasonable approximation in the absence of the appropriate
+        // spacecraft's position at the timestamp of the image(s) used for F/E detection.
+        $au_scalar = sunearth_distance($event['event_starttime'].'.000Z');
+
+        // Get Unique ID for the event
+        $event['hv_labels_formatted'] = $this->_buildLabelArray($event);
+
+        // Generate polygon PNG for events that have a chain code
+        if ( $event['hpc_boundcc'] != '' ) {
+            $this->drawPolygon($event, $au_scalar, $polyOffsetX, $polyOffsetY, $polyURL, $polyWidth, $polyHeight);
+
+            //Calculate event marker offset
+            $polyArray = polygonToArray($event['hpc_boundcc'], $au_scalar);
+            $markerXY = polylabel($polyArray['array']);
+            $event['hv_marker_offset_x'] = round($markerXY['x'] - $polyArray['width']/2);
+            $event['hv_marker_offset_y'] = round($markerXY['y'] - $polyArray['height']/2);
+
+            // Save polygon info into $data to be cached
+            $event['hv_poly_hpc_x_ul_scaled_norot'] = $polyOffsetX;
+            $event['hv_poly_hpc_y_ul_scaled_norot'] = $polyOffsetY;
+            $event['hv_poly_url'] = $polyURL;
+            $event['hv_poly_width_max_zoom_pixels'] = $polyWidth;
+            $event['hv_poly_height_max_zoom_pixels'] = $polyHeight;
+        }
+
+        // Calculate radial distance for determining whether or not to apply differential rotation.
+        $event['hv_hpc_r_scaled'] = sqrt( pow($event['hpc_x'],2) + pow($event['hpc_y'],2) ) * $au_scalar;
+
+        if ( $event['hv_hpc_r_scaled'] < 961.07064 ) {
+
+            // Differential rotation of the event marker's X,Y position
+            $rotateFromTime = $event['event_starttime'].'.000Z';
+            $rotateToTime   = $event['event_starttime'].'.000Z';//$startTime;
+
+            if ( $event['frm_name'] == 'SPoCA' ) {
+                $rotateFromTime = $event['event_endtime'].'.000Z';
+            }
+            else if (
+                $event['frm_name'] == 'Emerging flux region module' &&
+                floatval($event['frm_versionnumber']) < 0.55
+                ) {
+
+                $rotateFromTime = $event['event_peaktime'].'.000Z';
+            }
+
+            list( $event['hv_hpc_x_notscaled_rot'], $event['hv_hpc_y_notscaled_rot']) =
+                rot_hpc( $event['hpc_x'], $event['hpc_y'],
+                            $rotateFromTime, $rotateToTime,
+                            $spacecraft=null, $vstart=null, $vend=null);
+
+            $event['hv_hpc_x_rot_delta_notscaled'] = $event['hv_hpc_x_notscaled_rot'] - $event['hpc_x'];
+            $event['hv_hpc_y_rot_delta_notscaled'] = $event['hv_hpc_y_notscaled_rot'] - $event['hpc_y'];
+
+            $event['hv_hpc_x_scaled_rot'] = $event['hv_hpc_x_notscaled_rot'] * $au_scalar;
+            $event['hv_hpc_y_scaled_rot'] = $event['hv_hpc_y_notscaled_rot'] * $au_scalar;
+
+            $event['hv_rot_hpc_time_base'] = $event['event_starttime'];
+            $event['hv_rot_hpc_time_targ'] = $event['event_starttime'];//$startTime;
+
+            // These values will be used to place the event marker
+            // in the viewport, screenshots, and movies.
+            $event['hv_hpc_x_final'] = $event['hv_hpc_x_scaled_rot'];
+            $event['hv_hpc_y_final'] = $event['hv_hpc_y_scaled_rot'];
+
+
+            // Drop events whose calculated marker position is NaN
+            if ( is_nan($event['hv_hpc_x_final']) ||
+                    is_nan($event['hv_hpc_y_final']) ) {
+
+                return null;
+            }
+
+            // Apply differential rotation offset to the region
+            // polygon's upper-left X,Y position
+            if ( isset($event['hv_poly_hpc_x_ul_scaled_norot']) &&
+                    isset($event['hv_poly_hpc_y_ul_scaled_norot']) &&
+                    is_numeric($event['hv_poly_hpc_x_ul_scaled_norot']) &&
+                    is_numeric($event['hv_poly_hpc_y_ul_scaled_norot'])
+                ) {
+
+                $event['hv_poly_hpc_x_ul_scaled_rot']
+                    = $event['hv_poly_hpc_x_ul_scaled_norot']
+                        + ( $event['hv_hpc_x_rot_delta_notscaled']
+                            * $au_scalar );
+
+                $event['hv_poly_hpc_y_ul_scaled_rot']
+                    = $event['hv_poly_hpc_y_ul_scaled_norot']
+                        + ( $event['hv_hpc_y_rot_delta_notscaled']
+                            * $au_scalar );
+
+                // These values will be used to place the region
+                // polygon in the viewport, screenshots, and movies.
+                // Represents upper-left corner of polygon PNG.
+                $event['hv_poly_hpc_x_final'] = $event['hv_poly_hpc_x_ul_scaled_rot'];
+                $event['hv_poly_hpc_y_final'] = $event['hv_poly_hpc_y_ul_scaled_rot'];
+            }
+        }
+        else {
+            // Don't apply differential rotation to objects beyond
+            // the disk but do normalize them with the $au_scalar.
+
+            // These values will be used to place the event marker
+            // in the viewport, screenshots, and movies.
+            $event['hv_hpc_x_final'] = $event['hpc_x'] * $au_scalar;
+            $event['hv_hpc_y_final'] = $event['hpc_y'] * $au_scalar;
+
+            if (   isset($event['hv_poly_hpc_x_ul_scaled_norot'])
+                && isset($event['hv_poly_hpc_y_ul_scaled_norot'])
+                && is_numeric($event['hv_poly_hpc_x_ul_scaled_norot'])
+                && is_numeric($event['hv_poly_hpc_y_ul_scaled_norot'])
+                ) {
+
+                // These values will be used to place the event
+                // polygons in the viewport, screenshots, and movies.
+                $event['hv_poly_hpc_x_final'] = $event['hv_poly_hpc_x_ul_scaled_norot'];
+                $event['hv_poly_hpc_y_final'] = $event['hv_poly_hpc_y_ul_scaled_norot'];
+            }
+        }
+
+
+        // Sort HEK results by parameter name
+        if ( defined('PHP_VERSION_ID') && PHP_VERSION_ID >= 50400 ) {
+            ksort($event, SORT_NATURAL | SORT_FLAG_CASE);
+        }
+        else {
+            ksort($event, SORT_STRING);
+        }
+
+        return $event;
+    }
+
     private function _parseEvents($result){
 
         include_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
@@ -910,140 +1057,9 @@ class Event_HEKAdapter {
 	    if(count($result['result']) > 0){
             $successCount = 0;
 			foreach($result['result'] as $k=>$event){
-				$event_starttime = new DateTime($event['event_starttime'].'Z');
-				$event_endtime   = new DateTime($event['event_endtime']  .'Z');
-
-				//Cache dir location to store bounding boxes images
-				$cache_base_dir = HV_CACHE_DIR.'/events/'.$event_starttime->format('Y').'/'.$event_starttime->format('m').'/'.$event_starttime->format('d');
-
-				// Scalar for normalizing HEK hpc_x and hpc_y coordinates based on the
-		        // apparent size of the Sun as seen from Earth at the specified timestamp.
-		        // A reasonable approximation in the absence of the appropriate
-		        // spacecraft's position at the timestamp of the image(s) used for F/E detection.
-		        $au_scalar = sunearth_distance($event['event_starttime'].'.000Z');
-
-		        // Get Unique ID for the event
-		        $event['hv_labels_formatted'] = $this->_buildLabelArray($event);
-
-		        // Generate polygon PNG for events that have a chain code
-                if ( $event['hpc_boundcc'] != '' ) {
-                    $this->drawPolygon($event, $au_scalar, $polyOffsetX, $polyOffsetY, $polyURL, $polyWidth, $polyHeight);
-
-					//Calculate event marker offset
-					$polyArray = polygonToArray($event['hpc_boundcc'], $au_scalar);
-					$markerXY = polylabel($polyArray['array']);
-					$event['hv_marker_offset_x'] = round($markerXY['x'] - $polyArray['width']/2);
-					$event['hv_marker_offset_y'] = round($markerXY['y'] - $polyArray['height']/2);
-
-                    // Save polygon info into $data to be cached
-                    $event['hv_poly_hpc_x_ul_scaled_norot'] = $polyOffsetX;
-                    $event['hv_poly_hpc_y_ul_scaled_norot'] = $polyOffsetY;
-                    $event['hv_poly_url'] = $polyURL;
-                    $event['hv_poly_width_max_zoom_pixels'] = $polyWidth;
-                    $event['hv_poly_height_max_zoom_pixels'] = $polyHeight;
-                }
-
-		        // Calculate radial distance for determining whether or not to apply differential rotation.
-                $event['hv_hpc_r_scaled'] = sqrt( pow($event['hpc_x'],2) + pow($event['hpc_y'],2) ) * $au_scalar;
-
-		        if ( $event['hv_hpc_r_scaled'] < 961.07064 ) {
-
-                    // Differential rotation of the event marker's X,Y position
-					$rotateFromTime = $event['event_starttime'].'.000Z';
-                    $rotateToTime   = $event['event_starttime'].'.000Z';//$startTime;
-
-                    if ( $event['frm_name'] == 'SPoCA' ) {
-                        $rotateFromTime = $event['event_endtime'].'.000Z';
-                    }
-                    else if (
-                        $event['frm_name'] == 'Emerging flux region module' &&
-                        floatval($event['frm_versionnumber']) < 0.55
-                        ) {
-
-                        $rotateFromTime = $event['event_peaktime'].'.000Z';
-                    }
-
-                    list( $event['hv_hpc_x_notscaled_rot'], $event['hv_hpc_y_notscaled_rot']) =
-                        rot_hpc( $event['hpc_x'], $event['hpc_y'],
-                                 $rotateFromTime, $rotateToTime,
-                                 $spacecraft=null, $vstart=null, $vend=null);
-
-                    $event['hv_hpc_x_rot_delta_notscaled'] = $event['hv_hpc_x_notscaled_rot'] - $event['hpc_x'];
-                    $event['hv_hpc_y_rot_delta_notscaled'] = $event['hv_hpc_y_notscaled_rot'] - $event['hpc_y'];
-
-                    $event['hv_hpc_x_scaled_rot'] = $event['hv_hpc_x_notscaled_rot'] * $au_scalar;
-                    $event['hv_hpc_y_scaled_rot'] = $event['hv_hpc_y_notscaled_rot'] * $au_scalar;
-
-                    $event['hv_rot_hpc_time_base'] = $event['event_starttime'];
-                    $event['hv_rot_hpc_time_targ'] = $event['event_starttime'];//$startTime;
-
-                    // These values will be used to place the event marker
-                    // in the viewport, screenshots, and movies.
-                    $event['hv_hpc_x_final'] = $event['hv_hpc_x_scaled_rot'];
-                    $event['hv_hpc_y_final'] = $event['hv_hpc_y_scaled_rot'];
-
-
-                    // Drop events whose calculated marker position is NaN
-                    if ( is_nan($event['hv_hpc_x_final']) ||
-                         is_nan($event['hv_hpc_y_final']) ) {
-
-                        continue;
-                    }
-
-                    // Apply differential rotation offset to the region
-                    // polygon's upper-left X,Y position
-                    if ( isset($event['hv_poly_hpc_x_ul_scaled_norot']) &&
-                         isset($event['hv_poly_hpc_y_ul_scaled_norot']) &&
-                         is_numeric($event['hv_poly_hpc_x_ul_scaled_norot']) &&
-                         is_numeric($event['hv_poly_hpc_y_ul_scaled_norot'])
-                       ) {
-
-                        $event['hv_poly_hpc_x_ul_scaled_rot']
-                            = $event['hv_poly_hpc_x_ul_scaled_norot']
-                              + ( $event['hv_hpc_x_rot_delta_notscaled']
-                                  * $au_scalar );
-
-                        $event['hv_poly_hpc_y_ul_scaled_rot']
-                            = $event['hv_poly_hpc_y_ul_scaled_norot']
-                              + ( $event['hv_hpc_y_rot_delta_notscaled']
-                                  * $au_scalar );
-
-                        // These values will be used to place the region
-                        // polygon in the viewport, screenshots, and movies.
-                        // Represents upper-left corner of polygon PNG.
-                        $event['hv_poly_hpc_x_final'] = $event['hv_poly_hpc_x_ul_scaled_rot'];
-                        $event['hv_poly_hpc_y_final'] = $event['hv_poly_hpc_y_ul_scaled_rot'];
-                    }
-                }
-                else {
-                    // Don't apply differential rotation to objects beyond
-                    // the disk but do normalize them with the $au_scalar.
-
-                    // These values will be used to place the event marker
-                    // in the viewport, screenshots, and movies.
-                    $event['hv_hpc_x_final'] = $event['hpc_x'] * $au_scalar;
-                    $event['hv_hpc_y_final'] = $event['hpc_y'] * $au_scalar;
-
-                    if (   isset($event['hv_poly_hpc_x_ul_scaled_norot'])
-                        && isset($event['hv_poly_hpc_y_ul_scaled_norot'])
-                        && is_numeric($event['hv_poly_hpc_x_ul_scaled_norot'])
-                        && is_numeric($event['hv_poly_hpc_y_ul_scaled_norot'])
-                       ) {
-
-                        // These values will be used to place the event
-                        // polygons in the viewport, screenshots, and movies.
-                        $event['hv_poly_hpc_x_final'] = $event['hv_poly_hpc_x_ul_scaled_norot'];
-						$event['hv_poly_hpc_y_final'] = $event['hv_poly_hpc_y_ul_scaled_norot'];
-                    }
-                }
-
-
-		        // Sort HEK results by parameter name
-				if ( defined('PHP_VERSION_ID') && PHP_VERSION_ID >= 50400 ) {
-                    ksort($event, SORT_NATURAL | SORT_FLAG_CASE);
-                }
-                else {
-                    ksort($event, SORT_STRING);
+                $event = $this->_precomputeEventDetails($event);
+                if (is_null($event)) {
+                    continue;
                 }
 
                 //Store Result in Database
@@ -1262,6 +1278,10 @@ class Event_HEKAdapter {
 
             $labelArray = Array('Event Type' => $event['concept']);
         }
+        if ( $event['kb_archivist'] == 'CCMC Flare Scoreboard') {
+            $labelArray['Event Type'] = $event['concept'];
+            $labelArray['Method'] = $event['frm_name'];
+        }
         return $labelArray;
     }
 
@@ -1453,7 +1473,7 @@ class Event_HEKAdapter {
 
         /* Create a new canvas object and a transparent image */
         $canvas = new Imagick();
-        $canvas->newImage($polyWidth, $polyHeight, 'none');
+        $canvas->newImage(intval($polyWidth), intval($polyHeight), 'none');
 
         /* Draw the ImagickDraw on to the canvas */
         $canvas->drawImage($draw);
