@@ -33,11 +33,13 @@ for.
 Contains scripts related to HEK event management.
 
 ## statistics
-Contains scripts related to statistics management.
+Contains scripts related to statistics management (i.e. updating data coverage stats).
+
+## submodules
+Contains helpful scripts for setting up submodules
 
 ## config.php
 Import into php scripts to load the configured Config.ini.
 This is a compatibility layer so that every script doesn't need to
 search '../../../' to load the main Config.php. They just need
 to find this one.
-
