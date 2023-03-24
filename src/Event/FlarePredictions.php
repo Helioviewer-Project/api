@@ -60,7 +60,7 @@ class FlarePredictions
     {
         // If the python server is not running, start it
         if (!file_exists("/tmp/hgs2hpc.sock")) {
-            $cmd = "HOME=/tmp " . HV_PYTHON_PATH . " " . __DIR__ . "/hgs2hpc.py > /dev/null 2>&1 &";
+            $cmd = "HOME=/tmp " . HV_PYTHON_PATH . " " . __DIR__ . "/hgs2hpc.py > /tmp/hgs2hpc.log 2>&1 &";
             exec($cmd);
             // Wait up to 5 seconds for the socket to be created
             $elapsed_time = 0;
