@@ -8,23 +8,28 @@ require_once '../config.php';
  */
 function print_usage($name) {
 	echo "Usage:
-   $name [-u] [--update-only] <start date> <end date>
+   $name [-u|e|s] [--update-only|hek|scoreboard] <start date> <end date>
 
 Imports HEK events into the Helioviewer Database.
 You must specify the date range for the events to import.
 
 Optional Arguments:
-  -u,--update-only   Update statistics only, don't download from HEK
+  -h                 Show this help message
+  -u,--update-only   Update statistics only, don't download any events
+  -e,--hek           Download events from HEK
+  -s,--scoreboard    Download events from the CCMC Flare Scoreboard
 \n";
 }
 
 function parse_args($argv) {
 	// Store default values for optional parameters
 	$flags = array(
-		"update-only" => false
+		"update-only" => false,
+		"hek" => false,
+		"scoreboard" => false
 	);
 	// Use getopt to parse command line options
-	$opts = getopt('hu', ['help', 'update-only'], $rest_index);
+	$opts = getopt('hues', ['help', 'update-only', 'hek', 'scoreboard'], $rest_index);
 	if ($opts) {
 		foreach ($opts as $opt => $value) {
 			switch ($opt) {
@@ -38,6 +43,16 @@ function parse_args($argv) {
 				case "u":
 				case "update-only":
 					$flags['update-only'] = true;
+					break;
+
+				case "e":
+				case "hek":
+					$flags['hek'] = true;
+					break;
+
+				case "s":
+				case "scoreboard":
+					$flags['scoreboard'] = true;
 					break;
 			}
 		}
@@ -68,12 +83,17 @@ function parse_args($argv) {
 	return $result;
 }
 
-function downloadEvents($start, $end) {
+function downloadEvents($start, $end, $flags) {
 	require_once HV_ROOT_DIR.'/../src/Event/HEKAdapter.php';
 	echo "Starting HEK import over $start to $end". "\n";
 	// Query the HEK
 	$hek = new Event_HEKAdapter();
-	$events = $hek->importEventsOverRange($start, $end);
+	if ($flags['hek']) {
+		$hek->importEventsOverRange($start, $end);
+	}
+	if ($flags['scoreboard']) {
+		$hek->importScoreboardEvents($start, $end);
+	}
 }
 
 function updateTimeline($start, $end) {
@@ -96,7 +116,7 @@ $start = $args['start'];
 $end = $args['end'];
 
 if (!$args['update-only']) {
-	downloadEvents($start, $end);
+	downloadEvents($start, $end, $args);
 }
 updateTimeline($start, $end);
 
