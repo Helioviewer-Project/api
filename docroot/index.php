@@ -63,45 +63,45 @@ if ( !isset($params) || !loadModule($params) ) {
 function loadModule($params) {
 
     $valid_actions = array(
-        'downloadScreenshot'     	=> 'WebClient',
-        'getClosestImage'        	=> 'WebClient',
-        'getDataSources'         	=> 'WebClient',
-        'getJP2Header'           	=> 'WebClient',
-        'getNewsFeed'            	=> 'WebClient',
-        'getStatus'              	=> 'WebClient',
-        'getSciDataScript'       	=> 'WebClient',
-        'getTile'                	=> 'WebClient',
-		'downloadImage'             => 'WebClient',
-        'getUsageStatistics'     	=> 'WebClient',
-        'getDataCoverageTimeline'	=> 'WebClient',
-        'getDataCoverage'        	=> 'WebClient',
-        'updateDataCoverage'     	=> 'WebClient', // Deprecated, remove in V3, replaced by management scripts
-        'shortenURL'             	=> 'WebClient',
-        'takeScreenshot'         	=> 'WebClient',
+        'downloadScreenshot'        => 'WebClient',
+        'getClosestImage'           => 'WebClient',
+        'getDataSources'            => 'WebClient',
+        'getJP2Header'              => 'WebClient',
+        'getNewsFeed'               => 'WebClient',
+        'getStatus'                 => 'WebClient',
+        'getSciDataScript'          => 'WebClient',
+        'getTile'                   => 'WebClient',
+        'downloadImage'             => 'WebClient',
+        'getUsageStatistics'        => 'WebClient',
+        'getDataCoverageTimeline'   => 'WebClient',
+        'getDataCoverage'           => 'WebClient',
+        'updateDataCoverage'        => 'WebClient', // Deprecated, remove in V3, replaced by management scripts
+        'shortenURL'                => 'WebClient',
+        'takeScreenshot'            => 'WebClient',
         'getRandomSeed'             => 'WebClient',
-        'getJP2Image'            	=> 'JHelioviewer',
-        'getJPX'                 	=> 'JHelioviewer',
-        'getJPXClosestToMidPoint'	=> 'JHelioviewer',
-        'launchJHelioviewer'     	=> 'JHelioviewer',
-        'downloadMovie'          	=> 'Movies',
-        'getMovieStatus'         	=> 'Movies',
-        'playMovie'              	=> 'Movies',
-        'queueMovie'             	=> 'Movies',
-        'reQueueMovie'           	=> 'Movies',
-        'uploadMovieToYouTube'   	=> 'Movies',
-        'checkYouTubeAuth'       	=> 'Movies',
-        'getYouTubeAuth'         	=> 'Movies',
-        'getUserVideos'          	=> 'Movies',
-        'getObservationDateVideos'	=> 'Movies',
-        'getEventFRMs'           	=> 'SolarEvents',
-        'getEvent'		         	=> 'SolarEvents',
-        'getFlarePredictions'    	=> 'SolarEvents',
-        'getFRMs'                	=> 'SolarEvents',
-        'getDefaultEventTypes'   	=> 'SolarEvents',
-        'getEvents'              	=> 'SolarEvents',
-        'importEvents'           	=> 'SolarEvents', // Deprecated, remove in V3, replaced by management scripts
-        'getEventsByEventLayers' 	=> 'SolarEvents',
-        'getEventGlossary'       	=> 'SolarEvents',
+        'getJP2Image'               => 'JHelioviewer',
+        'getJPX'                    => 'JHelioviewer',
+        'getJPXClosestToMidPoint'   => 'JHelioviewer',
+        'launchJHelioviewer'        => 'JHelioviewer',
+        'downloadMovie'             => 'Movies',
+        'getMovieStatus'            => 'Movies',
+        'playMovie'                 => 'Movies',
+        'queueMovie'                => 'Movies',
+        'reQueueMovie'              => 'Movies',
+        'uploadMovieToYouTube'      => 'Movies',
+        'checkYouTubeAuth'          => 'Movies',
+        'getYouTubeAuth'            => 'Movies',
+        'getUserVideos'             => 'Movies',
+        'getObservationDateVideos'  => 'Movies',
+        'getEventFRMs'              => 'SolarEvents',
+        'getEvent'                  => 'SolarEvents',
+        'getFlarePredictions'       => 'SolarEvents',
+        'getFRMs'                   => 'SolarEvents',
+        'getDefaultEventTypes'      => 'SolarEvents',
+        'getEvents'                 => 'SolarEvents',
+        'importEvents'              => 'SolarEvents', // Deprecated, remove in V3, replaced by management scripts
+        'getEventsByEventLayers'    => 'SolarEvents',
+        'getEventGlossary'          => 'SolarEvents',
         'getSolarBodiesGlossary'    => 'SolarBodies',
         'getSolarBodies'            => 'SolarBodies',
         'getTrajectoryTime'         => 'SolarBodies',
@@ -121,7 +121,7 @@ function loadModule($params) {
             );
         }
         else {
-	        //Set-up variables for rate-limiting
+            //Set-up variables for rate-limiting
             $prefix = HV_RATE_LIMIT_PREFIX;
             //Use IP address as identifier.
             $identifier = $_SERVER["REMOTE_ADDR"];
@@ -140,10 +140,10 @@ function loadModule($params) {
                 // Rate-limit the client
                 // This stores the identifier in the redis database and sets an expiry time based on the temporal rate specified
                 // For Example: perMinute will store the $identifier with an expirty time of 60 seconds after which the $identifier is deleted from the redis database
-		        if (HV_ENFORCE_RATE_LIMIT) {
-                	$rateLimiter->limit($identifier, RateLimit\Rate::perMinute($maximumRequests));
-        	    }
-		        // Execute action
+                if (HV_ENFORCE_RATE_LIMIT) {
+                    $rateLimiter->limit($identifier, RateLimit\Rate::perMinute($maximumRequests));
+                }
+                // Execute action
                 $moduleName = $valid_actions[$params['action']];
                 $className  = 'Module_'.$moduleName;
 
@@ -158,7 +158,7 @@ function loadModule($params) {
                     'takeScreenshot', 'getJPX', 'getJPXClosestToMidPoint', 'uploadMovieToYouTube', 'getRandomSeed');
 
                 // Note that in addition to the above, buildMovie requests and
-	            // addition to getTile when the tile was already in the cache.
+                // addition to getTile when the tile was already in the cache.
                 if ( HV_ENABLE_STATISTICS_COLLECTION &&
                     in_array($params['action'], $actions_to_keep_stats_for) ) {
 
@@ -166,7 +166,7 @@ function loadModule($params) {
                     $statistics = new Database_Statistics();
                     $log_param = $params['action'];
                     if($log_param == 'getJPXClosestToMidPoint'){
-	                $log_param = 'getJPX';
+                    $log_param = 'getJPX';
                     }
                     $statistics->log($params['action']);
                 }
