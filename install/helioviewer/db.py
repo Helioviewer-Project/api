@@ -58,10 +58,10 @@ def setup_database_schema(adminuser, adminpass, dbhost, dbname, dbuser, dbpass, 
     create_redis_stats_table(cursor)
     print("Creating rate limit table")
     create_rate_limit_table(cursor)
-    print("Creating flare prediction table")
-    create_flare_prediction_table(cursor)
     print("Creating flare prediction dataset table")
     create_flare_prediction_dataset_table(cursor)
+    print("Creating flare prediction table")
+    create_flare_prediction_table(cursor)
 
     return db, cursor
 
