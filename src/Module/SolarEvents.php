@@ -178,7 +178,7 @@ class Module_SolarEvents implements Module {
         header('Content-Type: application/json');
         echo json_encode($events);
     }
-    
+
     /**
      * Import Features/Events from HEK database to the helioviewer for the requested time range
      *
@@ -190,7 +190,7 @@ class Module_SolarEvents implements Module {
         //run import if the auth provided matches the one set in config.ini
         if( $inputApiKey == HV_IMPORT_EVENTS_AUTH ){
 
-	    include_once HV_ROOT_DIR.'/../src/Event/HEKAdapter.php';
+            include_once HV_ROOT_DIR.'/../src/Event/HEKAdapter.php';
 
             $hek = new Event_HEKAdapter();
 
@@ -209,7 +209,20 @@ class Module_SolarEvents implements Module {
             echo "------------------------------------------\n";
             //header('Content-Type: application/json');
             //echo json_encode('{"status":"success"}');
-	}
+        }
+    }
+
+    /**
+     * Returns the latest flare predictions for the given observation time.
+     */
+    public function getFlarePredictions() {
+        $date = $this->_params['date'];
+        // Query the database for predictions that were issued as close as possible to the given date but not exceeding it.
+        include_once HV_ROOT_DIR.'/../src/Database/FlarePredictionDatabase.php';
+        $predictions = Database_FlarePredictionDatabase::getLatestFlarePredictions(new DateTime($date));
+        // Process the results and return them as a JSON object.
+        header("Content-Type: application/json");
+        echo json_encode($predictions);
     }
 
     /**
@@ -262,6 +275,12 @@ class Module_SolarEvents implements Module {
             $expected = array(
                 'required' => array('startTime', 'endTime'),
                 'dates'    => array('startTime', 'endTime')
+            );
+            break;
+        case 'getFlarePredictions':
+            $expected = array(
+                'required' => array('date'),
+                'dates' => array('date')
             );
             break;
         default:
