@@ -500,6 +500,8 @@ class Event_HEKAdapter {
 	        }
 		}
 
+
+
         // No output is desired for cacheOnly requests.
         // Also no need to calculate differential rotation or to
         // filter results.
@@ -515,6 +517,7 @@ class Event_HEKAdapter {
         }
 
         foreach( (array)$data as $index => $event ) {
+
             if ( gettype($event) == 'object') {
                 $event = (array) $event;
             }
@@ -717,7 +720,6 @@ class Event_HEKAdapter {
                              $event['ar_noaanum'] == '' ||
                              $event['frm_name'] != 'NOAA SWPC Observer' ) {
 
-
                            continue;
                         }
 
@@ -739,20 +741,6 @@ class Event_HEKAdapter {
         }
 
         return $events;
-    }
-
-    public function importScoreboardEvents(string $start, string $end)
-    {
-        //Start and End dates
-		$tz = new DateTimeZone('UTC');
-		$eDate = new DateTimeImmutable($end, $tz);
-		$sDate = new DateTimeImmutable($start, $tz);
-
-        include_once __DIR__ . "/FlarePredictions.php";
-        $scoreboard_start = $sDate->format('Y-m-dTH:i:s');
-        $scoreboard_stop = $eDate->format('Y-m-dTH:i:s');
-        $scoreboard_events = FlarePredictions::getEvents($scoreboard_start, $scoreboard_stop);
-        $this->_parseEvents(array('result' => $scoreboard_events));
     }
 
 	/**
@@ -1274,10 +1262,6 @@ class Event_HEKAdapter {
 
             $labelArray = Array('Event Type' => $event['concept']);
         }
-        if ( $event['kb_archivist'] == 'CCMC Flare Scoreboard') {
-            $labelArray['Event Type'] = $event['concept'];
-            $labelArray['Method'] = $event['frm_name'];
-        }
         return $labelArray;
     }
 
@@ -1469,7 +1453,7 @@ class Event_HEKAdapter {
 
         /* Create a new canvas object and a transparent image */
         $canvas = new Imagick();
-        $canvas->newImage(intval($polyWidth), intval($polyHeight), 'none');
+        $canvas->newImage($polyWidth, $polyHeight, 'none');
 
         /* Draw the ImagickDraw on to the canvas */
         $canvas->drawImage($draw);
