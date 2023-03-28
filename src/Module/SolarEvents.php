@@ -220,6 +220,12 @@ class Module_SolarEvents implements Module {
         // Query the database for predictions that were issued as close as possible to the given date but not exceeding it.
         include_once HV_ROOT_DIR.'/../src/Database/FlarePredictionDatabase.php';
         $predictions = Database_FlarePredictionDatabase::getLatestFlarePredictions(new DateTime($date));
+
+        include_once HV_ROOT_DIR.'/../scripts/rot_hpc.php';
+        foreach ($predictions as &$prediction) {
+            list($prediction['hv_hpc_x'], $prediction['hv_hpc_y']) = rot_hpc($prediction['hpc_x'], $prediction['hpc_y'], $prediction['start_window'], $date);
+        }
+
         // Process the results and return them as a JSON object.
         header("Content-Type: application/json");
         echo json_encode($predictions);
