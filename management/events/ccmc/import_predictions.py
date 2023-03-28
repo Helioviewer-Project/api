@@ -51,7 +51,6 @@ def as_list(predictions):
     """
     result = []
     ignore_count = 0
-    import pdb; pdb.set_trace()
     for prediction in predictions:
         # Ignore predictions without a position
         if prediction.latitude and prediction.longitude:
