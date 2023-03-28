@@ -95,7 +95,7 @@ function loadModule($params) {
         'getObservationDateVideos'	=> 'Movies',
         'getEventFRMs'           	=> 'SolarEvents',
         'getEvent'		         	=> 'SolarEvents',
-        'getFlarePredictions'       => 'SolarEvents',
+        'getFlarePredictions'    	=> 'SolarEvents',
         'getFRMs'                	=> 'SolarEvents',
         'getDefaultEventTypes'   	=> 'SolarEvents',
         'getEvents'              	=> 'SolarEvents',
