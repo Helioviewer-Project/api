@@ -7,3 +7,5 @@ by the `Lockheed Martin Solar & Astrophysics Laboratory (LMSAL) <http://www.lmsa
 
 Consult LMSAL's `HEK API Documentation <http://www.lmsal.com/hek/api.html>`_ for
 more information.
+
+.. include:: solar_features_and_events/getFlarePredictions.rst
