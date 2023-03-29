@@ -6,7 +6,7 @@ class SolarOrbiterDataServer(DataServer):
     """SolarOrbiter Datasource definition"""
     def __init__(self):
         """Defines the root directory of where the data is kept at LMSAL."""
-        DataServer.__init__(self, "https://www.sidc.be/EUI/data/releases/202204_release_5.0/L3/", "Solar_Orbiter")
+        DataServer.__init__(self, "https://www.sidc.be/EUI/data/releases/202301_release_6.0/L3/", "Solar_Orbiter")
 
     def compute_directories(self, start_date, end_date):
         """Computes a list of remote directories expected to contain files"""
