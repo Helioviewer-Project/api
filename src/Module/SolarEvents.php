@@ -216,19 +216,25 @@ class Module_SolarEvents implements Module {
      * Returns the latest flare predictions for the given observation time.
      */
     public function getFlarePredictions() {
-        $date = $this->_params['date'];
+        $date = $this->_params['startTime'];
         // Query the database for predictions that were issued as close as possible to the given date but not exceeding it.
         include_once HV_ROOT_DIR.'/../src/Database/FlarePredictionDatabase.php';
-        $predictions = Database_FlarePredictionDatabase::getLatestFlarePredictions(new DateTime($date));
-
-        include_once HV_ROOT_DIR.'/../scripts/rot_hpc.php';
-        foreach ($predictions as &$prediction) {
-            list($prediction['hv_hpc_x'], $prediction['hv_hpc_y']) = rot_hpc($prediction['hpc_x'], $prediction['hpc_y'], $prediction['start_window'], $date);
-        }
+        $hef_predictions = Database_FlarePredictionDatabase::GetLatestNormalizedFlarePredictions($date);
 
         // Process the results and return them as a JSON object.
         header("Content-Type: application/json");
-        echo json_encode($predictions);
+        echo json_encode($hef_predictions);
+    }
+
+    /**
+     * Retrieves HEK events in a normalized format
+     */
+    public function events() {
+        include_once HV_ROOT_DIR.'/../src/Event/HEKAdapter.php';
+        $hek = new Event_HEKAdapter();
+        $data = $hek->getNormalizedEvents($this->_params['startTime'], $this->_options);
+        header("Content-Type: application/json");
+        echo json_encode($data);
     }
 
     /**
@@ -285,8 +291,17 @@ class Module_SolarEvents implements Module {
             break;
         case 'getFlarePredictions':
             $expected = array(
-                'required' => array('date'),
-                'dates' => array('date')
+                'required' => array('startTime'),
+                'dates' => array('startTime')
+            );
+            break;
+        case 'events':
+            $expected = array(
+                'required' => array('startTime'),
+                'optional' => array('eventType', 'cacheOnly', 'force',
+                                    'ar_filter'),
+                'bools'    => array('cacheOnly','force','ar_filter'),
+                'dates'    => array('startTime')
             );
             break;
         default:

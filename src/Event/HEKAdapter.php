@@ -799,6 +799,20 @@ class Event_HEKAdapter {
 		}
 	}
 
+    /**
+     * Returns the same events as getEvents, but normalized into the Helioviewer Event Format.
+     */
+    public function getNormalizedEvents(string $startTime, array $options) {
+        $event_json = $this->getEventFRMs($startTime, $options);
+        $event_types = json_decode($event_json, true);
+        $events = $this->getEvents($startTime, $options);
+
+        // Normalize the events into Helioviewer Event Format
+        include_once HV_ROOT_DIR.'/../src/Event/HEKEventNormalizer.php';
+        $data = Event_HEKEventNormalizer::Normalize($event_types, $events);
+        return $data;
+    }
+
 	/**
      * Returns an array of event objects as a JSON string
      * @deprecated Use importEventsOverRange instead
