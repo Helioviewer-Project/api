@@ -38,14 +38,12 @@ class Image_JPEG2000_JPXImage
      *
      * @param array  $frames   A list of JP2 filepaths
      * @param bool   $linked   If true, then a linked JPX file will be created
-     * @param string $kduMerge [Optional] kdu_merge binary location
-     * @param string $pathCmd  [Optional] String to prepend to merge command (e.g. for setting environmental varibles)
      *
      * @return void
      */
-    protected function buildJPXImage($frames, $linked, $kduMerge = HV_KDU_MERGE_BIN)
+    protected function buildJPXImage($frames, $linked)
     {
-        $cmd = "PATH=\"\" $kduMerge -s /dev/stdin";
+        $cmd = HV_KDU_MERGE_BIN . " -s /dev/stdin";
         // Input JP2s
         $stdin = '-i ' . implode(',', $frames);
         // Virtual JPX
