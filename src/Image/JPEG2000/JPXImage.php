@@ -38,14 +38,12 @@ class Image_JPEG2000_JPXImage
      *
      * @param array  $frames   A list of JP2 filepaths
      * @param bool   $linked   If true, then a linked JPX file will be created
-     * @param string $kduMerge [Optional] kdu_merge binary location
-     * @param string $pathCmd  [Optional] String to prepend to merge command (e.g. for setting environmental varibles)
      *
      * @return void
      */
-    protected function buildJPXImage($frames, $linked, $kduMerge = HV_KDU_MERGE_BIN)
+    protected function buildJPXImage($frames, $linked)
     {
-        $cmd = "PATH=\"\" $kduMerge -s /dev/stdin";
+        $cmd = HV_KDU_MERGE_BIN . " -s /dev/stdin";
         // Input JP2s
         $stdin = '-i ' . implode(',', $frames);
         // Virtual JPX
@@ -73,31 +71,8 @@ class Image_JPEG2000_JPXImage
           1 => array('pipe', 'w'),
           2 => array('pipe', 'w')
         );
-	/*
-	**  Check input for any illegal characters.
-	**  Whitelist: 
-	**	$cmd:       A-Z  a-z  0-9  .  -  _  /  "  =  and whitespace
-	**	$stdin:     A-Z  a-z  0-9  .  -  _  /  and whitespace
-	**  Drop the command if invalid. No attempt to remove escape characters.
-	*/
-	//check $cmd for illegal characters
-	if(preg_match('/[^A-Za-z0-9\.\-\_\/\"\=\s]/' , $cmd) === 0){
-	    //$cmd string does NOT contain any illegal characters
-	    //continue to check $stdin for illegal characters
-	    if(preg_match('/[^A-Za-z0-9\.\,\-\_\/\s]/' , $stdin) === 0){
-		//$stdin string does NOT contain any illegal characters
-		//start the process
-		$proc = proc_open("$cmd 2>&1", $dspec, $pipes);
-	    }else{
-		//$stdin string contains illegal characters DO NOT EXECUTE
-		//exit with error. input params contain illegal character(s)
-		return 3;
-	    }
-	}else{
-	    //$cmd string contains illegal characters DO NOT EXECUTE
-	    //exit with error. command contains illegal character(s)
-	    return 2;
-	}
+
+        $proc = proc_open("$cmd 2>&1", $dspec, $pipes);
         if (is_resource($proc)) {
           fwrite($pipes[0], $stdin);
           fclose($pipes[0]);
