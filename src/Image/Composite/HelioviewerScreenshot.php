@@ -17,6 +17,7 @@ class Image_Composite_HelioviewerScreenshot
     extends Image_Composite_HelioviewerCompositeImage {
 
     public $id;
+    public $timestamp;
 
     /**
      * Creates a new screenshot

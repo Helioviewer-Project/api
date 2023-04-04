@@ -93,6 +93,7 @@ function loadModule($params) {
         'getYouTubeAuth'            => 'Movies',
         'getUserVideos'             => 'Movies',
         'getObservationDateVideos'  => 'Movies',
+        'events'                    => 'SolarEvents',
         'getEventFRMs'              => 'SolarEvents',
         'getEvent'                  => 'SolarEvents',
         'getFlarePredictions'       => 'SolarEvents',
