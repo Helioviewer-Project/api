@@ -28,6 +28,7 @@ class Image_Composite_HelioviewerCompositeImage {
     private   $_filename;
     private   $_timeOffsetX = 0;
     private   $_timeOffsetY = 0;
+    private   $_format;
     protected $compress;
     protected $date;
     protected $db;
@@ -592,41 +593,40 @@ class Image_Composite_HelioviewerCompositeImage {
         $markerPinPixelOffsetY = 38;
 
         require_once HV_ROOT_DIR.'/../src/Event/HEKAdapter.php';
+        require_once HV_ROOT_DIR.'/../src/Database/FlarePredictionDatabase.php';
 
+        // Collect events from all data sources.
         $hek = new Event_HEKAdapter();
-
-        // Query the HEK
-        $events = $hek->getEvents($this->date, Array());
-        if ( $events === false ) {
-            return false;
-        }
+        $event_categories = $hek->getNormalizedEvents($this->date, Array());
+        $event_categories = array_merge($event_categories, Database_FlarePredictionDatabase::GetLatestNormalizedFlarePredictions($this->date));
 
         // Lay down all relevant event REGIONS first
         $allowedFRMs = $this->events->toArray();
-
-        foreach($events as $index => $event) {
-            $found = false;
+        $events_to_render = [];
+        foreach($event_categories as $event_category) {
             foreach( $allowedFRMs as $j => $frm ) {
-
-                if ( $event['event_type'] == $frm['event_type'] &&
-                     (  $frm['frm_name'] == 'all'
-                     || $frm['frm_name'] == str_replace(' ', '_',
-                            $event['frm_name'])
-                     || strpos($frm['frm_name'],
-                            str_replace(' ', '_', $event['frm_name'])
-                        ) !== false
-                     )
-                   ) {
-
-                    $found = true;
-                    break;
+                // Match the 2 letter abbreviation to all the event groups.
+                if ($event_category['pin'] == $frm['event_type']) {
+                    // Find the specific FRM within the group
+                    foreach ($event_category['groups'] as $group) {
+                        // Match the group name to the frm name
+                        $underscored_name = str_replace(' ', '_', $group['name']);
+                        if ($frm['frm_name'] == 'all' ||
+                            strpos($frm['frm_name'], $underscored_name) !== false) {
+                            // This group of events was selected to show up in the image.
+                            // Merge them into the final list of events.
+                            foreach ($group['data'] as &$event) {
+                                $event['concept'] = $event_category['name'];
+                            }
+                            $events_to_render = array_merge($events_to_render, $group['data']);
+                        }
+                    }
                 }
             }
+        }
 
-            if ( $found === false ) {
-                continue;
-            }
-
+        // Now handle the events
+        foreach ($events_to_render as $event) {
             if ( array_key_exists('hv_poly_width_max_zoom_pixels', $event) ) {
 
                 $width  = round($event['hv_poly_width_max_zoom_pixels']
@@ -660,36 +660,13 @@ class Image_Composite_HelioviewerCompositeImage {
         }
 
         // Now lay down the event MARKERS
-        foreach( $events as $index => $event ) {
-
-            $found = false;
-            $allowedFRMs = $this->events->toArray();
-
-            foreach( $allowedFRMs as $j => $frm ) {
-                if ( $event['event_type'] == $frm['event_type'] &&
-                     (  $frm['frm_name'] == 'all'
-                     || $frm['frm_name'] == str_replace(' ', '_',
-                            $event['frm_name'] )
-                     || strpos($frm['frm_name'], str_replace(' ', '_',
-                            $event['frm_name']) ) !==false
-                     )
-                   ) {
-
-                    $found = true;
-                    continue;
-                }
-            }
-
-            if ( $found === false ) {
-                continue;
-            }
-
+        foreach( $events_to_render as $event ) {
             $marker = new IMagick(  HV_ROOT_DIR
                                   . '/resources/images/eventMarkers/'
-                                  . $event['event_type'].'.png' );
+                                  . $event['type'].'.png' );
 
 
-            if ( $event['hpc_boundcc'] != '') {
+            if ( array_key_exists('hpc_boundcc', $event) && ($event['hpc_boundcc'] != '')) {
 		        $polygonCenterX = round($event['hv_poly_width_max_zoom_pixels'] * ($this->maxPixelScale/$this->roi->imageScale())) / 2;
 	            $polygonCenterY = round($event['hv_poly_height_max_zoom_pixels'] * ($this->maxPixelScale/$this->roi->imageScale())) / 2;
 
@@ -702,8 +679,8 @@ class Image_Composite_HelioviewerCompositeImage {
 		        $x = round($polygonPosX + $polygonCenterX + $scaledMarkerX);
 		        $y = round($polygonPosY + $polygonCenterY + $scaledMarkerY);
 	        }else{
-		        $x = round(( $event['hv_hpc_x_final'] - $this->roi->left()) / $this->roi->imageScale());
-				$y = round((-$event['hv_hpc_y_final'] - $this->roi->top() ) / $this->roi->imageScale());
+		        $x = round(( $event['hv_hpc_x'] - $this->roi->left()) / $this->roi->imageScale());
+				$y = round((-$event['hv_hpc_y'] - $this->roi->top() ) / $this->roi->imageScale());
 	        }
 
 			$x = $x - $this->_timeOffsetX;
@@ -724,13 +701,8 @@ class Image_Composite_HelioviewerCompositeImage {
 				$y = $y - $this->_timeOffsetY;*/
 
                 $count = 0;
-                if ( !array_key_exists('hv_labels_formatted', $event) ||
-                     count($event['hv_labels_formatted']) < 1 ) {
 
-                    $event['hv_labels_formatted'] = Array('Event Type' => $event['concept'] );
-                }
-
-                foreach( $event['hv_labels_formatted'] as $key => $value ) {
+                foreach( explode("\n", $event['label']) as $value ) {
 					//Fix unicode
 					$value = str_replace(
 						array('u03b1', 'u03b2', 'u03b3', 'u00b1', 'u00b2'),
@@ -1214,7 +1186,7 @@ class Image_Composite_HelioviewerCompositeImage {
             $earth->resizeImage($earthScaleInPixels, $earthScaleInPixels,
                 Imagick::FILTER_LANCZOS,1);
             $imagickImage->compositeImage($earth, IMagick::COMPOSITE_DISSOLVE,
-                $x, $y);
+                intval($x), intval($y));
         }
 
         // Draw grey rectangle background for text label
@@ -1391,7 +1363,7 @@ class Image_Composite_HelioviewerCompositeImage {
         $x = $this->width  - $watermark->getImageWidth()  - 10;
         $y = $this->height - $watermark->getImageHeight() - 10;
         $imagickImage->compositeImage(
-            $watermark, IMagick::COMPOSITE_DISSOLVE, $x, $y );
+            $watermark, IMagick::COMPOSITE_DISSOLVE, intval($x), intval($y) );
 
         // If the image is too small, text won't fit. Don't put a date string
         // on it.

@@ -5,16 +5,19 @@ GET /v2/getFlarePredictions
 Returns a list of the most relevant flare positions for the given observation time.
 The predictions chosen are selected by being as close to the given date as possible, but not exceeding it.
 Predictions are provided by the `Community Coordinated Modeling Center (CCMC) <https://ccmc.gsfc.nasa.gov/scoreboards/flare/>`_
+The format of the returned data is in Helioviewer Event Format.
 
 .. table:: `Request Parameters`
 
     +-----------+----------+--------+----------------------+---------------------------------------+
     | Parameter | Required | Type   | Example              | Description                           |
     +===========+==========+========+======================+=======================================+
-    | date      | Required | string | 2023-01-01T00:00:00Z | Specific time to get predictions for. |
+    | startTime | Required | string | 2023-01-01T00:00:00Z | Specific time to get predictions for. |
     +-----------+----------+--------+----------------------+---------------------------------------+
 
-.. table:: Response Description
+See :ref:`helioviewer-event-format` for the response format.
+
+.. table:: Event Specific Data
 
     +--------------+-------------+--------+----------------------------------------------------+
     | Parameter    | Required    | Type   | Description                                        |
@@ -47,47 +50,54 @@ Predictions are provided by the `Community Coordinated Modeling Center (CCMC) <h
     +--------------+-------------+--------+----------------------------------------------------+
 
 
-Example: Get predictions for 2023-03-01 15:00:00 UTC
+Example: Get predictions for 2023-03-30 15:00:00 UTC
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block::
     :caption: Example Query
 
-    https://api.helioviewer.org/v2/getFlarePredictions/?date=2023-03-01T15:00:00Z
+    https://api.helioviewer.org/v2/getFlarePredictions/?startTime=2023-03-30T15:00:00Z
 
 .. code-block::
     :caption: Example Response
 
     [
         {
-            "start_window": "2023-03-01 12:30:00",
-            "end_window": "2023-03-02 12:30:00",
-            "issue_time": "2023-03-01 12:30:26",
-            "c": null,
-            "m": null,
-            "x": "0.01",
-            "cplus": "0.05",
-            "mplus": "0.01",
-            "latitude": "-23",
-            "longitude": "58",
-            "hpc_x": "757.69",
-            "hpc_y": "-316.737",
-            "dataset": "SIDC_Operator_REGIONS"
-        },
-        {
-            "start_window": "2023-03-01 12:30:00",
-            "end_window": "2023-03-02 12:30:00",
-            "issue_time": "2023-03-01 12:30:26",
-            "c": null,
-            "m": null,
-            "x": "0.1",
-            "cplus": "0.95",
-            "mplus": "0.4",
-            "latitude": "25",
-            "longitude": "36",
-            "hpc_x": "517.403",
-            "hpc_y": "496.716",
-            "dataset": "SIDC_Operator_REGIONS"
-        },
-        ...
+            "name": "Solar Flare Predictions",
+            "pin": "FP",
+            "groups": [
+            {
+                "name": "ASSA_1_REGIONS",
+                "contact": "",
+                "url": "https://ccmc.gsfc.nasa.gov/scoreboards/flare/",
+                "data": [
+                {
+                    "id": "270",
+                    "start_window": "2023-03-30 12:00:00",
+                    "end_window": "2023-03-31 00:00:00",
+                    "issue_time": "2023-03-30 12:00:00",
+                    "c": "0.13",
+                    "m": "0.04",
+                    "x": "0",
+                    "cplus": null,
+                    "mplus": null,
+                    "latitude": "69",
+                    "longitude": "18",
+                    "hpc_x": "106.494",
+                    "hpc_y": "929.679",
+                    "dataset": "ASSA_1_REGIONS",
+                    "hv_hpc_x": 113.72144977234295,
+                    "hv_hpc_y": 929.3633651907943,
+                    "label": "ASSA_1_REGIONS",
+                    "version": "ASSA_1_REGIONS",
+                    "type": "FP",
+                    "start": "2023-03-30 12:00:00",
+                    "end": "2023-03-31 00:00:00"
+                },
+                ...
+                ]
+            },
+            ...
+            ]
+        }
     ]
