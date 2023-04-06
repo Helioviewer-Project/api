@@ -78,8 +78,8 @@ class Database_FlarePredictionDatabase
         $datasets = [];
         foreach ($predictions as &$prediction) {
             list($prediction['hv_hpc_x'], $prediction['hv_hpc_y']) = rot_hpc($prediction['hpc_x'], $prediction['hpc_y'], $prediction['start_window'], $date);
-            $prediction['label'] = $prediction['dataset'];
-            $prediction['version'] = $prediction['dataset'];
+            $prediction['label'] = self::CreateLabel($prediction);
+            $prediction['version'] = "";
             $prediction['type'] = 'FP';
             $prediction['start'] = $prediction['start_window'];
             $prediction['end'] = $prediction['end_window'];
@@ -103,6 +103,54 @@ class Database_FlarePredictionDatabase
             array_push($hef_predictions['groups'], $details);
         }
         return $hef_predictions;
+    }
+
+    /**
+     * Returns a flare prediction value as a string representation.
+     * Example: FlarePredictionString($prediction, "c") -> "c: 0.75"
+     */
+    private static function FlarePredictionString(array $prediction, string $flare_class): string {
+        if (array_key_exists($flare_class, $prediction) && $prediction[$flare_class]) {
+            // Probability
+            $probability = floatval($prediction[$flare_class]) * 100;
+            // Make sure the flare class is uppercase in the label
+            $tentative_label = strtoupper($flare_class) . ": " . round($probability, 2) . "%";
+            // Replace the word "Plus" in the label with the plus sign.
+            $tentative_label = str_replace("PLUS", "+", $tentative_label);
+            return $tentative_label;
+        }
+        return "";
+    }
+
+    /**
+     * Adds the flare prediction as a newline on the label.
+     * @return string the new label with the flare string appended to it or the original label if the flare class isn't in the prediction.
+     */
+    private static function AppendFlarePredictionToLabel(array $prediction, string $flare_class, string $label) {
+        $flare_label = self::FlarePredictionString($prediction, $flare_class);
+        if ($flare_label != "") {
+            $label .= "\n$flare_label";
+        }
+        return $label;
+    }
+
+    /**
+     * Creates the label text that shows up on Helioviewer for the flare prediction
+     */
+    private static function CreateLabel(array $prediction): string {
+        // Remove underscores and replace them with spaces in the dataset name
+        $label = str_replace("_", " ", $prediction['dataset']);
+        // Make the label use Pascal Case (Every word's first letter is capitalized)
+        $label = ucwords(strtolower($label));
+
+        // Add the flare prediction values to the label
+        $label = self::AppendFlarePredictionToLabel($prediction, "c", $label);
+        $label = self::AppendFlarePredictionToLabel($prediction, "cplus", $label);
+        $label = self::AppendFlarePredictionToLabel($prediction, "m", $label);
+        $label = self::AppendFlarePredictionToLabel($prediction, "mplus", $label);
+        $label = self::AppendFlarePredictionToLabel($prediction, "x", $label);
+
+        return $label;
     }
 
     public static function GetLatestNormalizedFlarePredictions(string $date): array {
