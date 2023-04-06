@@ -780,15 +780,15 @@ class Module_WebClient implements Module {
 
         $dateEnd = new DateTime();
         if ( isset($this->_options['endDate']) ) {
-            $dateEnd->setTimestamp( $this->_options['endDate']/1000);
+            $dateEnd->setTimestamp(intval($this->_options['endDate']/1000));
         }else{
-            $dateEnd->setTimestamp( $end/1000);
+            $dateEnd->setTimestamp(intval($end/1000));
         }
         $dateStart = new DateTime();
         if ( isset($this->_options['startDate']) ) {
-            $dateStart->setTimestamp( $this->_options['startDate']/1000);
+            $dateStart->setTimestamp(intval($this->_options['startDate']/1000));
         }else{
-            $dateStart->setTimestamp( $start/1000);
+            $dateStart->setTimestamp(intval($start/1000));
         }
         $dateCurrent = new DateTime();
         if ( isset($this->_options['currentDate']) ) {
