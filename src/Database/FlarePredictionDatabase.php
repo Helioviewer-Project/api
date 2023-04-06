@@ -106,11 +106,29 @@ class Database_FlarePredictionDatabase
     }
 
     /**
+     * Handle the case where all flare prediction values are null
+     */
+    private static function LabelNoPrediction(array $prediction, string $label): string {
+        $flare_classes = ["c", "cplus", "m", "mplus", "x"];
+        $all_null = true;
+        foreach ($flare_classes as $flare_class) {
+            if ($prediction[$flare_class] != null) {
+                $all_null = false;
+            }
+        }
+
+        if ($all_null) {
+            return $label . "\nNo probabilities given";
+        }
+        return $label;
+    }
+
+    /**
      * Returns a flare prediction value as a string representation.
      * Example: FlarePredictionString($prediction, "c") -> "c: 0.75"
      */
     private static function FlarePredictionString(array $prediction, string $flare_class): string {
-        if (array_key_exists($flare_class, $prediction) && $prediction[$flare_class]) {
+        if (array_key_exists($flare_class, $prediction) && $prediction[$flare_class] != null) {
             // Probability
             $probability = floatval($prediction[$flare_class]) * 100;
             // Make sure the flare class is uppercase in the label
@@ -149,6 +167,7 @@ class Database_FlarePredictionDatabase
         $label = self::AppendFlarePredictionToLabel($prediction, "m", $label);
         $label = self::AppendFlarePredictionToLabel($prediction, "mplus", $label);
         $label = self::AppendFlarePredictionToLabel($prediction, "x", $label);
+        $label = self::LabelNoPrediction($prediction, $label);
 
         return $label;
     }
