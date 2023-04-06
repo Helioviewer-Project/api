@@ -1225,7 +1225,8 @@ class Database_Statistics {
             'EE' => 25,
             'PB' => 26,
             'PT' => 27,
-            'UNK' => 28
+            'UNK' => 28,
+            'FP' => 29
         );
 
         $eventsColors = array(
@@ -1239,6 +1240,7 @@ class Database_Statistics {
             'FE' => '#a3ff8d',
             'FA' => '#7bff8e',
             'FL' => '#7affae',
+            'FP' => '#74b0c5',
             'LP' => '#7cffc9',
             'OS' => '#81fffc',
             'SS' => '#8ce6ff',
