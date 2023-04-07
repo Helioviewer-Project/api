@@ -23,7 +23,7 @@ class Database_FlarePredictionDatabase
      *
      * @return array
      */
-    public static function getLatestFlarePredictions(DateTime $observationTime): array
+    public static function getLatestFlarePredictions(DateTime $observationTime, ?array $datasets): array
     {
         $db = self::get_db();
         $date = $observationTime->format('Y-m-d H:i:s');
@@ -55,11 +55,13 @@ class Database_FlarePredictionDatabase
                             GROUP BY dataset_id) g
                         ON p.dataset_id = g.dataset_id
                         AND TIMESTAMPDIFF(second, p.issue_time, '%s') = g.dt
-                        LEFT JOIN flare_datasets dataset ON p.dataset_id = dataset.id",
+                        LEFT JOIN flare_datasets dataset ON p.dataset_id = dataset.id
+                        %s",
                             $db->link->real_escape_string($date),
                             $db->link->real_escape_string($date),
                             $db->link->real_escape_string($date),
-                            $db->link->real_escape_string($date));
+                            $db->link->real_escape_string($date),
+                            self::GetDatasetWhereClause($db, "WHERE", $datasets));
         try {
             $result = $db->query($sql);
             $predictions = $result->fetch_all(MYSQLI_ASSOC);
@@ -88,21 +90,37 @@ class Database_FlarePredictionDatabase
     }
 
     /**
+     * Returns a condition that "dataset.name" is in the array of given datasets.
+     * Insert into a SQL query to filter by dataset
+     * @param Database_DbConnection $db Database connection object
+     * @param string $prefix SQL prefix (WHERE or AND or OR). This will be placed before the condition
+     * @param array $datasets Datasets to filter by. If empty, then no condition is returned.
+     * @return string SQL query or empty string. This can be inserted directly into the query, it already performs the character escape.
+     */
+    private static function GetDatasetWhereClause($db, string $prefix, ?array $datasets): string {
+        if (isset($datasets)) {
+            $extra_where = "";
+            if (count($datasets) > 0 && ($datasets[0] != 'all')) {
+                $extra_where = "dataset.name in (";
+                foreach ($datasets as $dataset) {
+                    $extra_where .= sprintf("'%s',", $db->link->real_escape_string($dataset));
+                }
+                // trim trailing comma and add closing parenthesis
+                $extra_where = substr($extra_where, 0, strlen($extra_where)-1) . ")";
+                return "$prefix $extra_where";
+            }
+        }
+        return "";
+    }
+
+    /**
      * Returns all prediction information for predictions in the given time range
      */
     public static function getFlarePredictionsInRange(DateTime $start, DateTime $end, array $datasets): array {
         $db = self::get_db();
         $startDateStr = $start->format('Y-m-d H:i:s');
         $endDateStr = $end->format('Y-m-d H:i:s');
-        $extra_where = "";
-        if (count($datasets) > 0 && ($datasets[0] != 'all')) {
-            $extra_where = "AND dataset.name in (";
-            foreach ($datasets as $dataset) {
-                $extra_where .= sprintf("'%s',", $db->link->real_escape_string($dataset));
-            }
-            // trim trailing comma and add closing parenthesis
-            $extra_where = substr($extra_where, 0, strlen($extra_where)-1) . ")";
-        }
+
         $sql = sprintf("SELECT p.*,
                                dataset.name as dataset
                         FROM flare_predictions p
@@ -112,7 +130,7 @@ class Database_FlarePredictionDatabase
                         ",
                             $db->link->real_escape_string($startDateStr),
                             $db->link->real_escape_string($endDateStr),
-                            $extra_where);
+                            self::GetDatasetWhereClause($db, "AND", $datasets));
         try {
             $result = $db->query($sql);
             return $result->fetch_all(MYSQLI_ASSOC);
@@ -139,17 +157,19 @@ class Database_FlarePredictionDatabase
      *          | 1680368400 |     4 |
      *          | 1680372000 |     6 |
      */
-    public static function getFlarePredictionCounts(DateTime $start, DateTime $end, int $binSizeSeconds): array {
+    public static function getFlarePredictionCounts(DateTime $start, DateTime $end, int $binSizeSeconds, ?array $datasets): array {
         $db = self::get_db();
         $startDateStr = $start->format('Y-m-d H:i:s');
         $endDateStr = $end->format('Y-m-d H:i:s');
         $sql = sprintf("SELECT UNIX_TIMESTAMP(start_window) as timestamp, COUNT(*) as count
                         FROM flare_predictions
                         WHERE end_window >= '%s' AND start_window <= '%s'
+                        %s
                         GROUP BY timestamp DIV %d
                         ORDER BY timestamp",
                             $db->link->real_escape_string($startDateStr),
                             $db->link->real_escape_string($endDateStr),
+                            self::GetDatasetWhereClause($db, "AND", $datasets),
                             $db->link->real_escape_string("$binSizeSeconds")
                         );
         try {
@@ -295,7 +315,7 @@ class Database_FlarePredictionDatabase
     }
 
     public static function GetLatestNormalizedFlarePredictions(string $date): array {
-        $predictions = self::getLatestFlarePredictions(new DateTime($date));
+        $predictions = self::getLatestFlarePredictions(new DateTime($date), null);
         $hef_predictions = self::NormalizePredictions($date, $predictions);
         return [$hef_predictions];
     }
@@ -312,7 +332,8 @@ class Database_FlarePredictionDatabase
         } else {
             // use bucket format
             $seconds = self::ResolutionToSeconds($resolution);
-            return self::getFlarePredictionCounts($startDate, $endDate, $seconds);
+            $datasets = explode(";", $eventDetails["frm_name"]);
+            return self::getFlarePredictionCounts($startDate, $endDate, $seconds, $datasets);
         }
     }
 
