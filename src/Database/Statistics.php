@@ -1235,7 +1235,7 @@ class Database_Statistics {
      */
     public function getDataCoverageEvents($events, $resolution, $startDate, $endDate, $currentDate) {
         require_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
-
+        $selectedEvents = $events;
         // Proceed to query for HEK event coverage
 
         $distance = $endDate->getTimestamp() - $startDate->getTimestamp();
@@ -1294,9 +1294,6 @@ class Database_Statistics {
                 'res' => $resolution,
                 'showInLegend' => false
             );
-
-            // Handle non HEK data
-            $sources[$eventKey]['data'] = self::GetDataCoverageForEvent($layer, $resolution, $startDate, $endDate, $currentDate);
         }
 
 
@@ -1601,6 +1598,18 @@ class Database_Statistics {
             }
         }
 
+        // Handle non HEK data
+        foreach($selectedEvents->toArray() as $layer) {
+            // Any NON-HEK events will have their coverage handler executed in GetDataCoverageForEvent.
+            // For HEK event types, this will return an empty array, so we can just drop them.
+            // For NON-HEK event types, this will return actual data which should be placed into the final data array.
+            $data = self::GetDataCoverageForEvent($layer, $resolution, $startDate, $endDate, $currentDate);
+            if (count($data) > 0) {
+                $eventKey = $eventsKeys[ $layer['event_type'] ];
+                $sources[$eventKey]['data'] = $data;
+                $sources[$eventKey]['showInLegend'] = true;
+            }
+        }
 
         ksort($sources);
         $sources = array_values($sources);
@@ -2236,7 +2245,7 @@ class Database_Statistics {
      * @param DateTime $startDate Start time of event range
      * @param DateTime $endTime End time of event range
      * @param DateTime $currentDate Current observation time.
-     * @return array The result should be an array of objects which conform to some HEK details.
+     * @return array IF RESOLUTION < 30m then The result should be an array of objects which conform to some HEK details.
      * Each object in the array should look like this:
      * [
      *                      x: unix timestamp in milliseconds of the event's start time,
@@ -2253,6 +2262,31 @@ class Database_Statistics {
      *                concept: The overall type of event that this is,
      *               modifier: 0
      * ]
+     *
+     * IF RESOLUTION 30m or Greater, then the result should look like bins of time between start and end with the number of items in each bin.
+     * [
+     *     [
+     *       1680661800000,
+     *       0
+     *     ],
+     *     [
+     *       1680663600000,
+     *       0
+     *     ],
+     *     [
+     *       1680665400000,
+     *       0
+     *     ],
+     *     [
+     *       1680667200000,
+     *       0
+     *     ],
+     *     [
+     *       1680669000000,
+     *       0
+     *     ],
+     *     ...
+     * ]
      */
     public static function GetDataCoverageForEvent($eventDetails, $resolution, $startDate, $endDate, $currentDate): array {
         $data = [];
@@ -2262,7 +2296,9 @@ class Database_Statistics {
                 $data = Database_FlarePredictionDatabase::GetPredictionCoverage($eventDetails, $resolution, $startDate, $endDate, $currentDate);
                 break;
         }
-        $data = self::AssignColorsToData($data);
+        if (in_array($resolution, ["m", "5m", "15m"])) {
+            $data = self::AssignColorsToData($data);
+        }
         return $data;
     }
 
