@@ -70,6 +70,110 @@ class Database_FlarePredictionDatabase
     }
 
     /**
+     * Returns all prediction information for predictions in the given time range
+     */
+    public static function getFlarePredictionsInRange(DateTime $start, DateTime $end, array $datasets): array {
+        $db = self::get_db();
+        $startDateStr = $start->format('Y-m-d H:i:s');
+        $endDateStr = $end->format('Y-m-d H:i:s');
+        $extra_where = "";
+        if (count($datasets) > 0 && ($datasets[0] != 'all')) {
+            $extra_where = "AND dataset.name in (";
+            foreach ($datasets as $dataset) {
+                $extra_where .= sprintf("'%s',", $db->link->real_escape_string($dataset));
+            }
+            // trim trailing comma and add closing parenthesis
+            $extra_where = substr($extra_where, 0, strlen($extra_where)-1) . ")";
+        }
+        $sql = sprintf("SELECT p.*,
+                               dataset.name as dataset
+                        FROM flare_predictions p
+                        LEFT JOIN flare_datasets dataset ON dataset.id = p.dataset_id
+                        WHERE p.issue_time BETWEEN '%s' AND '%s'
+                        %s
+                        ",
+                            $db->link->real_escape_string($startDateStr),
+                            $db->link->real_escape_string($endDateStr),
+                            $extra_where);
+        try {
+            $result = $db->query($sql);
+            return $result->fetch_all(MYSQLI_ASSOC);
+        } catch (Exception $e) {
+            error_log("Error querying flare prediction time range: " . $e->getMessage());
+            return array();
+        }
+    }
+
+    /**
+     * Counts the number of flares between start and end in buckets of binSizeSeconds.
+     * @return array Prediction counts
+     * @example | 1680332400 |    14 |
+     *          | 1680336000 |     8 |
+     *          | 1680339600 |    10 |
+     *          | 1680343200 |    11 |
+     *          | 1680346800 |    11 |
+     *          | 1680350400 |    14 |
+     *          | 1680352200 |     8 |
+     *          | 1680354000 |    14 |
+     *          | 1680357600 |    11 |
+     *          | 1680361200 |     9 |
+     *          | 1680364800 |    11 |
+     *          | 1680368400 |     4 |
+     *          | 1680372000 |     6 |
+     */
+    public static function getFlarePredictionCounts(DateTime $start, DateTime $end, int $binSizeSeconds): array {
+        $db = self::get_db();
+        $startDateStr = $start->format('Y-m-d H:i:s');
+        $endDateStr = $end->format('Y-m-d H:i:s');
+        $sql = sprintf("SELECT UNIX_TIMESTAMP(start_window) as timestamp, COUNT(*) as count
+                        FROM flare_predictions
+                        WHERE end_window >= '%s' AND start_window <= '%s'
+                        GROUP BY timestamp DIV %d
+                        ORDER BY timestamp",
+                            $db->link->real_escape_string($startDateStr),
+                            $db->link->real_escape_string($endDateStr),
+                            $db->link->real_escape_string("$binSizeSeconds")
+                        );
+        try {
+            $result = $db->query($sql);
+            $data = $result->fetch_all(MYSQLI_ASSOC);
+            return self::BinsToArray($data, $binSizeSeconds);
+        } catch (Exception $e) {
+            error_log("Error querying flare prediction counts: " . $e->getMessage());
+            error_log($sql);
+            return array();
+        }
+    }
+
+    /**
+     * Transforms the SQL result from getFlarePredictionCounts from SQL columns into a 2D array
+     * expected by the getDataCoverage API.
+     * TODO: This could be a moved to a helper API where $data is always a list of arrays with timestamp/count keys.
+     * @return array list of lists where each internal list is [milliseconds, count] representing the timestamp/count buckets.
+     */
+    private static function BinsToArray(array $data, int $binSizeSeconds) {
+        $pairs = [];
+        // Get the starting timestamp for the data
+        if (count($data) > 0) {
+            $expected_timestamp = intval($data[0]['timestamp']);
+        }
+        // Iterate through the data turning the timestamp, counts into pairs
+        foreach ($data as $time_count_pair) {
+            $time = intval($time_count_pair['timestamp']);
+            $count = intval($time_count_pair['count']);
+            // If time doesn't match the expected timestamp, it's because the query returned no data for that bin.
+            // In that case, add 0 to the pair array
+            while ($expected_timestamp < $time) {
+                array_push($pairs, [$expected_timestamp * 1000, 0]);
+                $expected_timestamp += $binSizeSeconds;
+            }
+            array_push($pairs, [$time * 1000, $count]);
+            $expected_timestamp += $binSizeSeconds;
+        }
+        return $pairs;
+    }
+
+    /**
      * Normalizes a set of predictions into the Helioviewer Event Format.
      */
     public static function NormalizePredictions(string $date, array $predictions): array {
@@ -176,5 +280,101 @@ class Database_FlarePredictionDatabase
         $predictions = self::getLatestFlarePredictions(new DateTime($date));
         $hef_predictions = self::NormalizePredictions($date, $predictions);
         return [$hef_predictions];
+    }
+
+    /**
+     * Returns prediction coverage statistics for the given time range
+     * @return array
+     */
+    public static function GetPredictionCoverage(array $eventDetails, string $resolution, DateTime $startDate, DateTime $endDate, DateTime $currentDate): array {
+        if (in_array($resolution, ["m", "5m", "15m"])) {
+            $datasets = explode(";", $eventDetails["frm_name"]);
+            $predictions = self::getFlarePredictionsInRange($startDate, $endDate, $datasets);
+            return self::PredictionsToCoverageFormat($predictions);
+        } else {
+            // use bucket format
+            $seconds = self::ResolutionToSeconds($resolution);
+            return self::getFlarePredictionCounts($startDate, $endDate, $seconds);
+        }
+    }
+
+    private const MAP = [
+        "30m" => 1800,
+        "h"   => 3600,
+        "D"   => 86400,
+        "W"   => 604800,
+        "M"   => 18144000, // 30 days
+        "Y"   => 31536000  // 365 days
+    ];
+    private static function ResolutionToSeconds(string $resolution): int {
+        if (array_key_exists($resolution, self::MAP)) {
+            return self::MAP[$resolution];
+        } else {
+            error_log("Invalid resolution requested for prediction coverage query");
+            return 1800;
+        }
+    }
+
+    /**
+     * Converts an array of prediction data into the coverage format required for the image timeline
+     * @return array
+     */
+    private static function PredictionsToCoverageFormat(array $predictions): array {
+        $coverage = [];
+        foreach ($predictions as $idx => $prediction) {
+            array_push($coverage, self::PredictionToCoverageObject($prediction, $idx));
+        }
+        return $coverage;
+    }
+
+    /**
+     * Converts a prediction object into a coverage object
+     * Each object in the array should look like this:
+     * [
+     *                      x: unix timestamp in milliseconds of the event's start time,
+     *                     x2: unix timestamp in milliseconds of the event's end time,
+     *                      y: index of this item in the array,
+     *            kb_archivid: unique id for this event,
+     *    hv_labels_formatted: array of key value pairs which make up a human readable label,
+     *             event_type: Event type abbreviation,
+     *               frm_name: Name for the event,
+     *         frm_specificid: Version of the recognition method, or empty string,
+     *         event_peaktime: Peak time or null (as string in format Y-m-d H:i:s)
+     *        event_starttime: Start time of the event,
+     *          event_endtime: End time of the event.
+     *                concept: The overall type of event that this is,
+     *               modifier: 0
+     * ]
+     */
+    private static function PredictionToCoverageObject(array $prediction, int $y): array {
+        $start = new DateTime($prediction['start_window']);
+        $end = new DateTime($prediction['end_window']);
+        return [
+                      'x' => $start->getTimestamp() * 1000,
+                     'x2' => $end->getTimestamp() * 1000,
+                      'y' => $y,
+            'kb_archivid' => $prediction['sha256'],
+            'hv_labels_formatted' => self::CreateCoverageLabel($prediction),
+            "event_type"    => "FP",
+            "frm_name"      => $prediction['dataset'],
+            "frm_specificid" => "",
+            "event_peaktime" => $prediction["issue_time"],
+            "event_starttime" => $prediction["start_window"],
+            "event_endtime"  => $prediction["end_window"],
+            "concept" => "Solar Flare Prediction",
+            "modifier" => 0
+        ];
+    }
+
+    private static function CreateCoverageLabel(array $prediction): array {
+        $label = [];
+        $classes = ['c', 'cplus', 'm', 'mplus', 'x'];
+        foreach ($classes as $class) {
+            if (isset($prediction[$class])) {
+                $key = str_replace("PLUS", "+", strtoupper($class));
+                $label[$key] = round($prediction[$class] * 100, 2) . "%" ;
+            }
+        }
+        return $label;
     }
 }
