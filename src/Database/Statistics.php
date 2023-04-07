@@ -15,6 +15,73 @@
 class Database_Statistics {
 
     private $_dbConnection;
+    private const EVENT_COLORS = array(
+        'AR' => '#ff8f97',
+        'CE' => '#ffb294',
+        'CME' => '#ffb294',
+        'CD' => '#ffd391',
+        'CH' => '#fef38e',
+        'CW' => '#ebff8c',
+        'FI' => '#c8ff8d',
+        'FE' => '#a3ff8d',
+        'FA' => '#7bff8e',
+        'FL' => '#7affae',
+        'FP' => '#74b0c5',
+        'LP' => '#7cffc9',
+        'OS' => '#81fffc',
+        'SS' => '#8ce6ff',
+        'EF' => '#95c6ff',
+        'CJ' => '#9da4ff',
+        'PG' => '#ab8cff',
+        'OT' => '#d4d4d4',
+        'NR' => '#d4d4d4',
+        'SG' => '#e986ff',
+        'SP' => '#ff82ff',
+        'CR' => '#ff85ff',
+        'CC' => '#ff8acc',
+        'ER' => '#ff8dad',
+        'TO' => '#ca89ff',
+        'HY' => '#00ffff',
+        'BO' => '#a7e417',
+        'EE' => '#fec00a',
+        'PB' => '#b3d5e4',
+        'PT' => '#494a37',
+        'UNK' => '#d4d4d4'
+    );
+
+    private const EVENT_KEYS = array(
+        'AR' => 0,
+        'CC' => 1,
+        'CD' => 2,
+        'CH' => 3,
+        'CJ' => 4,
+        'CE' => 5,
+        'CR' => 6,
+        'CW' => 7,
+        'EF' => 8,
+        'ER' => 9,
+        'FI' => 10,
+        'FA' => 11,
+        'FE' => 12,
+        'FL' => 13,
+        'LP' => 14,
+        'OS' => 15,
+        'PG' => 16,
+        'SG' => 17,
+        'SP' => 18,
+        'SS' => 19,
+        //unused
+        'OT' => 20,
+        'NR' => 21,
+        'TO' => 22,
+        'HY' => 23,
+        'BO' => 24,
+        'EE' => 25,
+        'PB' => 26,
+        'PT' => 27,
+        'UNK' => 28,
+        'FP' => 29
+    );
 
     /**
      * Constructor
@@ -1167,8 +1234,9 @@ class Database_Statistics {
      * Gets latest datasource coverage and return as JSON
      */
     public function getDataCoverageEvents($events, $resolution, $startDate, $endDate, $currentDate) {
-
         require_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
+
+        // Proceed to query for HEK event coverage
 
         $distance = $endDate->getTimestamp() - $startDate->getTimestamp();
         $interval = new DateInterval('PT'.$distance.'S');
@@ -1186,84 +1254,16 @@ class Database_Statistics {
         $endTimestamp = $endDate->getTimestamp();
         $currentTimestamp = $currentDate->getTimestamp();
 
-        $dateStartISO = str_replace("Z", "", toISOString($startDate));
-        $dateEndISO = str_replace("Z", "", toISOString($endDate));
-
         $sources = array();
 
         if(!$events){
             return json_encode(array());
         }
 
-        $eventsKeys = array(
-            'AR' => 0,
-            'CC' => 1,
-            'CD' => 2,
-            'CH' => 3,
-            'CJ' => 4,
-            'CE' => 5,
-            'CR' => 6,
-            'CW' => 7,
-            'EF' => 8,
-            'ER' => 9,
-            'FI' => 10,
-            'FA' => 11,
-            'FE' => 12,
-            'FL' => 13,
-            'LP' => 14,
-            'OS' => 15,
-            'PG' => 16,
-            'SG' => 17,
-            'SP' => 18,
-            'SS' => 19,
-            //unused
-            'OT' => 20,
-            'NR' => 21,
-            'TO' => 22,
-            'HY' => 23,
-            'BO' => 24,
-            'EE' => 25,
-            'PB' => 26,
-            'PT' => 27,
-            'UNK' => 28,
-            'FP' => 29
-        );
+        $eventsKeys = self::EVENT_KEYS;
 
-        $eventsColors = array(
-            'AR' => '#ff8f97',
-            'CE' => '#ffb294',
-            'CME' => '#ffb294',
-            'CD' => '#ffd391',
-            'CH' => '#fef38e',
-            'CW' => '#ebff8c',
-            'FI' => '#c8ff8d',
-            'FE' => '#a3ff8d',
-            'FA' => '#7bff8e',
-            'FL' => '#7affae',
-            'FP' => '#74b0c5',
-            'LP' => '#7cffc9',
-            'OS' => '#81fffc',
-            'SS' => '#8ce6ff',
-            'EF' => '#95c6ff',
-            'CJ' => '#9da4ff',
-            'PG' => '#ab8cff',
-            'OT' => '#d4d4d4',
-            'NR' => '#d4d4d4',
-            'SG' => '#e986ff',
-            'SP' => '#ff82ff',
-            'CR' => '#ff85ff',
-            'CC' => '#ff8acc',
-            'ER' => '#ff8dad',
-            'TO' => '#ca89ff',
-            'HY' => '#00ffff',
-            'BO' => '#a7e417',
-            'EE' => '#fec00a',
-            'PB' => '#b3d5e4',
-            'PT' => '#494a37',
-            'UNK' => '#d4d4d4'
-        );
+        $eventsColors = self::EVENT_COLORS;
 
-        $eventTypes = array();
         $dbData = array();
         $dbVisibleData = array();
         $layersString = '';
@@ -1294,6 +1294,9 @@ class Database_Statistics {
                 'res' => $resolution,
                 'showInLegend' => false
             );
+
+            // Handle non HEK data
+            $sources[$eventKey]['data'] = self::GetDataCoverageForEvent($layer, $resolution, $startDate, $endDate, $currentDate);
         }
 
 
@@ -2220,6 +2223,58 @@ class Database_Statistics {
         );
 
         return $intervals;
+    }
+
+    /**
+     * Execute Data coverage retrieves for non HEK data here.
+     * This extension is built into the legacy function which handles all HEK events.
+     * Non HEK events can add their data coverage queries here.
+     * This is intended to be a dispatcher, the statistics query should be coded elsewhere.
+     *
+     * @param array $eventDetails The event abbreviate that coverage is being requested for
+     * @param string $resolution The time bins for the data (m, 5m, 15m, 30m, h, D, W, M, Y)
+     * @param DateTime $startDate Start time of event range
+     * @param DateTime $endTime End time of event range
+     * @param DateTime $currentDate Current observation time.
+     * @return array The result should be an array of objects which conform to some HEK details.
+     * Each object in the array should look like this:
+     * [
+     *                      x: unix timestamp in milliseconds of the event's start time,
+     *                     x2: unix timestamp in milliseconds of the event's end time,
+     *                      y: index of this item in the array,
+     *            kb_archivid: unique id for this event,
+     *    hv_labels_formatted: array of key value pairs which make up a human readable label,
+     *             event_type: Event type abbreviation,
+     *               frm_name: Name for the event,
+     *         frm_specificid: Version of the recognition method, or empty string,
+     *         event_peaktime: Peak time or null (as string in format Y-m-d H:i:s)
+     *        event_starttime: Start time of the event,
+     *          event_endtime: End time of the event.
+     *                concept: The overall type of event that this is,
+     *               modifier: 0
+     * ]
+     */
+    public static function GetDataCoverageForEvent($eventDetails, $resolution, $startDate, $endDate, $currentDate): array {
+        $data = [];
+        switch ($eventDetails['event_type']) {
+            case "FP":
+                include_once HV_ROOT_DIR."/../src/Database/FlarePredictionDatabase.php";
+                $data = Database_FlarePredictionDatabase::GetPredictionCoverage($eventDetails, $resolution, $startDate, $endDate, $currentDate);
+                break;
+        }
+        $data = self::AssignColorsToData($data);
+        return $data;
+    }
+
+    /**
+     * Iterates over the given event array and assigns the appropriate color to each event.
+     * @return array The data object where each event has its color assigned to it.
+     */
+    private static function AssignColorsToData(array $data): array {
+        foreach ($data as &$event) {
+            $event['color'] = self::EVENT_COLORS[$event['event_type']];
+        }
+        return $data;
     }
 }
 ?>
