@@ -77,11 +77,14 @@ class Database_FlarePredictionDatabase
     private static function PatchPredictions(array $predictions): array {
         foreach ($predictions as &$prediction) {
             if (strpos($prediction['dataset'], "ASSA") !== false) {
+                $prediction['original_latitude'] = $prediction['latitude'];
+                $prediction['original_longitude'] = $prediction['longitude'];
                 $tmp = $prediction['latitude'];
                 $prediction['latitude'] = $prediction['longitude'];
                 $prediction['longitude'] = $tmp;
             }
         }
+        return $predictions;
     }
 
     /**
