@@ -62,10 +62,25 @@ class Database_FlarePredictionDatabase
                             $db->link->real_escape_string($date));
         try {
             $result = $db->query($sql);
-            return $result->fetch_all(MYSQLI_ASSOC);
+            $predictions = $result->fetch_all(MYSQLI_ASSOC);
+            return self::PatchPredictions($predictions);
         } catch (Exception $e) {
             error_log("Error querying flare predictions: " . $e->getMessage());
             return array();
+        }
+    }
+
+    /**
+     * Performs postprocessing on prediction data and returns it.
+     * - ASSA_* predictions seem to have their lat/long flipped...
+     */
+    private static function PatchPredictions(array $predictions): array {
+        foreach ($predictions as &$prediction) {
+            if (strpos($prediction['dataset'], "ASSA") !== false) {
+                $tmp = $prediction['latitude'];
+                $prediction['latitude'] = $prediction['longitude'];
+                $prediction['longitude'] = $tmp;
+            }
         }
     }
 
