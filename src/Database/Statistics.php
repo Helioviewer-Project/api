@@ -2293,6 +2293,7 @@ class Database_Statistics {
         switch ($eventDetails['event_type']) {
             case "FP":
                 // Don't include flare prediction data in the coverage since the volume of predictions muddles the data.
+                // See https://github.com/Helioviewer-Project/api/pull/287 for more info
                 break;
         }
         if (in_array($resolution, ["m", "5m", "15m"])) {
