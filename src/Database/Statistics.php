@@ -2292,8 +2292,7 @@ class Database_Statistics {
         $data = [];
         switch ($eventDetails['event_type']) {
             case "FP":
-                include_once HV_ROOT_DIR."/../src/Database/FlarePredictionDatabase.php";
-                $data = Database_FlarePredictionDatabase::GetPredictionCoverage($eventDetails, $resolution, $startDate, $endDate, $currentDate);
+                // Don't include flare prediction data in the coverage since the volume of predictions muddles the data.
                 break;
         }
         if (in_array($resolution, ["m", "5m", "15m"])) {
