@@ -37,7 +37,7 @@ def insert_predictions_into_db(predictions: list):
     db = get_db()
     cursor = db.cursor()
     data = as_list(predictions)
-    result = cursor.executemany("REPLACE INTO `flare_predictions` (`dataset_id`, `start_window`, `end_window`, `issue_time`, `c`, `m`, `x`, `cplus`, `mplus`, `latitude`, `longitude`, `hpc_x`, `hpc_y`, `sha256`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+    result = cursor.executemany("REPLACE INTO `flare_predictions` (`dataset_id`, `start_window`, `end_window`, `issue_time`, `hpc_x`, `hpc_y`, `json_data`, `sha256`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
                           data)
     cursor.close()
     db.commit()
@@ -59,15 +59,9 @@ def as_list(predictions):
                            prediction.start_window,
                            prediction.end_window,
                            prediction.issue_time,
-                           getattr_or_none(prediction, 'C'),
-                           getattr_or_none(prediction, 'M'),
-                           getattr_or_none(prediction, 'X'),
-                           getattr_or_none(prediction, 'CPlus'),
-                           getattr_or_none(prediction, 'MPlus'),
-                           prediction.latitude,
-                           prediction.longitude,
                            prediction.hpc_x,
                            prediction.hpc_y,
+                           prediction.json,
                            prediction.sha256))
         else:
             ignore_count += 1
