@@ -237,7 +237,7 @@ class Database_FlarePredictionDatabase
         }
 
         $hef_predictions = [
-            'name' => 'Solar Flare Predictions',
+            'name' => 'Solar Flare Prediction',
             'pin' => 'FP',
             'groups' => []
         ];
