@@ -5,11 +5,13 @@
  */
 class Database_FlarePredictionDatabase
 {
+    const FLARE_CLASSES = ["C", "CPlus", "M", "MPlus", "X"];
+
     static private $db = null;
 
     static private function get_db()
     {
-        if (self::$db === null) {
+        if (is_null(self::$db)) {
             include_once __DIR__ . "/DbConnection.php";
             self::$db = new Database_DbConnection();
         }
@@ -32,19 +34,7 @@ class Database_FlarePredictionDatabase
         // The inner join query gets the minimum time difference between the issue time and the observation time for each
         // dataset where the issue time is before the dataset and the observation time is within the prediction window.
         // The join condition filters for the predictions that meet the minimum time differences.
-        $sql = sprintf("SELECT p.id,
-                               p.start_window,
-                               p.end_window,
-                               p.issue_time,
-                               p.c,
-                               p.m,
-                               p.x,
-                               p.cplus,
-                               p.mplus,
-                               p.latitude,
-                               p.longitude,
-                               p.hpc_x,
-                               p.hpc_y,
+        $sql = sprintf("SELECT p.*,
                                dataset.name as dataset
                         FROM flare_predictions p
                         INNER JOIN
@@ -74,8 +64,17 @@ class Database_FlarePredictionDatabase
 
     /**
      * Performs postprocessing on prediction data and returns it.
+     * - Parses the json string into an array and flattens it into the main object (helioviewer doesn't handle nested objects at this time.)
      */
     private static function PatchPredictions(array $predictions): array {
+        foreach ($predictions as &$prediction) {
+            $json_array = json_decode($prediction['json_data'], true);
+            unset($prediction['json_data']);
+            // Let prediction come second during the merge so that we prefer the database values over the json values.
+            // We are more likely to have expectations about the the format of the data selected from the database than the unschema'd json,
+            // so this should make it easier to work with.
+            $prediction = array_merge($json_array, $prediction);
+        }
         return $predictions;
     }
 
@@ -241,10 +240,9 @@ class Database_FlarePredictionDatabase
      * Handle the case where all flare prediction values are null
      */
     private static function LabelNoPrediction(array $prediction, string $label): string {
-        $flare_classes = ["c", "cplus", "m", "mplus", "x"];
         $all_null = true;
-        foreach ($flare_classes as $flare_class) {
-            if ($prediction[$flare_class] != null) {
+        foreach (self::FLARE_CLASSES as $flare_class) {
+            if (array_key_exists($flare_class, $prediction) && $prediction[$flare_class] != null) {
                 $all_null = false;
             }
         }
@@ -260,7 +258,7 @@ class Database_FlarePredictionDatabase
      * Example: FlarePredictionString($prediction, "c") -> "c: 0.75"
      */
     private static function FlarePredictionString(array $prediction, string $flare_class): string {
-        if (array_key_exists($flare_class, $prediction) && $prediction[$flare_class] != null) {
+        if (array_key_exists($flare_class, $prediction) && isset($prediction[$flare_class])) {
             // Probability
             $probability = floatval($prediction[$flare_class]) * 100;
             // Make sure the flare class is uppercase in the label
@@ -294,11 +292,11 @@ class Database_FlarePredictionDatabase
         $label = ucwords(strtolower($label));
 
         // Add the flare prediction values to the label
-        $label = self::AppendFlarePredictionToLabel($prediction, "c", $label);
-        $label = self::AppendFlarePredictionToLabel($prediction, "cplus", $label);
-        $label = self::AppendFlarePredictionToLabel($prediction, "m", $label);
-        $label = self::AppendFlarePredictionToLabel($prediction, "mplus", $label);
-        $label = self::AppendFlarePredictionToLabel($prediction, "x", $label);
+        $label = self::AppendFlarePredictionToLabel($prediction, "C", $label);
+        $label = self::AppendFlarePredictionToLabel($prediction, "CPlus", $label);
+        $label = self::AppendFlarePredictionToLabel($prediction, "M", $label);
+        $label = self::AppendFlarePredictionToLabel($prediction, "MPlus", $label);
+        $label = self::AppendFlarePredictionToLabel($prediction, "X", $label);
         $label = self::LabelNoPrediction($prediction, $label);
 
         return $label;
