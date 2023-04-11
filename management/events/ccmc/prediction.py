@@ -1,6 +1,7 @@
 from astropy.coordinates import SkyCoord
 from sunpy.coordinates import frames
 import astropy.units as u
+import json
 
 def hgs2hpc(lat, lon, obstime):
     coord = SkyCoord(lon*u.deg, lat*u.deg, frame=frames.HeliographicStonyhurst, observer="earth", obstime=obstime)
@@ -42,6 +43,8 @@ class Prediction:
             return self.hpc.Ty.value
         if name == "sha256":
             return self.gen_sha256()
+        if name == "json":
+            return self._jsonify()
 
         for i in range(len(self.parameters)):
             # Attribute only exists if it is not a fill value. Fill is used for values which have no data.
@@ -78,6 +81,18 @@ class Prediction:
         Returns a string representing the given label and value
         """
         return f"{label}: {value}".rjust(10)
+
+    def _jsonify(self):
+        """
+        Converts the flare prediction hapi data into a json string with parameters as keys
+        """
+        jsonObject = {}
+        for i in range(len(self.parameters)):
+            # Attribute only exists if it is not a fill value. Fill is used for values which have no data.
+            key = self.parameters[i]['name']
+            value = self.data[i]
+            jsonObject[key] = value
+        return json.dumps(jsonObject)
 
     def __str__(self):
         return f"{self.dataset} Prediction issued at {self.issue_time} for " + f"({self.latitude},{self.longitude}) (lat,lon).".rjust(22) + self._label_str("c", self.C) + self._label_str("c+", self.CPlus) + self._label_str("m", self.M) + self._label_str("m+", self.MPlus) + self._label_str("x", self.X)
