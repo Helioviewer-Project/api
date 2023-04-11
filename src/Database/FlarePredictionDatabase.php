@@ -74,18 +74,8 @@ class Database_FlarePredictionDatabase
 
     /**
      * Performs postprocessing on prediction data and returns it.
-     * - ASSA_* predictions seem to have their lat/long flipped...
      */
     private static function PatchPredictions(array $predictions): array {
-        foreach ($predictions as &$prediction) {
-            if (strpos($prediction['dataset'], "ASSA") !== false) {
-                $prediction['original_latitude'] = $prediction['latitude'];
-                $prediction['original_longitude'] = $prediction['longitude'];
-                $tmp = $prediction['latitude'];
-                $prediction['latitude'] = $prediction['longitude'];
-                $prediction['longitude'] = $tmp;
-            }
-        }
         return $predictions;
     }
 
