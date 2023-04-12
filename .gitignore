@@ -71,3 +71,4 @@ docroot/docs/v2
 docroot/status.xml
 py_env
 py_venv_local_sunpy
+vendor
