@@ -9,8 +9,6 @@ SCOREBOARD_URL = "https://iswa.gsfc.nasa.gov/IswaSystemWebApp/flarescoreboard/ha
 REGIONAL_DATASETS = [
     "SIDC_Operator_REGIONS",
     "BoM_flare1_REGIONS",
-    "ASSA_1_REGIONS",
-    "ASSA_24H_1_REGIONS",
     "AMOS_v1_REGIONS",
     "ASAP_1_REGIONS",
     "MAG4_LOS_FEr_REGIONS",
