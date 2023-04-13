@@ -5,33 +5,29 @@ from prediction import Prediction
 
 SCOREBOARD_URL = "https://iswa.gsfc.nasa.gov/IswaSystemWebApp/flarescoreboard/hapi"
 
-# IMPORTANT! The order of datasets here must match the order of datasets in the database so that the correct dataset_id is given.
-REGIONAL_DATASETS = [
-    "SIDC_Operator_REGIONS",
-    "BoM_flare1_REGIONS",
-    "AMOS_v1_REGIONS",
-    "ASAP_1_REGIONS",
-    "MAG4_LOS_FEr_REGIONS",
-    "MAG4_LOS_r_REGIONS",
-    "MAG4_SHARP_FE_REGIONS",
-    "MAG4_SHARP_REGIONS",
-    "MAG4_SHARP_HMI_REGIONS",
-    "AEffort_REGIONS"
-];
+# The values here align with the database IDs
+REGIONAL_DATASETS = {
+     "SIDC_Operator_REGIONS" : 1 ,
+     "BoM_flare1_REGIONS"    : 2 ,
+     "AMOS_v1_REGIONS"       : 5 ,
+     "ASAP_1_REGIONS"        : 6 ,
+     "MAG4_LOS_FEr_REGIONS"  : 7 ,
+     "MAG4_LOS_r_REGIONS"    : 8 ,
+     "MAG4_SHARP_FE_REGIONS" : 9 ,
+     "MAG4_SHARP_REGIONS"    : 10,
+     "MAG4_SHARP_HMI_REGIONS": 11,
+     "AEffort_REGIONS"       : 12
+}
 
-def get_dataset_id(dataset: str) -> int:
-    """
-    Returns the ID of the given dataset
-    """
-    assert dataset in REGIONAL_DATASETS, "Invalid dataset: " + dataset
-    return REGIONAL_DATASETS.index(dataset) + 1
+def get_dataset_id(dataset_name: str) -> int:
+    return REGIONAL_DATASETS[dataset_name]
 
 def get_all(start: str, stop: str) -> list:
     """
     Returns a list of all available predictions in the given time range across all datasets
     """
     all_predictions = []
-    for dataset in REGIONAL_DATASETS:
+    for dataset in REGIONAL_DATASETS.keys():
         all_predictions += get_predictions(dataset, start, stop)
     return all_predictions
 
