@@ -242,8 +242,9 @@ class Database_FlarePredictionDatabase
     private static function LabelNoPrediction(array $prediction, string $label): string {
         $all_null = true;
         foreach (self::FLARE_CLASSES as $flare_class) {
-            if (array_key_exists($flare_class, $prediction) && $prediction[$flare_class] != null) {
+            if (array_key_exists($flare_class, $prediction) && $prediction[$flare_class] != -1) {
                 $all_null = false;
+                break;
             }
         }
 
@@ -258,7 +259,7 @@ class Database_FlarePredictionDatabase
      * Example: FlarePredictionString($prediction, "c") -> "c: 0.75"
      */
     private static function FlarePredictionString(array $prediction, string $flare_class): string {
-        if (array_key_exists($flare_class, $prediction) && isset($prediction[$flare_class])) {
+        if (array_key_exists($flare_class, $prediction) && isset($prediction[$flare_class]) && ($prediction[$flare_class] != -1)) {
             // Probability
             $probability = floatval($prediction[$flare_class]) * 100;
             // Make sure the flare class is uppercase in the label
