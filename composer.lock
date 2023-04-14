@@ -343,84 +343,45 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/dgarciabriseno/helioviewer-event-interface.git",
-                "reference": "d254362597f16d80cf514ae107e6d75b98202000"
+                "reference": "1da5297a176d87955426c94d6b78b51f28f59ee5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dgarciabriseno/helioviewer-event-interface/zipball/d254362597f16d80cf514ae107e6d75b98202000",
-                "reference": "d254362597f16d80cf514ae107e6d75b98202000",
+                "url": "https://api.github.com/repos/dgarciabriseno/helioviewer-event-interface/zipball/1da5297a176d87955426c94d6b78b51f28f59ee5",
+                "reference": "1da5297a176d87955426c94d6b78b51f28f59ee5",
                 "shasum": ""
             },
             "require": {
-                "guzzlehttp/guzzle": "^7.5",
-                "mark-gerarts/auto-mapper-plus": "^1.4.1"
+                "guzzlehttp/guzzle": "^7.5"
             },
             "require-dev": {
                 "phpunit/phpunit": "^10"
             },
             "default-branch": true,
+            "bin": [
+                "bin/hgs2hpc.py",
+                "bin/start_hgs2hpc"
+            ],
             "type": "library",
             "autoload": {
                 "psr-4": {
                     "HelioviewerEventInterface\\": "src/"
                 }
             },
+            "scripts": {
+                "test": [
+                    "vendor/bin/phpunit --fail-on-warning tests"
+                ]
+            },
+            "license": [
+                "MPL-2.0"
+            ],
+            "description": "Interface for querying external data sources for Helioviewer",
             "support": {
                 "source": "https://github.com/dgarciabriseno/helioviewer-event-interface/tree/main",
                 "issues": "https://github.com/dgarciabriseno/helioviewer-event-interface/issues"
             },
-            "time": "2023-04-12T16:48:43+00:00"
-        },
-        {
-            "name": "mark-gerarts/auto-mapper-plus",
-            "version": "1.4.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/mark-gerarts/automapper-plus.git",
-                "reference": "2c14575a51377c31f4efea48f89f3fe0530b499a"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/mark-gerarts/automapper-plus/zipball/2c14575a51377c31f4efea48f89f3fe0530b499a",
-                "reference": "2c14575a51377c31f4efea48f89f3fe0530b499a",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=7.4.0"
-            },
-            "require-dev": {
-                "mark-gerarts/phpstan-automapper-plus": "^0.1.0",
-                "phpunit/phpunit": "^7.0|^8.0",
-                "symfony/debug": "^3.3",
-                "symfony/var-dumper": "^3.3"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "AutoMapperPlus\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Mark Gerarts",
-                    "email": "mark.gerarts@gmail.com"
-                }
-            ],
-            "description": "An AutoMapper for PHP",
-            "keywords": [
-                "automapper",
-                "converter",
-                "object-to-object"
-            ],
-            "support": {
-                "issues": "https://github.com/mark-gerarts/automapper-plus/issues",
-                "source": "https://github.com/mark-gerarts/automapper-plus/tree/1.4.1"
-            },
-            "time": "2023-01-31T08:07:09+00:00"
+            "time": "2023-04-14T14:32:26+00:00"
         },
         {
             "name": "psr/http-client",

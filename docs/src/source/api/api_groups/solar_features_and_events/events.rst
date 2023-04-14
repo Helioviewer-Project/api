@@ -6,11 +6,15 @@ Returns a list of HEK events in the :ref:`helioviewer-event-format`.
 
 .. table:: `Request Parameters`
 
-    +-----------+----------+--------+----------------------+---------------------------------------+
-    | Parameter | Required | Type   | Example              | Description                           |
-    +===========+==========+========+======================+=======================================+
-    | startTime | Required | string | 2023-01-01T00:00:00Z | Specific time to get predictions for. |
-    +-----------+----------+--------+----------------------+---------------------------------------+
+    +-----------+----------+--------+----------------------+------------------------------------------------------------+
+    | Parameter | Required | Type   | Example              | Description                                                |
+    +===========+==========+========+======================+============================================================+
+    | startTime | Required | string | 2023-01-01T00:00:00Z | Specific time to get predictions for.                      |
+    +-----------+----------+--------+----------------------+------------------------------------------------------------+
+    | sources   | Optional | string | HEK,DONKI            | | Specify the external data sources to use for the request |
+    |           |          |        |                      | | If not provided, all sources will be queried             |
+    |           |          |        |                      | | Current options are HEK and DONKI.                       |
+    +-----------+----------+--------+----------------------+------------------------------------------------------------+
 
 See :ref:`helioviewer-event-format` for the response format.
 
