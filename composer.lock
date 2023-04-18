@@ -340,12 +340,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/dgarciabriseno/helioviewer-event-interface.git",
-                "reference": "78b0feeca5d33401349687a5e7c4017d9d9fb56a"
+                "reference": "d03bf577786a121f19638ec61834baa6032da2bb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dgarciabriseno/helioviewer-event-interface/zipball/78b0feeca5d33401349687a5e7c4017d9d9fb56a",
-                "reference": "78b0feeca5d33401349687a5e7c4017d9d9fb56a",
+                "url": "https://api.github.com/repos/dgarciabriseno/helioviewer-event-interface/zipball/d03bf577786a121f19638ec61834baa6032da2bb",
+                "reference": "d03bf577786a121f19638ec61834baa6032da2bb",
                 "shasum": ""
             },
             "require": {
@@ -378,7 +378,7 @@
                 "source": "https://github.com/dgarciabriseno/helioviewer-event-interface/tree/main",
                 "issues": "https://github.com/dgarciabriseno/helioviewer-event-interface/issues"
             },
-            "time": "2023-04-17T16:43:00+00:00"
+            "time": "2023-04-18T20:17:37+00:00"
         },
         {
             "name": "psr/http-client",
