@@ -34,7 +34,10 @@ class Database_FlarePredictionDatabase
         // The inner join query gets the minimum time difference between the issue time and the observation time for each
         // dataset where the issue time is before the dataset and the observation time is within the prediction window.
         // The join condition filters for the predictions that meet the minimum time differences.
-        $sql = sprintf("SELECT p.*,
+        $sql = sprintf("SELECT p.json_data,
+                               p.hpc_x,
+                               p.hpc_y,
+                               p.sha256,
                                dataset.name as dataset
                         FROM flare_predictions p
                         INNER JOIN
@@ -70,10 +73,7 @@ class Database_FlarePredictionDatabase
         foreach ($predictions as &$prediction) {
             $json_array = json_decode($prediction['json_data'], true);
             unset($prediction['json_data']);
-            // Let prediction come second during the merge so that we prefer the database values over the json values.
-            // We are more likely to have expectations about the the format of the data selected from the database than the unschema'd json,
-            // so this should make it easier to work with.
-            $prediction = array_merge($json_array, $prediction);
+            $prediction = array_merge($prediction, $json_array);
         }
         return $predictions;
     }
@@ -208,12 +208,22 @@ class Database_FlarePredictionDatabase
         // Normalize the flare predictions into Helioviewer Event Format
         $datasets = [];
         foreach ($predictions as &$prediction) {
-            list($prediction['hv_hpc_x'], $prediction['hv_hpc_y']) = rot_hpc($prediction['hpc_x'], $prediction['hpc_y'], $prediction['start_window'], $date);
-            $prediction['label'] = self::CreateLabel($prediction);
-            $prediction['version'] = "";
-            $prediction['type'] = 'FP';
-            $prediction['start'] = $prediction['start_window'];
-            $prediction['end'] = $prediction['end_window'];
+            $position = rot_hpc($prediction['hpc_x'], $prediction['hpc_y'], $prediction['start_window'], $date);
+            $data = [
+                'id'       => $prediction['sha256'],
+                'hv_hpc_x' => $position[0],
+                'hv_hpc_y' => $position[1],
+                'label'    => self::CreateLabel($prediction),
+                'version'  => "",
+                'type'     => "FP",
+                'start'    => $prediction['start_window'],
+                'end'      => $prediction['end_window'],
+                'source'   => $prediction,
+                'views'    => [
+                    ['name' => 'Flare Prediction',
+                     'content' => self::CreateView($prediction)],
+                ]
+            ];
             if (!array_key_exists($prediction['dataset'], $datasets)) {
                 $datasets[$prediction['dataset']] = [
                     'name' => $prediction['dataset'],
@@ -222,7 +232,7 @@ class Database_FlarePredictionDatabase
                     'data' => []
                 ];
             }
-            array_push($datasets[$prediction['dataset']]['data'], $prediction);
+            array_push($datasets[$prediction['dataset']]['data'], $data);
         }
 
         $hef_predictions = [
@@ -234,6 +244,33 @@ class Database_FlarePredictionDatabase
             array_push($hef_predictions['groups'], $details);
         }
         return $hef_predictions;
+    }
+
+    private static function GetLatitude(array $prediction): mixed {
+        return $prediction['NOAALatitude'] ?? $prediction['CataniaLatitude'] ?? $prediction['ModelLatitude'];
+    }
+
+    private static function GetLongitude(array $prediction): mixed {
+        return $prediction['NOAALongitude'] ?? $prediction['CataniaLongitude'] ?? $prediction['ModelLongitude'];
+    }
+
+    /**
+     * Returns a flat array of the most relevant data for the prediction
+     */
+    private static function CreateView(array $prediction): array {
+        return [
+            "Dataset" => $prediction['dataset'],
+            "Start Window" => $prediction['start_window'],
+            "End Window"   => $prediction['end_window'],
+            "Issue time"   => $prediction['issue_time'],
+            "Latitude" => self::GetLatitude($prediction),
+            "Longitude" => self::GetLongitude($prediction),
+            "C" => self::GetProbablity($prediction, "C"),
+            "C+" => self::GetProbablity($prediction, "CPlus"),
+            "M" => self::GetProbablity($prediction, "M"),
+            "M+" => self::GetProbablity($prediction, "MPlus"),
+            "X" => self::GetProbablity($prediction, "X"),
+        ];
     }
 
     /**
@@ -255,15 +292,26 @@ class Database_FlarePredictionDatabase
     }
 
     /**
+     * Returns a percentage based on the given prediction data and flare class
+     */
+    private static function GetProbablity(array $prediction, string $flare_class): ?string {
+        if (array_key_exists($flare_class, $prediction) && isset($prediction[$flare_class]) && ($prediction[$flare_class] != -1)) {
+            $tmp = $prediction[$flare_class] * 100;
+            return round($tmp, 2) . "%";
+        }
+        return null;
+    }
+
+    /**
      * Returns a flare prediction value as a string representation.
      * Example: FlarePredictionString($prediction, "c") -> "c: 0.75"
      */
     private static function FlarePredictionString(array $prediction, string $flare_class): string {
         if (array_key_exists($flare_class, $prediction) && isset($prediction[$flare_class]) && ($prediction[$flare_class] != -1)) {
             // Probability
-            $probability = floatval($prediction[$flare_class]) * 100;
+            $probability = self::GetProbablity($prediction, $flare_class);
             // Make sure the flare class is uppercase in the label
-            $tentative_label = strtoupper($flare_class) . ": " . round($probability, 2) . "%";
+            $tentative_label = strtoupper($flare_class) . ": " . $probability;
             // Replace the word "Plus" in the label with the plus sign.
             $tentative_label = str_replace("PLUS", "+", $tentative_label);
             return $tentative_label;
