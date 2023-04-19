@@ -3,6 +3,9 @@
 Heliovewer Event Format
 =======================
 
+.. warning::
+    This format is undergoing active development and may change without notice.
+
 The Helioviewer Event Format is data encapsulation format that makes it easier for clients (specifically Helioviewer) to parse event data.
 
 The format consists of an Array of objects which contain metadata and the data itself.
@@ -97,7 +100,7 @@ The data field is where the actual event specific data goes.
     +----------+---------------------------------------------------------------------------+
     | link     | Optional Link Object containing link text and URL                         |
     +----------+---------------------------------------------------------------------------+
-    | ...      | Event specific data                                                       |
+    | source   | Event specific data                                                       |
     +----------+---------------------------------------------------------------------------+
 
 The event object allows normalized positioning and labeling for any type of event while still containing the event-specific data.
@@ -120,3 +123,8 @@ This link will appear in the popup that shows up when an event is clicked.
     +----------+---------------------------------------------------------------------------+
     | text     | Text to show on Helioviewer for the link                                  |
     +----------+---------------------------------------------------------------------------+
+
+Contributing Data to Helioviewer
+--------------------------------
+
+If you would like your data to appear on Helioviewer, please see `Helioviewer Event Interface <https://github.com/dgarciabriseno/helioviewer-event-interface/>`_.
