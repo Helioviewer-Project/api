@@ -3,6 +3,9 @@
 Heliovewer Event Format
 =======================
 
+.. warning::
+    This format is undergoing active development and may change without notice.
+
 The Helioviewer Event Format is data encapsulation format that makes it easier for clients (specifically Helioviewer) to parse event data.
 
 The format consists of an Array of objects which contain metadata and the data itself.
@@ -95,9 +98,33 @@ The data field is where the actual event specific data goes.
     +----------+---------------------------------------------------------------------------+
     | end      | UTC End time for the event.                                               |
     +----------+---------------------------------------------------------------------------+
-    | ...      | Event specific data                                                       |
+    | link     | Optional Link Object containing link text and URL                         |
+    +----------+---------------------------------------------------------------------------+
+    | source   | Event specific data                                                       |
     +----------+---------------------------------------------------------------------------+
 
 The event object allows normalized positioning and labeling for any type of event while still containing the event-specific data.
 Helioviewer is using this format for all features and events.
 Any new datasource can be converted into this format for use on Helioviewer.
+
+External Links
+--------------
+Very often events may have some information hosted by the data provider.
+For example, CME Analyses provided by the Space Weather Database Of Notifications, Knowledege, Information (DONKI) will have links back to DONKI's website.
+Thinks links can be integrated into Helioviewer by specifying a link with url and text.
+This link will appear in the popup that shows up when an event is clicked.
+
+.. table:: `Link Object`
+
+    +----------+---------------------------------------------------------------------------+
+    | Field    | Description                                                               |
+    +==========+===========================================================================+
+    | url      | Link URL                                                                  |
+    +----------+---------------------------------------------------------------------------+
+    | text     | Text to show on Helioviewer for the link                                  |
+    +----------+---------------------------------------------------------------------------+
+
+Contributing Data to Helioviewer
+--------------------------------
+
+If you would like your data to appear on Helioviewer, please see `Helioviewer Event Interface <https://github.com/dgarciabriseno/helioviewer-event-interface/>`_.
