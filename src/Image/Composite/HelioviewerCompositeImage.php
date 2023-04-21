@@ -18,9 +18,6 @@
 require_once HV_ROOT_DIR.'/../src/Image/JPEG2000/JP2Image.php';
 require_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
 require_once HV_ROOT_DIR.'/../src/Module/SolarBodies.php';
-require_once HV_ROOT_DIR . "/../vendor/autoload.php";
-
-use HelioviewerEventInterface\Events;
 
 class Image_Composite_HelioviewerCompositeImage {
 
@@ -597,7 +594,7 @@ class Image_Composite_HelioviewerCompositeImage {
 
         require_once HV_ROOT_DIR.'/../src/Event/HEKAdapter.php';
         require_once HV_ROOT_DIR.'/../src/Database/FlarePredictionDatabase.php';
-        require_once HV_ROOT_DIR.'/../scripts/rot_hpc.php';
+        require_once HV_ROOT_DIR . "/../src/Helper/EventInterface.php";
 
         // Collect events from all data sources.
         $hek = new Event_HEKAdapter();
@@ -605,14 +602,7 @@ class Image_Composite_HelioviewerCompositeImage {
         $event_categories = array_merge($event_categories, Database_FlarePredictionDatabase::GetLatestNormalizedFlarePredictions($this->date));
         $startDate = new DateTimeImmutable($this->date);
         $endDate = $startDate->add(new DateInterval("P1D"));
-        $observationDate = $this->date;
-        $applyRotation = function ($hv_event) use ($observationDate) {
-            // Apply solar rotation from the event time to the current observation time
-            list($hv_event->hv_hpc_x, $hv_event->hv_hpc_y) = rot_hpc($hv_event->hpc_x, $hv_event->hpc_y, $hv_event->start, $observationDate);
-            return $hv_event;
-        };
-        $tmp = Events::GetAll($startDate, $endDate, $applyRotation);
-        $event_categories = array_merge($event_categories, $tmp);
+        $event_categories = array_merge($event_categories, Helper_EventInterface::GetEvents($startDate, $endDate, $this->date));
 
         // Lay down all relevant event REGIONS first
         $allowedFRMs = $this->events->toArray();
