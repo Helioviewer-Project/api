@@ -13,9 +13,7 @@
  * @link     https://github.com/Helioviewer-Project
  */
 require_once 'interface.Module.php';
-require_once HV_ROOT_DIR . "/../vendor/autoload.php";
-
-use HelioviewerEventInterface\Events;
+require_once HV_ROOT_DIR . "/../src/Helper/EventInterface.php";
 
 class Module_SolarEvents implements Module {
 
@@ -265,14 +263,14 @@ class Module_SolarEvents implements Module {
 
             // TODO: start should be the beginning of the day, Time = 00:00:00
             // Query the rest of the data
-            $data = Events::GetFromSource($sources, $start, $end, $applyRotation);
+            $data = Helper_EventInterface::GetEvents($start, $end, $observationTime, $sources);
 
             // Merge with the HEK data
             $data = array_merge($hekData, $data);
         } else {
             $hekData = $this->getHekEvents();
             // Simple case where there's no sources specified, just return everything
-            $data = Events::GetAll($start, $end, $applyRotation);
+            $data = Helper_EventInterface::GetEvents($start, $end, $observationTime);
             $data = array_merge($hekData, $data);
         }
 

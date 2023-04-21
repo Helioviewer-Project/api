@@ -594,11 +594,15 @@ class Image_Composite_HelioviewerCompositeImage {
 
         require_once HV_ROOT_DIR.'/../src/Event/HEKAdapter.php';
         require_once HV_ROOT_DIR.'/../src/Database/FlarePredictionDatabase.php';
+        require_once HV_ROOT_DIR . "/../src/Helper/EventInterface.php";
 
         // Collect events from all data sources.
         $hek = new Event_HEKAdapter();
         $event_categories = $hek->getNormalizedEvents($this->date, Array());
         $event_categories = array_merge($event_categories, Database_FlarePredictionDatabase::GetLatestNormalizedFlarePredictions($this->date));
+        $startDate = new DateTimeImmutable($this->date);
+        $endDate = $startDate->add(new DateInterval("P1D"));
+        $event_categories = array_merge($event_categories, Helper_EventInterface::GetEvents($startDate, $endDate, $this->date));
 
         // Lay down all relevant event REGIONS first
         $allowedFRMs = $this->events->toArray();
@@ -705,8 +709,8 @@ class Image_Composite_HelioviewerCompositeImage {
                 foreach( explode("\n", $event['label']) as $value ) {
 					//Fix unicode
 					$value = str_replace(
-						array('u03b1', 'u03b2', 'u03b3', 'u00b1', 'u00b2'),
-						array('α', 'β', 'γ', '±', '²'),
+						array('u03b1', 'u03b2', 'u03b3', 'u00b1', 'u00b2', '&deg;'),
+						array('α', 'β', 'γ', '±', '²', '°'),
 						$value
 					);
 
@@ -1354,7 +1358,7 @@ class Image_Composite_HelioviewerCompositeImage {
                                   . 'watermark_circle_small_black_border.png');
             $scale = ($this->width / 2) / 300;
             $width = $watermark->getImageWidth();
-            $watermark->scaleImage($width * $scale, $width * $scale);
+            $watermark->scaleImage(intval($width * $scale), intval($width * $scale));
         }
 
         // For whatever reason, compositeImage() doesn't carry over gravity
