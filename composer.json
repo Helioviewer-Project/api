@@ -1,0 +1,11 @@
+{
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/dgarciabriseno/helioviewer-event-interface.git"
+        }
+    ],
+    "require": {
+        "helioviewer/event-interface": "dev-main"
+    }
+}

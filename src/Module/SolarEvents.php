@@ -13,6 +13,9 @@
  * @link     https://github.com/Helioviewer-Project
  */
 require_once 'interface.Module.php';
+require_once HV_ROOT_DIR . "/../vendor/autoload.php";
+
+use HelioviewerEventInterface\Events;
 
 class Module_SolarEvents implements Module {
 
@@ -229,10 +232,50 @@ class Module_SolarEvents implements Module {
     /**
      * Retrieves HEK events in a normalized format
      */
-    public function events() {
+    private function getHekEvents() {
         include_once HV_ROOT_DIR.'/../src/Event/HEKAdapter.php';
         $hek = new Event_HEKAdapter();
         $data = $hek->getNormalizedEvents($this->_params['startTime'], $this->_options);
+        return $data;
+    }
+
+    public function events() {
+        $start = new DateTimeImmutable($this->_params['startTime']);
+        $end = $start->add(new DateInterval('PT23H59M59S'));
+        $observationTime = $this->_params['startTime'];
+
+        include_once HV_ROOT_DIR.'/../scripts/rot_hpc.php';
+        $applyRotation = function ($hv_event) use ($observationTime) {
+            // Apply solar rotation from the event time to the current observation time
+            list($hv_event->hv_hpc_x, $hv_event->hv_hpc_y) = rot_hpc($hv_event->hpc_x, $hv_event->hpc_y, $hv_event->start, $observationTime);
+            return $hv_event;
+        };
+
+        // Check if any specific datasources were requested
+        if (array_key_exists('sources', $this->_options)) {
+            $sources = explode(',', $this->_options['sources']);
+            // Special case for HEK since it doesn't go through the event interface
+            $hekData = [];
+            if (in_array("HEK", $sources)) {
+                // Remove HEK from the array
+                $sources = array_filter($sources, function ($source) {return $source != "HEK";});
+                // Get the HEK data
+                $hekData = $this->getHekEvents();
+            }
+
+            // TODO: start should be the beginning of the day, Time = 00:00:00
+            // Query the rest of the data
+            $data = Events::GetFromSource($sources, $start, $end, $applyRotation);
+
+            // Merge with the HEK data
+            $data = array_merge($hekData, $data);
+        } else {
+            $hekData = $this->getHekEvents();
+            // Simple case where there's no sources specified, just return everything
+            $data = Events::GetAll($start, $end, $applyRotation);
+            $data = array_merge($hekData, $data);
+        }
+
         header("Content-Type: application/json");
         echo json_encode($data);
     }
@@ -299,7 +342,7 @@ class Module_SolarEvents implements Module {
             $expected = array(
                 'required' => array('startTime'),
                 'optional' => array('eventType', 'cacheOnly', 'force',
-                                    'ar_filter'),
+                                    'ar_filter', 'sources'),
                 'bools'    => array('cacheOnly','force','ar_filter'),
                 'dates'    => array('startTime')
             );
