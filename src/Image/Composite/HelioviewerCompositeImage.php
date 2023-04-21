@@ -18,6 +18,9 @@
 require_once HV_ROOT_DIR.'/../src/Image/JPEG2000/JP2Image.php';
 require_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
 require_once HV_ROOT_DIR.'/../src/Module/SolarBodies.php';
+require_once HV_ROOT_DIR . "/../vendor/autoload.php";
+
+use HelioviewerEventInterface\Events;
 
 class Image_Composite_HelioviewerCompositeImage {
 
@@ -594,11 +597,22 @@ class Image_Composite_HelioviewerCompositeImage {
 
         require_once HV_ROOT_DIR.'/../src/Event/HEKAdapter.php';
         require_once HV_ROOT_DIR.'/../src/Database/FlarePredictionDatabase.php';
+        require_once HV_ROOT_DIR.'/../scripts/rot_hpc.php';
 
         // Collect events from all data sources.
         $hek = new Event_HEKAdapter();
         $event_categories = $hek->getNormalizedEvents($this->date, Array());
         $event_categories = array_merge($event_categories, Database_FlarePredictionDatabase::GetLatestNormalizedFlarePredictions($this->date));
+        $startDate = new DateTimeImmutable($this->date);
+        $endDate = $startDate->add(new DateInterval("P1D"));
+        $observationDate = $this->date;
+        $applyRotation = function ($hv_event) use ($observationDate) {
+            // Apply solar rotation from the event time to the current observation time
+            list($hv_event->hv_hpc_x, $hv_event->hv_hpc_y) = rot_hpc($hv_event->hpc_x, $hv_event->hpc_y, $hv_event->start, $observationDate);
+            return $hv_event;
+        };
+        $tmp = Events::GetAll($startDate, $endDate, $applyRotation);
+        $event_categories = array_merge($event_categories, $tmp);
 
         // Lay down all relevant event REGIONS first
         $allowedFRMs = $this->events->toArray();
@@ -705,8 +719,8 @@ class Image_Composite_HelioviewerCompositeImage {
                 foreach( explode("\n", $event['label']) as $value ) {
 					//Fix unicode
 					$value = str_replace(
-						array('u03b1', 'u03b2', 'u03b3', 'u00b1', 'u00b2'),
-						array('α', 'β', 'γ', '±', '²'),
+						array('u03b1', 'u03b2', 'u03b3', 'u00b1', 'u00b2', '&deg;'),
+						array('α', 'β', 'γ', '±', '²', '°'),
 						$value
 					);
 
@@ -1354,7 +1368,7 @@ class Image_Composite_HelioviewerCompositeImage {
                                   . 'watermark_circle_small_black_border.png');
             $scale = ($this->width / 2) / 300;
             $width = $watermark->getImageWidth();
-            $watermark->scaleImage($width * $scale, $width * $scale);
+            $watermark->scaleImage(intval($width * $scale), intval($width * $scale));
         }
 
         // For whatever reason, compositeImage() doesn't carry over gravity
