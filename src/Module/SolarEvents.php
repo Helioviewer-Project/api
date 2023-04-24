@@ -239,7 +239,7 @@ class Module_SolarEvents implements Module {
 
     public function events() {
         $start = new DateTimeImmutable($this->_params['startTime']);
-        $end = $start->add(new DateInterval('PT23H59M59S'));
+        $length = new DateInterval('P1D');
         $observationTime = $this->_params['startTime'];
 
         include_once HV_ROOT_DIR.'/../scripts/rot_hpc.php';
@@ -263,14 +263,14 @@ class Module_SolarEvents implements Module {
 
             // TODO: start should be the beginning of the day, Time = 00:00:00
             // Query the rest of the data
-            $data = Helper_EventInterface::GetEvents($start, $end, $observationTime, $sources);
+            $data = Helper_EventInterface::GetEvents($start, $length, $observationTime, $sources);
 
             // Merge with the HEK data
             $data = array_merge($hekData, $data);
         } else {
             $hekData = $this->getHekEvents();
             // Simple case where there's no sources specified, just return everything
-            $data = Helper_EventInterface::GetEvents($start, $end, $observationTime);
+            $data = Helper_EventInterface::GetEvents($start, $length, $observationTime);
             $data = array_merge($hekData, $data);
         }
 

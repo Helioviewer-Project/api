@@ -340,12 +340,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/dgarciabriseno/helioviewer-event-interface.git",
-                "reference": "d637b9949b9759d0f2a510339a250a3b68b7b56d"
+                "reference": "1c99e777a5fb99e3f1f93cc5d77dedb5f129adb8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dgarciabriseno/helioviewer-event-interface/zipball/d637b9949b9759d0f2a510339a250a3b68b7b56d",
-                "reference": "d637b9949b9759d0f2a510339a250a3b68b7b56d",
+                "url": "https://api.github.com/repos/dgarciabriseno/helioviewer-event-interface/zipball/1c99e777a5fb99e3f1f93cc5d77dedb5f129adb8",
+                "reference": "1c99e777a5fb99e3f1f93cc5d77dedb5f129adb8",
                 "shasum": ""
             },
             "require": {
@@ -375,10 +375,10 @@
             ],
             "description": "Interface for querying external data sources for Helioviewer",
             "support": {
-                "source": "https://github.com/dgarciabriseno/helioviewer-event-interface/tree/main",
+                "source": "https://github.com/dgarciabriseno/helioviewer-event-interface/tree/date-interval",
                 "issues": "https://github.com/dgarciabriseno/helioviewer-event-interface/issues"
             },
-            "time": "2023-04-21T18:17:25+00:00"
+            "time": "2023-04-24T15:04:21+00:00"
         },
         {
             "name": "psr/http-client",
