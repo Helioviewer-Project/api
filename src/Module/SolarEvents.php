@@ -228,13 +228,6 @@ class Module_SolarEvents implements Module {
         $length = new DateInterval('P1D');
         $observationTime = $this->_params['startTime'];
 
-        include_once HV_ROOT_DIR.'/../scripts/rot_hpc.php';
-        $applyRotation = function ($hv_event) use ($observationTime) {
-            // Apply solar rotation from the event time to the current observation time
-            list($hv_event->hv_hpc_x, $hv_event->hv_hpc_y) = rot_hpc($hv_event->hpc_x, $hv_event->hpc_y, $hv_event->start, $observationTime);
-            return $hv_event;
-        };
-
         // Check if any specific datasources were requested
         if (array_key_exists('sources', $this->_options)) {
             $sources = explode(',', $this->_options['sources']);
