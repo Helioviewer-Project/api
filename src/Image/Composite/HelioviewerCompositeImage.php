@@ -593,13 +593,11 @@ class Image_Composite_HelioviewerCompositeImage {
         $markerPinPixelOffsetY = 38;
 
         require_once HV_ROOT_DIR.'/../src/Event/HEKAdapter.php';
-        require_once HV_ROOT_DIR.'/../src/Database/FlarePredictionDatabase.php';
         require_once HV_ROOT_DIR . "/../src/Helper/EventInterface.php";
 
         // Collect events from all data sources.
         $hek = new Event_HEKAdapter();
         $event_categories = $hek->getNormalizedEvents($this->date, Array());
-        $event_categories = array_merge($event_categories, Database_FlarePredictionDatabase::GetLatestNormalizedFlarePredictions($this->date));
         $startDate = new DateTimeImmutable($this->date);
         $length = new DateInterval("P1D");
         $event_categories = array_merge($event_categories, Helper_EventInterface::GetEvents($startDate, $length, $this->date));

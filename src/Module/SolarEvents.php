@@ -214,20 +214,6 @@ class Module_SolarEvents implements Module {
     }
 
     /**
-     * Returns the latest flare predictions for the given observation time.
-     */
-    public function getFlarePredictions() {
-        $date = $this->_params['startTime'];
-        // Query the database for predictions that were issued as close as possible to the given date but not exceeding it.
-        include_once HV_ROOT_DIR.'/../src/Database/FlarePredictionDatabase.php';
-        $hef_predictions = Database_FlarePredictionDatabase::GetLatestNormalizedFlarePredictions($date);
-
-        // Process the results and return them as a JSON object.
-        header("Content-Type: application/json");
-        echo json_encode($hef_predictions);
-    }
-
-    /**
      * Retrieves HEK events in a normalized format
      */
     private function getHekEvents() {
