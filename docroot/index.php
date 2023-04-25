@@ -96,7 +96,6 @@ function loadModule($params) {
         'events'                    => 'SolarEvents',
         'getEventFRMs'              => 'SolarEvents',
         'getEvent'                  => 'SolarEvents',
-        'getFlarePredictions'       => 'SolarEvents',
         'getFRMs'                   => 'SolarEvents',
         'getDefaultEventTypes'      => 'SolarEvents',
         'getEvents'                 => 'SolarEvents',
