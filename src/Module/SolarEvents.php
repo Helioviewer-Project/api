@@ -309,12 +309,6 @@ class Module_SolarEvents implements Module {
                 'dates'    => array('startTime', 'endTime')
             );
             break;
-        case 'getFlarePredictions':
-            $expected = array(
-                'required' => array('startTime'),
-                'dates' => array('startTime')
-            );
-            break;
         case 'events':
             $expected = array(
                 'required' => array('startTime'),
