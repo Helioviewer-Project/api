@@ -214,20 +214,6 @@ class Module_SolarEvents implements Module {
     }
 
     /**
-     * Returns the latest flare predictions for the given observation time.
-     */
-    public function getFlarePredictions() {
-        $date = $this->_params['startTime'];
-        // Query the database for predictions that were issued as close as possible to the given date but not exceeding it.
-        include_once HV_ROOT_DIR.'/../src/Database/FlarePredictionDatabase.php';
-        $hef_predictions = Database_FlarePredictionDatabase::GetLatestNormalizedFlarePredictions($date);
-
-        // Process the results and return them as a JSON object.
-        header("Content-Type: application/json");
-        echo json_encode($hef_predictions);
-    }
-
-    /**
      * Retrieves HEK events in a normalized format
      */
     private function getHekEvents() {
@@ -239,15 +225,8 @@ class Module_SolarEvents implements Module {
 
     public function events() {
         $start = new DateTimeImmutable($this->_params['startTime']);
-        $end = $start->add(new DateInterval('PT23H59M59S'));
+        $length = new DateInterval('P1D');
         $observationTime = $this->_params['startTime'];
-
-        include_once HV_ROOT_DIR.'/../scripts/rot_hpc.php';
-        $applyRotation = function ($hv_event) use ($observationTime) {
-            // Apply solar rotation from the event time to the current observation time
-            list($hv_event->hv_hpc_x, $hv_event->hv_hpc_y) = rot_hpc($hv_event->hpc_x, $hv_event->hpc_y, $hv_event->start, $observationTime);
-            return $hv_event;
-        };
 
         // Check if any specific datasources were requested
         if (array_key_exists('sources', $this->_options)) {
@@ -263,14 +242,14 @@ class Module_SolarEvents implements Module {
 
             // TODO: start should be the beginning of the day, Time = 00:00:00
             // Query the rest of the data
-            $data = Helper_EventInterface::GetEvents($start, $end, $observationTime, $sources);
+            $data = Helper_EventInterface::GetEvents($start, $length, $observationTime, $sources);
 
             // Merge with the HEK data
             $data = array_merge($hekData, $data);
         } else {
             $hekData = $this->getHekEvents();
             // Simple case where there's no sources specified, just return everything
-            $data = Helper_EventInterface::GetEvents($start, $end, $observationTime);
+            $data = Helper_EventInterface::GetEvents($start, $length, $observationTime);
             $data = array_merge($hekData, $data);
         }
 
