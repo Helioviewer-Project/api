@@ -620,6 +620,9 @@ class Image_Composite_HelioviewerCompositeImage {
                             foreach ($group['data'] as &$event) {
                                 $event['concept'] = $event_category['name'];
                             }
+                            // The variable $event is re-used later so it must be unset so that it is not left pointing to the last member of the group array.
+                            // See the warning here https://www.php.net/manual/en/control-structures.foreach.php
+                            unset($event);
                             $events_to_render = array_merge($events_to_render, $group['data']);
                         }
                     }
