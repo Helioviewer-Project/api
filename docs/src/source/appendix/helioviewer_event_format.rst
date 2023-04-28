@@ -102,6 +102,9 @@ The data field is where the actual event specific data goes.
     +----------+---------------------------------------------------------------------------+
     | source   | Event specific data                                                       |
     +----------+---------------------------------------------------------------------------+
+    | views    | | List of views into the data.                                            |
+    |          | | This is parsed into the tabs that appear on Helioviewer                 |
+    +----------+---------------------------------------------------------------------------+
 
 The event object allows normalized positioning and labeling for any type of event while still containing the event-specific data.
 Helioviewer is using this format for all features and events.
@@ -123,6 +126,27 @@ This link will appear in the popup that shows up when an event is clicked.
     +----------+---------------------------------------------------------------------------+
     | text     | Text to show on Helioviewer for the link                                  |
     +----------+---------------------------------------------------------------------------+
+
+Views
+-----
+Sometimes the raw data returned by the API can contain far too much information to display in one tab.
+It's also given in some machine readable format, which is not necessarily the best way for humans to view the data.
+By using views, we can programmatically generate specialized tabs for looking at particular pieces of the source data.
+A view contains a tab name, a tab group, and the tab content.
+
+.. table:: `View`
+
+    +----------+-----------------------------------------------------------------------------------------+
+    | Field    | Description                                                                             |
+    +==========+=========================================================================================+
+    | name     | This view's title. It should describe the content in a short title.                     |
+    +----------+-----------------------------------------------------------------------------------------+
+    | content  | Object of key - value pairs which define the content. It should not have nested objects |
+    +----------+-----------------------------------------------------------------------------------------+
+    | tabgroup | | Optional field. A number specifying an association between multiple views.            |
+    |          | | This can be used to indicate multiple views are related in some way.                  |
+    |          | | The Helioviewer client will visually place these tabs next to each other              |
+    +----------+-----------------------------------------------------------------------------------------+
 
 Contributing Data to Helioviewer
 --------------------------------
