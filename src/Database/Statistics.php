@@ -1285,15 +1285,17 @@ class Database_Statistics {
                 $layersString .= 'event_type = "'.$layer['event_type'].'"';
             }
 
-            $eventKey = $eventsKeys[ $layer['event_type'] ];
-            $dbData[$eventKey] = array();
-            $dbVisibleData[$eventKey] = false;
-            $sources[$eventKey] = array(
-                'data' => array(),
-                'event_type' => $layer['event_type'],
-                'res' => $resolution,
-                'showInLegend' => false
-            );
+            if (isset($layer['event_type'])) {
+                $eventKey = $eventsKeys[ $layer['event_type'] ];
+                $dbData[$eventKey] = array();
+                $dbVisibleData[$eventKey] = false;
+                $sources[$eventKey] = array(
+                    'data' => array(),
+                    'event_type' => $layer['event_type'],
+                    'res' => $resolution,
+                    'showInLegend' => false
+                );
+            }
         }
 
 
