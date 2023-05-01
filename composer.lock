@@ -340,12 +340,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/dgarciabriseno/helioviewer-event-interface.git",
-                "reference": "01a7a8ad8a05c66879357c16d0bcc6b9bba2c431"
+                "reference": "e39466a33389d256d12089b95452d2ff82190689"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dgarciabriseno/helioviewer-event-interface/zipball/01a7a8ad8a05c66879357c16d0bcc6b9bba2c431",
-                "reference": "01a7a8ad8a05c66879357c16d0bcc6b9bba2c431",
+                "url": "https://api.github.com/repos/dgarciabriseno/helioviewer-event-interface/zipball/e39466a33389d256d12089b95452d2ff82190689",
+                "reference": "e39466a33389d256d12089b95452d2ff82190689",
                 "shasum": ""
             },
             "require": {
@@ -358,7 +358,8 @@
             "default-branch": true,
             "bin": [
                 "bin/hgs2hpc.py",
-                "bin/start_hgs2hpc"
+                "bin/start_hgs2hpc",
+                "bin/clear_cache.php"
             ],
             "type": "library",
             "autoload": {
@@ -369,6 +370,9 @@
             "scripts": {
                 "test": [
                     "vendor/bin/phpunit --bootstrap tests/bootstrap.php --fail-on-warning tests"
+                ],
+                "localtest": [
+                    "vendor/bin/phpunit --bootstrap tests/bootstrap.php --stop-on-failure --fail-on-warning tests"
                 ]
             },
             "license": [
@@ -376,10 +380,10 @@
             ],
             "description": "Interface for querying external data sources for Helioviewer",
             "support": {
-                "source": "https://github.com/dgarciabriseno/helioviewer-event-interface/tree/main",
+                "source": "https://github.com/dgarciabriseno/helioviewer-event-interface/tree/flares",
                 "issues": "https://github.com/dgarciabriseno/helioviewer-event-interface/issues"
             },
-            "time": "2023-04-26T18:38:46+00:00"
+            "time": "2023-05-01T14:35:22+00:00"
         },
         {
             "name": "psr/cache",
