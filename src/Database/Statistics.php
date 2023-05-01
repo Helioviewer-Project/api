@@ -1285,7 +1285,7 @@ class Database_Statistics {
                 $layersString .= 'event_type = "'.$layer['event_type'].'"';
             }
 
-            if (isset($layer['event_type'])) {
+            if (isset($layer['event_type']) && isset($eventsKeys[$layer['event_type']])) {
                 $eventKey = $eventsKeys[ $layer['event_type'] ];
                 $dbData[$eventKey] = array();
                 $dbVisibleData[$eventKey] = false;
