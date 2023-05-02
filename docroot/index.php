@@ -77,6 +77,7 @@ function loadModule($params) {
         'getDataCoverage'           => 'WebClient',
         'updateDataCoverage'        => 'WebClient', // Deprecated, remove in V3, replaced by management scripts
         'shortenURL'                => 'WebClient',
+        'goto'                      => 'WebClient',
         'takeScreenshot'            => 'WebClient',
         'getRandomSeed'             => 'WebClient',
         'getJP2Image'               => 'JHelioviewer',
