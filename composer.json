@@ -1,4 +1,7 @@
 {
+    "scripts": {
+        "test": "vendor/bin/phpunit --bootstrap tests/autoload.php --fail-on-warning tests/unit_tests"
+    },
     "repositories": [
         {
             "type": "vcs",
@@ -7,5 +10,8 @@
     ],
     "require": {
         "helioviewer/event-interface": "dev-main"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.6"
     }
 }

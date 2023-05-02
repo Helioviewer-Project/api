@@ -607,6 +607,29 @@ class Module_WebClient implements Module {
         }
     }
 
+    private static function GetClientUrl(): string {
+        $base = self::GetApiUrl();
+        return str_replace('api.', '', $base);
+    }
+
+    private static function GetApiUrl(): string {
+        $http = ($_SERVER['HTTPS'] ?? false) ? 'https' : 'http';
+        $baseUrl = "$http://".$_SERVER['SERVER_NAME'];
+        return $baseUrl;
+    }
+
+    public function goto() {
+        include_once HV_ROOT_DIR . '/../src/Net/LinkShortener.php';
+        $shortId = $this->_params['id'];
+        $url = Net_LinkShortener::Get($shortId);
+        if (strpos($url, self::GetClientUrl()) === 0) {
+            header("Location: $url");
+        } else {
+            $base = self::GetClientUrl();
+            header("Location: $base");
+        }
+    }
+
     /**
      * Uses bit.ly to generate a shortened URL
      *
@@ -614,28 +637,25 @@ class Module_WebClient implements Module {
      * recommendation.
      */
     public function shortenURL() {
-
-        include_once HV_ROOT_DIR.'/../src/Net/Proxy.php';
-
-        $proxy = new Net_Proxy('http://api.bitly.com/v3/shorten?');
-
+        include_once HV_ROOT_DIR . '/../src/Net/LinkShortener.php';
         $allowed = false;
 
-        if (stripos($this->_params['queryString'], HV_BITLY_ALLOWED_DOMAIN) !== false) {
+        if (stripos($this->_params['queryString'], self::GetClientUrl()) === 0) {
             $allowed = true;
         }
 
         if($allowed){
             $longURL = urldecode($this->_params['queryString']);
-
-            $params = array(
-                'longUrl' => $longURL,
-                'login'   => HV_BITLY_USER,
-                'apiKey'  => HV_BITLY_API_KEY
-            );
-
-            $this->_printJSON($proxy->query($params, true));
-        }else{
+            $shortId = Net_LinkShortener::Create($longURL);
+            $this->_printJSON(json_encode([
+                "status_code" => 200,
+                "status_txt" => "OK",
+                "data" => [
+                    "long_url" => $longURL,
+                    "url" => self::GetApiUrl() . "/v2/goto/?id=$shortId",
+                ]
+            ]));
+        } else {
             $this->_printJSON(json_encode(array(
                 "status_code" => 200,
                 "status_txt" => "OK",
@@ -1492,6 +1512,12 @@ class Module_WebClient implements Module {
         case 'downloadImage':
             $expected = array(
                 'required' => array('id', 'scale')
+            );
+            break;
+        case 'goto':
+            $expected = array(
+                'required' => array('id'),
+                'alphanum' => array('id')
             );
             break;
 

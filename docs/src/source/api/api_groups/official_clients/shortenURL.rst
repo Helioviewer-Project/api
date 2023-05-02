@@ -9,7 +9,7 @@ Shorten a Helioviewer.org URL with the bit.ly URL shortening web service.
     +-------------+----------+--------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------+
     |  Parameter  | Required |  Type  |                                                                                                           Example                                                                                                           |                          Description                          |
     +=============+==========+========+=============================================================================================================================================================================================================================+===============================================================+
-    | queryString | Required | string | date%3D2014-02-25T15%3A18%3A07.000Z%26imageScale%3D2.4204409%26centerX%3D-410.06307838566283%26centerY%3D-244.6662219973343%26imageLayers%3D%255BSDO%2CAIA%2CAIA%2C304%2C1%2C100%255D%26eventLayers%3D%26eventLabels%3Dtrue | URL-encoded query string.                                     |
+    | queryString | Required | string | date%3D2014-02-25T15%3A18%3A07.000Z%26imageScale%3D2.4204409%26centerX%3D-410.06307838566283%26centerY%3D-244.6662219973343%26imageLayers%3D%255BSDO%2CAIA%2CAIA%2C304%2C1%2C100%255D%26eventLayers%3D%26eventLabels%3Dtrue | URL-encoded link to shorten. (Not only the queryString)       |
     +-------------+----------+--------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------+
     | callback    | Optional | string |                                                                                                                                                                                                                             | Wrap the response object in a function call of your choosing. |
     +-------------+----------+--------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------+
@@ -20,7 +20,7 @@ Example: Shortened URL (JSON)
 .. code-block::
     :caption: Example Request:
 
-    https://api.helioviewer.org/v2/shortenURL/?queryString=date%3D2014-02-25T15%3A18%3A07.000Z%26imageScale%3D2.4204409%26centerX%3D-410.06307838566283%26centerY%3D-244.6662219973343%26imageLayers%3D%255BSDO%2CAIA%2CAIA%2C304%2C1%2C100%255D%26eventLayers%3D%26eventLabels%3Dtrue
+    https://api.helioviewer.org/v2/shortenURL/?queryString=http://helioviewer.org/?date%3D2014-02-25T15%3A18%3A07.000Z%26imageScale%3D2.4204409%26centerX%3D-410.06307838566283%26centerY%3D-244.6662219973343%26imageLayers%3D%255BSDO%2CAIA%2CAIA%2C304%2C1%2C100%255D%26eventLayers%3D%26eventLabels%3Dtrue
 
 .. code-block::
     :caption: Example Response:
@@ -39,8 +39,12 @@ Example: Shortened URL (JSON)
 
 .. table:: Response Description
 
-    +-----------+----------+--------+-----------------------+
-    | Parameter | Required |  Type  |      Description      |
-    +===========+==========+========+=======================+
-    |  status   | Required | string | YouTube upload status |
-    +-----------+----------+--------+-----------------------+
+    +-------------+----------+--------+------------------------+
+    | Parameter   | Required |  Type  |      Description       |
+    +=============+==========+========+========================+
+    |  status     | Required | string | Link shortener status  |
+    +-------------+----------+--------+------------------------+
+    |  status_txt | Required | string | Status text            |
+    +-------------+----------+--------+------------------------+
+    |  data       | Required | string | Shortened link details |
+    +-------------+----------+--------+------------------------+
