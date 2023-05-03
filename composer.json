@@ -1,6 +1,7 @@
 {
     "scripts": {
-        "test": "vendor/bin/phpunit --bootstrap tests/autoload.php --fail-on-warning tests/unit_tests"
+        "test": "vendor/bin/phpunit --bootstrap tests/autoload.php --fail-on-warning tests/unit_tests",
+        "local-test": "vendor/bin/phpunit --bootstrap tests/autoload.php --stop-on-failure --fail-on-warning tests/unit_tests"
     },
     "repositories": [
         {
