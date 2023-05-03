@@ -15,6 +15,6 @@ final class ImageBrightnessTest extends TestCase
         $testDate = "2010-06-02 00:00:00";
         $testWavelength = "304";
         $brightnessHelper = new Helper_ImageBrightness($testDate, $testWavelength);
-        $this->assertEquals(0.95189210028456201, $brightnessHelper->getBrightness());
-    }    
+        $this->assertEqualsWithDelta(0.951892100284562, $brightnessHelper->getBrightness(), 0.00000000001);
+    }
 }
