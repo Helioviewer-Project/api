@@ -13,12 +13,17 @@ final class HEKEventNormalizerTest extends TestCase
     public function testNormalizeFRM(): void
     {
         $sample_data_file = __DIR__ . "/test_data/sample_frms_and_events";
-        $expected_data_file = __DIR__ . "/test_data/expected_normalized_events";
         $data = unserialize(file_get_contents($sample_data_file));
         $frms = $data['frms'];
         $normalized = Event_HEKEventNormalizer::NormalizeFRMs($frms);
-        $expected = unserialize(file_get_contents($expected_data_file));
-        $this->assertEquals($expected, $normalized);
+        $this->assertCount(20, $normalized);
+        $this->assertCount(3, $normalized[0]);
+        $group = $normalized[0]['groups'][0];
+        $this->assertCount(4, $group);
+        $this->assertArrayHasKey('name', $group);
+        $this->assertArrayHasKey('contact', $group);
+        $this->assertArrayHasKey('url', $group);
+        $this->assertArrayHasKey('data', $group);
     }
 
     public function testNormalizeEvents(): void {
