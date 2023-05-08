@@ -29,8 +29,8 @@ class Net_LinkShortener
     }
 
     public static function Create(string $longUrl): string {
-        $redis = self::GetRedisInstance($longUrl);
-        while($key = self::GenerateShortString()) {
+        $redis = self::GetRedisInstance();
+        while($key = self::GenerateShortString($longUrl)) {
             if ($redis->get($key) === false) {
                 $redis->set($key, $longUrl);
                 return $key;
