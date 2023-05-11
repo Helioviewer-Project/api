@@ -1,0 +1,1 @@
+UPDATE datasource_property SET label = 'Instrument' WHERE name = 'SUVI';
