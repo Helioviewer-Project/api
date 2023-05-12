@@ -13,8 +13,9 @@ class Net_LinkShortener
         return $redis;
     }
 
-    protected static function GenerateShortString(): string {
-        return bin2hex(random_bytes(8));
+    protected static function GenerateShortString(string $longUrl): string {
+        $hash = substr(md5($longUrl), 0, 16);
+        return $hash;
     }
 
     public static function Get(string $shortLink): ?string {
@@ -29,11 +30,8 @@ class Net_LinkShortener
 
     public static function Create(string $longUrl): string {
         $redis = self::GetRedisInstance();
-        while($key = self::GenerateShortString()) {
-            if ($redis->get($key) === false) {
-                $redis->set($key, $longUrl);
-                return $key;
-            }
-        };
+        $key = self::GenerateShortString($longUrl);
+        $redis->set($key, $longUrl);
+        return $key;
     }
 }
