@@ -14,7 +14,7 @@ class Net_LinkShortener
     }
 
     protected static function GenerateShortString(string $longUrl): string {
-        $hash = substr(md5($longurl ), 0, 16);
+        $hash = substr(md5($longurl), 0, 16);
         return $hash;
     }
 
