@@ -14,7 +14,7 @@ class Net_LinkShortener
     }
 
     protected static function GenerateShortString(string $longUrl): string {
-        $hash = substr(md5($longurl . time()), 0, 8);
+        $hash = substr(md5($longurl ), 0, 16);
         return $hash;
     }
 
@@ -30,11 +30,8 @@ class Net_LinkShortener
 
     public static function Create(string $longUrl): string {
         $redis = self::GetRedisInstance();
-        while($key = self::GenerateShortString($longUrl)) {
-            if ($redis->get($key) === false) {
-                $redis->set($key, $longUrl);
-                return $key;
-            }
-        };
+        $key = self::GenerateShortString($longUrl)
+        $redis->set($key, $longUrl);
+        return $key;
     }
 }
