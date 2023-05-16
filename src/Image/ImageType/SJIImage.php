@@ -25,11 +25,6 @@ class Image_ImageType_SJIImage extends Image_HelioviewerImage {
      * @return void
      */
     public function __construct($jp2, $filepath, $roi, $uiLabels, $offsetX, $offsetY, $options) {
-
-	/*
-		Temporary fix to use correct color table. Because both v2 and v3 runnning at same time some
-		names have different parameters
-	*/
         $measurement = $uiLabels[3]['name'];
 
         $colorTable = HV_ROOT_DIR
