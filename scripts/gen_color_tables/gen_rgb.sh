@@ -15,5 +15,5 @@ sunpy_fn=$2
 shift; shift
 sunpy_args=$@
 
-python gen_rgb.py $name $sunpy_fn -a $sunpy_args
-php gen_color_table.php $name
+python gen_rgb.py "${name}_${sunpy_args}" $sunpy_fn -a $sunpy_args
+php gen_color_table.php "${name}_${sunpy_args}"
