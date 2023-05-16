@@ -1,8 +1,14 @@
 """IRIS DataServer definition"""
 import os
+import re
 import requests
 from datetime import datetime
 from helioviewer.hvpull.servers import DataServer
+
+class IrisFolder:
+    def __init__(self, folder: str, timestamp: datetime):
+        self.folder = folder
+        self.timestamp = timestamp
 
 class IRISDataServer(DataServer):
     """IRIS Datasource definition"""
@@ -16,7 +22,7 @@ class IRISDataServer(DataServer):
         # This URI doesn't follow the typical organization, so instead we need to parse all the folders given by the web directory
         folders = self._get_folders(response.content.decode('utf-8'))
         # After getting the folders, extract the folders with the relevant dates
-        relevant_folders = filter(lambda f: f.timestamp > start_date and f.timestamp < end_date, folders)
+        relevant_folders = filter(lambda f: f.timestamp >= start_date and f.timestamp <= end_date, folders)
         # Return the folder URLs
         return [os.path.join(self.uri, x.folder) for x in relevant_folders]
 
@@ -35,7 +41,7 @@ class IRISDataServer(DataServer):
         folders.sort(key=lambda f: f.timestamp)
         return folders
 
-class IrisFolder:
-    def __init__(self, folder: str, timestamp: datetime):
-        self.folder = folder
-        self.timestamp = timestamp
+    def get_datetime_from_file(self, filename):
+        url_filename = os.path.basename(filename)
+        url_datetime = url_filename[11:26]
+        return datetime.strptime(url_datetime, '%Y%m%d_%H%M%S')
