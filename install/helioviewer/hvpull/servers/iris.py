@@ -22,7 +22,7 @@ class IRISDataServer(DataServer):
         # This URI doesn't follow the typical organization, so instead we need to parse all the folders given by the web directory
         folders = self._get_folders(response.content.decode('utf-8'))
         # After getting the folders, extract the folders with the relevant dates
-        relevant_folders = filter(lambda f: f.timestamp >= start_date and f.timestamp <= end_date, folders)
+        relevant_folders = filter(lambda f: f.timestamp.date() >= start_date.date() and f.timestamp.date() <= end_date.date(), folders)
         # Return the folder URLs
         return [os.path.join(self.uri, x.folder) for x in relevant_folders]
 
