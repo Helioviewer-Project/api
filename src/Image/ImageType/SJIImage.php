@@ -25,7 +25,7 @@ class Image_ImageType_SJIImage extends Image_HelioviewerImage {
      * @return void
      */
     public function __construct($jp2, $filepath, $roi, $uiLabels, $offsetX, $offsetY, $options) {
-        $measurement = $uiLabels[3]['name'];
+        $measurement = $uiLabels[2]['name'];
 
         $colorTable = HV_ROOT_DIR
                     . '/resources/images/color-tables/'
@@ -41,9 +41,8 @@ class Image_ImageType_SJIImage extends Image_HelioviewerImage {
      * @return string watermark name
      */
     public function getWaterMarkName() {
-        $type = $this->uiLabels[2]['name'];
-        $measurement = $this->uiLabels[3]['name'];
-        $watermark = 'IRIS SJI '.$type.' '.$measurement." Å\n";
+        $measurement = $this->uiLabels[2]['name'];
+        $watermark = 'IRIS SJI '.$measurement." Å\n";
         return $watermark;
     }
 }
