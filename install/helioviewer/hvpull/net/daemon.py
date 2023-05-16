@@ -882,7 +882,8 @@ class ImageRetrievalDaemon:
             "kcor": "KCORDataServer",
             "hv_kcor": "HVKCORDataServer",
             "solar_orbiter": "SolarOrbiterDataServer",
-            "suvi": "SUVIDataServer"
+            "suvi": "SUVIDataServer",
+            "iris": "IRISDataServer"
         }
 
     @classmethod
