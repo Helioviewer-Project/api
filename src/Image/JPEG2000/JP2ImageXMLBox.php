@@ -266,13 +266,8 @@ class Image_JPEG2000_JP2ImageXMLBox {
      */
     public function getRefPixelCoords() {
         try {
-            if ( $this->_getElementValue('INSTRUME') == 'XRT' ) {
-            	$x = -($this->_getElementValue('CRVAL1') / $this->_getElementValue('CDELT1') - $this->_getElementValue('CRPIX1'));
-				$y = -($this->_getElementValue('CRVAL2') / $this->_getElementValue('CDELT2') - $this->_getElementValue('CRPIX2'));
-			}else{
-				$x = $this->_getElementValue('CRPIX1');
-				$y = $this->_getElementValue('CRPIX2');
-			}
+            $x = -($this->_getElementValue('CRVAL1') / $this->_getElementValue('CDELT1') - $this->_getElementValue('CRPIX1'));
+            $y = -($this->_getElementValue('CRVAL2') / $this->_getElementValue('CDELT2') - $this->_getElementValue('CRPIX2'));
         }
         catch (Exception $e) {
             throw new Exception(
