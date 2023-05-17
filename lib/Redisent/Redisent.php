@@ -41,6 +41,8 @@ class Redisent {
      */
     public $port;
 
+    private $max_reconnect_attempts;
+
     /**
      * Creates a Redisent connection to the Redis server on host {@link $host} and port {@link $port}.
      * @param string $host The hostname of the Redis server
