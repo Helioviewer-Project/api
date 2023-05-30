@@ -1152,9 +1152,6 @@ class Image_Composite_HelioviewerCompositeImage {
      * @return void
      */
     private function _addEarthScale($imagickImage) {
-        $rect_width  = 73;
-        $rect_height = 56;
-
         // Calculate earth scale in piexls
         $rsunInArcseconds = 959.705;
         $earthFractionOfSun = 1/109.1;
@@ -1173,6 +1170,13 @@ class Image_Composite_HelioviewerCompositeImage {
         else {
             $topLeftX = $imagickImage->getImageWidth() - $rect_width - 20;
             $topLeftY = 20;
+        }
+
+        $rect_width  = 95;
+        // Calculate height of the box based on the earth scale
+        $rect_height = $earthScaleInPixels + 22;
+        if ($rect_height < 82) {
+            $rect_height = 82;
         }
 
         // Draw black rectangle background for indicator and label
@@ -1209,7 +1213,7 @@ class Image_Composite_HelioviewerCompositeImage {
         $text->setFillColor('#ffff');
         $text->setTextAntialias(true);
         $text->setStrokeWidth(0);
-        $x = $topLeftX + 9;
+        $x = $topLeftX + 21;
         $y = $topLeftY + 13;
         $imagickImage->annotateImage($text, $x, $y, 0,'Earth Scale');
 
