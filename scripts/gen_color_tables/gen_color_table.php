@@ -1,4 +1,4 @@
-<?php 
+<?php
 /**
  * Generates color tables for use with Helioviewer given
  * a file containing RGB values.
@@ -31,6 +31,10 @@ function readColorFile($color_file) {
     $lines = explode("\n", $color_data);
     $result = array();
     foreach($lines as $line) {
+        $line = trim($line);
+        if ($line == "") {
+            continue;
+        }
         $colors = preg_split("/\s+/", $line);
         array_push($result, array(
             'r' => intval($colors[0]),
@@ -50,7 +54,7 @@ function readColorFile($color_file) {
  *   [1] => array('r' => red2, 'g' => green2, 'b' => blue2),
  *   ...);
  */
-function constructColorTable($colors) {
+function constructColorTable($colors, $fname) {
     // Construct the image instance
     $colorTable = new \Imagick();
     $colorTable->newImage(1, count($colors), "SteelBlue2");
@@ -69,10 +73,10 @@ function constructColorTable($colors) {
         $index += 1;
     }
     $colorTable->drawImage($draw);
-    $colorTable->writeImage('color_table.png');
-    echo "Created color_table.png\n";
+    $colorTable->writeImage($fname);
+    echo "Created $fname\n";
 }
 
 $colors = readColorFile($argv[1]);
-constructColorTable($colors);
+constructColorTable($colors, $argv[1] . ".png");
 ?>

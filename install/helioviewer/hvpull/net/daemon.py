@@ -223,14 +223,16 @@ class ImageRetrievalDaemon:
 
             #print(browser, starttime, endtime)
             matches = self.query_server(browser, query_start_time, endtime)
+            matches = self._dedupe_urls(matches)
+
             #print(matches)
             if len(matches) > 0:
                 urls.append(matches)
 
         #print(urls)
-        # Remove duplicate files, randomizing to spread load across servers
+        # Spread load across servers
         if len(urls) > 1:
-            urls = self._deduplicate(urls)
+            urls = self._balance_load(urls)
 
         # Filter out files that are already in the database
         new_urls = []
@@ -335,6 +337,20 @@ class ImageRetrievalDaemon:
 
         # acquire the data files
         self.acquire(new_urls)
+
+    def _dedupe_urls(self, urls: list) -> list:
+        """
+        Deduplicates files in the given url list.
+        This ensures that no files with the same name are ignored
+        """
+        known_files = []
+        final_urls = []
+        for url in urls:
+            fname = os.path.basename(url)
+            if fname not in known_files:
+                known_files.append(fname)
+                final_urls.append(url)
+        return final_urls
 
     def _get_query_starttime(self, starttime):
         """
@@ -715,7 +731,7 @@ class ImageRetrievalDaemon:
             self.send_email_alert(msg)
             self.sent_diskspace_warning = True
 
-    def _deduplicate(self, urls):
+    def _balance_load(self, urls):
         """When working with multiple files, this function will ensure that
         each file is only downloaded once.
 
@@ -882,7 +898,9 @@ class ImageRetrievalDaemon:
             "kcor": "KCORDataServer",
             "hv_kcor": "HVKCORDataServer",
             "solar_orbiter": "SolarOrbiterDataServer",
-            "suvi": "SUVIDataServer"
+            "suvi": "SUVIDataServer",
+            "iris": "IRISDataServer",
+            "hv_iris": "HvIRISDataServer"
         }
 
     @classmethod
