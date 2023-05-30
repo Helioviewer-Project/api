@@ -9,7 +9,7 @@ class HvIRISDataServer(IRISDataServer):
     """IRIS Datasource definition"""
     def __init__(self):
         """Defines the root directory of where the data is kept on Helioviewer."""
-        DataServer.__init__(self, "https://api.beta.helioviewer.org/jp2/", "IRIS")
+        DataServer.__init__(self, "https://api.helioviewer.org/jp2/", "IRIS")
 
     def compute_directories(self, start_date, end_date):
         """Computes a list of remote directories expected to contain files"""
