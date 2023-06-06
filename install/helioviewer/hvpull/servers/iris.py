@@ -15,6 +15,7 @@ class IRISDataServer(DataServer):
     def __init__(self):
         """Defines the root directory of where the data is kept at LMSAL."""
         DataServer.__init__(self, "https://www.lmsal.com/cruiser/observatory/iris_jp2k/data/", "IRIS")
+        self.pause = datetime.timedelta(minutes=60)
 
     def compute_directories(self, start_date, end_date):
         """Computes a list of remote directories expected to contain files"""
@@ -45,3 +46,7 @@ class IRISDataServer(DataServer):
         url_filename = os.path.basename(filename)
         url_datetime = url_filename[11:26]
         return datetime.strptime(url_datetime, '%Y%m%d_%H%M%S')
+
+    def get_starttime(self):
+        """Default start time to use when retrieving data"""
+        return datetime.datetime.utcnow() - datetime.timedelta(days=3)
