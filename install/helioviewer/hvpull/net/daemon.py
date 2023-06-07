@@ -482,7 +482,18 @@ class ImageRetrievalDaemon:
             for q in self.queues:
                 q.join()
 
-            self.ingest(finished)
+            # Check if any downloaders have failed, and quit if they have
+            for downloader_threads in self.downloaders:
+                if self.shutdown_requested:
+                    break
+                for downloader in downloader_threads:
+                    if downloader.has_failed():
+                        logging.error("Quitting due downloader failure")
+                        self.shutdown()
+                        break
+
+            if not self.shutdown_requested:
+                self.ingest(finished)
 
             if self.shutdown_requested:
                 break
