@@ -2,7 +2,7 @@
 import os
 import re
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 from helioviewer.hvpull.servers import DataServer
 
 class IrisFolder:
@@ -15,7 +15,7 @@ class IRISDataServer(DataServer):
     def __init__(self):
         """Defines the root directory of where the data is kept at LMSAL."""
         DataServer.__init__(self, "https://www.lmsal.com/cruiser/observatory/iris_jp2k/data/", "IRIS")
-        self.pause = datetime.timedelta(minutes=60)
+        self.pause = timedelta(minutes=60)
 
     def compute_directories(self, start_date, end_date):
         """Computes a list of remote directories expected to contain files"""
