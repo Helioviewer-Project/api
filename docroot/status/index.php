@@ -7,8 +7,9 @@
         "lmsal"    => genProviderLink("LMSAL", "https://www.lmsal.com"),
         "stanford" => genProviderLink("Stanford", "http://jsoc.stanford.edu"),
         "sdac"     => genProviderLink("SDAC", "https://umbra.nascom.nasa.gov"),
-        "proba2"   => genProviderLink("RoB PROBA2", "https://proba2.sidc.be"),
-        "solo"     => genProviderLink("RoB SOLO", "https://www.sidc.be/EUI/intro"),
+        "proba2"   => genProviderLink("PROBA2", "https://proba2.sidc.be"),
+        "solo"     => genProviderLink("EUI", "https://www.sidc.be/EUI/intro"),
+        "suvi"     => genRobLink("SUVI", "https://www.ncei.noaa.gov/products/goes-r-solar-ultraviolet-imagers-suvi"),
         "ncar"     => genProviderLink("NCAR", "https://www2.hao.ucar.edu/mlso/instruments/cosmo-k-coronagraph-k-cor"),
         "harvard"  => genProviderLink("Harvard", "https://xrt.cfa.harvard.edu/"),
         "MSU"      => genProviderLink("MSU", "http://ylstone.physics.montana.edu/ylegacy/")
@@ -24,6 +25,7 @@
         "SECCHI" => $PROVIDERS['sdac'],
         "SWAP"   => $PROVIDERS['proba2'],
         "EUI"    => $PROVIDERS['solo'],
+        "SUVI"   => $PROVIDERS['suvi'],
         "COSMO"  => $PROVIDERS['ncar'],
         "XRT"    => $PROVIDERS['harvard'],
         "SXT"    => $PROVIDERS['MSU']
@@ -86,6 +88,10 @@
 
     function genProviderLink($name, $url) {
         return "<a class='provider-link' href='$url' target='_blank'>$name</a>";
+    }
+
+    function genRobLink($name, $url) {
+        return genProviderLink("ROB", "http://swhv.oma.be") . " / " . genProviderLink($name, $url);
     }
 
     function genCoverageLink($source) {
