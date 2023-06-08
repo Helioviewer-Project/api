@@ -266,8 +266,16 @@ class Image_JPEG2000_JP2ImageXMLBox {
      */
     public function getRefPixelCoords() {
         try {
-            $x = -($this->_getElementValue('CRVAL1') / $this->_getElementValue('CDELT1') - $this->_getElementValue('CRPIX1'));
-            $y = -($this->_getElementValue('CRVAL2') / $this->_getElementValue('CDELT2') - $this->_getElementValue('CRPIX2'));
+            try {
+                $crval1 = $this->_getElementValue('CRVAL1');
+                $crval2 = $this->_getElementValue('CRVAL2');
+            } catch (Exception) {
+                $crval1 = 0;
+                $crval2 = 0;
+            }
+
+            $x = -($crval1 / $this->_getElementValue('CDELT1') - $this->_getElementValue('CRPIX1'));
+            $y = -($crval2 / $this->_getElementValue('CDELT2') - $this->_getElementValue('CRPIX2'));
         }
         catch (Exception $e) {
             throw new Exception(
