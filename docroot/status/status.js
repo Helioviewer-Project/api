@@ -1,8 +1,14 @@
 $(function() {
     var locateStorageEnabled, jsonEnabled;
 
+    // Extracts instrument from "observatory / instrument" text
+    function getInstrument(text) {
+        let split = text.split("/");
+        return split[1].trim();
+    }
+
     // Check for localStorage and native JSON support
-    locateStorageEnabled = ('localStorage' in window) && 
+    locateStorageEnabled = ('localStorage' in window) &&
                             window['localStorage'] !== null;
 
     jsonEnabled = typeof (JSON) !== "undefined";
@@ -26,8 +32,10 @@ $(function() {
         if (e.target.nodeName === "A") {
             return;
         }
-        
-        var inst = $($(this).find("td")[0]).text();
+
+        let text = $($(this).find("td")[0]).text();
+        let inst = getInstrument(text);
+
         $(".datasource." + inst).toggle();
 
         if (locateStorageEnabled && jsonEnabled) {
@@ -46,18 +54,18 @@ $(function() {
         }
     }).find("td:first").each(function (i, item) {
         var inst = $(this);
-        
+
         //if ($.inArray(inst.text(), ["AIA", "HMI"]) !== -1) {
         //    inst.text(inst.text() + " (LMSAL/SAO)");
         //}
     });
 
-    
+
     // Info popup
     $("#info").hover(function (e) {
         $("#legend").show();
     }, function (e) {
         $("#legend").hide();
     });
-    
+
 });

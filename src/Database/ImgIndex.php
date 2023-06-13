@@ -1166,6 +1166,28 @@ class Database_ImgIndex {
         return $data['date'];
     }
 
+    public function getObservatoryForInstrument(string $instrument) {
+        $this->_dbConnect();
+        $sql = sprintf("
+        SELECT name
+        FROM datasource_property
+        WHERE label = 'Observatory'
+            AND sourceId = (
+                SELECT sourceId FROM datasource_property WHERE name = '%s' LIMIT 1
+            );
+        ", $this->_dbConnection->link->real_escape_string($instrument));
+
+        try {
+            $result = $this->_dbConnection->query($sql);
+        }
+        catch (Exception $e) {
+            return false;
+        }
+
+        $data = $result->fetch_array(MYSQLI_ASSOC);
+        return $data['name'];
+    }
+
     /**
      * Return a sorted array of Instruments with a sorted sub-array
      * of datasource IDs and datasource names.
