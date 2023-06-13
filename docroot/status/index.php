@@ -154,7 +154,7 @@
 
     <table id='statuses'>
     <tr id='status-headers'>
-        <th width='100'>Image</th>
+        <th width='150'>Image</th>
         <th width='140'>Oldest</th>
         <th width='140'>Latest</th>
         <th width='120'>Source</th>
@@ -355,8 +355,9 @@
                 $missionActive = MissionStatusMessage($name);
                 $newestDateStr = formatDate(safe_max($newestForInstrument));
                 $oldestDateStr = formatDate(safe_min($oldestForInstrument));
+                $observatory = $imgIndex->getObservatoryForInstrument($name);
 
-                $row = genTableHeaderRow("instrument", $name, $oldestDateStr, $newestDateStr, $attribution, $oldest['icon'], $missionActive);
+                $row = genTableHeaderRow("instrument", "$observatory / $name", $oldestDateStr, $newestDateStr, $attribution, $oldest['icon'], $missionActive);
                 echo $row;
                 print($subTableHTML);
             }
