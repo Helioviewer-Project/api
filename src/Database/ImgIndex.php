@@ -31,7 +31,7 @@ class Database_ImgIndex {
      *
      * @return void
      */
-    private function _dbConnect() {
+    protected function _dbConnect() {
         if ( $this->_dbConnection === false ) {
             include_once HV_ROOT_DIR.'/../src/Database/DbConnection.php';
             $this->_dbConnection = new Database_DbConnection();
@@ -425,7 +425,7 @@ class Database_ImgIndex {
                             FROM data
                             WHERE ".$this->getDatasourceIDsString($sourceId)."
                             AND date = (SELECT date
-                                        FROM data
+                                        FROM data " . $this->_forceIndex($sourceId) . "
                                         WHERE ".$this->getDatasourceIDsString($sourceId)."
                                         AND date < '%s' ORDER BY date DESC LIMIT 1))
                         UNION ALL
@@ -433,7 +433,7 @@ class Database_ImgIndex {
                           FROM data
                           WHERE ".$this->getDatasourceIDsString($sourceId)."
                           AND date = (SELECT date
-                                      FROM data
+                                      FROM data " . $this->_forceIndex($sourceId) . "
                                       WHERE ".$this->getDatasourceIDsString($sourceId)."
                                       AND date >= '%s' ORDER BY date ASC LIMIT 1))
                         ) t
@@ -462,6 +462,45 @@ class Database_ImgIndex {
 
 
         return $data;
+    }
+
+    /**
+     * Returns a "FORCE INDEX" statement for SQL using the given sourceId
+     *
+     * Queries on XRT are very slow because SQL will use choose the wrong index with LIMIT 1 added to the query.
+     */
+    protected function _forceIndex(int $sourceId): string {
+        if ($sourceId > 10000) {
+            $group = $this->_getGroupForSourceId($sourceId);
+            if ($group == "groupOne") {
+                $group = "date_group";
+            }
+            if ($group != "") {
+                return " FORCE INDEX ($group) ";
+            }
+        }
+        return "";
+    }
+
+    protected function _getGroupForSourceId($sourceId) {
+        if ((int) $sourceId > 10000) {
+	        $sql = sprintf('SELECT groupOne, groupTwo, groupThree FROM datasources WHERE id = %d LIMIT 1;', (int) $sourceId);
+            $result = $this->_dbConnection->query($sql);
+	        $source = $result->fetch_array(MYSQLI_ASSOC);
+            if (is_null($source)) {
+                return "";
+            }
+
+            if ($source['groupOne'] == 1) {
+                return "groupOne";
+	        } else if ($source['groupTwo'] == 1) {
+                return "groupTwo";
+	        } else if ($source['groupThree'] == 1) {
+                return "groupThree";
+	        }
+        }
+
+        return "";
     }
 
     /**
@@ -1494,24 +1533,15 @@ class Database_ImgIndex {
      * @return array set of Sources ID
      */
     public function getDatasourceIDsString($sourceId) {
-        if((int)$sourceId > 10000){
-	        $sql = sprintf('SELECT * FROM datasources WHERE id = %d LIMIT 1;', (int)$sourceId);
-	        $result = $this->_dbConnection->query($sql);
-	        $source = $result->fetch_array(MYSQLI_ASSOC);
+        $layersString = sprintf(' sourceId = %d ', (int)$sourceId);
 
-	        //Determinate source group
-	        if($source['groupOne'] == 1){
-		        $layersString = ' groupOne = '.(int)$sourceId.' ' ;
-	        }else if($source['groupTwo'] == 1){
-		        $layersString = ' groupTwo = '.(int)$sourceId.' ' ;
-	        }else if($source['groupThree'] == 1){
-		        $layersString = ' groupThree = '.(int)$sourceId.' ' ;
-	        }else{
-		        $layersString = ' sourceId IN ('.$source['sourceIdGroup'].') ' ;// general group
-	        }
-		}else{
-			$layersString = sprintf(' sourceId = %d ', (int)$sourceId);
+        if((int)$sourceId > 10000){
+            $group = $this->_getGroupForSourceId($sourceId);
+            if ($group != "") {
+                $layersString = " $group = " . (int) $sourceId . " ";
+            }
 		}
+
         return $layersString;
     }
 }
