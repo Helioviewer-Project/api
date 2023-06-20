@@ -29,7 +29,7 @@ jobs:
           ${{ runner.os }}-php-
 
     - name: Run container setup script to start core services
-      run: /home/helioviewer/setup_files/scripts/startup.sh &
+      run: cd /home/helioviewer/setup_files/scripts/ && ./startup.sh &
 
     - name: Wait for container to get up and running
       run: timeout 120s bash -c "until [[ -f /home/helioviewer/setup_files/scripts/first_run.lock ]]; do echo waiting for container to be ready; sleep 1; done"
