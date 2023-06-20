@@ -26,10 +26,18 @@ jobs:
         path: vendor
         key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
         restore-keys: |
-          ${{ runner.os }}-php-
+          ${{ runner.os }}-php
 
-    - name: Run container setup script to start core services
-      run: cd /home/helioviewer/setup_files/scripts/ && ./startup.sh &
+    - name: Debug
+      run: |
+        echo $PWD
+        ls /home/helioviewer/setup_files/scripts/
+        cd /home/helioviewer/setup_files/scripts/
+        echo $PWD
+        ./startup.sh
+
+#     - name: Run container setup script to start core services
+#       run: cd /home/helioviewer/setup_files/scripts/ && ./startup.sh &
 
     - name: Wait for container to get up and running
       run: timeout 120s bash -c "until [[ -f /home/helioviewer/setup_files/scripts/first_run.lock ]]; do echo waiting for container to be ready; sleep 1; done"
