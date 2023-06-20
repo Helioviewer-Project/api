@@ -6,4 +6,4 @@ echo set -x\; > startup2.sh
 sed "s:read::" startup.sh >> startup2.sh
 bash startup2.sh
 echo completed startup script
-exit 0
+exit 1
