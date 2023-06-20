@@ -28,11 +28,14 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-php-
 
+    - name: Wait for container to get up and running
+      run: timeout 120s bash -c "until [[ -f /home/helioviewer/setup_files/scripts/first_run.lock ]]; do echo waiting for container to be ready; sleep 1; done"
+
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress
 
     - name: Set up test environment
-      run: composer run-script make-test-config
+      run: composer run-script make-test-config settings/Config.ini settings/Private.php
 
     - name: Run test suite
       run: composer run-script test
