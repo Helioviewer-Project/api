@@ -29,7 +29,7 @@ jobs:
           ${{ runner.os }}-php
 
     - name: Run container setup script to start core services
-      run: echo "set -x; echo 'root ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers; cat /etc/sudoers; ln -s $PWD /home/helioviewer/api.helioviewer.org; echo '' | /home/helioviewer/setup_files/scripts/startup.sh" > tmp.sh && bash tmp.sh
+      run: management/scripts/ci/container_setup.sh
 
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress
