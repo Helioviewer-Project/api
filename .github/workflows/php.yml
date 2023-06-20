@@ -29,12 +29,7 @@ jobs:
           ${{ runner.os }}-php
 
     - name: Debug
-      run: |
-        echo $PWD
-        ls /home/helioviewer/setup_files/scripts/
-        cd /home/helioviewer/setup_files/scripts/
-        echo $PWD
-        ./startup.sh
+      run: echo "set -x; /home/helioviewer/setup_files/scripts/startup.sh" > tmp.sh && bash tmp.sh
 
 #     - name: Run container setup script to start core services
 #       run: cd /home/helioviewer/setup_files/scripts/ && ./startup.sh &
