@@ -72,6 +72,8 @@ class Movie_HelioviewerMovie {
     public $scaleY;
     public $size;
     public $switchSources;
+    public $publicId;
+    public $imageScale;
 
     private $_db;
     private $_layers;
@@ -82,7 +84,6 @@ class Movie_HelioviewerMovie {
 
     private $_cachedir;
     private $_filename;
-    private $_filepath;
     private $_cached = false;
 
     /**
@@ -96,7 +97,6 @@ class Movie_HelioviewerMovie {
 
         $this->_cachedir = Movie_HelioviewerMovie::CACHE_DIR;
         $this->_filename = urlencode($publicId.'.cache');
-        $this->_filepath = $this->_cachedir.'/'.$this->_filename;
 
         if ( HV_DISABLE_CACHE !== true ) {
             $cache = new Helper_Serialize($this->_cachedir, $this->_filename, 60);

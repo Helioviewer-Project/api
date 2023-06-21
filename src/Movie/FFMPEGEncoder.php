@@ -29,6 +29,7 @@ class Movie_FFMPEGEncoder
     private $_title;
     private $_description;
     private $_comment;
+    private $_log;
 
     /**
      * Constructor

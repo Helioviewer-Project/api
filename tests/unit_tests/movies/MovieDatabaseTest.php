@@ -13,6 +13,8 @@ final class MovieDatabaseTest extends TestCase
 {
     public function testGetForbiddenYoutubeVideo()
     {
+        $this->markTestSkipped("This video isn't returning forbidden anymore");
+
         $db = new Database_MovieDatabase();
         $response = $db->getYoutubeVideo("0X6f5V8V29c");
         $this->assertEquals('Forbidden', $response);
