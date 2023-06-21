@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: dgarciabriseno/helioviewer.org
-      options: --user root
+      options: --user root --entrypoint /home/helioviewer/setup_files/scripts/startup.sh
 
     steps:
     - uses: actions/checkout@v3
@@ -27,9 +27,6 @@ jobs:
         key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
         restore-keys: |
           ${{ runner.os }}-php
-
-    - name: Run container setup script to start core services
-      run: bash -c "composer run-script container-setup"
 
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress
