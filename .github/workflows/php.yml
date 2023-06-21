@@ -39,7 +39,7 @@ jobs:
         ./vendor/bin/start_hgs2hpc
 
     - name: Set up test environment
-      run: composer run-script make-test-config settings/Config.ini settings/Private.php
+      run: composer run-script make-test-config
 
     - name: Run test suite
       run: composer run-script test
