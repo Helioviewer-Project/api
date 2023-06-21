@@ -28,21 +28,23 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-php
 
+    - name: Set up test environment
+      run: |
+        mkdir log
+        mkdir cache
+        ln -s $PWD /home/helioviewer/api.helioviewer.org
+        composer run-script make-test-config
+
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress
 
     - name: Startup background services
       run: |
+        httpd
         mysqld --user=mysql -D
         redis-server --daemonize yes
         tcsh scripts/movie_queue.tcsh
         ./vendor/bin/start_hgs2hpc
-
-    - name: Set up test environment
-      run: |
-        mkdir log
-        mkdir cache
-        composer run-script make-test-config
 
     - name: Run test suite
       run: composer run-script test
