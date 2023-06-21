@@ -19,7 +19,7 @@ PRIVATE_PHP=$2
 # Make Config.ini
 sed "s:/var/www-api/docroot/cache:$PWD/cache:" settings/Config.Example.ini | \
 sed "s:/var/www-api/docroot:$PWD/docroot:" | \
-sed "s-http://localhost-http://127.0.0.1-" > $CONFIG_INI
+sed "s-http://localhost-http://127.0.0.1:81-" > $CONFIG_INI
 
 # Make Private.php
 sed "s/localhost/127.0.0.1/" settings/Private.Example.php > $PRIVATE_PHP
