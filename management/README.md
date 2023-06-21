@@ -22,6 +22,9 @@ Each subdirectory should have a README containing a description of the type of s
 This gives an overview of what scripts are available at a glance.
 
 # Top Level Directory Listing
+## ci
+Scripts related to Continuous Integration tests
+
 ## events
 Contains scripts related to features and events management.
 
@@ -32,3 +35,4 @@ Contains scripts related to data coverage and usage statistics.
 Import into php scripts to load the configured Config.ini.
 This is a compatibility layer so that every script doesn't need to search '../../../' to load the main Config.php.
 They just need to include this one.
+
