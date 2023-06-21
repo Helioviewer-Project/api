@@ -17,8 +17,8 @@ CONFIG_INI=$1
 PRIVATE_PHP=$2
 
 # Make Config.ini
-sed "s:/var/www-api/docroot/cache:/home/helioviewer/helioviewer.org/cache:" settings/Config.Example.ini | \
-sed "s:/var/www-api/docroot:/home/helioviewer/api.helioviewer.org/docroot:" | \
+sed "s:/var/www-api/docroot/cache:$PWD/cache:" settings/Config.Example.ini | \
+sed "s:/var/www-api/docroot:$PWD/docroot:" | \
 sed "s-http://localhost-http://127.0.0.1-" > $CONFIG_INI
 
 # Make Private.php
