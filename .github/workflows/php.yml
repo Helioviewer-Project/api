@@ -14,7 +14,6 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: dgarciabriseno/helioviewer.org
-      options: --user root
 
     steps:
     - uses: actions/checkout@v3
