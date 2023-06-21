@@ -1,6 +1,4 @@
-#!/bin/bash
-echo "root ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+#!/bin/sh
 ln -s $PWD /home/helioviewer/api.helioviewer.org
-cd /home/helioviewer/setup_files/scripts/
-./startup.sh > startup_log &
-sleep 60
+chown -R helioviewer:helioviewer .
+su helioviewer -c "echo | /home/helioviewer/setup_files/scripts/startup.sh"
