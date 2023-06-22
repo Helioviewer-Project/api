@@ -22,6 +22,9 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
     private $_message;
     private $_summaryFile;
     private $_url;
+    private $_jpxFile;
+    private $_timestamps;
+    private $_images;
 
     /**
      * Create a new Helioviewer JPX image
@@ -110,7 +113,7 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
 
     /**
      * Retrieves the frames from the database to satisfy this request.
-     * 
+     *
      * @param bool $middleFrames flag to determine whether or not to select
      *                           images by midpoint.
      */
@@ -124,7 +127,7 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
 
     /**
      * Determines if a JPX movie should be generated/regenerated.
-     * 
+     *
      * Compares the provided frame timestamps against the frames in the existing
      * JPX file (if any). If there are new frames in the database, then the
      * JPX movie will be regenerated with all the new frames.
@@ -171,7 +174,7 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
 
         return json_decode($summary_contents);
     }
-	
+
 	/**
      * Return list of JP2 files to use for JPX generation selected by Mid Points
      *
@@ -185,26 +188,26 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
         include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
 
         $imgIndex = new Database_ImgIndex();
-		
+
 		// Parse List of dates and convert them to Unix Timestaps
 		$startTimesArray                 = explode(',', $this->_startTime);
 		$endTimesArray                   = explode(',', $this->_endTime);
-		
+
 		if(count($startTimesArray) < 1 || count($endTimesArray) < 1){
 			throw new Exception('At least one Start and End date need to be specified. Please use timestamps separated with commas.', 61);
 		}
-		
+
 		if(count($startTimesArray) != count($endTimesArray)){
 			throw new Exception('Number of Start dates doesn\'t match the number of End dates. Please use equal amount of Start and End dates.', 61);
 		}
-		
+
 		$images = array();
         $dates  = array();
-		
+
 		foreach($startTimesArray as $k => $start){
 			$end = $endTimesArray[$k];
 			$middle = round(($start + $end) / 2);
-			
+
 			$results = $imgIndex->getDataMidPoint($start, $end, $middle, $this->_sourceId);
 			if($results && isset($results['id'])){
 				$filepath = HV_JP2_DIR.$results['filepath'].'/'.$results['filename'];
@@ -215,7 +218,7 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
 
         return array($images, $dates);
     }
-	
+
     /**
      * Return list of JP2 files to use for JPX generation
      *
@@ -454,7 +457,7 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
         @fwrite($fp, json_encode($contents));
         @fclose($fp);
     }
-    
+
     /**
      * Remove a summary file for the generated JPX file encountered during
      * the creation process.

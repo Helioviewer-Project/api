@@ -10,7 +10,7 @@ include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
 
 final class StatisticsTest extends TestCase
 {
-    public function testGetUsagetStatistics(): void
+    public function testGetUsageStatistics(): void
     {
         $stats = new Database_Statistics();
         $resolution = "daily";

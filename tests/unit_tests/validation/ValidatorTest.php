@@ -21,7 +21,7 @@ final class ValidatorTest extends TestCase
         $expected = array(
             'layer' => array('layerstring')
         );
-        
+
         $this->expectException(InvalidArgumentException::class);
         Validation_InputValidator::checkInput($expected, $badLayerData, $badLayerData);
     }
@@ -36,7 +36,7 @@ final class ValidatorTest extends TestCase
         $expected = array(
             'layer' => array('layerstring')
         );
-        
+
         Validation_InputValidator::checkInput($expected, $goodLayerData,
             $goodLayerData);
         // checkInput will raise an exception if it fails, so assertTrue means
@@ -54,7 +54,7 @@ final class ValidatorTest extends TestCase
         $expected = array(
             'layer' => array('layerstring')
         );
-        
+
         Validation_InputValidator::checkInput($expected, $goodLayerData,
           $goodLayerData);
         // checkInput will raise an exception if it fails, so assertTrue means
