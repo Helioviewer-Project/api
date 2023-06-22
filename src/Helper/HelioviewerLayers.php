@@ -39,11 +39,11 @@ class Helper_HelioviewerLayers {
         $this->_layerString = $layerString;
 
         $this->_db = new Database_ImgIndex();
-		
+
 		//Fix Apache double encoding
 		$layerString = str_replace(
-			array('%255B', '%255D', '%255b', '%255d', '%5b', '%5d', '%5B', '%5D', '%25255b', '%25255d', '%25255B', '%25255D'), 
-			array('[', ']', '[', ']', '[', ']', '[', ']', '[', ']', '[', ']'), 
+			array('%255B', '%255D', '%255b', '%255d', '%5b', '%5d', '%5B', '%5D', '%25255b', '%25255d', '%25255B', '%25255D'),
+			array('[', ']', '[', ']', '[', ']', '[', ']', '[', ']', '[', ']'),
 			$layerString);
 
         $layerStringArray = explode('],[', substr($layerString, 1, -1));
@@ -173,7 +173,10 @@ class Helper_HelioviewerLayers {
 		$diffCount 		= 60;
 		$difference 	= 0;
 
-        //if (sizeOf($layerArray) == 3) {
+        if (count($layerArray) < 3) {
+            throw new InvalidArgumentException("Invalid layer string");
+        }
+
 	    if (is_numeric($layerArray[0])) {
             // [sourceId,visible,opacity]
             $sourceId 		= $layerArray[0];
