@@ -11,6 +11,7 @@ from sunpy.io.jp2 import get_header
 from sunpy.map import Map
 from sunpy.util.xml import xml_to_dict
 from sunpy.io.header import FileHeader
+from sunpy.map.mapbase import MapMetaValidationError
 from glymur import Jp2k
 from sunpy.util.xml import xml_to_dict
 
@@ -20,21 +21,27 @@ __HV_CONSTANT_AU__ = 149597870700
 class JP2parser:
     _filepath = None
     _data = None
-            
+
     def __init__(self, path):
         """Main application"""
         self._filepath = path
-        
+
+    def getImageMap(self):
+        try:
+            return Map(self.read_header_only_but_still_use_sunpy_map())
+        except MapMetaValidationError:
+            return Map(self.read_header_only_but_still_use_sunpy_map(patch_cunit=True))
+
     def getData(self):
         """Create data object of JPEG 2000 image.
-    
+
         Get image observatory, instrument, detector, ∑measurement, date from image
         metadata and create an object.
         """
-            
-        imageData = Map(self.read_header_only_but_still_use_sunpy_map())
+
+        imageData = self.getImageMap()
         image = dict()
-        
+
         #Calculate sun position/size/scale
         dimensions              = self.getImageDimensions();
         refPixel                = self.getRefPixelCoords();
@@ -44,7 +51,7 @@ class JP2parser:
 
         # Normalize image scale
         imageScale = imageScale * (dsun / __HV_CONSTANT_AU__);
-        
+
         image['scale'] = imageScale
         image['width'] = dimensions['width']
         image['height'] = dimensions['height']
@@ -52,7 +59,7 @@ class JP2parser:
         image['refPixelY'] = refPixel['y']
         image['layeringOrder'] = layeringOrder
 
-        image['DSUN_OBS'] = self._data['DSUN_OBS'] if 'DSUN_OBS' in self._data else 'NULL' 
+        image['DSUN_OBS'] = self._data['DSUN_OBS'] if 'DSUN_OBS' in self._data else 'NULL'
         image['SOLAR_R'] = self._data['SOLAR_R'] if 'SOLAR_R' in self._data else 'NULL'
         image['RADIUS'] = self._data['RADIUS'] if 'RADIUS' in self._data else 'NULL'
         image['NAXIS1'] = self._data['NAXIS1'] if 'NAXIS1' in self._data else 'NULL'
@@ -66,7 +73,7 @@ class JP2parser:
         image['XCEN'] = self._data['XCEN'] if 'XCEN' in self._data else 'NULL'
         image['YCEN'] = self._data['YCEN'] if 'YCEN' in self._data else 'NULL'
         image['CROTA1'] = self._data['CROTA1'] if 'CROTA1' in self._data else 'NULL'
-        
+
         #Fix FITS NaN parameters
         for key, value in image.items():
             if self._is_string(value):
@@ -83,7 +90,7 @@ class JP2parser:
         image['observatory'] = imageData.observatory.replace(" ","_")
         image['instrument'] = imageData.instrument.split(" ")[0]
         image['detector'] = imageData.detector
-        # Remove explicit units from the measurement 
+        # Remove explicit units from the measurement
         measurement = str(imageData.measurement).replace(".0 Angstrom", "").replace(".0 nm","").replace(".0", "")
         # Convert Yohkoh measurements to be helioviewer compatible
         if image['observatory'] == "Yohkoh":
@@ -101,10 +108,10 @@ class JP2parser:
         image['date'] = imageData.date
         image['filepath'] = self._filepath
         image['header'] = imageData.meta
-    
+
         return image
-    
-    def read_header_only_but_still_use_sunpy_map(self):
+
+    def read_header_only_but_still_use_sunpy_map(self, patch_cunit=False):
         """
         Reads the header for a JPEG200 file and returns some dummy data.
         Why does this function exist?  SunPy map objects perform some important
@@ -116,7 +123,7 @@ class JP2parser:
         which is a copy of the source FITS header (with some modifications in
         some cases - see JP2Gen).  So by using SunPy's maps, Helioviewer does not
         have to implement these homogenization steps.
-    
+
         So what's the problem?  Why not use SunPy's JPEG2000 file reading
         capability?  Well let's explain. SunPy's JPEG2000 file reading reads
         both the file header and the image data.  The image data is then decoded
@@ -125,38 +132,43 @@ class JP2parser:
         enough that the ingestion of AIA and HMI data would be severely impacted,
         possibly to the point that we would never catch up if we fell behind in
         ingesting the latest data.
-    
+
         The solution is to not decode the image data, but to pass along only the
         minimal amount of information required to create the SunPy map.  This
         function implements this solution tactic, admittedly in an unsatisfying
         manner.  The actual image data is replaced by a 1 by 1 numpy array.  This
         is sufficient to create a SunPy map with the properties required by the
         Helioviewer Project.
-    
+
         Parameters
         ----------
         filepath : `str`
             The file to be read.
-    
+
         Returns
         -------
         pairs : `list`
             A (data, header) tuple
         """
         header = self.get_header()
-    
+        if (patch_cunit):
+            # Try fixing the header
+            header = self.get_header()
+            header[0]['cunit1'] = 'arcsec'
+            header[0]['cunit2'] = 'arcsec'
+
         return [(np.zeros([1, 1]), header[0])]
-    
-    
+
+
     def get_header(self):
         """
         Reads the header from the file
-    
+
         Parameters
         ----------
         filepath : `str`
             The file to be read
-    
+
         Returns
         -------
         headers : list
@@ -166,23 +178,23 @@ class JP2parser:
         xml_box = [box for box in jp2.box if box.box_id == 'xml ']
         xmlstring = ET.tostring(xml_box[0].xml.find('fits'))
         pydict = xml_to_dict(xmlstring)["fits"]
-    
+
         # Fix types
         for k, v in pydict.items():
             if v.isdigit():
                 pydict[k] = int(v)
             elif self._is_float(v):
                 pydict[k] = float(v)
-    
+
         # Remove newlines from comment
         if 'comment' in pydict:
             pydict['comment'] = pydict['comment'].replace("\n", "")
-    
+
         self._data = pydict
-        
+
         return [FileHeader(pydict)]
-    
-    
+
+
     def _is_float(self, s):
         """Check to see if a string value is a valid float"""
         try:
@@ -216,7 +228,7 @@ class JP2parser:
                 except Exception as e:
                     #
                     value = 1
-            
+
             try:
                 rsun
             except NameError:
@@ -228,7 +240,7 @@ class JP2parser:
                     print('JP2 WARNING! Invalid value for CDELT1 (' + self._filepath + '): ' + scale)
                 if rsun == 0 :
                     print('JP2 WARNING! Invalid value for RSUN (' + self._filepath + '): ' + rsun)
-                    
+
                 dsun = (__HV_CONSTANT_RSUN__ / (rsun * scale)) * __HV_CONSTANT_AU__
 
         # HMI continuum images may have DSUN = 0.00
@@ -237,7 +249,7 @@ class JP2parser:
             dsun
         except NameError:
             dsun = __HV_CONSTANT_AU__
-        
+
         if dsun <= 0:
             dsun = __HV_CONSTANT_AU__
 
@@ -252,7 +264,7 @@ class JP2parser:
         @return array JP2 width and height
         """
         ret = dict()
-        
+
         try:
             ret['width']  = self._data['NAXIS1']
             ret['height'] = self._data['NAXIS2']
@@ -261,7 +273,7 @@ class JP2parser:
 
         return ret
 
-    
+
     def getImagePlateScale(self):
         """Returns the plate scale for a given image
         @return string JP2 image scale
@@ -285,7 +297,7 @@ class JP2parser:
            @return array Pixel coordinates of the reference pixel
         """
         ret = dict()
-        
+
         try:
             if self._data['INSTRUME'] == 'XRT':
                 ret['x'] = -(self._data['CRVAL1'] / self._data['CDELT1'] - self._data['CRPIX1'])
@@ -298,7 +310,7 @@ class JP2parser:
 
         return ret
 
-    
+
     def getSunCenterOffsetParams(self):
         """Returns the Header keywords containing any Sun-center location
            information
@@ -351,12 +363,12 @@ class JP2parser:
 
     def getImageRotationStatus(self):
         """Returns true if the image was rotated 180 degrees
-          
+
            Note that while the image data may have been rotated to make it easier
            to line up different data sources, the meta-information regarding the
            sun center, etc. are not adjusted, and thus must be manually adjusted
            to account for any rotation.
-          
+
            @return boolean True if the image has been rotated
         """
         try:

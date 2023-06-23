@@ -39,6 +39,11 @@ jobs:
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress
 
+    - name: Install python packages for root user
+      run: |
+        su helioviewer -c "python3 -m pip freeze > /tmp/helioviewer-packages"
+        python3 -m pip install -r /tmp/helioviewer-packages
+
     - name: Startup background services
       run: |
         httpd
@@ -47,11 +52,13 @@ jobs:
         tcsh scripts/movie_queue.tcsh
         ./vendor/bin/start_hgs2hpc
 
+    - name: Re-install Helioviewer Database for current branch
+      run: |
+        mysql -e "drop database helioviewer; drop user 'helioviewer'@'localhost';"
+        cd management/data && ./setup_db.exp
+
     - name: Run PHP test suite
       run: composer run-script test
 
     - name: Run Python test suite
-      run: |
-        su helioviewer -c "python3 -m pip freeze > /tmp/helioviewer-packages"
-        python3 -m pip install -r /tmp/helioviewer-packages
-        composer run-script test-python
+      run: composer run-script test-python
