@@ -51,4 +51,5 @@ jobs:
       run: composer run-script test
 
     - name: Run Python test suite
-      run: composer run-script test-python
+      # Need to su to helioviewer since python packages are installed under that user.
+      run: su helioviewer -c "composer run-script test-python"
