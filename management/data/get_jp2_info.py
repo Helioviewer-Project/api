@@ -1,3 +1,5 @@
+import sys
+sys.path.append("../../install/helioviewer")
 from argparse import ArgumentParser
 from db import get_datasources, get_db_cursor
 from jp2parser import JP2parser
@@ -39,10 +41,11 @@ def extract_datasource_name(jp2_file, cursor):
 def get_config(filepath):
     """Load configuration file"""
     config = configparser.ConfigParser()
-    
-    basedir = os.path.dirname(os.path.realpath(__file__))
-    default_userconfig = os.path.join(basedir, '..', 'settings/settings.cfg')
-    
+
+    filedir = os.path.dirname(os.path.realpath(__file__))
+    basedir = os.path.join(filedir, '..', '..', 'install')
+    default_userconfig = os.path.join(basedir, 'settings/settings.cfg')
+
     if filepath is not None and os.path.isfile(filepath):
         config.readfp(open(filepath))
     elif os.path.isfile(default_userconfig):

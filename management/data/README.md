@@ -4,6 +4,9 @@ This directory contains scripts related to image data management.
 # Listing
 Directory Listing
 
+## get_jp2_info.py
+Parses a given jp2 image and prints out important metadata needed for adding new image sources.
+
 ## refill.py
 Use this script when data needs to be deleted and re-downloaded.
 This may happen when the upstream images are regenerated.

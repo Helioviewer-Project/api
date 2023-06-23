@@ -911,7 +911,8 @@ class ImageRetrievalDaemon:
             "solar_orbiter": "SolarOrbiterDataServer",
             "suvi": "SUVIDataServer",
             "iris": "IRISDataServer",
-            "hv_iris": "HvIRISDataServer"
+            "hv_iris": "HvIRISDataServer",
+            "halpha": "GongDataServer"
         }
 
     @classmethod
