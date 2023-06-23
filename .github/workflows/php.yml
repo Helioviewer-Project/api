@@ -53,5 +53,5 @@ jobs:
     - name: Run Python test suite
       run: |
         su helioviewer -c "python3 -m pip freeze > /tmp/helioviewer-packages"
-        python3 -m pip install /tmp/helioviewer-packages
+        python3 -m pip install -r /tmp/helioviewer-packages
         composer run-script test-python
