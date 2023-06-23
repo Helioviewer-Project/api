@@ -47,5 +47,11 @@ jobs:
         tcsh scripts/movie_queue.tcsh
         ./vendor/bin/start_hgs2hpc
 
-    - name: Run test suite
+    - name: Run PHP test suite
       run: composer run-script test
+
+    - name: Run Python test suite
+      run: |
+        su helioviewer -c "python3 -m pip freeze > /tmp/helioviewer-packages"
+        python3 -m pip install -r /tmp/helioviewer-packages
+        composer run-script test-python
