@@ -110,5 +110,15 @@ final class ImgIndexTest extends TestCase
             }
         }
     }
+
+    public function test_getDatasourceInformationFromNames() {
+        $expected_file = __DIR__ . "/test_data/expected_datasource_info";
+        $expected = unserialize(file_get_contents($expected_file));
+        $imgIndex = new ImgIndexHarness();
+        $result = $imgIndex->getDatasourceInformationFromNames([
+            "GONG", "GONG", "h-alpha", "6562"
+        ]);
+        $this->assertEquals($expected, $result);
+    }
 }
 

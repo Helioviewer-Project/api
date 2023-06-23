@@ -996,7 +996,14 @@ class Database_ImgIndex {
 		$previousAttr = '';
 		$order = 1;
         foreach ($property_array as $i=>$property) {
-            if($previousAttr != $property || $property == 'Any'){
+            // Exception for GONG.
+            // Typically, when an image has duplicate properties
+            // (i.e. detector: EIT, instrument: EIT), then only the
+            // first appears in the database.
+            // Gong is an exception because it has this duplicate property (observatory: GONG, instrument: GONG)
+            // but both properties are in the database because the properties in FITS are (observatory: NSO-GONG, instrument: GONG).
+            // Because of this, the iteration shouldn't be skipped for GONG.
+            if(($previousAttr != $property || $property == 'Any' || $property == "GONG")){
 	            $i = intval($i);
 	            $property = $this->_dbConnection->link->real_escape_string($property);
 
