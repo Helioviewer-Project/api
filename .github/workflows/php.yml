@@ -51,4 +51,7 @@ jobs:
       run: composer run-script test
 
     - name: Run Python test suite
-      run: su helioviewer -c "composer run-script test-python"
+      run: |
+        su helioviewer -c "python3 -m pip freeze > /tmp/helioviewer-packages"
+        python3 -m pip install /tmp/helioviewer-packages
+        composer run-script test-python
