@@ -367,6 +367,15 @@ class Image_JPEG2000_JP2ImageXMLBox {
         return $layeringOrder;
     }
 
+    public function getRotation(): float {
+        try {
+            $rotation = $this->_getElementValue('CROTA');
+            return (float) $rotation;
+        } catch (Exception $e) {
+            return 0;
+        }
+    }
+
     /**
      * Returns true if the image was rotated 180 degrees
      *
