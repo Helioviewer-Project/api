@@ -44,6 +44,7 @@
         "COR1-B" => "STEREO_B_coverage.html",
         "COR2-B" => "STEREO_B_coverage.html",
         "EUVI-B" => "STEREO_B_coverage.html",
+        "IRIS"   => "IRIS_coverage.html",
         "SWAP"   => "PROBA2_coverage.html",
         "SXT"    => "Yohkoh_coverage.html",
         "XRT"    => "Hinode_coverage.html"
