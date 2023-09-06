@@ -84,6 +84,9 @@
             starts_with($instrument, "SXT")) {
             return "Inactive";
         }
+        if (starts_with($instrument, "COSMO")) {
+            return '<a href="https://www2.hao.ucar.edu/mlso">Inactive</a>';
+        }
         return "Active";
     }
 
