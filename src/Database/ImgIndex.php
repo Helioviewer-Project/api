@@ -904,17 +904,21 @@ class Database_ImgIndex {
             $rsun                    = (float) $xmlBox->getRSun();
             $sunCenterOffsetParams   = $xmlBox->getSunCenterOffsetParams();
             $layeringOrder           = $xmlBox->getLayeringOrder();
+            $rotation                = $xmlBox->getRotation();
 
             // Normalize image scale
-            $imageScale = $imageScale * ($dsun / HV_CONSTANT_AU);
+            $normalizedScale = $imageScale * ($dsun / HV_CONSTANT_AU);
 
             $meta = array(
-                "scale"      => $imageScale,
+                "scale"      => $normalizedScale,
+                "scaleCorrection" => $imageScale / $normalizedScale,
                 "width"      => (int) $dimensions[0],
                 "height"     => (int) $dimensions[1],
                 "refPixelX"  => (float) $refPixel[0],
                 "refPixelY"  => (float) $refPixel[1],
+                "rotation"   => $rotation,
                 "rsun"       => (float) $rsun,
+                "dsun"       => $dsun,
                 "sunCenterOffsetParams" => $sunCenterOffsetParams,
                 "layeringOrder"         => $layeringOrder
             );
