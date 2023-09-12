@@ -360,7 +360,7 @@ class Movie_HelioviewerMovie {
      *
      * @param string $msg Error message
      */
-    private function _abort($msg, $procTime=0) {
+    protected function _abort($msg, $procTime=0) {
         $this->_dbSetup();
         $this->_db->markMovieAsInvalid($this->id, $procTime);
         $this->_cleanUp();
@@ -388,6 +388,7 @@ class Movie_HelioviewerMovie {
      * @return string Movie filename
      */
     private function _buildFilename($highQuality=false) {
+        $this->_prepDates();
         $start = str_replace(array(':', '-', ' '), '_', $this->startDate);
         $end   = str_replace(array(':', '-', ' '), '_', $this->endDate);
 
@@ -723,6 +724,13 @@ class Movie_HelioviewerMovie {
         }
     }
 
+    private function _prepDates() {
+        $this->_getTimeStamps();
+        // Store actual start and end dates that will be used for the movie
+        $this->startDate = $this->_timestamps[0];
+        $this->endDate   = $this->_timestamps[sizeOf($this->_timestamps) - 1];
+    }
+
     /**
      * Determines some of the movie details and saves them to the database
      * record
@@ -730,9 +738,6 @@ class Movie_HelioviewerMovie {
     private function _setMovieProperties() {
         $this->_dbSetup();
 
-        // Store actual start and end dates that will be used for the movie
-        $this->startDate = $this->_timestamps[0];
-        $this->endDate   = $this->_timestamps[sizeOf($this->_timestamps) - 1];
 
         $this->filename = $this->_buildFilename();
 
