@@ -11,6 +11,19 @@ include_once HV_ROOT_DIR.'/../src/Movie/HelioviewerMovie.php';
 // File under test
 include_once HV_ROOT_DIR.'/../src/Module/Movies.php';
 
+/**
+ * HelioviewerMovie stub class used to call the abort function to simulate a build failure.
+ */
+class HelioviewerMovie_BuildBreaker extends Movie_HelioviewerMovie {
+    public function __construct($id) {
+        parent::__construct($id, 'mp4');
+    }
+
+    public function abort() {
+        $this->_abort("Forced Failure");
+    }
+}
+
 final class reQueueMovieTest extends TestCase
 {
     /**
@@ -141,6 +154,35 @@ final class reQueueMovieTest extends TestCase
      */
     public function testRequeueMovie_MovieProcessing_Force() {
         $this->_testRequeueMovie_MovieProcessing(true);
+    }
+
+    /**
+     * Issue #262 - When mp4 creation fails, movie can't be requeued
+     */
+    public function testRequeueMovie_262() {
+        // Queue the test movie
+        $result = $this->_queueTestMovie();
+        // Get the movie ID as an integer
+        $movieId = alphaId($result->id, true, 5, HV_MOVIE_ID_PASS);
+        $movieId = intval($movieId);
+        // Get the movie details from the database
+        $movieDatabase = new Database_MovieDatabase();
+        $formats = $movieDatabase->getMovieFormats($movieId);
+
+        $this->assertEquals($formats[0]['status'], 0, "mp4 should have status of 0 to indicate it was queued");
+        $this->assertEquals($formats[1]['status'], 0, "webm should have status of 0 to indicate it was queued");
+        // Create instance of class to break the movie.
+        $builder = new HelioviewerMovie_BuildBreaker($result->id);
+        // Call abort to simulate move build failure.
+        try {
+            $builder->abort();
+        } catch (Exception $e) {
+            // Thrown exception is expected, ignore it and move on with the test.
+        }
+
+        $formats = $movieDatabase->getMovieFormats($movieId);
+        $this->assertEquals($formats[0]['status'], 3, "mp4 should have status of 3 to indicate an error");
+        $this->assertEquals($formats[1]['status'], 3, "webm should have status of 3 to indicate an error");
     }
 
 }
