@@ -304,8 +304,7 @@ class Database_ImgIndex {
                  .     "status "   . " = 3, "   // 3 = invalid
                  .     "procTime " . " = NULL "
                  . "WHERE "
-                 .     "movieId "  . " = %d "
-                 . "LIMIT 1;",
+                 .     "movieId "  . " = %d;",
                  (int)$movieId
                );
         try {
