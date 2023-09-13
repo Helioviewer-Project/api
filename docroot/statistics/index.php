@@ -19,8 +19,8 @@
         google.load("visualization", "1", {packages:["corechart"]});
         google.setOnLoadCallback(function (e) {
             temporalResolution = "<?php echo $resolution;?>";
-            dateStart = "<?php echo $_GET['dateStart']; ?>";
-            dateEnd = "<?php echo $_GET['dateEnd']; ?>";
+            dateStart = "<?php echo $_GET['dateStart'] ?? ''; ?>";
+            dateEnd = "<?php echo $_GET['dateEnd'] ?? ''; ?>";
             setRefreshIntervalFromTemporalResolution();
             getUsageStatistics(temporalResolution,dateStart,dateEnd);
             setInterval(checkSessionTimeout, 1000);
@@ -54,7 +54,7 @@
         <div id="footer">
             Note: Helioviewer.org only collects information about types of queries made.  Helioviewer.org does not collect or store any information that could be used to identify users.
         </div>
-        
+
 	</div>
 </body>
 </html>
