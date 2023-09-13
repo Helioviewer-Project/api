@@ -12,6 +12,11 @@
  * @link     https://github.com/Helioviewer-Project/
  */
 
+require_once HV_ROOT_DIR . "/../vendor/autoload.php";
+
+use DeviceDetector\ClientHints;
+use DeviceDetector\DeviceDetector;
+
 class Database_Statistics {
 
     private $_dbConnection;
@@ -94,6 +99,36 @@ class Database_Statistics {
     }
 
     /**
+     * Gets device information from the user agent
+     */
+    protected function _GetDevice() {
+        $userAgent = $_SERVER['HTTP_USER_AGENT']; // change this to the useragent you want to parse
+        $clientHints = ClientHints::factory($_SERVER); // client hints are optional
+
+        $dd = new DeviceDetector($userAgent, $clientHints);
+
+        // OPTIONAL: Set caching method
+        // By default static cache is used, which works best within one php process (memory array caching)
+        // To cache across requests use caching in files or memcache
+        require_once HV_ROOT_DIR . "/../src/Helper/RedisCache.php";
+        $dd->setCache(new RedisCache(HV_REDIS_HOST, HV_REDIS_PORT));
+        $dd->parse();
+
+        if ($dd->isBot()) {
+            // handle bots,spiders,crawlers,...
+            return $dd->getBot();
+        } else {
+            // Assume that if its a browser, then DD can determine whether it's a desktop/smartphone/tablet
+            if ($dd->isBrowser()) {
+                return $dd->getDeviceName();
+            } else {
+                // Otherwise, use the client name
+                return $dd->getClient('name');
+            }
+        }
+    }
+
+    /**
      * Add a new entry to the `statistics` table
      *
      * param $action string The API action to log
@@ -101,13 +136,16 @@ class Database_Statistics {
      * @return boolean
      */
     public function log($action) {
+        $device = $this->_GetDevice();
         $sql = sprintf(
                   "INSERT INTO statistics "
                 . "SET "
                 .     "id "        . " = NULL, "
                 .     "timestamp " . " = NULL, "
-                .     "action "    . " = '%s';",
-                $this->_dbConnection->link->real_escape_string($action)
+                .     "action "    . " = '%s', "
+                .     "device "    . " = '%s';",
+                $this->_dbConnection->link->real_escape_string($action),
+                $this->_dbConnection->link->real_escape_string($device)
                );
         try {
             $result = $this->_dbConnection->query($sql);
@@ -170,7 +208,7 @@ class Database_Statistics {
             $dateTimeNearestHour = explode(":",$dateTimeNoMilis)[0] . ":00:00"; // strip out minutes and seconds
 
             // Make compound key
-            $key = HV_REDIS_STATS_PREFIX . "/" . $dateTimeNearestHour . "/" . $action;
+            $key = HV_REDIS_STATS_PREFIX . "/" . $dateTimeNearestHour . "/" . $action . "/" . $this->_GetDevice();
             $redis->incr($key);
         }catch(Exception $e){
             //continue gracefully if redis statistics logging fails
@@ -195,6 +233,7 @@ class Database_Statistics {
                     "datetime" => $keyComponents[1],
                     "action" => $keyComponents[2],
                     "count" => $count,
+                    "device" => $keyComponents[3] ?? 'x',
                     "key" => $key
                 );
                 array_push($statisticsData, $statistic);
@@ -206,11 +245,13 @@ class Database_Statistics {
                 . "SET "
                 . "datetime "    . " = '%s', "
                 . "action "        . " = '%s', "
-                . "count "        . " = %d "
+                . "count "        . " = %d, "
+                . "device = '%s' "
                 . "ON DUPLICATE KEY UPDATE count = %d;",
                 $this->_dbConnection->link->real_escape_string($data["datetime"]),
                 $this->_dbConnection->link->real_escape_string($data["action"]),
                 $this->_dbConnection->link->real_escape_string($data["count"]),
+                $this->_dbConnection->link->real_escape_string($data['device']),
                 $this->_dbConnection->link->real_escape_string($data["count"])
             );
             try {
