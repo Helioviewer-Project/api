@@ -189,6 +189,7 @@ var displayUsageStatistics = function (data, timeInterval) {
     var pieChartHeight, barChartHeight, barChartMargin, summaryRaw, max;
     var hvTypePieSummary = {};
     var notificationPieSummary = {};
+    let deviceSummary = data['device_summary'];
     var movieSourcesSummary = data['movieCommonSources'];
     var movieLayerCountSummary = data['movieLayerCount'];
     var screenshotSourcesSummary = data['screenshotCommonSources'];
@@ -213,6 +214,7 @@ var displayUsageStatistics = function (data, timeInterval) {
     createScreenshotLayerCountChart('screenshotLayerCountChart',screenshotLayerCountSummary, pieChartHeight);
     createMovieSourcesChart('movieSourcesChart', movieSourcesSummary, pieChartHeight);
     createMovieLayerCountChart('movieLayerCountChart',movieLayerCountSummary, pieChartHeight);
+    createDeviceChart('deviceChart', deviceSummary, pieChartHeight);
 
     var colorMod = 0;
     var excludeFromCharts = ['movieCommonSources','movieLayerCount','screenshotCommonSources','screenshotLayerCount','summary'];
@@ -625,4 +627,21 @@ var createMovieLayerCountChart = function (id, totals, size) {
     }
     chart = new google.visualization.PieChart(document.getElementById(id));
     chart.draw(data, {width: size, height: size*pieHeightScale, colors: colors, title: "Movie Layer Count"});
+};
+
+function createDeviceChart(id, deviceSummary, size) {
+    var chart, width, data = new google.visualization.DataTable();
+
+    data.addColumn('string', 'device');
+    data.addColumn('number', 'requests');
+
+    let devices = Object.keys(deviceSummary);
+
+    //populate the chart
+    for(let device of devices){
+        data.addRows([[device, deviceSummary[device]]]);
+    }
+
+    chart = new google.visualization.PieChart(document.getElementById(id));
+    chart.draw(data, {width: size, height: size*pieHeightScale, colors: colors, title: "Client Devices"});
 };

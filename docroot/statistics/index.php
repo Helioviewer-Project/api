@@ -48,6 +48,7 @@
                 <div id="movieSourcesChart"></div>
                 <div id="movieLayerCountChart"></div>
                 <div id="notificationChart"></div>
+                <div id="deviceChart"></div>
             </div>
             <div id="barCharts"></div>
         </div>

@@ -13,6 +13,7 @@
  */
 
 require_once HV_ROOT_DIR . "/../vendor/autoload.php";
+require_once HV_ROOT_DIR . "/../src/Helper/ArrayExtensions.php";
 
 use DeviceDetector\ClientHints;
 use DeviceDetector\DeviceDetector;
@@ -464,6 +465,8 @@ class Database_Statistics {
             "totalRequests"                    => 0
         );
 
+        // Stores the counts for the number of requests come from specific devices
+        $device_counts = array();
         $new_counts = $this->_createCountsArray();
         $new_summary = $this->_createSummaryArray();
         //final counts summary
@@ -511,34 +514,6 @@ class Database_Statistics {
             $dateEnd = toMySQLDateString($date);
             $intervalEndDate = $dateEnd;
 
-            //begin statistics table data gathering
-            /*
-            $sql = sprintf(
-                      "SELECT action, COUNT(id) AS count "
-                    . "FROM statistics "
-                    . "WHERE "
-                    .     "timestamp BETWEEN '%s' AND '%s' "
-                    . "GROUP BY action;",
-                    $this->_dbConnection->link->real_escape_string($dateStart),
-                    $this->_dbConnection->link->real_escape_string($dateEnd)
-                   );
-            try {
-                $result = $this->_dbConnection->query($sql);
-            }
-            catch (Exception $e) {
-                return false;
-            }
-
-            // Append counts for each API action during that interval
-            // to the appropriate array
-            while ($count = $result->fetch_array(MYSQLI_ASSOC)) {
-                $num = (int)$count['count'];
-
-                $counts[$count['action']][$i][$dateIndex] = $num;
-                $summary[$count['action']] += $num;
-            }
-            */
-
             //redis table statistics gathering for total number of calls
             $sql = sprintf(
                 "SELECT SUM(count) AS count "
@@ -566,7 +541,6 @@ class Database_Statistics {
 
             //additional real-time redis stats for total number of calls
             $statisticsKeys = $redis->keys(HV_REDIS_STATS_PREFIX . "/*");
-            $statisticsData = array();
             $realTimeRedisCount = 0;
             foreach( $statisticsKeys as $key ){
                 $count = (int)$redis->get($key);
@@ -580,6 +554,8 @@ class Database_Statistics {
             if($realTimeRedisCount > 0){
                 $new_counts['total'][$i][$dateIndex] += $realTimeRedisCount;
                 $new_summary['total'] += $realTimeRedisCount;
+                $device = $keyComponents[3] ?? 'x';
+                array_add($device_counts, $device, $realTimeRedisCount);
             }
 
             //new redis-stats statistics gathering for all api endpoints
@@ -608,9 +584,31 @@ class Database_Statistics {
                 $new_summary[$count['action']] += $num;
             }
 
+            // Get device request counts
+            $sql = sprintf(
+                "SELECT device, SUM(count) AS count "
+              . "FROM redis_stats "
+              . "WHERE "
+              .     "datetime >= '%s' AND datetime < '%s'"
+              ."GROUP BY device; ",
+              $this->_dbConnection->link->real_escape_string($dateStart),
+              $this->_dbConnection->link->real_escape_string($dateEnd)
+             );
+            try {
+                $result = $this->_dbConnection->query($sql);
+            }
+            catch (Exception $e) {
+                return false;
+            }
+
+            // Append counts for each device
+            while ($count = $result->fetch_array(MYSQLI_ASSOC)) {
+                $num = (int)$count['count'];
+                array_add($device_counts, $count['device'], $num);
+            }
+
             //additional real-time redis stats for all api endpoints
             $statisticsKeys = $redis->keys(HV_REDIS_STATS_PREFIX . "/*");
-            $statisticsData = array();
             foreach( $statisticsKeys as $key ){
                 $realTimeRedisCount = 0;
                 $count = (int)$redis->get($key);
@@ -785,8 +783,21 @@ class Database_Statistics {
         $counts['summary'] = $summary;
         $new_counts['summary'] = $new_summary;
         $new_counts['rate_limit_exceeded'] = $rateLimitExceeded;
+        $device_counts['unknown'] = $device_counts['x'] ?? 0;
+        unset($device_counts['x']);
+        $new_counts['device_summary'] = $device_counts;
 
         return json_encode($new_counts);
+    }
+
+    /**
+     * Gets client device statistics.
+     * This returns a list of devices and the number of requests made by each device over the given time period
+     * @param string $start Start date of time range that will be passed to the SQL query
+     * @param string $end End date of time range that will be passed to the SQL query
+     */
+    protected function _QueryDeviceStatistics(string $start, string $end): array {
+
     }
 
     private function _createCountsArray(){
