@@ -17,9 +17,9 @@ var heirarchy = {
     "Client Sites":["standard","embed","minimal"],
     "Images":["takeScreenshot","getTile","getClosestImage","getJP2Image-web","getJP2Image-jpip","getJP2Image","downloadScreenshot","getJPX","getJPXClosestToMidPoint", "downloadImage"],
     "Movies":["buildMovie","getMovieStatus","queueMovie","reQueueMovie","playMovie","downloadMovie","getUserVideos","getObservationDateVideos","uploadMovieToYouTube","checkYouTubeAuth","getYouTubeAuth"],
-    "Events":["getEventGlossary","getEvents","getFRMs","getEvent","getEventFRMs","getDefaultEventTypes","getEventsByEventLayers","importEvents"],
+    "Events":["getEventGlossary", "events", "getEvents","getFRMs","getEvent","getEventFRMs","getDefaultEventTypes","getEventsByEventLayers","importEvents"],
     "Data":["getRandomSeed","getDataSources","getJP2Header","getDataCoverage","getStatus","getNewsFeed","getDataCoverageTimeline","getClosestData","getSolarBodiesGlossary","getSolarBodies","getTrajectoryTime","sciScript-SSWIDL","sciScript-SunPy","getSciDataScript","updateDataCoverage"],
-    "Other":["shortenURL","getUsageStatistics","movie-notifications-granted","movie-notifications-denied","logNotificationStatistics","launchJHelioviewer"],
+    "Other":["shortenURL", "goto", "getUsageStatistics","movie-notifications-granted","movie-notifications-denied","logNotificationStatistics","launchJHelioviewer"],
     "WebGL":["getTexture","getGeometryServiceData"]
 };
 
@@ -71,7 +71,7 @@ var checkSessionTimeout = function () {
     var minutes = Math.abs((initialTime - new Date()) / 1000 / 60);
     if (minutes > refreshIntervalMinutes) {
         loadNewStatistics();
-    } 
+    }
 };
 
 var loadNewStatistics = function(){
@@ -258,7 +258,7 @@ var displayUsageStatistics = function (data, timeInterval) {
                         content.style.maxHeight = null;
                     } else {
                         content.style.maxHeight = content.scrollHeight + "px";
-                    } 
+                    }
                     console.log(contentId + " " + content.style.maxHeight);
                 }
             }
@@ -271,7 +271,7 @@ var displayUsageStatistics = function (data, timeInterval) {
                 content.style.maxHeight = content.scrollHeight + "px";
             }
         }
-    } 
+    }
 
     // Create bar graphs for each request type
     /*
@@ -367,7 +367,7 @@ var displaySummaryText = function(timeInterval, summary) {
         }
         $("#timeRange").hide();
     }
-    
+
     //temporal resolution dropdown change event listener
     $("#temporalResolution").val(timeInterval).unbind().change(function(e){
         temporalResolution = $("#temporalResolution").val();
