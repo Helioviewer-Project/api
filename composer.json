@@ -11,11 +11,15 @@
         {
             "type": "vcs",
             "url": "https://github.com/dgarciabriseno/helioviewer-event-interface.git"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/dgarciabriseno/device-detector.git"
         }
     ],
     "require": {
         "helioviewer/event-interface": "dev-main",
-        "matomo/device-detector": "^6.1"
+        "matomo/device-detector": "dev-master"
     },
     "require-dev": {
         "phpunit/phpunit": "^9.6"
