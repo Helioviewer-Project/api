@@ -60,6 +60,10 @@ final class StatisticsTest extends TestCase
                 'UserAgent' => "python-requests/2.31.0",
                 'ExpectedResult' => 'Python Requests'
             ],
+            [
+                'UserAgent' => "JHV/SWHV-4.4.2.10777 (x86_64 Mac OS X 13.2.1) Eclipse Adoptium JRE 19.0.2",
+                'ExpectedResult' => 'JHelioviewer'
+            ]
         );
 
         $stats = new StatisticsTestHarness();
