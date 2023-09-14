@@ -784,7 +784,6 @@ class Database_Statistics {
         $new_counts['summary'] = $new_summary;
         $new_counts['rate_limit_exceeded'] = $rateLimitExceeded;
         // 'x' represents requests before we started logging devices
-        $device_counts['unknown'] = $device_counts['x'] ?? 0;
         unset($device_counts['x']);
 
         // 'UNK' represents clients that the device detector didn't recognize.
