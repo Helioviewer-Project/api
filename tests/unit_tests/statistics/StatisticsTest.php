@@ -63,6 +63,10 @@ final class StatisticsTest extends TestCase
             [
                 'UserAgent' => "JHV/SWHV-4.4.2.10777 (x86_64 Mac OS X 13.2.1) Eclipse Adoptium JRE 19.0.2",
                 'ExpectedResult' => 'JHelioviewer'
+            ],
+            [
+                'UserAgent' => "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15 (Applebot/0.1; +http://www.apple.com/go/applebot)",
+                'ExpectedResult' => 'Applebot'
             ]
         );
 

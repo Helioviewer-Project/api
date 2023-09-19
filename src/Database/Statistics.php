@@ -117,7 +117,7 @@ class Database_Statistics {
 
         if ($dd->isBot()) {
             // handle bots,spiders,crawlers,...
-            return $dd->getBot();
+            return $dd->getBot()["name"];
         } else {
             // Assume that if its a browser, then DD can determine whether it's a desktop/smartphone/tablet
             if ($dd->isBrowser()) {
