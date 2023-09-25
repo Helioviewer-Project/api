@@ -41,6 +41,12 @@ final class StatisticsTest extends TestCase
         $statistics->saveStatisticsFromRedis($redis);
     }
 
+    public function testGetDevice_NoUserAgent() {
+        $stats = new StatisticsTestHarness();
+        $result = $stats->GetDevice();
+        $this->assertEquals("UNK", $result);
+    }
+
     /**
      * Get device is used to identify the device via the user agent.
      * Test with a few known user agents.

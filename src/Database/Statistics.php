@@ -103,8 +103,8 @@ class Database_Statistics {
      * Gets device information from the user agent
      */
     protected function _GetDevice() {
-        $userAgent = $_SERVER['HTTP_USER_AGENT']; // change this to the useragent you want to parse
-        $clientHints = ClientHints::factory($_SERVER); // client hints are optional
+        $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? "";
+        $clientHints = ClientHints::factory($_SERVER);
 
         $dd = new DeviceDetector($userAgent, $clientHints);
 
