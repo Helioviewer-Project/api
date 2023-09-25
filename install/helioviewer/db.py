@@ -866,6 +866,7 @@ def create_redis_stats_table(cursor):
         `datetime`       datetime NOT NULL,
         `action`         varchar(32) NOT NULL,
         `count`          int unsigned NOT NULL,
+        `device`         VARCHAR(64) DEFAULT 'x',
         PRIMARY KEY (`datetime`, `action`)
     ) DEFAULT CHARSET=utf8;""")
 
@@ -1006,6 +1007,7 @@ def create_statistics_table(cursor):
       `id`          INT unsigned NOT NULL auto_increment,
       `timestamp`   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       `action`      VARCHAR(32)  NOT NULL,
+      `device`      VARCHAR(64) DEFAULT 'x',
        PRIMARY KEY (`id`),
        KEY `date_idx` (`timestamp`,`action`)
     ) DEFAULT CHARSET=utf8;""")
