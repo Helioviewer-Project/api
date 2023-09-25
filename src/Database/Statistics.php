@@ -12,6 +12,12 @@
  * @link     https://github.com/Helioviewer-Project/
  */
 
+require_once HV_ROOT_DIR . "/../vendor/autoload.php";
+require_once HV_ROOT_DIR . "/../src/Helper/ArrayExtensions.php";
+
+use DeviceDetector\ClientHints;
+use DeviceDetector\DeviceDetector;
+
 class Database_Statistics {
 
     private $_dbConnection;
@@ -94,6 +100,36 @@ class Database_Statistics {
     }
 
     /**
+     * Gets device information from the user agent
+     */
+    protected function _GetDevice() {
+        $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? "";
+        $clientHints = ClientHints::factory($_SERVER);
+
+        $dd = new DeviceDetector($userAgent, $clientHints);
+
+        // OPTIONAL: Set caching method
+        // By default static cache is used, which works best within one php process (memory array caching)
+        // To cache across requests use caching in files or memcache
+        require_once HV_ROOT_DIR . "/../src/Helper/RedisCache.php";
+        $dd->setCache(new RedisCache(HV_REDIS_HOST, HV_REDIS_PORT));
+        $dd->parse();
+
+        if ($dd->isBot()) {
+            // handle bots,spiders,crawlers,...
+            return $dd->getBot()["name"];
+        } else {
+            // Assume that if its a browser, then DD can determine whether it's a desktop/smartphone/tablet
+            if ($dd->isBrowser()) {
+                return $dd->getDeviceName();
+            } else {
+                // Otherwise, use the client name
+                return $dd->getClient('name');
+            }
+        }
+    }
+
+    /**
      * Add a new entry to the `statistics` table
      *
      * param $action string The API action to log
@@ -101,13 +137,16 @@ class Database_Statistics {
      * @return boolean
      */
     public function log($action) {
+        $device = $this->_GetDevice();
         $sql = sprintf(
                   "INSERT INTO statistics "
                 . "SET "
                 .     "id "        . " = NULL, "
                 .     "timestamp " . " = NULL, "
-                .     "action "    . " = '%s';",
-                $this->_dbConnection->link->real_escape_string($action)
+                .     "action "    . " = '%s', "
+                .     "device "    . " = '%s';",
+                $this->_dbConnection->link->real_escape_string($action),
+                $this->_dbConnection->link->real_escape_string($device)
                );
         try {
             $result = $this->_dbConnection->query($sql);
@@ -170,7 +209,7 @@ class Database_Statistics {
             $dateTimeNearestHour = explode(":",$dateTimeNoMilis)[0] . ":00:00"; // strip out minutes and seconds
 
             // Make compound key
-            $key = HV_REDIS_STATS_PREFIX . "/" . $dateTimeNearestHour . "/" . $action;
+            $key = HV_REDIS_STATS_PREFIX . "/" . $dateTimeNearestHour . "/" . $action . "/" . $this->_GetDevice();
             $redis->incr($key);
         }catch(Exception $e){
             //continue gracefully if redis statistics logging fails
@@ -195,6 +234,7 @@ class Database_Statistics {
                     "datetime" => $keyComponents[1],
                     "action" => $keyComponents[2],
                     "count" => $count,
+                    "device" => $keyComponents[3] ?? 'x',
                     "key" => $key
                 );
                 array_push($statisticsData, $statistic);
@@ -206,11 +246,13 @@ class Database_Statistics {
                 . "SET "
                 . "datetime "    . " = '%s', "
                 . "action "        . " = '%s', "
-                . "count "        . " = %d "
+                . "count "        . " = %d, "
+                . "device = '%s' "
                 . "ON DUPLICATE KEY UPDATE count = %d;",
                 $this->_dbConnection->link->real_escape_string($data["datetime"]),
                 $this->_dbConnection->link->real_escape_string($data["action"]),
                 $this->_dbConnection->link->real_escape_string($data["count"]),
+                $this->_dbConnection->link->real_escape_string($data['device']),
                 $this->_dbConnection->link->real_escape_string($data["count"])
             );
             try {
@@ -385,17 +427,17 @@ class Database_Statistics {
             "getClosestData"                   => array(),
             "getClosestImage"                  => array(),
             "getJPX"                           => array(),
-            "getJPXClosestToMidPoint"         => array(),
+            "getJPXClosestToMidPoint"          => array(),
             "takeScreenshot"                   => array(),
             "uploadMovieToYouTube"             => array(),
             "embed"                            => array(),
-            "minimal"                        => array(),
-            "standard"                        => array(),
-            "sciScript-SSWIDL"                => array(),
-            "sciScript-SunPy"                => array(),
-            "movie-notifications-granted"    => array(),
-            "movie-notifications-denied"    => array(),
-            "getJP2Image-web"                => array(),
+            "minimal"                          => array(),
+            "standard"                         => array(),
+            "sciScript-SSWIDL"                 => array(),
+            "sciScript-SunPy"                  => array(),
+            "movie-notifications-granted"      => array(),
+            "movie-notifications-denied"       => array(),
+            "getJP2Image-web"                  => array(),
             "getJP2Image-jpip"                 => array(),
             "getRandomSeed"                    => array(),
             "totalRequests"                    => array()
@@ -407,22 +449,24 @@ class Database_Statistics {
             "getClosestData"                   => 0,
             "getClosestImage"                  => 0,
             "getJPX"                           => 0,
-            "getJPXClosestToMidPoint"       => 0,
+            "getJPXClosestToMidPoint"          => 0,
             "takeScreenshot"                   => 0,
             "uploadMovieToYouTube"             => 0,
             "embed"                            => 0,
-            "minimal"                        => 0,
-            "standard"                        => 0,
-            "sciScript-SSWIDL"                => 0,
-            "sciScript-SunPy"                => 0,
-            "movie-notifications-granted"    => 0,
-            "movie-notifications-denied"    => 0,
-            "getJP2Image-web"                => 0,
+            "minimal"                          => 0,
+            "standard"                         => 0,
+            "sciScript-SSWIDL"                 => 0,
+            "sciScript-SunPy"                  => 0,
+            "movie-notifications-granted"      => 0,
+            "movie-notifications-denied"       => 0,
+            "getJP2Image-web"                  => 0,
             "getJP2Image-jpip"                 => 0,
             "getRandomSeed"                    => 0,
             "totalRequests"                    => 0
         );
 
+        // Stores the counts for the number of requests come from specific devices
+        $device_counts = array();
         $new_counts = $this->_createCountsArray();
         $new_summary = $this->_createSummaryArray();
         //final counts summary
@@ -470,34 +514,6 @@ class Database_Statistics {
             $dateEnd = toMySQLDateString($date);
             $intervalEndDate = $dateEnd;
 
-            //begin statistics table data gathering
-            /*
-            $sql = sprintf(
-                      "SELECT action, COUNT(id) AS count "
-                    . "FROM statistics "
-                    . "WHERE "
-                    .     "timestamp BETWEEN '%s' AND '%s' "
-                    . "GROUP BY action;",
-                    $this->_dbConnection->link->real_escape_string($dateStart),
-                    $this->_dbConnection->link->real_escape_string($dateEnd)
-                   );
-            try {
-                $result = $this->_dbConnection->query($sql);
-            }
-            catch (Exception $e) {
-                return false;
-            }
-
-            // Append counts for each API action during that interval
-            // to the appropriate array
-            while ($count = $result->fetch_array(MYSQLI_ASSOC)) {
-                $num = (int)$count['count'];
-
-                $counts[$count['action']][$i][$dateIndex] = $num;
-                $summary[$count['action']] += $num;
-            }
-            */
-
             //redis table statistics gathering for total number of calls
             $sql = sprintf(
                 "SELECT SUM(count) AS count "
@@ -525,7 +541,6 @@ class Database_Statistics {
 
             //additional real-time redis stats for total number of calls
             $statisticsKeys = $redis->keys(HV_REDIS_STATS_PREFIX . "/*");
-            $statisticsData = array();
             $realTimeRedisCount = 0;
             foreach( $statisticsKeys as $key ){
                 $count = (int)$redis->get($key);
@@ -539,6 +554,8 @@ class Database_Statistics {
             if($realTimeRedisCount > 0){
                 $new_counts['total'][$i][$dateIndex] += $realTimeRedisCount;
                 $new_summary['total'] += $realTimeRedisCount;
+                $device = $keyComponents[3] ?? 'x';
+                array_add($device_counts, $device, $realTimeRedisCount);
             }
 
             //new redis-stats statistics gathering for all api endpoints
@@ -567,9 +584,31 @@ class Database_Statistics {
                 $new_summary[$count['action']] += $num;
             }
 
+            // Get device request counts
+            $sql = sprintf(
+                "SELECT device, SUM(count) AS count "
+              . "FROM redis_stats "
+              . "WHERE "
+              .     "datetime >= '%s' AND datetime < '%s'"
+              ."GROUP BY device; ",
+              $this->_dbConnection->link->real_escape_string($dateStart),
+              $this->_dbConnection->link->real_escape_string($dateEnd)
+             );
+            try {
+                $result = $this->_dbConnection->query($sql);
+            }
+            catch (Exception $e) {
+                return false;
+            }
+
+            // Append counts for each device
+            while ($count = $result->fetch_array(MYSQLI_ASSOC)) {
+                $num = (int)$count['count'];
+                array_add($device_counts, $count['device'], $num);
+            }
+
             //additional real-time redis stats for all api endpoints
             $statisticsKeys = $redis->keys(HV_REDIS_STATS_PREFIX . "/*");
-            $statisticsData = array();
             foreach( $statisticsKeys as $key ){
                 $realTimeRedisCount = 0;
                 $count = (int)$redis->get($key);
@@ -744,128 +783,152 @@ class Database_Statistics {
         $counts['summary'] = $summary;
         $new_counts['summary'] = $new_summary;
         $new_counts['rate_limit_exceeded'] = $rateLimitExceeded;
+        // 'x' represents requests before we started logging devices
+        unset($device_counts['x']);
+
+        // 'UNK' represents clients that the device detector didn't recognize.
+        $device_counts['unrecognized'] = $device_counts['UNK'] ?? 0;
+        unset($device_counts['UNK']);
+
+        $new_counts['device_summary'] = $device_counts;
 
         return json_encode($new_counts);
     }
 
+    /**
+     * Gets client device statistics.
+     * This returns a list of devices and the number of requests made by each device over the given time period
+     * @param string $start Start date of time range that will be passed to the SQL query
+     * @param string $end End date of time range that will be passed to the SQL query
+     */
+    protected function _QueryDeviceStatistics(string $start, string $end): array {
+
+    }
+
     private function _createCountsArray(){
         return array(
-            "total"                        => array(),
-            'downloadScreenshot'         => array(),
-            'getClosestImage'            => array(),
-            'getDataSources'             => array(),
-            'getJP2Header'               => array(),
-            'getNewsFeed'                => array(),
-            'getStatus'                  => array(),
-            'getSciDataScript'           => array(),
-            'getTile'                    => array(),
-            'getUsageStatistics'         => array(),
-            'getDataCoverageTimeline'    => array(),
-            'getDataCoverage'            => array(),
-            'updateDataCoverage'         => array(),
-            'shortenURL'                 => array(),
-            'takeScreenshot'             => array(),
-            'getRandomSeed'             => array(),
-            'getJP2Image'                => array(),
-            'getJPX'                     => array(),
-            'getJPXClosestToMidPoint'    => array(),
-            'launchJHelioviewer'         => array(),
-            'downloadMovie'              => array(),
-            'getMovieStatus'             => array(),
-            'playMovie'                  => array(),
-            'queueMovie'                 => array(),
-            'reQueueMovie'               => array(),
-            'uploadMovieToYouTube'       => array(),
-            'checkYouTubeAuth'           => array(),
-            'getYouTubeAuth'             => array(),
-            'getUserVideos'              => array(),
+            "total"                       => array(),
+            'downloadScreenshot'          => array(),
+            'getClosestImage'             => array(),
+            'getDataSources'              => array(),
+            'getJP2Header'                => array(),
+            'getNewsFeed'                 => array(),
+            'getStatus'                   => array(),
+            'getSciDataScript'            => array(),
+            'getTile'                     => array(),
+            'downloadImage'               => array(),
+            'getUsageStatistics'          => array(),
+            'getDataCoverageTimeline'     => array(),
+            'getDataCoverage'             => array(),
+            'updateDataCoverage'          => array(),
+            'shortenURL'                  => array(),
+            'goto'                        => array(),
+            'takeScreenshot'              => array(),
+            'getRandomSeed'               => array(),
+            'getJP2Image'                 => array(),
+            'getJPX'                      => array(),
+            'getJPXClosestToMidPoint'     => array(),
+            'launchJHelioviewer'          => array(),
+            'downloadMovie'               => array(),
+            'getMovieStatus'              => array(),
+            'playMovie'                   => array(),
+            'queueMovie'                  => array(),
+            'reQueueMovie'                => array(),
+            'uploadMovieToYouTube'        => array(),
+            'checkYouTubeAuth'            => array(),
+            'getYouTubeAuth'              => array(),
+            'getUserVideos'               => array(),
             'getObservationDateVideos'    => array(),
-            'getEventFRMs'               => array(),
-            'getEvent'                     => array(),
-            'getFRMs'                    => array(),
-            'getDefaultEventTypes'       => array(),
-            'getEvents'                  => array(),
-            'importEvents'               => array(),
-            'getEventsByEventLayers'     => array(),
-            'getEventGlossary'           => array(),
-            'getSolarBodiesGlossary'    => array(),
-            'getSolarBodies'            => array(),
-            'getTrajectoryTime'         => array(),
-            'logNotificationStatistics' => array(),
-            'getTexture'                => array(),
-            'getGeometryServiceData'    => array(),
-            'buildMovie'                => array(),//this one happens in HelioviewerMovie.php
-            "getClosestData"                => array(),
-            "embed"                            => array(),
-            "minimal"                        => array(),
-            "standard"                        => array(),
-            "sciScript-SSWIDL"                => array(),
-            "sciScript-SunPy"                => array(),
-            "movie-notifications-granted"    => array(),
-            "movie-notifications-denied"    => array(),
-            "getJP2Image-web"                => array(),
-            "getJP2Image-jpip"                 => array()
+            'events'                      => array(),
+            'getEventFRMs'                => array(),
+            'getEvent'                    => array(),
+            'getFRMs'                     => array(),
+            'getDefaultEventTypes'        => array(),
+            'getEvents'                   => array(),
+            'importEvents'                => array(),
+            'getEventsByEventLayers'      => array(),
+            'getEventGlossary'            => array(),
+            'getSolarBodiesGlossary'      => array(),
+            'getSolarBodies'              => array(),
+            'getTrajectoryTime'           => array(),
+            'logNotificationStatistics'   => array(),
+            'getTexture'                  => array(),
+            'getGeometryServiceData'      => array(),
+            'buildMovie'                  => array(),//this one happens in HelioviewerMovie.php
+            "getClosestData"              => array(),
+            "embed"                       => array(),
+            "minimal"                     => array(),
+            "standard"                    => array(),
+            "sciScript-SSWIDL"            => array(),
+            "sciScript-SunPy"             => array(),
+            "movie-notifications-granted" => array(),
+            "movie-notifications-denied"  => array(),
+            "getJP2Image-web"             => array(),
+            "getJP2Image-jpip"            => array()
         );
     }
 
     private function _createSummaryArray(){
         return array(
-            "total"                        => 0,
-            'downloadScreenshot'         => 0,
-            'getClosestImage'            => 0,
-            'getDataSources'             => 0,
-            'getJP2Header'               => 0,
-            'getNewsFeed'                => 0,
-            'getStatus'                  => 0,
-            'getSciDataScript'           => 0,
-            'getTile'                    => 0,
-            'getUsageStatistics'         => 0,
-            'getDataCoverageTimeline'    => 0,
-            'getDataCoverage'            => 0,
-            'updateDataCoverage'         => 0,
-            'shortenURL'                 => 0,
-            'takeScreenshot'             => 0,
-            'getRandomSeed'             => 0,
-            'getJP2Image'                => 0,
-            'getJPX'                     => 0,
-            'getJPXClosestToMidPoint'    => 0,
-            'launchJHelioviewer'         => 0,
-            'downloadMovie'              => 0,
-            'getMovieStatus'             => 0,
-            'playMovie'                  => 0,
-            'queueMovie'                 => 0,
-            'reQueueMovie'               => 0,
-            'uploadMovieToYouTube'       => 0,
-            'checkYouTubeAuth'           => 0,
-            'getYouTubeAuth'             => 0,
-            'getUserVideos'              => 0,
+            "total"                       => 0,
+            'downloadScreenshot'          => 0,
+            'getClosestImage'             => 0,
+            'getDataSources'              => 0,
+            'getJP2Header'                => 0,
+            'getNewsFeed'                 => 0,
+            'getStatus'                   => 0,
+            'getSciDataScript'            => 0,
+            'getTile'                     => 0,
+            'downloadImage'               => 0,
+            'getUsageStatistics'          => 0,
+            'getDataCoverageTimeline'     => 0,
+            'getDataCoverage'             => 0,
+            'updateDataCoverage'          => 0,
+            'shortenURL'                  => 0,
+            'goto'                        => 0,
+            'takeScreenshot'              => 0,
+            'getRandomSeed'               => 0,
+            'getJP2Image'                 => 0,
+            'getJPX'                      => 0,
+            'getJPXClosestToMidPoint'     => 0,
+            'launchJHelioviewer'          => 0,
+            'downloadMovie'               => 0,
+            'getMovieStatus'              => 0,
+            'playMovie'                   => 0,
+            'queueMovie'                  => 0,
+            'reQueueMovie'                => 0,
+            'uploadMovieToYouTube'        => 0,
+            'checkYouTubeAuth'            => 0,
+            'getYouTubeAuth'              => 0,
+            'getUserVideos'               => 0,
             'getObservationDateVideos'    => 0,
-            'getEventFRMs'               => 0,
-            'getEvent'                     => 0,
-            'getFRMs'                    => 0,
-            'getDefaultEventTypes'       => 0,
-            'getEvents'                  => 0,
-            'importEvents'               => 0,
-            'getEventsByEventLayers'     => 0,
-            'getEventGlossary'           => 0,
-            'getSolarBodiesGlossary'    => 0,
-            'getSolarBodies'            => 0,
-            'getTrajectoryTime'         => 0,
-            'logNotificationStatistics' => 0,
-            'getTexture'                => 0,
-            'getGeometryServiceData'    => 0,
-            'buildMovie'                => 0,//this one happens in HelioviewerMovie.php
-            "getClosestData"                => 0,
-            "embed"                            => 0,
-            "minimal"                        => 0,
-            "standard"                        => 0,
-            "sciScript-SSWIDL"                => 0,
-            "sciScript-SunPy"                => 0,
-            "movie-notifications-granted"    => 0,
-            "movie-notifications-denied"    => 0,
-            "getJP2Image-web"                => 0,
-            "getJP2Image-jpip"                 => 0,
-            "rate_limit_exceeded"            => 0
+            'events'                      => 0,
+            'getEventFRMs'                => 0,
+            'getEvent'                    => 0,
+            'getFRMs'                     => 0,
+            'getDefaultEventTypes'        => 0,
+            'getEvents'                   => 0,
+            'importEvents'                => 0,
+            'getEventsByEventLayers'      => 0,
+            'getEventGlossary'            => 0,
+            'getSolarBodiesGlossary'      => 0,
+            'getSolarBodies'              => 0,
+            'getTrajectoryTime'           => 0,
+            'logNotificationStatistics'   => 0,
+            'getTexture'                  => 0,
+            'getGeometryServiceData'      => 0,
+            'buildMovie'                  => 0,//this one happens in HelioviewerMovie.php
+            "getClosestData"              => 0,
+            "embed"                       => 0,
+            "minimal"                     => 0,
+            "standard"                    => 0,
+            "sciScript-SSWIDL"            => 0,
+            "sciScript-SunPy"             => 0,
+            "movie-notifications-granted" => 0,
+            "movie-notifications-denied"  => 0,
+            "getJP2Image-web"             => 0,
+            "getJP2Image-jpip"            => 0,
+            "rate_limit_exceeded"         => 0
         );
     }
 
