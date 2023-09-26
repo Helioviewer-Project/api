@@ -495,14 +495,18 @@ class Database_Statistics {
         // Query each time interval
         for ($i = 0; $i < $interval["numSteps"]; $i++) {
 
+
             // Format date for array index
             $dateIndex = $date->format($dateFormat);
 
+            // Date as a date object
+            $dateStart = clone $date;
             // MySQL-formatted date string
-            $dateStart = toMySQLDateString($date);
+            $dateStartStr = toMySQLDateString($date);
 
             // Move to end date for the current interval
             $date->add($interval['timestep']);
+            $dateEnd = clone $date;
 
             // Fill with zeros to begin with
             foreach ($counts as $action => $arr) {
@@ -511,8 +515,8 @@ class Database_Statistics {
             foreach ($new_counts as $action => $arr) {
                 array_push($new_counts[$action], array($dateIndex => 0));
             }
-            $dateEnd = toMySQLDateString($date);
-            $intervalEndDate = $dateEnd;
+            $dateEndStr = toMySQLDateString($date);
+            $intervalEndDate = $dateEndStr;
 
             //redis table statistics gathering for total number of calls
             $sql = sprintf(
@@ -520,8 +524,8 @@ class Database_Statistics {
               . "FROM redis_stats "
               . "WHERE "
               .     "datetime >= '%s' AND datetime < '%s'; ",
-              $this->_dbConnection->link->real_escape_string($dateStart),
-              $this->_dbConnection->link->real_escape_string($dateEnd)
+              $this->_dbConnection->link->real_escape_string($dateStartStr),
+              $this->_dbConnection->link->real_escape_string($dateEndStr)
              );
             try {
                 $result = $this->_dbConnection->query($sql);
@@ -546,7 +550,7 @@ class Database_Statistics {
                 $count = (int)$redis->get($key);
                 $keyComponents = explode("/",$key);
                 //collect data that falls within the interval
-                $keyDateTime = $keyComponents[1];
+                $keyDateTime = DateTime::createFromFormat("Y-m-d H:i:s", $keyComponents[1]);
                 if($keyDateTime >= $dateStart && $keyDateTime < $dateEnd){
                     $realTimeRedisCount += $count;
                 }
@@ -565,8 +569,8 @@ class Database_Statistics {
               . "WHERE "
               .     "datetime >= '%s' AND datetime < '%s'"
               ."GROUP BY action; ",
-              $this->_dbConnection->link->real_escape_string($dateStart),
-              $this->_dbConnection->link->real_escape_string($dateEnd)
+              $this->_dbConnection->link->real_escape_string($dateStartStr),
+              $this->_dbConnection->link->real_escape_string($dateEndStr)
              );
             try {
                 $result = $this->_dbConnection->query($sql);
@@ -591,8 +595,8 @@ class Database_Statistics {
               . "WHERE "
               .     "datetime >= '%s' AND datetime < '%s'"
               ."GROUP BY device; ",
-              $this->_dbConnection->link->real_escape_string($dateStart),
-              $this->_dbConnection->link->real_escape_string($dateEnd)
+              $this->_dbConnection->link->real_escape_string($dateStartStr),
+              $this->_dbConnection->link->real_escape_string($dateEndStr)
              );
             try {
                 $result = $this->_dbConnection->query($sql);
@@ -614,7 +618,7 @@ class Database_Statistics {
                 $count = (int)$redis->get($key);
                 $keyComponents = explode("/",$key);
                 //collect data that falls within the interval
-                $keyDateTime = $keyComponents[1];
+                $keyDateTime = DateTime::createFromFormat("Y-m-d H:i:s", $keyComponents[1]);
                 $keyAction = $keyComponents[2];
                 if($keyDateTime >= $dateStart && $keyDateTime < $dateEnd){
                     $realTimeRedisCount = $count;
@@ -638,8 +642,8 @@ class Database_Statistics {
                 . "FROM movies "
                 . "WHERE "
                 .     "timestamp BETWEEN '%s' AND '%s' ;",
-                $this->_dbConnection->link->real_escape_string($dateStart),
-                $this->_dbConnection->link->real_escape_string($dateEnd)
+                $this->_dbConnection->link->real_escape_string($dateStartStr),
+                $this->_dbConnection->link->real_escape_string($dateEndStr)
                 );
 
                 try {
@@ -689,8 +693,8 @@ class Database_Statistics {
                 . "FROM screenshots "
                 . "WHERE "
                 .     "timestamp BETWEEN '%s' AND '%s' ;",
-                $this->_dbConnection->link->real_escape_string($dateStart),
-                $this->_dbConnection->link->real_escape_string($dateEnd)
+                $this->_dbConnection->link->real_escape_string($dateStartStr),
+                $this->_dbConnection->link->real_escape_string($dateEndStr)
                 );
 
                 try {
