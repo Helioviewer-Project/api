@@ -159,6 +159,9 @@ class Movie_HelioviewerMovie {
 
         // Regon of interest
         $this->_roi = Helper_RegionOfInterest::parsePolygonString($info['roi'], $info['imageScale']);
+
+        // Get timestamps for frames in the key movie layer
+        $this->_getTimeStamps();
     }
 
     private function _dbSetup() {
@@ -205,9 +208,6 @@ class Movie_HelioviewerMovie {
                     '/../src/Image/Composite/HelioviewerMovieFrame.php';
 
                 $t1 = date('Y-m-d H:i:s');
-
-                // Get timestamps for frames in the key movie layer
-                $this->_getTimeStamps();
 
                 // Set the actual start and end dates, frame-rate,
                 // movie length, numFrames and dimensions
@@ -725,7 +725,6 @@ class Movie_HelioviewerMovie {
     }
 
     private function _prepDates() {
-        $this->_getTimeStamps();
         // Store actual start and end dates that will be used for the movie
         $this->startDate = $this->_timestamps[0];
         $this->endDate   = $this->_timestamps[sizeOf($this->_timestamps) - 1];

@@ -16,6 +16,21 @@ include_once HV_ROOT_DIR.'/../lib/Redisent/Redisent.php';
 
 class Job_MovieBuilder
 {
+    /**
+     * Args passed in from resque
+     */
+    public array $args;
+
+    /**
+     * Resque job instance which is currently executing the job.
+     */
+    public Resque_Job $job;
+
+    /**
+     * Redis key for the queue. Automatically set by Resque_Job
+     */
+    public string $queue;
+
     public function perform()
     {
         printf("Starting movie %s\n", $this->args['movieId']);

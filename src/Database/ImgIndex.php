@@ -713,7 +713,7 @@ class Database_ImgIndex {
         }
 
         $data = $result->fetch_array(MYSQLI_ASSOC);
-        return $data['count'];
+        return intval($data['count']);
     }
 
     /**
