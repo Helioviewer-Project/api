@@ -44,8 +44,6 @@ def setup_database_schema(adminuser, adminpass, dbhost, dbname, dbuser, dbpass, 
     create_movie_formats_table(cursor)
     print("Creating youtube table")
     create_youtube_table(cursor)
-    print("Creating statistics table")
-    create_statistics_table(cursor)
     print("Creating data coverage table")
     create_data_coverage_table(cursor)
     print("Updating image table index")
@@ -863,11 +861,15 @@ def create_redis_stats_table(cursor):
     """
     cursor.execute("""
     CREATE TABLE `redis_stats` (
+        `id`             INT UNSIGNED NOT NULL AUTO_INCREMENT,
         `datetime`       datetime NOT NULL,
         `action`         varchar(32) NOT NULL,
         `count`          int unsigned NOT NULL,
         `device`         VARCHAR(64) DEFAULT 'x',
-        PRIMARY KEY (`datetime`, `action`)
+        PRIMARY KEY (`id`),
+        INDEX dates (`datetime`),
+        INDEX devices (`device`, `action`, `datetime`),
+        INDEX actions (`action`, `datetime`)
     ) DEFAULT CHARSET=utf8;""")
 
 def create_rate_limit_table(cursor):
@@ -994,22 +996,6 @@ def create_screenshots_table(cursor):
       `celestialBodiesLabels` VARCHAR(372),
       `celestialBodiesTrajectories` VARCHAR(372),
        PRIMARY KEY (`id`)
-    ) DEFAULT CHARSET=utf8;""")
-
-def create_statistics_table(cursor):
-    """Creates a table to keep query statistics
-
-    Creates a simple table for storing query statistics for selected types of
-    requests
-    """
-    cursor.execute("""
-    CREATE TABLE `statistics` (
-      `id`          INT unsigned NOT NULL auto_increment,
-      `timestamp`   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      `action`      VARCHAR(32)  NOT NULL,
-      `device`      VARCHAR(64) DEFAULT 'x',
-       PRIMARY KEY (`id`),
-       KEY `date_idx` (`timestamp`,`action`)
     ) DEFAULT CHARSET=utf8;""")
 
 def create_data_coverage_table(cursor):
