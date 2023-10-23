@@ -175,7 +175,12 @@ class Image_ImageType_CORImage extends Image_HelioviewerImage {
             $mask->negateImage(true);
 
             $imagickImage->setImageClipMask($mask);
-            $imagickImage->setImageOpacity($this->options['opacity'] / 100);
+            $opacity = $this->imageOptions['opacity'] / 100;
+            try {
+                @$imagickImage->setImageOpacity($opacity);
+            } catch (Throwable $e) {
+                $imagickImage->setImageAlpha($opacity);
+            }
         }
 
         $mask->destroy();
