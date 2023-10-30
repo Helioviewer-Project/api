@@ -113,10 +113,14 @@ def create_db(adminuser, adminpass, dbhost, dbname, dbuser, dbpass, mysql, adapt
 
     TODO (2009/08/18) Catch error when db already exists and gracefully exit
     """
+    if dbhost == "localhost":
+        hostname = dbhost
+    else:
+        hostname = '%'
 
     create_str = "CREATE DATABASE IF NOT EXISTS %s;" % dbname
-    user_str = "CREATE USER '%s'@'localhost' IDENTIFIED BY '%s';" % (dbuser, dbpass)
-    grant_str = "GRANT ALL ON %s.* TO '%s'@'localhost';" % (dbname, dbuser)
+    user_str = "CREATE USER '%s'@'%s' IDENTIFIED BY '%s';" % (dbuser, hostname, dbpass)
+    grant_str = "GRANT ALL ON %s.* TO '%s'@'%s';" % (dbname, dbuser, hostname)
 
     if mysql:
         try:

@@ -19,7 +19,7 @@ final class LinkShortenerTest extends TestCase
 
     public function testDb(): void {
         $redis = LinkShortenerExposed::GetRedisInstance();
-        $this->assertEquals(20, $redis->getDBnum());
+        $this->assertEquals(10, $redis->getDBnum());
     }
 
     public function testCreateLink(): void

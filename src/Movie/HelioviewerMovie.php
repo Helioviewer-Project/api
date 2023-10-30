@@ -98,6 +98,7 @@ class Movie_HelioviewerMovie {
         $this->_cachedir = Movie_HelioviewerMovie::CACHE_DIR;
         $this->_filename = urlencode($publicId.'.cache');
 
+        $this->_cached = false;
         if ( HV_DISABLE_CACHE !== true ) {
             $cache = new Helper_Serialize($this->_cachedir, $this->_filename, 60);
             $info = $cache->readCache($verifyAge=true);
@@ -105,7 +106,7 @@ class Movie_HelioviewerMovie {
             // users get the fastest notification of the movie being done.
             // This also fixes an issue where the progress data breaks because the cached status
             // is processing, but the movie is done.
-            if ( $info !== false && $info['status'] != self::STATUS_PROCESSING ) {
+            if ( $info !== false && $info['status'] >= self::STATUS_COMPLETED ) {
                 $this->_cached = true;
             }
         }
@@ -738,6 +739,7 @@ class Movie_HelioviewerMovie {
     private function _setMovieProperties() {
         $this->_dbSetup();
 
+        $this->_prepDates();
 
         $this->filename = $this->_buildFilename();
 
