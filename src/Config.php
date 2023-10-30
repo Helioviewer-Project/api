@@ -58,6 +58,9 @@ class Config {
 
         $keys = substr($file, 0, strripos($file, '/')).'/Private.php';
         include_once $keys;
+
+        include_once HV_ROOT_DIR.'/../lib/Resque.php';
+        Resque::setBackend(HV_REDIS_HOST . ":" . HV_REDIS_PORT);
     }
 
     /**

@@ -490,7 +490,12 @@ class Image_SubFieldImage {
         // Using @ to mask setImageOpacity deprecation notice.
         // This can be removed if we upgrade to ImageMagick 7 and use
         // setImageAlpha instead of setImageOpacity.
-        @$imagickImage->setImageOpacity($this->imageOptions['opacity'] / 100);
+        $opacity = $this->imageOptions['opacity'] / 100;
+        try {
+            @$imagickImage->setImageOpacity($opacity);
+        } catch (Throwable $e) {
+            $imagickImage->setImageAlpha($opacity);
+        }
     }
 
     /**

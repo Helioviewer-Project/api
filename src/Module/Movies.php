@@ -60,7 +60,7 @@ class Module_Movies implements Module {
         include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
 
         // Connect to redis
-        $redis = new Redisent('localhost');
+        $redis = new Redisent(HV_REDIS_HOST, HV_REDIS_PORT);
 
         // If the queue is currently full, don't process the request
         $queueSize = Resque::size(HV_MOVIE_QUEUE);
@@ -237,7 +237,7 @@ class Module_Movies implements Module {
         include_once HV_ROOT_DIR.'/../src/Movie/HelioviewerMovie.php';
 
         // Connect to redis
-        $redis = new Redisent('localhost');
+        $redis = new Redisent(HV_REDIS_HOST, HV_REDIS_PORT);
 
         // If the queue is currently full, don't process the request
         $queueSize = Resque::size(HV_MOVIE_QUEUE);

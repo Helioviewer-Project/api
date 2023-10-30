@@ -103,8 +103,8 @@ class HelioviewerConsoleInstaller:
         except ReferenceError as err:
             print("ReferenceError:", err)
             sys.exit()
-        except:
-            print("Specified database already exists! Exiting installer. Error:", sys.exc_info()[0])
+        except Exception as e:
+            print("Specified database already exists! Exiting installer. Error: ", str(e))
             sys.exit()
 
     def get_filepath(self):
@@ -183,10 +183,7 @@ class HelioviewerConsoleInstaller:
             # MySQL?
             mysql = dbtype is "mysql"
 
-            if not check_db_info(dbuser, dbpass, mysql):
-                print("Unable to connect to the database. Please check your login information and try again.")
-            else:
-                return dbuser,dbpass,mysql
+            return dbuser,dbpass,mysql
 
     def get_new_user_info(self):
         ''' Prompts the user for the required database information '''

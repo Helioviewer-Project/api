@@ -73,7 +73,7 @@ class Job_MovieBuilder
             return;
         }
         # Get current time estimation counter
-        $redis = new Redisent('localhost');
+        $redis = new Redisent(HV_REDIS_HOST, HV_REDIS_PORT);
         $totalWait = (int) $redis->get('helioviewer:movie_queue_wait');
         $redis->decrby('helioviewer:movie_queue_wait', min($totalWait, $this->args['eta']));
     }
