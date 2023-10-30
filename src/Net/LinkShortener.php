@@ -8,7 +8,7 @@ class Net_LinkShortener
     protected static function GetRedisInstance(): Redis {
         $redis = new Redis();
         $redis->connect(HV_REDIS_HOST,HV_REDIS_PORT);
-        $db = defined('HV_SHORTENER_REDIS_DB') ? HV_SHORTENER_REDIS_DB : 20;
+        $db = defined('HV_SHORTENER_REDIS_DB') ? HV_SHORTENER_REDIS_DB : 10;
         $redis->select($db);
         return $redis;
     }
