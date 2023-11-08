@@ -373,8 +373,8 @@ class Validation_InputValidator
             $options = $choices[$parameter];
             // The value passed in by the user
             $value = $args[$parameter];
-            if (!array_key_exists($value, $options)) {
-                throw new InvalidArgumentException("Invalid argument provided for $parameter, must be one of " . implode($options, ', '));
+            if (!in_array($value, $options)) {
+                throw new InvalidArgumentException("Invalid argument provided for $parameter, must be one of " . implode(', ', $options));
             }
         }
     }
