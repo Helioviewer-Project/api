@@ -437,6 +437,9 @@ class Image_SubFieldImage {
             if ( $this->imageOptions['interlace'] ) {
                 $imagickImage->setInterlaceScheme(IMagick::INTERLACE_LINE);
             }
+        } else {
+            // Use high quality compression for whatever extension is currently set.
+            $imagickImage->setImageCompressionQuality(100);
         }
 
         $imagickImage->setImageDepth($this->imageOptions['bitdepth']);

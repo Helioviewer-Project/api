@@ -17,4 +17,6 @@ Download a specific jp2 img colorized and converted to a png image.
     | scale     | Required | number  | 4                    | Ratio of the size of the original image to the downloaded image. Larger numbers are smaller scales.                                                                                            |
     |           |          |         |                      | 1 means original size. 2 for half size. 3 for 1/3 size, etc.                                                                                                                                   |
     +-----------+----------+---------+----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+    | type      | Optional | string  | jpg                  | Image type. Available options are jpg, png, and webp                                                                                                                                           |
+    +-----------+----------+---------+----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 

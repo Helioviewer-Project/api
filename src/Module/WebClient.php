@@ -230,6 +230,8 @@ class Module_WebClient implements Module {
             -$image['width'] / 2, -$image['height'] / 2, $image['width'] / 2, $image['height'] / 2, $this->_params['scale']);
 
         $filepath =  $this->_getImageCacheFilename($image['filepath'], $image['filename'], $this->_params['scale']);
+        // Set the extension to the type passed in or default to png.
+        $filepath .= '.' . ($this->_options['type'] ?? 'png');
         // Reference pixel offset at the original image scale
         $offsetX =   $image['refPixelX'] - ($image['width']  / 2);
         $offsetY = -($image['refPixelY'] - ($image['height'] / 2));
@@ -1511,7 +1513,9 @@ class Module_WebClient implements Module {
             break;
         case 'downloadImage':
             $expected = array(
-                'required' => array('id', 'scale')
+                'required' => array('id', 'scale'),
+                'optional' => array('type'),
+                'choices'  => array('type' => ['png', 'jpg', 'webp'])
             );
             break;
         case 'goto':
