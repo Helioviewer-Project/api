@@ -7,7 +7,7 @@ import os
 import sys
 from xml.etree import cElementTree as ET
 import numpy as np
-from sunpy.io.jp2 import get_header
+from sunpy.io._jp2 import get_header
 from sunpy.map import Map
 from sunpy.util.xml import xml_to_dict
 from sunpy.io.header import FileHeader
