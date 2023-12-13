@@ -17,6 +17,20 @@ function qs(key) {
     return match && decodeURIComponent(match[1].replace(/\+/g, " "));
 }
 
+function getEndDate() {
+    if (qs('endDate') !== null) {
+        let tenativeDate = new Date(Date.parse(qs('endDate')));
+        // Invalid date in the query string.
+        if (isNaN(tenativeDate.valueOf())) {
+            return new Date();
+        } else {
+            return tenativeDate;
+        }
+    } else {
+        return new Date();
+    }
+}
+
 
 function decodeResolutionParam(resolutionParam) {
     "use strict";
@@ -119,11 +133,7 @@ function jump() {
 
     url = location.origin + location.pathname + '?';
 
-    if (qs('endDate') !== null) {
-        date = new Date(Date.parse(qs('endDate')));
-    } else {
-        date = new Date();
-    }
+    date = getEndDate();
 
 
     seconds = getPeriodInSeconds();
@@ -300,24 +310,15 @@ google.setOnLoadCallback(function () {
     "use strict";
     var yyyy, mm, dd, hr, min, sec, resolution, endDate, now = new Date();
 
-    endDate = qs('endDate');
-    if (endDate !== null) {
-        yyyy = endDate.slice(0, 4);
-        mm   = endDate.slice(5, 7);
-        dd   = endDate.slice(8, 10);
-        hr   = endDate.slice(11, 13);
-        min  = endDate.slice(14, 16);
-        sec  = endDate.slice(17, 19);
-    } else {
-        yyyy =  now.getFullYear().toString().lpad('0', 4);
-        mm   = (now.getMonth() + 1).toString().lpad('0', 2);
-        dd   =  now.getDate().toString().lpad('0', 2);
-        hr   =  now.getHours().toString().lpad('0', 2);
-        min  =  now.getMinutes().toString().lpad('0', 2);
-        sec  =  now.getSeconds().toString().lpad('0', 2);
-        endDate = yyyy + '-' + mm + '-' + dd +
-                 'T' + hr + ':' + min + ':' + sec + 'Z';
-    }
+    endDate = getEndDate();
+    yyyy =  endDate.getFullYear().toString().lpad('0', 4);
+    mm   = (endDate.getMonth() + 1).toString().lpad('0', 2);
+    dd   =  endDate.getDate().toString().lpad('0', 2);
+    hr   =  endDate.getHours().toString().lpad('0', 2);
+    min  =  endDate.getMinutes().toString().lpad('0', 2);
+    sec  =  endDate.getSeconds().toString().lpad('0', 2);
+    endDate = yyyy + '-' + mm + '-' + dd +
+                'T' + hr + ':' + min + ':' + sec + 'Z';
 
     timeOption('yyyy', now.getFullYear(), 1990, -1, 'YYYY',
         null, yyyy);
