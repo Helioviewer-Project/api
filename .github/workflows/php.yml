@@ -26,7 +26,7 @@ jobs:
     - name: Wait for test data to be ready
       # Wait for the cli container to get the data used in unit tests
       # This will wait up to 2 minutes
-      run: sh .github/workflows/wait_for_test_data.sh
+      run: bash .github/workflows/wait_for_test_data.sh
 
     # Run the tests inside the api container
     - name: Run tests
