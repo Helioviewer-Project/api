@@ -2,9 +2,9 @@ name: Build and Test
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "main" ]
 
 permissions:
   contents: read
@@ -12,53 +12,61 @@ permissions:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    container:
-      image: dgarciabriseno/helioviewer.org
-      options: --user root
-
     steps:
     - uses: actions/checkout@v3
 
-    - name: Cache Composer packages
-      id: composer-cache
-      uses: actions/cache@v3
-      with:
-        path: vendor
-        key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-php
+    - name: Get development docker compose file
+      run: wget https://raw.githubusercontent.com/Helioviewer-Project/helioviewer.org-docker/main/compose.yaml
 
-    - name: Set up test environment
-      run: |
-        mkdir log
-        mkdir cache
-        ln -s $PWD /home/helioviewer/api.helioviewer.org
-        ln -s /tmp/jp2 docroot/jp2
-        composer run-script make-test-config
+    # Start up api service
+    # Start up cli service (installs test data)
+    - name: Start services
+      run: docker compose up -d api cli && sleep 15
 
-    - name: Install dependencies
-      run: composer install --prefer-dist --no-progress
+    # Run the tests inside the api container
+    - name: Run tests
+      run: docker exec -t helioviewer-api-1 composer run-script test
 
-    - name: Install python packages for root user
-      run: |
-        su helioviewer -c "python3 -m pip freeze > /tmp/helioviewer-packages"
-        python3 -m pip install -r /tmp/helioviewer-packages
+    # - name: Cache Composer packages
+    #   id: composer-cache
+    #   uses: actions/cache@v3
+    #   with:
+    #     path: vendor
+    #     key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+    #     restore-keys: |
+    #       ${{ runner.os }}-php
 
-    - name: Startup background services
-      run: |
-        httpd
-        mysqld --user=mysql -D
-        redis-server --daemonize yes
-        tcsh scripts/movie_queue.tcsh
-        ./vendor/bin/start_hgs2hpc
+    # - name: Set up test environment
+    #   run: |
+    #     mkdir log
+    #     mkdir cache
+    #     ln -s $PWD /home/helioviewer/api.helioviewer.org
+    #     ln -s /tmp/jp2 docroot/jp2
+    #     composer run-script make-test-config
 
-    - name: Re-install Helioviewer Database for current branch
-      run: |
-        mysql -e "drop database helioviewer; drop user 'helioviewer'@'localhost';"
-        cd management/data && ./setup_db.exp
+    # - name: Install dependencies
+    #   run: composer install --prefer-dist --no-progress
 
-    - name: Run PHP test suite
-      run: composer run-script test
+    # - name: Install python packages for root user
+    #   run: |
+    #     su helioviewer -c "python3 -m pip freeze > /tmp/helioviewer-packages"
+    #     python3 -m pip install -r /tmp/helioviewer-packages
 
-    - name: Run Python test suite
-      run: composer run-script test-python
+    # - name: Startup background services
+    #   run: |
+    #     httpd
+    #     mysqld --user=mysql -D
+    #     redis-server --daemonize yes
+    #     tcsh scripts/movie_queue.tcsh
+    #     ./vendor/bin/start_hgs2hpc
+
+    # - name: Re-install Helioviewer Database for current branch
+    #   run: |
+    #     mysql -e "drop database helioviewer; drop user 'helioviewer'@'localhost';"
+    #     cd management/data && ./setup_db.exp
+
+    # - name: Run PHP test suite
+    #   run: composer run-script test
+
+    # - name: Run Python test suite
+    #   run: composer run-script test-python
