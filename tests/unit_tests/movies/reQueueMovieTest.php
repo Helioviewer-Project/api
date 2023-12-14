@@ -32,7 +32,7 @@ final class reQueueMovieTest extends TestCase
      */
     private function _queueTestMovie() {
         // Queue the movie
-        $url = HV_WEB_ROOT_URL . "/v2/queueMovie/?startTime=2021-06-01T00:02:20Z&endTime=2021-06-02T00:02:00Z&layers=[8,1,100]&imageScale=0.6&events=&eventsLabels=false";
+        $url = HV_WEB_ROOT_URL . "?action=queueMovie&startTime=2023-12-01T00:00:00Z&endTime=2023-12-01T01:00:00Z&layers=[4,1,100]&imageScale=0.6&events=&eventsLabels=false";
         $result = file_get_contents($url);
         $data = json_decode($result);
         // Confirm the API request was accepted
