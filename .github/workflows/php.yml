@@ -29,8 +29,8 @@ jobs:
       # The loop below waits up to 2 minutes.
       run: |
         for i in {1..12}; do
-          docker exec -t helioviewer-cli-1 ls /tmp/jp2/LASCO-C2/2023/12/01/white-light/
-          if [ $? -eq 0 ]; then
+          ret=$(docker exec -t helioviewer-cli-1 ls /tmp/jp2/LASCO-C2/2023/12/01/white-light/)
+          if [ $ret -eq 0 ]; then
             exit 0
           fi
           sleep 10
