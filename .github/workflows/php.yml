@@ -24,18 +24,9 @@ jobs:
       run: cd .. && docker compose up --no-build -d api cli
 
     - name: Wait for test data to be ready
-      # Loop checking for the SOHO data used in unit tests
-      # if ls returns 0, the directory exists and tests can proceed.
-      # The loop below waits up to 2 minutes.
-      run: |
-        for i in {1..12}; do
-          ret=$(docker exec -t helioviewer-cli-1 ls /tmp/jp2/LASCO-C2/2023/12/01/white-light/)
-          if [ $ret -eq 0 ]; then
-            exit 0
-          fi
-          sleep 10
-        done
-        exit 1
+      # Wait for the cli container to get the data used in unit tests
+      # This will wait up to 2 minutes
+      run: sh .github/workflows/wait_for_test_data.sh
 
     # Run the tests inside the api container
     - name: Run tests
