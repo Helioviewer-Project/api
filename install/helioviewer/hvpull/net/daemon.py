@@ -621,7 +621,6 @@ class ImageRetrievalDaemon:
         """
         if not os.path.exists(path):
             permissions = stat.S_IRWXU | stat.S_IRWXG | stat.S_IROTH | stat.S_IXOTH
-            group_id = self.get_helioviewer_group()
             user_id = os.getuid()
             directories = path.split(os.sep)
             # Traverse the directories to be created so that
@@ -638,6 +637,7 @@ class ImageRetrievalDaemon:
                     if not os.path.exists(fullpath):
                         os.mkdir(fullpath)
                         try:
+                            group_id = self.get_helioviewer_group()
                             os.chown(fullpath, user_id, group_id)
                             os.chmod(fullpath, mode=permissions)
                         except Exception as e:
