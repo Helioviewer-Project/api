@@ -21,7 +21,7 @@ jobs:
     # Start up api service
     # Start up cli service (installs test data)
     - name: Start services
-      run: docker compose up --no-build -d api cli && sleep 15
+      run: cd .. && docker compose up --no-build -d api cli && sleep 15
 
     # Run the tests inside the api container
     - name: Run tests
