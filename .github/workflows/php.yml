@@ -33,8 +33,10 @@ jobs:
     - name: Start services
       run: cd .. && docker compose up --no-build -d api cli
 
-    - name: Debug api container
-      run: docker compose up api
+    - name: Debug config files
+      run: |
+        docker exec -t helioviewer-api-1 cat settings/Config.ini
+        docker exec -t helioviewer-api-1 cat settings/Private.php
 
     - name: Wait for test data to be ready
       # Wait for the cli container to get the data used in unit tests
