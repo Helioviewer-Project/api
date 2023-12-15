@@ -621,7 +621,6 @@ class ImageRetrievalDaemon:
         """
         if not os.path.exists(path):
             permissions = stat.S_IRWXU | stat.S_IRWXG | stat.S_IROTH | stat.S_IXOTH
-            group_id = self.get_helioviewer_group()
             user_id = os.getuid()
             directories = path.split(os.sep)
             # Traverse the directories to be created so that
@@ -637,12 +636,19 @@ class ImageRetrievalDaemon:
                     # create the directories and set appropriate permissions.
                     if not os.path.exists(fullpath):
                         os.mkdir(fullpath)
-                        os.chown(fullpath, user_id, group_id)
-                        os.chmod(fullpath, mode=permissions)
-                except:
+                        try:
+                            group_id = self.get_helioviewer_group()
+                            os.chown(fullpath, user_id, group_id)
+                            os.chmod(fullpath, mode=permissions)
+                        except Exception as e:
+                            # Not necessarily an error, things ought to still function, but
+                            # admins may have permission to edit these files.
+                            logging.warn(f"Unable to set group permissions on {fullpath}.")
+                except Exception as e:
                     logging.error("Unable to create the directory '" +
                                   fullpath + "'. Please ensure that you "
                                   "have the proper permissions and try again.")
+                    logging.error(f"Error: {str(e)}")
                     # Do not continue if we don't have a directory to place
                     # the files into
                     sys.exit(1)

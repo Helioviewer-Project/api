@@ -2,9 +2,9 @@ name: Build and Test
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "main" ]
 
 permissions:
   contents: read
@@ -12,53 +12,33 @@ permissions:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    container:
-      image: dgarciabriseno/helioviewer.org
-      options: --user root
-
     steps:
     - uses: actions/checkout@v3
 
-    - name: Cache Composer packages
-      id: composer-cache
-      uses: actions/cache@v3
-      with:
-        path: vendor
-        key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-php
+    - name: Get development docker compose file
+      run: cd .. && wget https://raw.githubusercontent.com/Helioviewer-Project/helioviewer.org-docker/main/compose.yaml
 
-    - name: Set up test environment
+    # The containers need to be able update config files
+    - name: Make writeable config files
       run: |
-        mkdir log
-        mkdir cache
-        ln -s $PWD /home/helioviewer/api.helioviewer.org
-        ln -s /tmp/jp2 docroot/jp2
-        composer run-script make-test-config
+        touch install/settings/settings.cfg
+        chmod o+rw install/settings/settings.cfg
+        touch settings/Config.ini
+        chmod o+rw settings/Config.ini
+        touch settings/Config.php
+        chmod o+rw settings/Config.php
 
-    - name: Install dependencies
-      run: composer install --prefer-dist --no-progress
+    # Start up api service (test environment)
+    # Start up cli service (installs test data)
+    - name: Start services
+      # --no-build to force it to use whatever is published in the registry
+      # -d to detach, so the command returns
+      # --wait to wait for containers to be healthy, meaning the test data is downloaded and ready
+      run: cd .. && docker compose up --no-build -d --wait api cli
 
-    - name: Install python packages for root user
-      run: |
-        su helioviewer -c "python3 -m pip freeze > /tmp/helioviewer-packages"
-        python3 -m pip install -r /tmp/helioviewer-packages
+    # Run the tests inside the api container
+    - name: Run phpunit tests
+      run: docker exec -t helioviewer-api-1 composer run-script test
 
-    - name: Startup background services
-      run: |
-        httpd
-        mysqld --user=mysql -D
-        redis-server --daemonize yes
-        tcsh scripts/movie_queue.tcsh
-        ./vendor/bin/start_hgs2hpc
-
-    - name: Re-install Helioviewer Database for current branch
-      run: |
-        mysql -e "drop database helioviewer; drop user 'helioviewer'@'localhost';"
-        cd management/data && ./setup_db.exp
-
-    - name: Run PHP test suite
-      run: composer run-script test
-
-    - name: Run Python test suite
-      run: composer run-script test-python
+    - name: Run python tests
+      run: docker exec -t helioviewer-api-1 composer run-script test-python
