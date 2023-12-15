@@ -63,10 +63,10 @@ final class HelioviewerJPXImageTest extends TestCase
         sleep(1);
         // Create JPX instance that aligns with the test file.
         $jpx = new Image_JPEG2000_HelioviewerJPXImage(
-                    13, // AIA 304 source
+                    4, // LASCO C2 source
                     // Known time range for the test file.
-                    "2021-06-01 00:01:00",
-                    "2021-06-01 00:03:00",
+                    "2023-12-01 00:00:00",
+                    "2023-12-01 01:00:00",
                     60,
                     false,
                     self::TEST_JPX_NAME);

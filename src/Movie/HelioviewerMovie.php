@@ -389,6 +389,9 @@ class Movie_HelioviewerMovie {
      * @return string Movie filename
      */
     private function _buildFilename($highQuality=false) {
+        if (is_null($this->startDate)) {
+            $this->_prepDates();
+        }
         $start = str_replace(array(':', '-', ' '), '_', $this->startDate);
         $end   = str_replace(array(':', '-', ' '), '_', $this->endDate);
 
