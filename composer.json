@@ -1,6 +1,6 @@
 {
     "scripts": {
-        "test-python": "cd install && python3 -m pytest",
+        "test-python": "cd install && venv/bin/python -m pytest",
         "test": "vendor/bin/phpunit --bootstrap tests/autoload.php --fail-on-warning --testdox tests/unit_tests",
         "local-test": "vendor/bin/phpunit --bootstrap tests/autoload.php --stop-on-failure --testdox --fail-on-warning tests/unit_tests",
         "run-test": "vendor/bin/phpunit --bootstrap tests/autoload.php --stop-on-failure --testdox --fail-on-warning tests/unit_tests --filter ",
