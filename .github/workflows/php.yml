@@ -16,7 +16,7 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Get development docker compose file
-      run: cd .. && wget https://raw.githubusercontent.com/Helioviewer-Project/helioviewer.org-docker/main/compose.yaml
+      run: cd .. && wget https://raw.githubusercontent.com/Helioviewer-Project/helioviewer.org-docker/dev/compose.yaml
 
     # The containers need to be able update config files
     - name: Make writeable config files
@@ -28,15 +28,13 @@ jobs:
         touch settings/Config.php
         chmod o+rw settings/Config.php
 
-    # Start up api service
+    # Start up api service (test environment)
     # Start up cli service (installs test data)
     - name: Start services
-      run: cd .. && docker compose up --no-build -d api cli
-
-    - name: Wait for containers to be ready
-      # Wait for the cli container to get the data used in unit tests
-      # This will wait up to 2 minutes
-      run: bash .github/workflows/wait_for_ready.sh
+      # --no-build to force it to use whatever is published in the registry
+      # -d to detach, so the command returns
+      # --wait to wait for containers to be healthy, meaning the test data is downloaded and ready
+      run: cd .. && docker compose up --no-build -d --wait api cli
 
     # Run the tests inside the api container
     - name: Run phpunit tests
