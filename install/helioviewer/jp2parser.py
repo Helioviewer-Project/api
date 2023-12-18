@@ -3,11 +3,9 @@
 """Helioviewer.org JP2 Download Daemon (HVPull)
 JPEG 2000 Image XML Box parser class
 """
-import os
 import sys
 from xml.etree import cElementTree as ET
 import numpy as np
-from sunpy.io._jp2 import get_header
 from sunpy.map import Map
 from sunpy.util.xml import xml_to_dict
 from sunpy.io.header import FileHeader
