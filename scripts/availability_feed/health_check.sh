@@ -20,8 +20,8 @@ then
 fi
 
 # Check that movie queues are active
-queue_count=`resque list | wc -l`
-if [ $queue_count -le 1 ]
+queue_count=`ps -ax | grep resque | wc -l`
+if [ $queue_count -le 10 ]
 then
     python3 gen_feed.py ../../docroot/status.xml -t "Movie Generation is Down." -d "Movie queue workers are not running"
     touch $lockfile
