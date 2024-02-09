@@ -13,7 +13,7 @@ require_once HV_ROOT_DIR.'/../src/Image/HelioviewerImage.php';
 
 class Image_ImageType_PHIImage extends Image_HelioviewerImage {
     /**
-     * Creates a new EUIImage
+     * Creates a new PHIImage
      *
      * @param string $jp2      Source JP2 image
      * @param string $filepath Location to output the file to
