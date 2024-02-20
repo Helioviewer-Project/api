@@ -1141,6 +1141,14 @@ class Module_WebClient implements Module {
         // Output result
         $this->_printJSON(json_encode($response));
      }
+     
+    /**
+     * Returns an embeddable image showing LASCO C2/C3 data leading up to
+     * the selected eclipse.
+     */
+    public function getEclipseImage() {
+
+    }
 
     /**
      * Determines a numeric indicator ("level") of how up to date a particular
@@ -1524,8 +1532,13 @@ class Module_WebClient implements Module {
                 'alphanum' => array('id')
             );
             break;
-
-
+        case 'getEclipseImage':
+            $expected = array(
+                'required' => array('year'),
+                'bools'    => array('countdown'),
+                'optional' => array('countdown')
+            );
+            break;
         default:
             break;
         }
