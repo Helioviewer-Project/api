@@ -22,9 +22,8 @@ if __name__ == "__main__":
                     prog='Gen RGB',
                     description='Generates text-based RGB color tables for further processing')
     parser.add_argument('name', help="Name of the color table to be created")
-    parser.add_argument('fn', help="Name of the sunpy color table function")
-    parser.add_argument('-a', '--args', help="Args to pass to the color table function", nargs="+")
+    parser.add_argument('cm', help="Name of the color map variable in sunpy.visualization.colormaps.cm")
     args = parser.parse_args()
-    import sunpy.visualization.colormaps.color_tables as ct
-    cmap = ct.__dict__[args.fn](*args.args)
+    import sunpy.visualization.colormaps.cm as cm
+    cmap = cm.__dict__[args.cm]
     gen_rgb(cmap, args.name)
