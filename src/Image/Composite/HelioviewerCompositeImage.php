@@ -45,7 +45,8 @@ class Image_Composite_HelioviewerCompositeImage {
     protected $maxPixelScale;
     protected $roi;
     protected $imageScale;
-    protected $grayscale;
+    protected bool $grayscale;
+    protected int $eclipse;
     protected $watermark;
     protected $width;
     protected $movie;
@@ -92,7 +93,8 @@ class Image_Composite_HelioviewerCompositeImage {
             'reqEndDate' => false,
             'reqObservationDate' => false,
             'switchSources' => false,
-            'grayscale' => false
+            'grayscale' => false,
+            'eclipse' => false
         );
 
         $options = array_replace($defaults, $options);
@@ -125,6 +127,7 @@ class Image_Composite_HelioviewerCompositeImage {
         $this->reqObservationDate = $options['reqObservationDate'];
         $this->switchSources = $options['switchSources'];
         $this->grayscale = $options['grayscale'];
+        $this->eclipse = $options['eclipse'];
 
         $this->celestialBodiesLabels = $celestialBodies['labels'];
         $this->celestialBodiesTrajectories = $celestialBodies['trajectories'];
@@ -419,6 +422,12 @@ class Image_Composite_HelioviewerCompositeImage {
                 $previous = $image;
                 $image = $layer->getIMagickImage();
 
+                if ($this->eclipse && str_contains($layer->getWaterMarkName(), "C2")) {
+                // LASCO C2 layer is brightened for eclipse images
+                // to blend better with C3 images
+                    $image->modulateImage(240, 100, 100);
+                }
+
                 // If $previous exists, then the images need to be composited.
                 // For memory purposes, destroy $previous when done with it.
                 if ($previous) {
@@ -463,6 +472,10 @@ class Image_Composite_HelioviewerCompositeImage {
 
         if ( $this->watermark ) {
             $this->_addWatermark($image);
+        }
+
+        if ( $this->eclipse ) {
+            $this->_addEclipseOverlay($image, $this->eclipse);
         }
 
         $this->_finalizeImage($image, $this->_filepath);
@@ -1492,6 +1505,10 @@ class Image_Composite_HelioviewerCompositeImage {
         // return the sorted array in order of smallest layering order to
         // largest.
         return $sortedImages;
+    }
+
+    private function _addEclipseOverlay(IMagick $image, int $year) {
+        $image->modulateImage(100, 100, 100);
     }
 
     public function _convertHPCtoHCC($inputBody,$useTan){

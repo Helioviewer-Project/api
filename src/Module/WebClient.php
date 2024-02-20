@@ -1173,7 +1173,7 @@ class Module_WebClient implements Module {
         include_once HV_ROOT_DIR.'/../src/Image/Composite/HelioviewerScreenshot.php';
         $screenshot = new Image_Composite_HelioviewerScreenshot(
             $layers, $events, false, false, $celestialBodies, false, 'earth', 0, 0, $now_str, $roi, 
-            ['grayscale' => true]
+            ['grayscale' => true, 'eclipse' => (int) $this->_params['year']]
         );
         $screenshot->display();
     }
@@ -1563,6 +1563,7 @@ class Module_WebClient implements Module {
         case 'getEclipseImage':
             $expected = array(
                 'required' => array('year'),
+                'choices'  => array('year' => ['2024']),
                 'bools'    => array('countdown'),
                 'optional' => array('countdown')
             );
