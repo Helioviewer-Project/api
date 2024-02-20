@@ -868,7 +868,8 @@ class Database_Statistics {
             "movie-notifications-granted" => array(),
             "movie-notifications-denied"  => array(),
             "getJP2Image-web"             => array(),
-            "getJP2Image-jpip"            => array()
+            "getJP2Image-jpip"            => array(),
+            "getEclipseImage"             => array()
         );
     }
 
@@ -932,7 +933,8 @@ class Database_Statistics {
             "movie-notifications-denied"  => 0,
             "getJP2Image-web"             => 0,
             "getJP2Image-jpip"            => 0,
-            "rate_limit_exceeded"         => 0
+            "rate_limit_exceeded"         => 0,
+            "getEclipseImage"             => 0
         );
     }
 

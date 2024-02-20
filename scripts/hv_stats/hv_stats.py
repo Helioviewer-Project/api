@@ -2273,7 +2273,7 @@ heirarchy = {
     "Images":["takeScreenshot","getTile","getClosestImage","getJP2Image-web","getJP2Image-jpip","getJP2Image","downloadScreenshot","getJPX","getJPXClosestToMidPoint"],
     "Movies":["buildMovie","getMovieStatus","queueMovie","reQueueMovie","playMovie","downloadMovie","getUserVideos","getObservationDateVideos","uploadMovieToYouTube","checkYouTubeAuth","getYouTubeAuth"],
     "Events":["getEventGlossary","getEvents","getFRMs","getEvent","getEventFRMs","getDefaultEventTypes","getEventsByEventLayers","importEvents"],
-    "Data":["getRandomSeed","getDataSources","getJP2Header","getDataCoverage","getStatus","getNewsFeed","getDataCoverageTimeline","getClosestData","getSolarBodiesGlossary","getSolarBodies","getTrajectoryTime","sciScript-SSWIDL","sciScript-SunPy","getSciDataScript","updateDataCoverage"],
+    "Data":["getRandomSeed","getDataSources","getJP2Header","getDataCoverage","getStatus","getNewsFeed","getDataCoverageTimeline","getClosestData","getSolarBodiesGlossary","getSolarBodies","getTrajectoryTime","sciScript-SSWIDL","sciScript-SunPy","getSciDataScript","updateDataCoverage","getEclipseImage"],
     "Other":["shortenURL","getUsageStatistics","movie-notifications-granted","movie-notifications-denied","logNotificationStatistics","launchJHelioviewer"],
     "WebGL":["getTexture","getGeometryServiceData"]
 };
