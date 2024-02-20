@@ -1147,7 +1147,35 @@ class Module_WebClient implements Module {
      * the selected eclipse.
      */
     public function getEclipseImage() {
+        // Get the current time
+        $date = new DateTimeImmutable("now", new DateTimeZone("UTC"));
+        // Get the current time as a string
+        $now_str = $date->format("Y-m-d\TH:i:s\Z");
 
+        // Data Layers for lasco C2 and C3 with C3 on top
+        include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerLayers.php';
+        $layer_str = "[SOHO,LASCO,C2,white-light,2,100,0,60,1,$now_str],[SOHO,LASCO,C3,white-light,3,100,0,60,1,$now_str]";
+        $layers = new Helper_HelioviewerLayers($layer_str);
+
+        // Get the region of interest which encapsulates LASCO C3
+        include_once HV_ROOT_DIR.'/../src/Helper/RegionOfInterest.php';
+        $roi = new Helper_RegionOfInterest(-33805, -28969, 31698, 29610, 91.1);
+
+        // Create empty events object required for screenshots.
+        include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerEvents.php';
+        $events = new Helper_HelioviewerEvents('');
+
+        // Create empty celestial bodies list
+        $celestialBodies = array( "labels" => "",
+                                "trajectories" => "");
+
+        // Create the base screenshot image
+        include_once HV_ROOT_DIR.'/../src/Image/Composite/HelioviewerScreenshot.php';
+        $screenshot = new Image_Composite_HelioviewerScreenshot(
+            $layers, $events, false, false, $celestialBodies, false, 'earth', 0, 0, $now_str, $roi, 
+            ['grayscale' => true]
+        );
+        $screenshot->display();
     }
 
     /**

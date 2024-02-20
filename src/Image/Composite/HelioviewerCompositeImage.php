@@ -45,6 +45,7 @@ class Image_Composite_HelioviewerCompositeImage {
     protected $maxPixelScale;
     protected $roi;
     protected $imageScale;
+    protected $grayscale;
     protected $watermark;
     protected $width;
     protected $movie;
@@ -90,7 +91,8 @@ class Image_Composite_HelioviewerCompositeImage {
             'reqStartDate' => false,
             'reqEndDate' => false,
             'reqObservationDate' => false,
-            'switchSources' => false
+            'switchSources' => false,
+            'grayscale' => false
         );
 
         $options = array_replace($defaults, $options);
@@ -122,6 +124,7 @@ class Image_Composite_HelioviewerCompositeImage {
         $this->reqEndDate = $options['reqEndDate'];
         $this->reqObservationDate = $options['reqObservationDate'];
         $this->switchSources = $options['switchSources'];
+        $this->grayscale = $options['grayscale'];
 
         $this->celestialBodiesLabels = $celestialBodies['labels'];
         $this->celestialBodiesTrajectories = $celestialBodies['trajectories'];
@@ -241,7 +244,8 @@ class Image_Composite_HelioviewerCompositeImage {
             'size'          => $this->size,
             'originalOffsetX' => $originalOffsetX,
             'originalOffsetY' => $originalOffsetY,
-            'followViewport'  => $this->followViewport
+            'followViewport'  => $this->followViewport,
+            'grayscale'       => $this->grayscale
         );
 
         // For layers with transparent regions use PNG
