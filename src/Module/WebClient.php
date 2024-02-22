@@ -1147,6 +1147,10 @@ class Module_WebClient implements Module {
      * the selected eclipse.
      */
     public function getEclipseImage() {
+        // Default to overlaying the moon in place of the sun.
+        if (!isset($this->_options['moon'])) {
+            $this->_options['moon'] = true;
+        }
         // Get the current time
         $date = new DateTimeImmutable("now", new DateTimeZone("UTC"));
         // Get the current time as a string
@@ -1174,7 +1178,7 @@ class Module_WebClient implements Module {
         include_once HV_ROOT_DIR.'/../src/Image/Composite/HelioviewerScreenshot.php';
         $screenshot = new Image_Composite_HelioviewerScreenshot(
             $layers, $events, false, false, $celestialBodies, false, 'earth', 0, 0, $now_str, $roi, 
-            ['grayscale' => true, 'eclipse' => true]
+            ['grayscale' => true, 'eclipse' => true, 'moon' => $this->_options['moon']]
         );
         $screenshot->display();
     }
@@ -1559,6 +1563,12 @@ class Module_WebClient implements Module {
             $expected = array(
                 'required' => array('id'),
                 'alphanum' => array('id')
+            );
+            break;
+        case 'getEclipseImage':
+            $expected = array(
+                'bools' => array('moon'),
+                'optional' => array('moon')
             );
             break;
         default:

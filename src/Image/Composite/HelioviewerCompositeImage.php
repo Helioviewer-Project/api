@@ -47,6 +47,7 @@ class Image_Composite_HelioviewerCompositeImage {
     protected $imageScale;
     protected bool $grayscale;
     protected int $eclipse;
+    protected bool $showMoon;
     protected $watermark;
     protected $width;
     protected $movie;
@@ -94,7 +95,8 @@ class Image_Composite_HelioviewerCompositeImage {
             'reqObservationDate' => false,
             'switchSources' => false,
             'grayscale' => false,
-            'eclipse' => false
+            'eclipse' => false,
+            'moon' => false
         );
 
         $options = array_replace($defaults, $options);
@@ -128,6 +130,7 @@ class Image_Composite_HelioviewerCompositeImage {
         $this->switchSources = $options['switchSources'];
         $this->grayscale = $options['grayscale'];
         $this->eclipse = $options['eclipse'];
+        $this->showMoon = $options['moon'];
 
         $this->celestialBodiesLabels = $celestialBodies['labels'];
         $this->celestialBodiesTrajectories = $celestialBodies['trajectories'];
@@ -468,7 +471,7 @@ class Image_Composite_HelioviewerCompositeImage {
         }
 
         if ( $this->eclipse ) {
-            $this->_addEclipseOverlay($image, $this->imageScale);
+            $this->_addEclipseOverlay($image, $this->imageScale, $this->showMoon);
         }
 
         $this->_finalizeImage($image, $this->_filepath);
@@ -1500,10 +1503,10 @@ class Image_Composite_HelioviewerCompositeImage {
         return $sortedImages;
     }
 
-    private function _addEclipseOverlay(IMagick $image, float $scale) {
+    private function _addEclipseOverlay(IMagick $image, float $scale, bool $showMoon) {
         include_once HV_ROOT_DIR . "/../src/Image/EclipseOverlay.php";
         // Add extra eclipse content to the image
-        Image_EclipseOverlay::Apply($image, $scale);
+        Image_EclipseOverlay::Apply($image, $scale, $showMoon);
     }
 
     public function _convertHPCtoHCC($inputBody,$useTan){

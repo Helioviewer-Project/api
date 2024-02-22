@@ -4,10 +4,8 @@
  * Renders eclipse information over the given composite image
  * The entry point to this static class is "Apply"
  * When applying the overlay, the following steps are taken:
- * - Draw the countdown to the eclipse at the top of the image, if applicable
  * - Add a 'UTC' time designation to the LASCO C2/C3 timestamps
- * - Add a delta time (time image was taken relative to the eclipse.) descriptor above the LASCO C2/C3 labels.
- * - Add a moon for scale.
+ * - Optionally add a moon for scale.
  * 
  * @category Image
  * @package  Helioviewer
@@ -17,7 +15,7 @@
  */
 class Image_EclipseOverlay {
     // Applies the eclipse overlay information to the given image.
-    static function Apply(IMagick $image, float $scale) {
+    static function Apply(IMagick $image, float $scale, bool $showMoon) {
 
         include_once __DIR__ . "/EditableImage.php";
         $editableImage = new Image_EditableImage($image);
@@ -25,8 +23,10 @@ class Image_EclipseOverlay {
         // Add 'UTC' to the end of the dates
         Image_EclipseOverlay::ApplyUTCLabels($editableImage);
 
-        // Add the moon image on top
-        Image_EclipseOverlay::ApplyMoon($editableImage, $scale);
+        if ($showMoon) {
+            // Add the moon image on top
+            Image_EclipseOverlay::ApplyMoon($editableImage, $scale);
+        }
     }
 
     /**
