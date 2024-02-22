@@ -22,9 +22,18 @@ class Image_EclipseOverlay {
 
         include_once __DIR__ . "/EditableImage.php";
         $editableImage = new Image_EditableImage($image);
+        // Draw the countdown if it's requested
         if ($enableCountdown) {
             Image_EclipseOverlay::ApplyCountdown($editableImage, $ECLIPSE_TIMES[$year]);
         }
+
+        // Add 'UTC' to the end of the LASCO dates
+        Image_EclipseOverlay::ApplyUTCLabels($editableImage);
+    }
+
+    static private function ApplyUTCLabels(Image_EditableImage $img) {
+        $img->Write(12, 270, 608, "UTC");
+        $img->Write(12, 270, 623, "UTC");
     }
 
     /**
