@@ -84,25 +84,9 @@ class Image_EditableImage {
      * @param string $text Text to write on the image
      */
     public function Write(int $size, float $x, float $y, string $text) {
-        // $outline = new IMagickProperties($size, "#000C", 2);
-        // $white = new IMagickPixel('white');
-        // $outline->setTextEncoding('utf-8');
-        // $outline->setFont(HV_ROOT_DIR.'/../resources/fonts/DejaVuSans.ttf');
-        // $outline->setFontSize($size);
-        // $outline->setStrokeColor($black);
-        // $outline->setStrokeAntialias(true);
-        // $outline->setStrokeWidth(2);
         $outline = new IMagickProperties($size, '#000C', true);
         $this->image->annotateImage($outline->drawer, $x, $y, 0, $text);
 
-        // Write words in white over outline
-        // $foreground = new IMagickDraw();
-        // $foreground->setTextEncoding('utf-8');
-        // $foreground->setFont(HV_ROOT_DIR.'/../resources/fonts/DejaVuSans.ttf');
-        // $foreground->setFontSize($size);
-        // $foreground->setFillColor($white);
-        // $foreground->setTextAntialias(true);
-        // $foreground->setStrokeWidth(0);
         $foreground = new IMagickProperties($size, 'white', false);
         $this->image->annotateImage($foreground->drawer, $x, $y, 0, $text);
     }
@@ -123,5 +107,24 @@ class Image_EditableImage {
         $this->Write($size, $this->cursor_x, $this->cursor_y, $text);
         $width = $this->GetTextWidth($size, $text);
         $this->cursor_x += $width;
+    }
+
+    /**
+     * Overlay an image file onto this image at the given position and scale
+     * @param string $file Image file to be overlayed
+     * @param float $x Position on this image where the new image will be placed
+     * @param float $y Position on this image where the new image will be placed
+     * @param float $width Width of the overlay image
+     * @param float $height Height of the overlayimage
+     * @param int $filter scaling filter if width/height does not match the overlayed image, see imagick.constant.filters
+     */
+    public function Overlay(string $file, float $x, float $y, float $width, float $height, int $filter = imagick::FILTER_CUBIC) {
+        $overlay = new IMagick($file);
+        $overlay->resizeImage((int)$width, (int)$height, $filter, 1);
+        $overlay->modulateImage(30, 100, 100);
+        $offsetX = $x - ($width / 2);
+        $offsetY = $y - ($height / 2);
+        $this->image->compositeImage($overlay, imagick::COMPOSITE_COPY, (int) $offsetX, (int)$offsetY);
+        $overlay->destroy();
     }
 }

@@ -414,19 +414,12 @@ class Image_Composite_HelioviewerCompositeImage {
 
         // Composite images on top of one another if there are multiple layers.
         if ( sizeOf($this->_imageLayers) > 1 ) {
-            //$sortedImages = $this->_sortByLayeringOrder($this->_imageLayers);
 
             $image = null;
 
             foreach ($this->_imageLayers as $layer) {
                 $previous = $image;
                 $image = $layer->getIMagickImage();
-
-                if ($this->eclipse && str_contains($layer->getWaterMarkName(), "C2")) {
-                // LASCO C2 layer is brightened for eclipse images
-                // to blend better with C3 images
-                    $image->modulateImage(240, 100, 100);
-                }
 
                 // If $previous exists, then the images need to be composited.
                 // For memory purposes, destroy $previous when done with it.
@@ -441,7 +434,7 @@ class Image_Composite_HelioviewerCompositeImage {
             // For single layer images the composite image is simply the first
             // image layer
             $image = $this->_imageLayers[0]->getIMagickImage();
-        }
+    }
 
         if ( count($this->events) > 0 &&
              $this->date != '2999-01-01T00:00:00.000Z') {
@@ -475,7 +468,7 @@ class Image_Composite_HelioviewerCompositeImage {
         }
 
         if ( $this->eclipse ) {
-            $this->_addEclipseOverlay($image, $this->eclipse);
+            $this->_addEclipseOverlay($image, $this->imageScale);
         }
 
         $this->_finalizeImage($image, $this->_filepath);
@@ -1507,14 +1500,10 @@ class Image_Composite_HelioviewerCompositeImage {
         return $sortedImages;
     }
 
-    private function _addEclipseOverlay(IMagick $image, int $year) {
+    private function _addEclipseOverlay(IMagick $image, float $scale) {
         include_once HV_ROOT_DIR . "/../src/Image/EclipseOverlay.php";
-        // Get the date to use as the "time the image was taken".
-        $dates = array_map(function ($layer) { return $layer->getDate(); }, $this->_imageLayers);
-        // Use the newer between the C2/C3 images.
-        $imageDate = max($dates);
-        // Add text which shows how old the image is relative to the eclipse time.
-        Image_EclipseOverlay::Apply($image, $year, $imageDate);
+        // Add extra eclipse content to the image
+        Image_EclipseOverlay::Apply($image, $scale);
     }
 
     public function _convertHPCtoHCC($inputBody,$useTan){
