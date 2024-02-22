@@ -2,6 +2,12 @@
 
 /**
  * Renders eclipse information over the given composite image
+ * The entry point to this static class is "Apply"
+ * When applying the overlay, the following steps are taken:
+ * - Draw the countdown to the eclipse at the top of the image, if applicable
+ * - Add a 'UTC' time designation to the LASCO C2/C3 timestamps
+ * - Add a delta time (time image was taken relative to the eclipse.) descriptor above the LASCO C2/C3 labels.
+ * - Add a moon for scale.
  * 
  * @category Image
  * @package  Helioviewer
@@ -14,7 +20,7 @@ class Image_EclipseOverlay {
     const LABEL_SIZE = 16;
     const SPACE_SIZE = 4;
     // Applies the eclipse overlay information to the given image.
-    static function Apply(IMagick $image, int $year, bool $enableCountdown = true) {
+    static function Apply(IMagick $image, int $year, DateTimeImmutable $imageDate, bool $enableCountdown = true) {
         $ECLIPSE_TIMES = [
             // https://science.nasa.gov/eclipses/future-eclipses/eclipse-2024/where-when/
             2024 => new DateTimeImmutable('2024-04-08 19:07:00', new DateTimeZone('UTC'))
@@ -29,6 +35,23 @@ class Image_EclipseOverlay {
 
         // Add 'UTC' to the end of the LASCO dates
         Image_EclipseOverlay::ApplyUTCLabels($editableImage);
+
+        // Add the time the image was taken relative to the eclipse
+        Image_EclipseOverlay::ApplyDeltaLabel($editableImage, $imageDate, $ECLIPSE_TIMES[$year]);
+    }
+
+    static private function ApplyDeltaLabel(Image_EditableImage $editableImage, DateTimeImmutable $imageDate, DateTimeImmutable $eclipseDate) {
+        $delta = $eclipseDate->diff($imageDate);
+        $days = $delta->days;
+        $dayLabel = Image_EclipseOverlay::_pluralize("day", $days);
+        $hours = $delta->h;
+        $hourLabel = Image_EclipseOverlay::_pluralize("hour", $hours);
+        $minutes = $delta->m;
+        $minuteLabel = Image_EclipseOverlay::_pluralize("minute", $minutes);
+        $seconds = $delta->s;
+        $secondLabel = Image_EclipseOverlay::_pluralize("second", $seconds);
+        $deltaLabel = "Images taken $days $dayLabel $hours $hourLabel $minutes $minuteLabel $seconds $secondLabel before eclipse";
+        $editableImage->Write(12, 12, 608-15, $deltaLabel);
     }
 
     static private function ApplyUTCLabels(Image_EditableImage $img) {

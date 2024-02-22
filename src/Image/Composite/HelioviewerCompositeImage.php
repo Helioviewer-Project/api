@@ -1509,8 +1509,12 @@ class Image_Composite_HelioviewerCompositeImage {
 
     private function _addEclipseOverlay(IMagick $image, int $year) {
         include_once HV_ROOT_DIR . "/../src/Image/EclipseOverlay.php";
+        // Get the date to use as the "time the image was taken".
+        $dates = array_map(function ($layer) { return $layer->getDate(); }, $this->_imageLayers);
+        // Use the newer between the C2/C3 images.
+        $imageDate = max($dates);
         // Add text which shows how old the image is relative to the eclipse time.
-        Image_EclipseOverlay::Apply($image, $year);
+        Image_EclipseOverlay::Apply($image, $year, $imageDate);
     }
 
     public function _convertHPCtoHCC($inputBody,$useTan){

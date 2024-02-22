@@ -109,6 +109,10 @@ class Image_HelioviewerImage extends Image_SubFieldImage {
         return str_replace('T', '   ', $this->options['date']) . $this->options['jp2DifferenceLabel']. "\n";
     }
 
+    public function getDate(): DateTimeImmutable {
+        return new DateTimeImmutable($this->options['date'], new DateTimeZone("UTC"));
+    }
+
     /**
      * Get the layering order
      *
