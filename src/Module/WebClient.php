@@ -1164,7 +1164,7 @@ class Module_WebClient implements Module {
         // Get the region of interest which encapsulates LASCO C3
         include_once HV_ROOT_DIR.'/../src/Helper/RegionOfInterest.php';
         $range = 6000;
-        $roi = new Helper_RegionOfInterest(-$range, -$range, $range, $range, 7.5);
+        $roi = new Helper_RegionOfInterest(-$range, -$range, $range, $range, 15);
 
         // Create empty events object required for screenshots.
         include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerEvents.php';
