@@ -45,6 +45,9 @@ class Image_Composite_HelioviewerCompositeImage {
     protected $maxPixelScale;
     protected $roi;
     protected $imageScale;
+    protected bool $grayscale;
+    protected int $eclipse;
+    protected bool $showMoon;
     protected $watermark;
     protected $width;
     protected $movie;
@@ -90,7 +93,10 @@ class Image_Composite_HelioviewerCompositeImage {
             'reqStartDate' => false,
             'reqEndDate' => false,
             'reqObservationDate' => false,
-            'switchSources' => false
+            'switchSources' => false,
+            'grayscale' => false,
+            'eclipse' => false,
+            'moon' => false
         );
 
         $options = array_replace($defaults, $options);
@@ -122,6 +128,9 @@ class Image_Composite_HelioviewerCompositeImage {
         $this->reqEndDate = $options['reqEndDate'];
         $this->reqObservationDate = $options['reqObservationDate'];
         $this->switchSources = $options['switchSources'];
+        $this->grayscale = $options['grayscale'];
+        $this->eclipse = $options['eclipse'];
+        $this->showMoon = $options['moon'];
 
         $this->celestialBodiesLabels = $celestialBodies['labels'];
         $this->celestialBodiesTrajectories = $celestialBodies['trajectories'];
@@ -241,7 +250,8 @@ class Image_Composite_HelioviewerCompositeImage {
             'size'          => $this->size,
             'originalOffsetX' => $originalOffsetX,
             'originalOffsetY' => $originalOffsetY,
-            'followViewport'  => $this->followViewport
+            'followViewport'  => $this->followViewport,
+            'grayscale'       => $this->grayscale
         );
 
         // For layers with transparent regions use PNG
@@ -407,7 +417,6 @@ class Image_Composite_HelioviewerCompositeImage {
 
         // Composite images on top of one another if there are multiple layers.
         if ( sizeOf($this->_imageLayers) > 1 ) {
-            //$sortedImages = $this->_sortByLayeringOrder($this->_imageLayers);
 
             $image = null;
 
@@ -428,7 +437,7 @@ class Image_Composite_HelioviewerCompositeImage {
             // For single layer images the composite image is simply the first
             // image layer
             $image = $this->_imageLayers[0]->getIMagickImage();
-        }
+    }
 
         if ( count($this->events) > 0 &&
              $this->date != '2999-01-01T00:00:00.000Z') {
@@ -459,6 +468,10 @@ class Image_Composite_HelioviewerCompositeImage {
 
         if ( $this->watermark ) {
             $this->_addWatermark($image);
+        }
+
+        if ( $this->eclipse ) {
+            $this->_addEclipseOverlay($image, $this->imageScale, $this->showMoon);
         }
 
         $this->_finalizeImage($image, $this->_filepath);
@@ -1488,6 +1501,12 @@ class Image_Composite_HelioviewerCompositeImage {
         // return the sorted array in order of smallest layering order to
         // largest.
         return $sortedImages;
+    }
+
+    private function _addEclipseOverlay(IMagick $image, float $scale, bool $showMoon) {
+        include_once HV_ROOT_DIR . "/../src/Image/EclipseOverlay.php";
+        // Add extra eclipse content to the image
+        Image_EclipseOverlay::Apply($image, $scale, $showMoon);
     }
 
     public function _convertHPCtoHCC($inputBody,$useTan){

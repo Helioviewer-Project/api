@@ -44,7 +44,8 @@ class Image_HelioviewerImage extends Image_SubFieldImage {
             'jp2Difference' => false,
             'jp2DiffPath'   => '',
             'jp2DifferenceLabel'   => '',
-            'followViewport' => false
+            'followViewport' => false,
+            'grayscale'     => false
         );
         $this->options = array_replace($defaults, $options);
 
@@ -60,6 +61,10 @@ class Image_HelioviewerImage extends Image_SubFieldImage {
         	'jp2DifferenceLabel'  => $this->options['jp2DifferenceLabel'],
             'followViewport' => $this->options['followViewport']
         );
+
+        if ($this->options['grayscale']) {
+            $this->setColorTable(false);
+        }
 
         parent::__construct($jp2, $roi, $this->filepath, $offsetX, $offsetY, $imageSettings);
 
@@ -102,6 +107,10 @@ class Image_HelioviewerImage extends Image_SubFieldImage {
     public function getWaterMarkDateString() {
         // Add extra spaces between date and time for readability.
         return str_replace('T', '   ', $this->options['date']) . $this->options['jp2DifferenceLabel']. "\n";
+    }
+
+    public function getDate(): DateTimeImmutable {
+        return new DateTimeImmutable($this->options['date'], new DateTimeZone("UTC"));
     }
 
     /**

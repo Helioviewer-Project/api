@@ -1141,6 +1141,47 @@ class Module_WebClient implements Module {
         // Output result
         $this->_printJSON(json_encode($response));
      }
+     
+    /**
+     * Returns an embeddable image showing LASCO C2/C3 data leading up to
+     * the selected eclipse.
+     */
+    public function getEclipseImage() {
+        // Default to overlaying the moon in place of the sun.
+        if (!isset($this->_options['moon'])) {
+            $this->_options['moon'] = true;
+        }
+        // Get the current time
+        $date = new DateTimeImmutable("now", new DateTimeZone("UTC"));
+        // Get the current time as a string
+        $now_str = $date->format("Y-m-d\TH:i:s\Z");
+
+        // Data Layer for lasco C2
+        include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerLayers.php';
+        $layer_str = "[SOHO,LASCO,C2,white-light,2,100,0,60,1,$now_str]";
+        $layers = new Helper_HelioviewerLayers($layer_str);
+
+        // Get the region of interest which encapsulates LASCO C3
+        include_once HV_ROOT_DIR.'/../src/Helper/RegionOfInterest.php';
+        $range = 6000;
+        $roi = new Helper_RegionOfInterest(-$range, -$range, $range, $range, 15);
+
+        // Create empty events object required for screenshots.
+        include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerEvents.php';
+        $events = new Helper_HelioviewerEvents('');
+
+        // Create empty celestial bodies list
+        $celestialBodies = array( "labels" => "",
+                                "trajectories" => "");
+
+        // Create the base screenshot image
+        include_once HV_ROOT_DIR.'/../src/Image/Composite/HelioviewerScreenshot.php';
+        $screenshot = new Image_Composite_HelioviewerScreenshot(
+            $layers, $events, false, false, $celestialBodies, false, 'earth', 0, 0, $now_str, $roi, 
+            ['grayscale' => true, 'eclipse' => true, 'moon' => $this->_options['moon']]
+        );
+        $screenshot->display();
+    }
 
     /**
      * Determines a numeric indicator ("level") of how up to date a particular
@@ -1524,8 +1565,12 @@ class Module_WebClient implements Module {
                 'alphanum' => array('id')
             );
             break;
-
-
+        case 'getEclipseImage':
+            $expected = array(
+                'bools' => array('moon'),
+                'optional' => array('moon')
+            );
+            break;
         default:
             break;
         }
