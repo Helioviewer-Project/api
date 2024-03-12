@@ -110,15 +110,15 @@ class JP2parser:
         image['header'] = imageData.meta
 
         return image
-    
+
     def _IdentifySolarOrbiterData(self, image, measurement, imageData):
         assert image['observatory'] == 'Solar_Orbiter'
         try:
             if image['detector'] == 'FDT':
                 btype = imageData.meta['btype'].lower()
-                if btype == "longitudinal magnetic field":
+                if "magnetic field" in btype:
                     measurement = "BLOS"
-                elif btype == "intensity [me]":
+                elif "intensity" in btype:
                     measurement = "ICNT"
             elif image['detector'] == 'HRT':
                 measurement = imageData.meta['btype'].upper()
