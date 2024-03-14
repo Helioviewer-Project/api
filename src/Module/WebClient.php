@@ -203,7 +203,8 @@ class Module_WebClient implements Module {
     }
 
     /**
-     * Returns a full jpeg2000 image as a tif
+     * Returns a full jpeg2000 image converted to the designated image type (png/jpg/webp)
+     * extension is validated via the input validator.
      */
     public function downloadImage() {
         include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
@@ -243,6 +244,10 @@ class Module_WebClient implements Module {
             $offsetX, $offsetY, $this->_options,
             $image['sunCenterOffsetParams']
         );
+
+        // downloadImage requests are very deterministic, so make sure the client knows these are safe to cache.
+        // 30days (60sec * 60min * 24hours * 30days)
+        header("Cache-Control: max-age=2592000");
 
         // Save and display
         $tile->save();
@@ -397,6 +402,10 @@ class Module_WebClient implements Module {
             $offsetX, $offsetY, $this->_options,
             $image['sunCenterOffsetParams']
         );
+
+        // getTile requests are very deterministic, so make sure the client knows these are safe to cache.
+        // 30days (60sec * 60min * 24hours * 30days)
+        header("Cache-Control: max-age=2592000");
 
         // Save and display
         $tile->save();
@@ -1141,7 +1150,7 @@ class Module_WebClient implements Module {
         // Output result
         $this->_printJSON(json_encode($response));
      }
-     
+
     /**
      * Returns an embeddable image showing LASCO C2/C3 data leading up to
      * the selected eclipse.
@@ -1177,7 +1186,7 @@ class Module_WebClient implements Module {
         // Create the base screenshot image
         include_once HV_ROOT_DIR.'/../src/Image/Composite/HelioviewerScreenshot.php';
         $screenshot = new Image_Composite_HelioviewerScreenshot(
-            $layers, $events, false, false, $celestialBodies, false, 'earth', 0, 0, $now_str, $roi, 
+            $layers, $events, false, false, $celestialBodies, false, 'earth', 0, 0, $now_str, $roi,
             ['grayscale' => true, 'eclipse' => true, 'moon' => $this->_options['moon']]
         );
         $screenshot->display();
