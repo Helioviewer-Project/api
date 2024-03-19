@@ -101,6 +101,8 @@ class JP2parser:
         elif image['observatory'] == "Hinode":
             image['filter1'] = measurement.split("-")[0].replace(" ", "_")
             image['filter2'] = measurement.split("-")[1].replace(" ", "_")
+        elif image['observatory'] == 'Solar_Orbiter':
+            self._IdentifySolarOrbiterData(image, measurement, imageData)
         else:
             image['measurement'] = measurement
         image['date'] = imageData.date
@@ -108,6 +110,24 @@ class JP2parser:
         image['header'] = imageData.meta
 
         return image
+
+    def _IdentifySolarOrbiterData(self, image, measurement, imageData):
+        assert image['observatory'] == 'Solar_Orbiter'
+        try:
+            if image['detector'] == 'FDT':
+                btype = imageData.meta['btype'].lower()
+                if "magnetic field" in btype:
+                    measurement = "BLOS"
+                elif "intensity" in btype:
+                    measurement = "ICNT"
+            elif image['detector'] == 'HRT':
+                measurement = imageData.meta['btype'].upper()
+        except Exception as e:
+            # If for whatever reason we can't read the btype from the image data
+            # then just continue with the default behavior. Which probably
+            # still won't work...
+            pass
+        image['measurement'] = measurement
 
     def read_header_only_but_still_use_sunpy_map(self, patch_cunit=False):
         """
