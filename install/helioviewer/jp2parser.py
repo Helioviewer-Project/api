@@ -6,7 +6,8 @@ JPEG 2000 Image XML Box parser class
 import sys
 from xml.etree import cElementTree as ET
 import numpy as np
-from sunpy.map import Map
+from astropy.time import Time
+from sunpy.map import Map, GenericMap
 from sunpy.util.xml import xml_to_dict
 from sunpy.io.header import FileHeader
 from sunpy.map.mapbase import MapMetaValidationError
@@ -103,11 +104,20 @@ class JP2parser:
             image['filter2'] = measurement.split("-")[1].replace(" ", "_")
         else:
             image['measurement'] = measurement
-        image['date'] = imageData.date
+        image['date'] = self._get_date(imageData)
         image['filepath'] = self._filepath
         image['header'] = imageData.meta
 
+        if image["observatory"] == "RHESSI":
+            image = self._process_rhessi_extras(image, imageData)
+
         return image
+
+    def _get_date(self, img: GenericMap) -> Time:
+        try:
+            return img.date
+        except KeyError:
+            return Time(img.meta["date_obs"])
 
     def read_header_only_but_still_use_sunpy_map(self, patch_cunit=False):
         """
@@ -189,6 +199,12 @@ class JP2parser:
             pydict['comment'] = pydict['comment'].replace("\n", "")
 
         self._data = pydict
+
+        hv_tag = xml_box[0].xml.find('helioviewer')
+        if hv_tag is not None:
+            hvxml = ET.tostring(hv_tag)
+            self._helioviewer = xml_to_dict(hvxml)["helioviewer"]
+
 
         return [FileHeader(pydict)]
 
@@ -376,3 +392,17 @@ class JP2parser:
         except Exception as e:
             # AIA, EIT, and MDI do their own rotation
             return False
+
+    def _process_rhessi_extras(self, image: dict, imageData: GenericMap) -> dict:
+        """
+        Performs extra processing specific to RHESSI images.
+        This extracts the energy band and reconstruction methods into the img dict.
+        """
+        image[
+            "energy_band"
+        ] = f"{imageData.meta['energy_l']}_{imageData.meta['energy_h']}"
+        image["reconstruction_method"] = self._helioviewer[
+            "HV_RHESSI_IMAGE_RECONSTRUCTION_METHOD"
+        ]
+        return image
+
