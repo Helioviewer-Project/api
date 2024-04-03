@@ -93,6 +93,8 @@ def insert_images(images, sources, rootdir, db, cursor, mysql, step_function=Non
 
         if img['observatory'] == "Hinode":
             leafs = ["observatory", "instrument", "detector", "filter1", "filter2"]
+        elif img["observatory"] == "RHESSI":
+            leafs = ["observatory", "energy_band", "reconstruction_method"]
         else:
             leafs = ["observatory", "instrument", "detector", "measurement"]
 
