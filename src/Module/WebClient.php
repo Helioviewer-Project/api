@@ -276,6 +276,9 @@ class Module_WebClient implements Module {
         else if ($image['uiLabels'][0]['name'] == 'Hinode') {
             $type = 'XRTImage';
         }
+        else if ($image['uiLabels'][0]['name'] == 'RHESSI') {
+            $type = 'RHESSIImage';
+        }
         else if (count($image['uiLabels']) >=2) {
             $type = strtoupper($image['uiLabels'][1]['name']).'Image';
         }
