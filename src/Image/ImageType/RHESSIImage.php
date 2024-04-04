@@ -14,7 +14,7 @@ require_once HV_ROOT_DIR.'/../src/Image/HelioviewerImage.php';
 
 class Image_ImageType_RHESSIImage extends Image_HelioviewerImage {
     /**
-     * Creates a new EUVIImage
+     * Creates a new RHESSIImage
      *
      * @param string $jp2      Source JP2 image
      * @param string $filepath Location to output the file to
@@ -27,7 +27,8 @@ class Image_ImageType_RHESSIImage extends Image_HelioviewerImage {
      * @return void
      */
     public function __construct($jp2, $filepath, $roi, $uiLabels, $offsetX, $offsetY, $options) {
-        $this->setColorTable(false);
+        $color_table = HV_ROOT_DIR . "/resources/images/color-tables/RHESSI.png";
+        $this->setColorTable($color_table);
         parent::__construct($jp2, $filepath, $roi, $uiLabels, $offsetX, $offsetY, $options);
     }
 
@@ -41,12 +42,6 @@ class Image_ImageType_RHESSIImage extends Image_HelioviewerImage {
         $energy = $this->uiLabels[1]['name'];
         $reconstruction = $this->uiLabels[2]['name'];
         return $observatory . " " . $energy . " " . $reconstruction;
-    }
-
-    protected function setAlphaChannel(&$imagickImage) {
-        parent::setAlphaChannel($imagickImage);
-        $imagickImage->transparentPaintImage('black', 0, 300, false);
-        $imagickImage->despeckleImage();
     }
 }
 ?>
