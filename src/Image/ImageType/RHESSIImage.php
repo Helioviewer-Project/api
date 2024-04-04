@@ -42,5 +42,11 @@ class Image_ImageType_RHESSIImage extends Image_HelioviewerImage {
         $reconstruction = $this->uiLabels[2]['name'];
         return $observatory . " " . $energy . " " . $reconstruction;
     }
+
+    protected function setAlphaChannel(&$imagickImage) {
+        parent::setAlphaChannel($imagickImage);
+        $imagickImage->transparentPaintImage('black', 0, 300, false);
+        $imagickImage->despeckleImage();
+    }
 }
 ?>
