@@ -158,26 +158,23 @@ class Image_JPEG2000_JP2ImageXMLBox {
         $maxDSUN = 2.25e11; // A reasonable max for solar observatories
                             // ~1.5 AU
 
-        try {
-            // AIA, EUVI, COR, SWAP, SXT
-            $dsun = $this->_getElementValue('DSUN_OBS');
-        }
-        catch (Exception $e) {
-            try {
-                // EIT
-                $rsun = $this->_getElementValue('SOLAR_R');
-            }
-            catch (Exception $e) {
+        $dsun_keys = ['DSUN_OBS', 'DSUN'];
+        $rsun_keys = ['SOLAR_R', 'RADIUS'];
+        $find_value = function(array $keys): ?float {
+            foreach ($keys as $key) {
                 try {
-                    // MDI
-                    $rsun = $this->_getElementValue('RADIUS');
-                }
-                catch (Exception $e) {
-                    //
+                    return $this->_getElementValue($key);
+                } catch (Exception $e) {
+                    // ignore key errors
                 }
             }
+            return null;
+        };
 
-            if ( isset($rsun) ) {
+        $dsun = $find_value($dsun_keys);
+        if (is_null($dsun)) {
+            $rsun = $find_value($rsun_keys);
+            if (isset($rsun)) {
                 $scale = $this->_getElementValue('CDELT1');
                 if ( $scale == 0 ) {
                     throw new Exception(
