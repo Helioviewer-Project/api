@@ -13,6 +13,7 @@ from sunpy.io.header import FileHeader
 from sunpy.map.mapbase import MapMetaValidationError
 from glymur import Jp2k
 from sunpy.util.xml import xml_to_dict
+from typing import Union
 
 __HV_CONSTANT_RSUN__ = 959.644
 __HV_CONSTANT_AU__ = 149597870700
@@ -243,7 +244,7 @@ class JP2parser:
             'SOLAR_R',  # EIT
             'RADIUS',   # MDI
         ]
-        def find_value(data: dict, keys: list[str]) -> float|None:
+        def find_value(data: dict, keys: list[str]) -> Union[float,None]:
             # Find the first instance of any key in data and return its value
             for key in keys:
                 if key in data:
