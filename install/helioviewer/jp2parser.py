@@ -24,12 +24,17 @@ class JP2parser:
     def __init__(self, path):
         """Main application"""
         self._filepath = path
+        # getImageMap initializes self._data
+        self._imageData = self._loadSunpyMap()
 
-    def getImageMap(self):
+    def _loadSunpyMap(self) -> GenericMap:
         try:
             return Map(self.read_header_only_but_still_use_sunpy_map())
         except MapMetaValidationError:
             return Map(self.read_header_only_but_still_use_sunpy_map(patch_cunit=True))
+
+    def getImageMap(self) -> GenericMap:
+        return self._imageData
 
     def getData(self):
         """Create data object of JPEG 2000 image.
@@ -230,25 +235,25 @@ class JP2parser:
             dsun = (rsun_1au / rsun_image) * dsun_1au
         """
         maxDSUN = 2.25e11 # A reasonable max for solar observatories ~1.5 AU
+        dsun_keys = [
+            'DSUN_OBS', # Used by most data sources
+            'DSUN'      # Used by RHESSI
+        ]
+        rsun_keys = [
+            'SOLAR_R',  # EIT
+            'RADIUS',   # MDI
+        ]
+        def find_value(data: dict, keys: list[str]) -> float|None:
+            # Find the first instance of any key in data and return its value
+            for key in keys:
+                if key in data:
+                    return data[key]
+            return None
 
-        try:
-            dsun = self._data['DSUN_OBS'] # AIA, EUVI, COR, SWAP, SXT
-        except Exception as e:
-            try:
-                rsun = self._data['SOLAR_R'] # EIT
-            except Exception as e:
-                try:
-                    rsun = self._data['RADIUS'] # MDI
-                except Exception as e:
-                    #
-                    value = 1
-
-            try:
-                rsun
-            except NameError:
-                #skipping
-                value = 1
-            else:
+        dsun = find_value(self._data, dsun_keys)
+        if dsun is None:
+            rsun = find_value(self._data, rsun_keys)
+            if rsun is not None:
                 scale = self._data['CDELT1']
                 if scale == 0 :
                     print('JP2 WARNING! Invalid value for CDELT1 (' + self._filepath + '): ' + scale)
@@ -259,9 +264,7 @@ class JP2parser:
 
         # HMI continuum images may have DSUN = 0.00
         # LASCO/MDI may have rsun=0.00
-        try:
-            dsun
-        except NameError:
+        if dsun is None:
             dsun = __HV_CONSTANT_AU__
 
         if dsun <= 0:
