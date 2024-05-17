@@ -22,7 +22,7 @@ class ClientState extends Database_DbConnection
     public function upsert(array $state): string 
     {
         $state_json = json_encode($state); 
-        $state_key = md5($state_json);
+        $state_key = hash('sha256',$state_json);
 
         $create_sql = "REPLACE INTO client_states(id, state) VALUES ('%s','%s')";
         $create_state_sql = sprintf($create_sql, $state_key, $this->link->real_escape_string($state_json));

@@ -27,7 +27,7 @@ final class ClientStateTest extends TestCase
         // just a precaution to clean database after we are done
         $this->createdIds[] = $client_state->upsert($state);
 
-        $count_sql = sprintf("SELECT COUNT(*) FROM client_states WHERE id = '%s'", md5(json_encode($state)));
+        $count_sql = sprintf("SELECT COUNT(*) FROM client_states WHERE id = '%s'", hash('sha256', json_encode($state)));
 
         $result = $client_state->query($count_sql);
 
@@ -49,7 +49,7 @@ final class ClientStateTest extends TestCase
         $client_state->upsert($state);
         $client_state->upsert($state);
 
-        $count_sql = sprintf("SELECT COUNT(*) FROM client_states WHERE id = '%s'", md5(json_encode($state)));
+        $count_sql = sprintf("SELECT COUNT(*) FROM client_states WHERE id = '%s'", hash('sha256', json_encode($state)));
 
         $result = $client_state->query($count_sql);
 
@@ -70,7 +70,7 @@ final class ClientStateTest extends TestCase
         $state_key = $client_state->upsert($state);
         $this->createdIds[] = $state_key;
 
-        $this->assertEquals($state_key, md5(json_encode($state)));
+        $this->assertEquals($state_key, hash('sha256', json_encode($state)));
     }
 
     public function testItShouldFindPreviouslyCreatedStates(): void 
