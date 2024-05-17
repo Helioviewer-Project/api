@@ -619,14 +619,13 @@ class Module_WebClient implements Module {
     }
 
     private static function GetClientUrl(): string {
-        $base = self::GetApiUrl();
-        return str_replace('api.', '', $base);
+        // i.e. http://helioviewer.org
+        return HV_CLIENT_URL;
     }
 
     private static function GetApiUrl(): string {
-        $http = ($_SERVER['HTTPS'] ?? false) ? 'https' : 'http';
-        $baseUrl = "$http://".$_SERVER['SERVER_NAME'];
-        return $baseUrl;
+        // i.e. http://api.helioviewer.org
+        return HV_WEB_ROOT_URL;
     }
 
     public function goto() {
@@ -639,6 +638,58 @@ class Module_WebClient implements Module {
             $base = self::GetClientUrl();
             header("Location: $base");
         }
+    }
+
+    /**
+     * This function saves event state into our database
+     *
+     * It saves the event and returns the identifier
+     */
+    public function saveWebClientState() {
+
+        require_once HV_ROOT_DIR.'/../src/Database/ClientState.php';
+
+        $client_state = new ClientState();
+
+        try {
+
+            $state_key = $client_state->upsert($this->_params['state']);
+
+            return $this->_sendResponse(200, 'OK', $state_key);
+
+        } catch (\Exception $e) {
+            return $this->_sendResponse(500, 'Server Error', '');
+        }
+
+
+    }
+
+    /**
+     * This function returns the event state for the given id 
+     */
+    public function getWebClientState() 
+    {
+        require_once HV_ROOT_DIR.'/../src/Database/ClientState.php';
+
+        $client_state = new ClientState();
+
+        try {
+
+            $state = $client_state->find($this->_params['state_id']);
+
+            if(is_null($state)) {
+                return $this->_sendResponse(404, 'Not Found', '');
+            }
+
+            return $this->_sendResponse(200, 'OK', $state);
+
+        } catch (\Exception $e) {
+
+            return $this->_sendResponse(500, 'Server Error', '');
+
+        }
+
+
     }
 
     /**
@@ -1342,6 +1393,26 @@ class Module_WebClient implements Module {
     }
 
     /**
+     * Helper function to handle response code and response message with
+     * output result as either JSON or JSONP
+     *
+     * @param int    $code HTTP response code to return
+     * @param string $message  Message for the response code,
+     * @param mixed  $data Data can be anything 
+     *
+     * @return void
+     */
+    private function _sendResponse(int $code, string $message, mixed $data) : void
+    {
+        http_response_code($code);
+        $this->_printJSON(json_encode([
+            'status_code' => $code,
+            'status_txt' => $message,
+            'data' => $data,
+        ]));
+    }
+
+    /**
      * Helper function to output result as either JSON or JSONP
      *
      * @param string $json JSON object string
@@ -1434,6 +1505,18 @@ class Module_WebClient implements Module {
     public function validate() {
 
         switch( $this->_params['action'] ) {
+
+        case 'saveWebClientState':
+            $expected = array(
+               'required' => array('state'),
+            );
+            break;
+
+        case 'getWebClientState':
+            $expected = array(
+               'required' => array('state_id'),
+            );
+            break;
 
         case 'downloadScreenshot':
             $expected = array(
