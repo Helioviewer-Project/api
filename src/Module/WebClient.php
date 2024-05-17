@@ -641,7 +641,7 @@ class Module_WebClient implements Module {
     }
 
     /**
-     * This function saves event state into our redis database
+     * This function saves event state into our database
      *
      * It saves the event and returns the identifier
      */
