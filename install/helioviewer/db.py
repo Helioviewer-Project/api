@@ -60,6 +60,8 @@ def setup_database_schema(adminuser, adminpass, dbhost, dbname, dbuser, dbpass, 
     create_flare_prediction_dataset_table(cursor)
     print("Creating flare prediction table")
     create_flare_prediction_table(cursor)
+    print("Creating client_states table")
+    create_client_states_table(cursor)
 
     return db, cursor
 
@@ -887,6 +889,18 @@ def create_rate_limit_table(cursor):
         `count`       int unsigned NOT NULL,
         PRIMARY KEY (`datetime`, `identifier`)
     ) DEFAULT CHARSET=utf8;""")
+
+def create_client_states_table(cursor):
+    """
+    Create table for client states
+    """
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS `client_states` (
+        `id`      CHAR(32) PRIMARY KEY,
+        `state`   JSON NOT NULL DEFAULT '{}',
+        `created` DATETIME DEFAULT CURRENT_TIMESTAMP,
+        `updated` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;""")
 
 def create_flare_prediction_table(cursor):
     """

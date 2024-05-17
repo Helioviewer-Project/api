@@ -619,14 +619,13 @@ class Module_WebClient implements Module {
     }
 
     private static function GetClientUrl(): string {
-        $base = self::GetApiUrl();
-        return str_replace('api.', '', $base);
+        // i.e. http://helioviewer.org
+        return HV_CLIENT_URL;
     }
 
     private static function GetApiUrl(): string {
-        $http = ($_SERVER['HTTPS'] ?? false) ? 'https' : 'http';
-        $baseUrl = "$http://".$_SERVER['SERVER_NAME'];
-        return $baseUrl;
+        // i.e. http://api.helioviewer.org
+        return HV_WEB_ROOT_URL;
     }
 
     public function goto() {
@@ -639,6 +638,88 @@ class Module_WebClient implements Module {
             $base = self::GetClientUrl();
             header("Location: $base");
         }
+    }
+
+    /**
+     * This function saves event state into our redis database
+     *
+     * It saves event into redis and returns the identifer
+     */
+    public function saveWebClientState() {
+
+        require_once HV_ROOT_DIR.'/../src/Database/ClientState.php';
+
+        $client_state = new ClientState();
+
+        try {
+
+            $state_key = $client_state->upsert($this->_params['state']);
+
+            $this->_printJSON(json_encode([
+                "status_code" => 200,
+                "status_txt" => "OK",
+                "data" => [
+                    "state_id" => $state_key,
+                ]
+            ]));
+
+        } catch (\Exception $e) {
+
+            http_response_code(500);
+
+            $this->_printJSON(json_encode([
+                "status_code" => 500,
+                "status_txt" => "Server Error",
+                "data" => "",
+            ]));
+        }
+
+
+    }
+
+    /**
+     * This function returns the event state for the given id 
+     */
+    public function getWebClientState() 
+    {
+        require_once HV_ROOT_DIR.'/../src/Database/ClientState.php';
+
+        $client_state = new ClientState();
+
+        try {
+
+            $state = $client_state->find($this->_params['state_id']);
+
+            if(is_null($state)) {
+                http_response_code(404);
+                $this->_printJSON(json_encode([
+                    "status_code" => 404,
+                    "status_txt" => "Not Found",
+                    "data" => "",
+                ]));
+                return;
+            }
+
+            $this->_printJSON(json_encode([
+                "status_code" => 200,
+                "status_txt" => "OK",
+                "data" => [
+                    "state" => $state,
+                ]
+            ]));
+
+        } catch (\Exception $e) {
+
+            http_response_code(500);
+
+            $this->_printJSON(json_encode([
+                "status_code" => 500,
+                "status_txt" => "Server Error",
+                "data" => "",
+            ]));
+        }
+
+
     }
 
     /**
@@ -1434,6 +1515,18 @@ class Module_WebClient implements Module {
     public function validate() {
 
         switch( $this->_params['action'] ) {
+
+        case 'saveWebClientState':
+            $expected = array(
+               'required' => array('state'),
+            );
+            break;
+
+        case 'getWebClientState':
+            $expected = array(
+               'required' => array('state_id'),
+            );
+            break;
 
         case 'downloadScreenshot':
             $expected = array(

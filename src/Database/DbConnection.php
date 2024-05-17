@@ -107,5 +107,17 @@ class Database_DbConnection {
     public function setEncoding($encoding) {
         mysqli_set_charset($this->link, $encoding);
     }
+
+    /**
+     * Deconstructor should be executed when this class instance is not referenced
+     *
+     * @return void
+     */
+    public function __destruct() {
+        if ($this->link) {
+            mysqli_close($this->link);
+        }
+    }
+
 }
 ?>
