@@ -655,23 +655,10 @@ class Module_WebClient implements Module {
 
             $state_key = $client_state->upsert($this->_params['state']);
 
-            $this->_printJSON(json_encode([
-                "status_code" => 200,
-                "status_txt" => "OK",
-                "data" => [
-                    "state_id" => $state_key,
-                ]
-            ]));
+            return $this->_sendResponse(200, 'OK', $state_key);
 
         } catch (\Exception $e) {
-
-            http_response_code(500);
-
-            $this->_printJSON(json_encode([
-                "status_code" => 500,
-                "status_txt" => "Server Error",
-                "data" => "",
-            ]));
+            return $this->_sendResponse(500, 'Server Error', '');
         }
 
 
@@ -691,32 +678,15 @@ class Module_WebClient implements Module {
             $state = $client_state->find($this->_params['state_id']);
 
             if(is_null($state)) {
-                http_response_code(404);
-                $this->_printJSON(json_encode([
-                    "status_code" => 404,
-                    "status_txt" => "Not Found",
-                    "data" => "",
-                ]));
-                return;
+                return $this->_sendResponse(404, 'Not Found', '');
             }
 
-            $this->_printJSON(json_encode([
-                "status_code" => 200,
-                "status_txt" => "OK",
-                "data" => [
-                    "state" => $state,
-                ]
-            ]));
+            return $this->_sendResponse(200, 'OK', $state);
 
         } catch (\Exception $e) {
 
-            http_response_code(500);
+            return $this->_sendResponse(500, 'Server Error', '');
 
-            $this->_printJSON(json_encode([
-                "status_code" => 500,
-                "status_txt" => "Server Error",
-                "data" => "",
-            ]));
         }
 
 
@@ -1420,6 +1390,26 @@ class Module_WebClient implements Module {
             "%s%s/%s_%s_x%d_y%d%s.png", $baseDirectory, $directory,
             $baseFilename, $scale, $x, $y, $difference
         );
+    }
+
+    /**
+     * Helper function to handle response code and response message with
+     * output result as either JSON or JSONP
+     *
+     * @param int    $code HTTP response code to return
+     * @param string $message  Message for the response code,
+     * @param mixed  $data Data can be anything 
+     *
+     * @return void
+     */
+    private function _sendResponse(int $code, string $message, mixed $data) : void
+    {
+        http_response_code($code);
+        $this->_printJSON(json_encode([
+            'status_code' => $code,
+            'status_txt' => $message,
+            'data' => $data,
+        ]));
     }
 
     /**

@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 /**
- * @author Daniel Garcia-Briseno <daniel.garciabriseno@nasa.gov>
+ * @author Kasim Necdet Percinel <kasim.n.percinel@nasa.gov>
  */
 
 use PHPUnit\Framework\TestCase;
