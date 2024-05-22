@@ -36,6 +36,13 @@ jobs:
       # --wait to wait for containers to be healthy, meaning the test data is downloaded and ready
       run: cd .. && docker compose up --no-build -d --wait api cli
 
+    - name: Print container logs logs
+      run: |
+        docker logs helioviewer-api-1
+        docker logs helioviewer-web-1
+        docker logs helioviewer-cli-1
+        docker logs helioviewer-movies-1
+
     # Run the tests inside the api container
     - name: Run phpunit tests
       run: docker exec -t helioviewer-api-1 composer run-script test
