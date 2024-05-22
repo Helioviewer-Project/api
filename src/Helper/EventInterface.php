@@ -6,11 +6,12 @@ include_once HV_ROOT_DIR.'/../scripts/rot_hpc.php';
 use HelioviewerEventInterface\Events;
 
 class Helper_EventInterface {
-    public static function GetEvents(DateTimeInterface $start, DateInterval $length, string $observationTime, ?array $sources = null): array {
+    public static function GetEvents(DateTimeInterface $start, DateInterval $length, DateTimeInterface $observationTime, ?array $sources = null): array {
+        print_r($start);
         if (is_null($sources)) {
-            return Events::GetAll($start, $length);
+            return Events::GetAll($start, $length, $observationTime);
         } else {
-            return Events::GetFromSource($sources, $start, $length);
+            return Events::GetFromSource($sources, $start, $length, $observationTime);
         }
     }
 }
