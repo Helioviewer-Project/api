@@ -37,6 +37,7 @@ jobs:
       run: cd .. && docker compose up --no-build -d --wait api cli
 
     - name: Print container logs logs
+      if: always()
       run: |
         docker logs helioviewer-api-1
         docker logs helioviewer-web-1
