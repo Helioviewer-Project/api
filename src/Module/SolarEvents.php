@@ -227,7 +227,7 @@ class Module_SolarEvents implements Module {
         // The given time is the observation time.
         $observationTime = new DateTimeImmutable($this->_params['startTime']);
         // The query start time is 12 hours earlier.
-        $start = $observationTime->sub(new DateInterval("P12H"));
+        $start = $observationTime->sub(new DateInterval("PT12H"));
         // The query duration will be 24 hours.
         // This results in a query of events over 24 hours with the given time
         // at the center.

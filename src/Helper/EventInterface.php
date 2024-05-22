@@ -7,7 +7,6 @@ use HelioviewerEventInterface\Events;
 
 class Helper_EventInterface {
     public static function GetEvents(DateTimeInterface $start, DateInterval $length, DateTimeInterface $observationTime, ?array $sources = null): array {
-        print_r($start);
         if (is_null($sources)) {
             return Events::GetAll($start, $length, $observationTime);
         } else {
