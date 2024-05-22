@@ -44,6 +44,7 @@ jobs:
       run: docker logs helioviewer-api-1
 
     - name: Print container logs logs
+      if: always()
       run: |
         docker logs helioviewer-api-1
         docker logs helioviewer-web-1
