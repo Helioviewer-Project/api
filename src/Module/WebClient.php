@@ -653,7 +653,7 @@ class Module_WebClient implements Module {
 
         try {
 
-            $state_key = $client_state->upsert($this->_params['state']);
+            $state_key = $client_state->upsert($this->_params['json']);
 
             return $this->_sendResponse(200, 'OK', $state_key);
 
@@ -1508,7 +1508,7 @@ class Module_WebClient implements Module {
 
         case 'saveWebClientState':
             $expected = array(
-               'required' => array('state'),
+               'required' => array('json'),
             );
             break;
 
