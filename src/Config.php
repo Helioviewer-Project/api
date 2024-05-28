@@ -15,6 +15,16 @@
  * @link     https://github.com/Helioviewer-Project/
  */
 
+function pr($am) {
+	echo '<pre>';
+	print_r($am);
+	echo '</pre>';
+}
+
+function pre($am) {
+	pr($am);exit;
+} 
+
 class Config {
 
     private $_bools  = array('disable_cache', 'enable_statistics_collection', 'db_events');
@@ -41,6 +51,8 @@ class Config {
 
                 header("Access-Control-Allow-Origin: ".$_SERVER['HTTP_ORIGIN']);
                 header("Access-Control-Allow-Methods: ".$this->config['acam']);
+                header("Access-Control-Allow-Headers: Content-Type");
+
             }
 
         }
