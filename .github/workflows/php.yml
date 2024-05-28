@@ -43,14 +43,6 @@ jobs:
       if: always()
       run: docker logs helioviewer-api-1
 
-    - name: Print container logs logs
-      if: always()
-      run: |
-        docker logs helioviewer-api-1
-        docker logs helioviewer-web-1
-        docker logs helioviewer-database-1
-        docker logs helioviewer-movies-1
-
     # Run the tests inside the api container
     - name: Run phpunit tests
       run: docker exec -t helioviewer-api-1 composer run-script test
