@@ -18,7 +18,7 @@
         }
     ],
     "require": {
-        "helioviewer/event-interface": "dev-main",
+        "helioviewer/event-interface": "v0.1.0",
         "matomo/device-detector": "dev-master"
     },
     "require-dev": {

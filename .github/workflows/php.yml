@@ -16,7 +16,11 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Get development docker compose file
-      run: cd .. && wget https://raw.githubusercontent.com/Helioviewer-Project/helioviewer.org-docker/main/compose.yaml
+      run: |
+        cd ..
+        wget https://raw.githubusercontent.com/Helioviewer-Project/helioviewer.org-docker/main/compose.yaml
+        wget https://raw.githubusercontent.com/Helioviewer-Project/helioviewer.org-docker/main/.env.example
+        mv .env.example .env
 
     # The containers need to be able update config files
     - name: Make writeable config files
@@ -29,12 +33,15 @@ jobs:
         chmod o+rw settings/Config.php
 
     # Start up api service (test environment)
-    # Start up cli service (installs test data)
     - name: Start services
       # --no-build to force it to use whatever is published in the registry
       # -d to detach, so the command returns
       # --wait to wait for containers to be healthy, meaning the test data is downloaded and ready
-      run: cd .. && docker compose up --no-build -d --wait api cli
+      run: cd .. && docker compose up --no-build --wait api
+
+    - name: Print container logs logs
+      if: always()
+      run: docker logs helioviewer-api-1
 
     # Run the tests inside the api container
     - name: Run phpunit tests
