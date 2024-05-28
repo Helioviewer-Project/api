@@ -15,16 +15,6 @@
  * @link     https://github.com/Helioviewer-Project/
  */
 
-function pr($am) {
-	echo '<pre>';
-	print_r($am);
-	echo '</pre>';
-}
-
-function pre($am) {
-	pr($am);exit;
-} 
-
 class Config {
 
     private $_bools  = array('disable_cache', 'enable_statistics_collection', 'db_events');
