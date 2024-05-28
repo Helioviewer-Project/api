@@ -48,7 +48,7 @@ jobs:
       run: |
         docker logs helioviewer-api-1
         docker logs helioviewer-web-1
-        docker logs helioviewer-cli-1
+        docker logs helioviewer-database-1
         docker logs helioviewer-movies-1
 
     # Run the tests inside the api container
