@@ -17,6 +17,11 @@
             "url": "https://github.com/dgarciabriseno/device-detector.git"
         }
     ],
+    "autoload": {
+        "psr-4": {
+            "Helioviewer\\Api\\": "src/"
+        }
+    },
     "require": {
         "helioviewer/event-interface": "v0.1.0",
         "matomo/device-detector": "dev-master"
