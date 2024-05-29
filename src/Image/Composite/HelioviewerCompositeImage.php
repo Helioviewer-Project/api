@@ -611,9 +611,11 @@ class Image_Composite_HelioviewerCompositeImage {
         // Collect events from all data sources.
         $hek = new Event_HEKAdapter();
         $event_categories = $hek->getNormalizedEvents($this->date, Array());
-        $startDate = new DateTimeImmutable($this->date);
+
+        $observationTime = new DateTimeImmutable($this->date);
+        $startDate = $observationTime->sub(new DateInterval("PT12H"));
         $length = new DateInterval("P1D");
-        $event_categories = array_merge($event_categories, Helper_EventInterface::GetEvents($startDate, $length, $this->date));
+        $event_categories = array_merge($event_categories, Helper_EventInterface::GetEvents($startDate, $length, $observationTime));
 
         // Lay down all relevant event REGIONS first
         $allowedFRMs = $this->events->toArray();
