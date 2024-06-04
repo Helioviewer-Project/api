@@ -358,6 +358,12 @@ class Movie_HelioviewerMovie {
                 }
             }
         }
+
+        // Do not call closedir boolean if we can not open directory
+        if (false === $handle) {
+            throw new \Exception("Could not find requested movie frames");
+        }
+
         @closedir($handle);
 
         return ($newest_frame>0) ? (int)$newest_frame : null;
