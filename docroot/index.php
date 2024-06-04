@@ -33,8 +33,10 @@ $config = new Config('../settings/Config.ini');
 date_default_timezone_set('UTC');
 register_shutdown_function('shutdownFunction');
 
-if ( array_key_exists('docs', $_GET) ) {
-    printAPIDocs();
+// Options requests are just for validating CORS 
+// Lets just pass them through
+if ( array_key_exists('REQUEST_METHOD', $_SERVER) && $_SERVER['REQUEST_METHOD'] == 'OPTIONS' ) {
+    echo 'OK';  
     exit;
 }
 
@@ -52,6 +54,7 @@ try {
     echo json_encode([
         'success' => false,
         'message' => $re->getMessage(),
+        'data' => [],
     ]);
     exit;
 }
