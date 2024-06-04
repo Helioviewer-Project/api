@@ -133,16 +133,10 @@ function loadModule($params) {
     include_once HV_ROOT_DIR.'/../src/Validation/InputValidator.php';
 
     try {
-        if ( !array_key_exists('action', $params) ||
-             !array_key_exists($params['action'], $valid_actions) ) {
+        if ( !array_key_exists($params['action'], $valid_actions) ) {
+            throw new \InvalidArgumentException('Invalid action specified.<br />Consult the <a href="https://api.helioviewer.org/docs/v2/">API Documentation</a> for a list of valid actions.');
+        } else {
 
-            $url = HV_WEB_ROOT_URL.'/docs/';
-            throw new Exception(
-                'Invalid action specified.<br />Consult the <a href="'.$url.'">' .
-                'API Documentation</a> for a list of valid actions.', 26
-            );
-        }
-        else {
             //Set-up variables for rate-limiting
             $prefix = HV_RATE_LIMIT_PREFIX;
             //Use IP address as identifier.
@@ -211,9 +205,34 @@ function loadModule($params) {
                 //limit exceeded
             }
         }
-    }
-    catch (Exception $e) {
+    } catch (\InvalidArgumentException $e) {
+            
+        // Proper response code
+        http_response_code(400);
+
+        // Determine the content type of the request
+        $content_type = $_SERVER['CONTENT_TYPE'] ?? '';
+
+        // If the request is posting JSON
+        if('application/json' === $content_type) {
+
+            // Set the content type to JSON
+            header('Content-Type: application/json');
+
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => [],
+            ]);
+            exit;
+        }
+
         printHTMLErrorMsg($e->getMessage());
+
+    } catch (Exception $e) {
+        
+        printHTMLErrorMsg($e->getMessage());
+        
     }
 
     return true;
@@ -276,8 +295,7 @@ function shutDownFunction() {
     $error = error_get_last();
 
     if (!is_null($error) && $error['type'] == 1) {
-        handleError(sprintf("%s:%d - %s", $error['file'], $error['line'],
-            $error['message']), $error->getCode());
+        handleError(sprintf("%s:%d - %s", $error['file'], $error['line'], $error['message']));
     }
 }
 ?>
