@@ -43,13 +43,20 @@ class Database_ImgIndex {
      *
      * @return int Identifier in the `screenshots` table
      */
-    public function insertScreenshot($date, $imageScale, $roi, $watermark,
-        $layers, $bitmask, $events, $eventsLabels, $movieIcons, $scale, $scaleType,
-        $scaleX, $scaleY, $numLayers, $switchSources, $celestialLabels, $celestialTrajectories) {
+    public function insertScreenshot($date, $imageScale, $roi, $watermark, $layers, $bitmask, $eventsStateString, $movieIcons, $scale, $scaleType,$scaleX, $scaleY, $numLayers, $switchSources, $celestialLabels, $celestialTrajectories) {
 
         include_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
 
         $this->_dbConnect();
+
+		// old implementation removed for events strings
+		// used to be $this->events->serialize();
+		$old_events_layer_string = ""; 
+
+		// old if events labels are shown switch , removed for new implementation
+		// used to be $this->eventsLabels;
+		$old_events_labels_bool = false; 
+		
 
         $sql = sprintf(
                   "INSERT INTO screenshots "
@@ -64,7 +71,8 @@ class Database_ImgIndex {
                 .     "dataSourceBitMask " . " = %d, "
                 .     "eventSourceString " . " ='%s', "
                 .     "eventsLabels "      . " = %b, "
-                .     "movieIcons "      . " = %b, "
+                .     "eventsState "       . " = '%s', "
+                .     "movieIcons "        . " = %b, "
                 .     "scale "             . " = %b, "
                 .     "scaleType "         . " ='%s', "
                 .     "scaleX "            . " = %f, "
@@ -74,23 +82,18 @@ class Database_ImgIndex {
                 .     "celestialBodiesLabels" . " = '%s', "
                 .     "celestialBodiesTrajectories" . " = '%s';",
 
-                $this->_dbConnection->link->real_escape_string(
-                    isoDateToMySQL($date) ),
+                $this->_dbConnection->link->real_escape_string(isoDateToMySQL($date)),
                 (float)$imageScale,
-                $this->_dbConnection->link->real_escape_string(
-                    $roi ),
+                $this->_dbConnection->link->real_escape_string($roi),
                 (bool)$watermark,
-                $this->_dbConnection->link->real_escape_string(
-                    $layers ),
-                bindec($this->_dbConnection->link->real_escape_string(
-                    (binary)$bitmask ) ),
-                $this->_dbConnection->link->real_escape_string(
-                    $events ),
-                (bool)$eventsLabels,
+                $this->_dbConnection->link->real_escape_string($layers),
+                bindec($this->_dbConnection->link->real_escape_string((binary)$bitmask)),
+                $old_events_layer_string, //  eventsSourceString is always empty not used any more
+                $old_events_labels_bool, // eventLabels is not used anymore
+                $this->_dbConnection->link->real_escape_string($eventsStateString),
                 (bool)$movieIcons,
                 (bool)$scale,
-                $this->_dbConnection->link->real_escape_string(
-                    $scaleType ),
+                $this->_dbConnection->link->real_escape_string($scaleType),
                 (float)$scaleX,
                 (float)$scaleY,
                 (int)$numLayers,
@@ -98,11 +101,11 @@ class Database_ImgIndex {
                 $celestialLabels,
                 $celestialTrajectories
                );
+
         try {
             $result = $this->_dbConnection->query($sql);
-        }
-        catch (Exception $e) {
-            return false;
+        } catch (Exception $e) {
+            throw new \Exception("Could not create screenshot in our database", 2, $e); 
         }
 
         return $this->_dbConnection->getInsertId();

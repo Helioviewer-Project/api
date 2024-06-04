@@ -80,7 +80,6 @@ function loadModule($params) {
     $valid_actions = array(
         'downloadScreenshot'             => 'WebClient',
         'getClosestImage'                => 'WebClient',
-        'getClosestImageDatesForSources' => 'WebClient',
         'getDataSources'                 => 'WebClient',
         'getJP2Header'                   => 'WebClient',
         'getNewsFeed'                    => 'WebClient',
@@ -97,7 +96,7 @@ function loadModule($params) {
         'saveWebClientState'             => 'WebClient',
         'getWebClientState'              => 'WebClient',
         'takeScreenshot'                 => 'WebClient',
-        'makeScreenshot'                 => 'WebClient',
+        'postScreenshot'                 => 'WebClient',
         'getRandomSeed'                  => 'WebClient',
         'getJP2Image'                    => 'JHelioviewer',
         'getJPX'                         => 'JHelioviewer',
@@ -173,7 +172,7 @@ function loadModule($params) {
                 $actions_to_keep_stats_for = [
                     'getClosestImage', 
                     'takeScreenshot', 
-                    'makeScreenshot', 
+                    'postsScreenshot', 
                     'getJPX', 
                     'getJPXClosestToMidPoint', 
                     'uploadMovieToYouTube', 

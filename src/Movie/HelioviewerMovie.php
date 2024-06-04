@@ -31,10 +31,11 @@
 require_once HV_ROOT_DIR . '/../lib/alphaID/alphaID.php';
 require_once HV_ROOT_DIR . '/../src/Database/ImgIndex.php';
 require_once HV_ROOT_DIR . '/../src/Helper/DateTimeConversions.php';
-require_once HV_ROOT_DIR . '/../src/Helper/HelioviewerEvents.php';
 require_once HV_ROOT_DIR . '/../src/Helper/HelioviewerLayers.php';
 require_once HV_ROOT_DIR . '/../src/Helper/RegionOfInterest.php';
 require_once HV_ROOT_DIR . '/../src/Helper/Serialize.php';
+
+use Helioviewer\Api\Event\EventsStateManager;
 
 class Movie_HelioviewerMovie {
     const STATUS_QUEUED = 0;
@@ -62,7 +63,6 @@ class Movie_HelioviewerMovie {
     public $timestamp;
     public $modified;
     public $watermark;
-    public $eventsLabels;
     public $movieIcons;
     public $celestialBodies;
     public $followViewport;
@@ -77,7 +77,7 @@ class Movie_HelioviewerMovie {
 
     private $_db;
     private $_layers;
-    private $_events;
+    private $_eventsManager;
     private $_roi;
     private $_timestamps = array();
     private $_frames     = array();
@@ -139,7 +139,6 @@ class Movie_HelioviewerMovie {
         $this->width        = (int)$info['width'];
         $this->height       = (int)$info['height'];
         $this->watermark    = (bool)$info['watermark'];
-        $this->eventsLabels = (bool)$info['eventsLabels'];
         $this->movieIcons   = (bool)$info['movieIcons'];
         $this->celestialBodies = array(
             'labels'        => $info['celestialBodiesLabels'],
@@ -156,7 +155,15 @@ class Movie_HelioviewerMovie {
 
         // Data Layers
         $this->_layers = new Helper_HelioviewerLayers($info['dataSourceString']);
-        $this->_events = new Helper_HelioviewerEvents($info['eventSourceString']);
+
+        // Events Manager
+        $events_state_from_info = json_decode($info['eventsState'], true);
+
+        if(!empty($events_state_from_info)) {
+            $this->_eventsManager = EventsStateManager::buildFromEventsState($events_state_from_info);
+        } else {
+            $this->_eventsManager = EventsStateManager::buildFromLegacyEventStrings($info['eventSourceString'], (bool)$info['eventsLabels']);
+        }
 
         // Regon of interest
         $this->_roi = Helper_RegionOfInterest::parsePolygonString($info['roi'], $info['imageScale']);
@@ -249,7 +256,7 @@ class Movie_HelioviewerMovie {
 
             $statistics = new Database_Statistics();
             $statistics->log('buildMovie');
-	    $statistics->logRedis('buildMovie');
+            $statistics->logRedis('buildMovie');
         }
 
         $this->_cleanUp();
@@ -281,7 +288,7 @@ class Movie_HelioviewerMovie {
                 'duration'   => $this->getDuration(),
                 'imageScale' => $this->imageScale,
                 'layers'     => $this->_layers->serialize(),
-                'events'     => $this->_events->serialize(),
+                'events'     => $this->_eventsManager->getState(),
                 'x1'         => $this->_roi->left(),
                 'y1'         => $this->_roi->top(),
                 'x2'         => $this->_roi->right(),
@@ -421,8 +428,8 @@ class Movie_HelioviewerMovie {
             'compress'  => false,
             'interlace' => false,
             'watermark' => $watermark,
-            'movie' 	=> true,
-            'size' 	    => $this->size,
+            'movie'     => true,
+            'size'      => $this->size,
             'followViewport' => $this->followViewport,
             'startDate' => $this->startDate,
             'reqStartDate' => $this->reqStartDate,
@@ -444,8 +451,8 @@ class Movie_HelioviewerMovie {
 
             try {
                 $screenshot = new Image_Composite_HelioviewerMovieFrame(
-                    $filepath, $this->_layers, $this->_events,
-                    $this->eventsLabels, $this->movieIcons, $this->celestialBodies,
+                    $filepath, $this->_layers, $this->_eventsManager,
+                    $this->movieIcons, $this->celestialBodies,
                     $this->scale, $this->scaleType, $this->scaleX, $this->scaleY,
                     $time, $this->_roi, $options);
 
@@ -581,18 +588,18 @@ class Movie_HelioviewerMovie {
         // https://bugs.launchpad.net/helioviewer.org/+bug/979231
         $frameRate = round($this->frameRate, 1);
 
-		if($this->size == 1){
-	        $this->width = 1280;
-	        $this->height = 720;
+        if($this->size == 1){
+            $this->width = 1280;
+            $this->height = 720;
         }else if($this->size == 2){
-	        $this->width = 1920;
-	        $this->height = 1080;
+            $this->width = 1920;
+            $this->height = 1080;
         }else if($this->size == 3){
-	        $this->width = 2560;
-	        $this->height = 1440;
+            $this->width = 2560;
+            $this->height = 1440;
         }else if($this->size == 4){
-	        $this->width = 3840;
-	        $this->height = 2160;
+            $this->width = 3840;
+            $this->height = 2160;
         }
 
         // Create and FFmpeg encoder instance
@@ -761,21 +768,21 @@ class Movie_HelioviewerMovie {
 
         $this->_setMovieDimensions();
 
-		if($this->size == 1){
-	        $width = 1280;
-	        $height = 720;
+        if($this->size == 1){
+            $width = 1280;
+            $height = 720;
         }else if($this->size == 2){
-	        $width = 1920;
-	        $height = 1080;
+            $width = 1920;
+            $height = 1080;
         }else if($this->size == 3){
-	        $width = 2560;
-	        $height = 1440;
+            $width = 2560;
+            $height = 1440;
         }else if($this->size == 4){
-	        $width = 3840;
-	        $height = 2160;
+            $width = 3840;
+            $height = 2160;
         }else{
-	        $width = $this->width;
-	        $height = $this->height;
+            $width = $this->width;
+            $height = $this->height;
         }
 
         // Update movie entry in database with new details

@@ -15,6 +15,8 @@
  */
 require_once 'interface.Module.php';
 
+use Helioviewer\Api\Event\EventsStateManager;
+
 class Module_Movies implements Module {
 
     const YOUTUBE_THUMBNAIL_FORMAT = "https://i.ytimg.com/vi/{VideoID}/{Quality}default.jpg";
@@ -40,22 +42,199 @@ class Module_Movies implements Module {
         if ($this->validate()) {
             try {
                 $this->{$this->_params['action']}();
-            }
-            catch (Exception $e) {
+            } catch (Exception $e) {
                 handleError($e->getMessage(), $e->getCode());
             }
         }
+    }
+
+
+    /**
+     * Queues a request for a Helioviewer.org movie
+     * Does it with HTTP POST request
+     */
+    public function postMovie() {
+
+        include_once HV_ROOT_DIR.'/../lib/alphaID/alphaID.php';
+        include_once HV_ROOT_DIR.'/../lib/Resque.php';
+        include_once HV_ROOT_DIR.'/../lib/Redisent/Redisent.php';
+        include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerLayers.php';
+        include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerEvents.php';
+        include_once HV_ROOT_DIR.'/../src/Database/MovieDatabase.php';
+        include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
+
+        $json_params = $this->_params['json'];
+        // Connect to redis
+        $redis = new Redisent(HV_REDIS_HOST, HV_REDIS_PORT);
+
+        // If the queue is currently full, don't process the request
+        $queueSize = Resque::size(HV_MOVIE_QUEUE);
+        if ( $queueSize >= MOVIE_QUEUE_MAX_SIZE ) {
+            throw new Exception(
+                'Sorry, due to current high demand, we are currently unable ' .
+                'to process your request. Please try again later.', 40);
+        }
+
+        // Get current number of HV_MOVIE_QUEUE workers
+        $workers = Resque::redis()->smembers('workers');
+        $movieWorkers = array_filter($workers, function ($elem) {
+            return strpos($elem, HV_MOVIE_QUEUE) !== false;
+        });
+
+        if( isset($json_params['celestialBodiesLabels']) && isset($json_params['celestialBodiesTrajectories']) ){
+            $celestialBodies = array( "labels" => $json_params['celestialBodiesLabels'],
+                                "trajectories" => $json_params['celestialBodiesTrajectories']);
+        }else{
+            $celestialBodies = array( "labels" => "",
+                                "trajectories" => "");
+        }
+
+        // Default options
+        $defaults = array(
+            "format"      => 'mp4',
+            "frameRate"   => null,
+            "movieLength" => null,
+            "maxFrames"   => HV_MAX_MOVIE_FRAMES,
+            "watermark"   => true,
+            "scale"       => false,
+            "scaleType"   => 'earth',
+            "scaleX"      => 0,
+            "scaleY"      => 0,
+            "size"        => 0,
+            "movieIcons"  => 0,
+            "followViewport"  => 0,
+            "reqStartTime"  => $json_params['startTime'],
+            "reqEndTime"  => $json_params['endTime'],
+            "reqObservationDate"  => null,
+            "switchSources" => false,
+            "celestialBodies" => $celestialBodies
+        );
+
+        $options = array_replace($defaults, $json_params);
+
+        // Default to 15fps if no frame-rate or length was specified
+        if ( is_null($options['frameRate']) && is_null($options['movieLength'])) {
+			$options['frameRate'] = 15;
+        }
+
+        // Limit movies to three layers
+        $layers = new Helper_HelioviewerLayers($json_params['layers']);
+        if ( $layers->length() < 1 || $layers->length() > 3 ) {
+            throw new Exception('Invalid layer choices! You must specify 1-3 comma-separated layer names.', 22);
+        }
+
+		$events_manager = EventsStateManager::buildFromEventsState($json_params['eventsState']);
+
+        // TODO 2012/04/11
+        // Discard any layers which do not share an overlap with the roi to
+        // avoid generating kdu_expand errors later. Check is performed already
+        // on front-end, but should also be done before queuing a request.
+
+        // Determine the ROI
+        $roi       = $this->_getMovieROI($options);
+        $roiString = $roi->getPolygonString();
+
+        $numPixels = $roi->getPixelWidth() * $roi->getPixelHeight();
+
+        // Use reduce image scale if necessary
+        $imageScale = $roi->imageScale();
+
+        // Max number of frames
+        $maxFrames = min($this->_getMaxFrames($queueSize), $options['maxFrames']);
+
+        // Create a connection to the database
+        $db = new Database_ImgIndex();
+        $movieDb = new Database_MovieDatabase();
+
+        // Estimate the number of frames
+        $numFrames = $this->_estimateNumFrames($db, $layers, $json_params['startTime'], $json_params['endTime']);
+        $numFrames = min($numFrames, $maxFrames);
+
+        // Estimate the time to create movie frames
+        // @TODO 06/2012: Factor in total number of workers and number of
+        //                workers that are currently available?
+        $estBuildTime = $this->_estimateMovieBuildTime($movieDb, $numFrames, $numPixels, $options['format']);
+
+        // If all workers are in use, increment and use estimated wait counter
+        if ( $queueSize +1 >= sizeOf($movieWorkers) ) {
+            $eta = $redis->incrby('helioviewer:movie_queue_wait', $estBuildTime);
+            $updateCounter = true;
+        }
+        else {
+            // Otherwise simply use the time estimated for the single movie
+            $eta = $estBuildTime;
+            $updateCounter = false;
+        }
+
+        // Get datasource bitmask
+        $bitmask = bindec($layers->getBitMask());
+
+        // Create entry in the movies table in MySQL
+        $dbId = $movieDb->insertMovie(
+            $json_params['startTime'],
+            $json_params['endTime'],
+            (isset($json_params['reqObservationDate']) ? $json_params['reqObservationDate'] : false),
+            $imageScale,
+            $roiString,
+            $maxFrames,
+            $options['watermark'],
+            $json_params['layers'],
+            $bitmask,
+			$events_manager->export(),
+            (isset($json_params['movieIcons']) ? $json_params['movieIcons'] : false),
+            (isset($json_params['followViewport']) ? $json_params['followViewport'] : false),
+            $options['scale'],
+            $options['scaleType'],
+            $options['scaleX'],
+            $options['scaleY'],
+            $layers->length(),
+            $queueSize,
+            $options['frameRate'],
+            $options['movieLength'],
+            $options['size'],
+            $options['switchSources'],
+            $options['celestialBodies']
+        );
+
+        // Convert id
+        $publicId = alphaID($dbId, false, 5, HV_MOVIE_ID_PASS);
+
+        // Queue movie request
+        $args = array(
+            'movieId' => $publicId,
+            'eta'     => $estBuildTime,
+            'format'  => $options['format'],
+            'counter' => $updateCounter
+        );
+
+        // Create entries for each version of the movie in the movieFormats
+        // table
+        foreach(array('mp4', 'webm') as $format) {
+            $movieDb->insertMovieFormat($dbId, $format);
+        }
+
+        $token = Resque::enqueue(HV_MOVIE_QUEUE, 'Job_MovieBuilder', $args, true);
+
+        // Print response
+        $response = array(
+            'id'    => $publicId,
+            'eta'   => $eta,
+            'queue' => max(0, $queueSize + 1 - sizeOf($movieWorkers)),
+            'token' => $token
+        );
+
+        $this->_printJSON(json_encode($response));
     }
 
     /**
      * Queues a request for a Helioviewer.org movie
      */
     public function queueMovie() {
+
         include_once HV_ROOT_DIR.'/../lib/alphaID/alphaID.php';
         include_once HV_ROOT_DIR.'/../lib/Resque.php';
         include_once HV_ROOT_DIR.'/../lib/Redisent/Redisent.php';
         include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerLayers.php';
-        include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerEvents.php';
         include_once HV_ROOT_DIR.'/../src/Database/MovieDatabase.php';
         include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
 
@@ -114,12 +293,23 @@ class Module_Movies implements Module {
         // Limit movies to three layers
         $layers = new Helper_HelioviewerLayers($this->_params['layers']);
         if ( $layers->length() < 1 || $layers->length() > 3 ) {
-            throw new Exception(
-                'Invalid layer choices! You must specify 1-3 comma-separated '.
-                'layer names.', 22);
+            throw new Exception('Invalid layer choices! You must specify 1-3 comma-separated layer names.', 22);
         }
 
-        $events = new Helper_HelioviewerEvents($this->_params['events']);
+        // Event legacy string
+        $events_legacy_string = "";
+        if ( array_key_exists('events', $this->_params) ) {
+            $events_legacy_string = $this->_params['events'];
+        }
+
+        // Event legacy labels switch
+        $event_labels = false;
+        if ( array_key_exists('eventLabels', $this->_params) ) {
+            $event_labels = (bool)$this->_params['eventLabels'];
+        }
+
+		// Events manager built from old logic
+		$events_manager = EventsStateManager::buildFromLegacyEventStrings($events_legacy_string, $event_labels);
 
         // TODO 2012/04/11
         // Discard any layers which do not share an overlap with the roi to
@@ -176,8 +366,7 @@ class Module_Movies implements Module {
             $options['watermark'],
             $this->_params['layers'],
             $bitmask,
-            $this->_params['events'],
-            $this->_params['eventsLabels'],
+            $events_manager->export(),
             (isset($this->_params['movieIcons']) ? $this->_params['movieIcons'] : false),
             (isset($this->_params['followViewport']) ? $this->_params['followViewport'] : false),
             $options['scale'],
@@ -231,7 +420,6 @@ class Module_Movies implements Module {
         include_once HV_ROOT_DIR.'/../lib/Resque.php';
         include_once HV_ROOT_DIR.'/../lib/Redisent/Redisent.php';
         include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerLayers.php';
-        include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerEvents.php';
         include_once HV_ROOT_DIR.'/../src/Database/MovieDatabase.php';
         include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
         include_once HV_ROOT_DIR.'/../src/Movie/HelioviewerMovie.php';
@@ -270,8 +458,8 @@ class Module_Movies implements Module {
 
         // Check if movie exists on disk before re-queueing
         if ( $options['force'] === false ) {
-            $helioviewerMovie = new Movie_HelioviewerMovie(
-                $this->_params['id'], $options['format']);
+            $helioviewerMovie = new Movie_HelioviewerMovie($this->_params['id'], $options['format']);
+
             $filepath = $helioviewerMovie->getFilepath();
 
             $path_parts = pathinfo($filepath);
@@ -304,11 +492,9 @@ class Module_Movies implements Module {
         foreach ( $movieFormats as $movieFormat ) {
             if ($movieFormat['status'] == 0) {
 				throw new Exception('Movie is already in queue', 47);
-                return;
             }
             if ( $movieFormat['status'] == 1) {
 				throw new Exception('Movie is currently being processed', 47);
-                return;
             }
         }
 
@@ -530,6 +716,7 @@ class Module_Movies implements Module {
      * if one was not properly specified.
      */
     private function _getMovieROI($options) {
+
         include_once HV_ROOT_DIR.'/../src/Helper/RegionOfInterest.php';
 
         // Region of interest (center in arcseconds and dimensions in pixels)
@@ -539,7 +726,7 @@ class Module_Movies implements Module {
             !isset($options['x2']) && !isset($options['y2']) &&
             !isset($options['x0']) && !isset($options['y0']) &&
             !isset($options['width']) && !isset($options['height']) ) {
-            $defaultOptions = $this->_getDefaultROIOptions($this->_params['imageScale']);
+            $defaultOptions = $this->_getDefaultROIOptions($options['imageScale']);
             $x1 = $defaultOptions['x1'];
             $y1 = $defaultOptions['y1'];
             $x2 = $defaultOptions['x2'];
@@ -559,14 +746,14 @@ class Module_Movies implements Module {
             // Region of interest (top-left and bottom-right coords in
             // arcseconds)
             $x1 = $options['x0'] - 0.5 * $options['width']
-                * $this->_params['imageScale'];
+                * $options['imageScale'];
             $y1 = $options['y0'] - 0.5 * $options['height']
-                * $this->_params['imageScale'];
+                * $options['imageScale'];
 
             $x2 = $options['x0'] + 0.5 * $options['width']
-                * $this->_params['imageScale'];
+                * $options['imageScale'];
             $y2 = $options['y0'] + 0.5 * $options['height']
-                * $this->_params['imageScale'];
+                * $options['imageScale'];
         }
         else {
             throw new Exception(
@@ -574,7 +761,7 @@ class Module_Movies implements Module {
         }
 
         $roi = new Helper_RegionOfInterest($x1, $y1, $x2, $y2,
-            $this->_params['imageScale']);
+            $options['imageScale']);
 
         return $roi;
     }
@@ -598,19 +785,15 @@ class Module_Movies implements Module {
 
         // Estimate number of movies frames for each layer
         foreach ( $layers->toArray() as $layer ) {
-            $numFrames += $db->getDataCount($startTime, $endTime,
-                $layer['sourceId']);
+            $numFrames += $db->getDataCount($startTime, $endTime, $layer['sourceId']);
         }
 
         // Raise an error if few or no frames were found for the request range
         // and data sources
         if ($numFrames == 0) {
-            throw new Exception('No images found for requested time range. '.
-                'Please try a different time.', 12);
-        }
-        else if ($numFrames <= 3) {
-            throw new Exception('Insufficient data was found for the '.
-                'requested time range. Please try a different time.', 16);
+            throw new Exception('No images found for requested time range. Please try a different time.', 12);
+        } else if ($numFrames <= 3) {
+            throw new Exception('Insufficient data was found for the requested time range. Please try a different time.', 16);
         }
 
         return $numFrames;
@@ -1345,6 +1528,11 @@ class Module_Movies implements Module {
                                     'scaleX', 'scaleY'),
                 'ints'     => array('maxFrames', 'width', 'height', 'size')
             );
+            break;
+        case 'postMovie': 
+            $expected = [
+                'required' => ['json'],
+            ];
             break;
         case 'reQueueMovie':
             $expected = array(
