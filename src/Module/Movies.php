@@ -478,6 +478,11 @@ class Module_Movies implements Module {
         $movieDatabase = new Database_MovieDatabase();
         $movie = $movieDatabase->getMovieMetadata($movieId);
 
+        // Movie not found
+        if(!$movie) {
+            return $this->_sendResponse(404, 'NOT FOUND', 'Movie could not be found');
+        }
+
 
         // Check if movie is already in the queue (status=0)
         // or is already being processed (status=1) before re-queueing.
@@ -1592,6 +1597,26 @@ class Module_Movies implements Module {
         }
 
         return true;
+    }
+
+    /**
+     * Helper function to handle response code and response message with
+     * output result as either JSON or JSONP
+     *
+     * @param int    $code HTTP response code to return
+     * @param string $message  Message for the response code,
+     * @param mixed  $data Data can be anything 
+     *
+     * @return void
+     */
+    private function _sendResponse(int $code, string $message, mixed $data) : void
+    {
+        http_response_code($code);
+        $this->_printJSON(json_encode([
+            'status_code' => $code,
+            'status_txt' => $message,
+            'data' => $data,
+        ]));
     }
 }
 ?>
