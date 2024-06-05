@@ -126,7 +126,8 @@ function loadModule($params) {
         'getSolarBodies'                 => 'SolarBodies',
         'getTrajectoryTime'              => 'SolarBodies',
         'logNotificationStatistics'      => 'WebClient',
-        'getEclipseImage'                => 'WebClient'                   
+        'getEclipseImage'                => 'WebClient', 
+        'getClosestImageDatesForSources' => 'WebClient',
     );
 
     include_once HV_ROOT_DIR.'/../src/Validation/InputValidator.php';
