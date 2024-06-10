@@ -506,6 +506,74 @@ class Database_ImgIndex {
     }
 
     /**
+     * Return the closest matches from the `data` table whose time is just before and just after of the given time
+     * there can be null dates, if there is before or after image
+     * @param string $date     UTC date string like "2003-10-05T00:00:00Z"
+     * @param int    $sourceId The data source identifier in the database
+     *
+     * @return array Array containing 1 next image and 1 prev date image
+     */
+    public function getClosestDataBeforeAndAfter($date, $sourceId) 
+    {
+        include_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
+
+        $this->_dbConnect();
+
+        $datestr = isoDateToMySQL($date);
+
+        // Before date first image
+        $sql_before = sprintf(
+                   "SELECT date "
+                 . "FROM data "
+                 . "WHERE "
+                 .     "sourceId " . " = %d AND "
+                 .     "date "     . "< '%s' "
+                 . "ORDER BY date DESC "
+                 . "LIMIT 1;",
+                 (int)$sourceId,
+                 $this->_dbConnection->link->real_escape_string($datestr)
+               );
+
+        try {
+            $result = $this->_dbConnection->query($sql_before);
+        } catch (Exception $e) {
+            throw new \Exception("Unable to find before image for ".$date." and sourceId:".$sourceId, 2, $e);
+        }
+
+        $before_date = $result->fetch_array(MYSQLI_ASSOC);
+
+        // After date first image
+        $sql_after = sprintf(
+                   "SELECT date "
+                 . "FROM data "
+                 . "WHERE "
+                 .     "sourceId " . " = %d AND "
+                 .     "date "     . "> '%s' "
+                 . "ORDER BY date DESC "
+                 . "LIMIT 1;",
+                 (int)$sourceId,
+                 $this->_dbConnection->link->real_escape_string($datestr)
+               );
+
+        try {
+            $result = $this->_dbConnection->query($sql_after);
+        } catch (Exception $e) {
+            throw new \Exception("Unable to find before image for ".$date." and sourceId:".$sourceId, 2, $e);
+        }
+
+        // pre($result);
+        $after_date = $result->fetch_array(MYSQLI_ASSOC);
+
+        return [
+            'prev_date' => $before_date ? $before_date['date']: null,
+            'next_date'  => $after_date ? $after_date['date'] : null,
+        ];
+
+    }
+
+
+
+    /**
      * Return the closest match from the `data` table whose time is on
      * or before the specified time.
      *
