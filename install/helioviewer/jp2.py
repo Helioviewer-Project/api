@@ -122,7 +122,7 @@ def insert_images(images, sources, rootdir, db, cursor, mysql, step_function=Non
         query_v2 += "(NULL, '%s', '%s', '%s', %d)," % (path, filename, img["date"], source['id'])
 
         # Progressbar
-        if step_function and (i + 1) % __STEP_FXN_THROTTLE__ is 0:
+        if step_function and (((i + 1) % __STEP_FXN_THROTTLE__) == 0):
             step_function(filename)
 
     # Remove trailing comma

@@ -659,7 +659,7 @@ class ImageRetrievalDaemon:
         """Sends an email notification to the Helioviewer admin(s) when a
         one of the data sources becomes unreachable."""
         # If no server was specified, don't do anything
-        if self.email_server is "":
+        if self.email_server == "":
             return
 
         # import email modules
@@ -710,7 +710,7 @@ class ImageRetrievalDaemon:
 
         # Cprecincts
         if cprecincts is not None:
-            command += " Cprecincts=\{%d,%d\}" % (cprecincts[0], cprecincts[1])
+            command += " Cprecincts={%d,%d}" % (cprecincts[0], cprecincts[1])
 
         # Hide output
         command += " >/dev/null"
