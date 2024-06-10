@@ -36,4 +36,20 @@ final class JP2ImageXMLBoxTest extends TestCase
         $rsun = $xmlBox->getRSun();
 	    $this->assertEquals(1626.7751, $rsun);
     }
+
+    public function test_getDSun(): void
+    {
+        $prefix = HV_ROOT_DIR . "/../install/helioviewer/__test__/__tdata__/";
+        $known_answers = [
+            $prefix . "2012_07_05__03_25_52_200__RHESSI_RHESSI_Back_Projection_25-50keV.jp2" => 152096710000,
+            $prefix . "2024_04_16__11_15_41_129__SDO_AIA_AIA_304.jp2" => 150159030000,
+            $prefix . "2024_04_16__13_00_13_908__SOHO_EIT_EIT_171.jp2" => 148557089924.02765,
+            $prefix . "iris_1330A_20240415_060002.jp2" => 150094000000
+        ];
+        foreach ($known_answers as $jp2file => $expected) {
+            $parser = new Image_JPEG2000_JP2ImageXMLBox($jp2file);
+            $dsun = $parser->getDSun();
+            $this->assertEquals($expected, $dsun);
+        }
+    }
 }

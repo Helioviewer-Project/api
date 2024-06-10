@@ -6,6 +6,14 @@ from jp2parser import JP2parser
 import configparser
 import os
 
+# This dictates which fields should be examined for a given observatory's images.
+# It should align with those in `jp2.py`
+OBSERVATORY_KEYWORDS = {
+    "RHESSI": ["observatory", "energy_band", "reconstruction_method"],
+    "Hinode": ["observatory", "instrument", "detector", "filter1", "filter2"],
+    "default": ["observatory", "instrument", "detector", "measurement"]
+}
+
 def parse_args():
     parser = ArgumentParser(description="Determines the required data source name for a given file")
     parser.add_argument('jp2_file', type=str, help="JPEG2000 file to examine")
@@ -13,13 +21,15 @@ def parse_args():
     return parser.parse_args()
 
 def extract_datasource_name(jp2_file, cursor):
-    leafs = ["observatory", "instrument", "detector", "measurement"]
-
     sources = get_datasources(cursor)
     source = sources
     prev = ""
     jp2 = JP2parser(jp2_file)
     img = jp2.getData()
+    try:
+        leafs = OBSERVATORY_KEYWORDS[img["observatory"]]
+    except KeyError:
+        leafs = OBSERVATORY_KEYWORDS["default"]
 
     in_db = True # Track if the datasource is in the database
     for leaf in leafs:

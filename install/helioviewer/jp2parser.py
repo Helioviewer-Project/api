@@ -6,12 +6,14 @@ JPEG 2000 Image XML Box parser class
 import sys
 from xml.etree import cElementTree as ET
 import numpy as np
-from sunpy.map import Map
+from astropy.time import Time
+from sunpy.map import Map, GenericMap
 from sunpy.util.xml import xml_to_dict
 from sunpy.io.header import FileHeader
 from sunpy.map.mapbase import MapMetaValidationError
 from glymur import Jp2k
 from sunpy.util.xml import xml_to_dict
+from typing import Union
 
 __HV_CONSTANT_RSUN__ = 959.644
 __HV_CONSTANT_AU__ = 149597870700
@@ -23,12 +25,17 @@ class JP2parser:
     def __init__(self, path):
         """Main application"""
         self._filepath = path
+        # getImageMap initializes self._data
+        self._imageData = self._loadSunpyMap()
 
-    def getImageMap(self):
+    def _loadSunpyMap(self) -> GenericMap:
         try:
             return Map(self.read_header_only_but_still_use_sunpy_map())
         except MapMetaValidationError:
             return Map(self.read_header_only_but_still_use_sunpy_map(patch_cunit=True))
+
+    def getImageMap(self) -> GenericMap:
+        return self._imageData
 
     def getData(self):
         """Create data object of JPEG 2000 image.
@@ -103,11 +110,20 @@ class JP2parser:
             image['filter2'] = measurement.split("-")[1].replace(" ", "_")
         else:
             image['measurement'] = measurement
-        image['date'] = imageData.date
+        image['date'] = self._get_date(imageData)
         image['filepath'] = self._filepath
         image['header'] = imageData.meta
 
+        if image["observatory"] == "RHESSI":
+            image = self._process_rhessi_extras(image, imageData)
+
         return image
+
+    def _get_date(self, img: GenericMap) -> Time:
+        try:
+            return img.date
+        except KeyError:
+            return Time(img.meta["date_obs"])
 
     def read_header_only_but_still_use_sunpy_map(self, patch_cunit=False):
         """
@@ -190,6 +206,12 @@ class JP2parser:
 
         self._data = pydict
 
+        hv_tag = xml_box[0].xml.find('helioviewer')
+        if hv_tag is not None:
+            hvxml = ET.tostring(hv_tag)
+            self._helioviewer = xml_to_dict(hvxml)["helioviewer"]
+
+
         return [FileHeader(pydict)]
 
 
@@ -214,25 +236,25 @@ class JP2parser:
             dsun = (rsun_1au / rsun_image) * dsun_1au
         """
         maxDSUN = 2.25e11 # A reasonable max for solar observatories ~1.5 AU
+        dsun_keys = [
+            'DSUN_OBS', # Used by most data sources
+            'DSUN'      # Used by RHESSI
+        ]
+        rsun_keys = [
+            'SOLAR_R',  # EIT
+            'RADIUS',   # MDI
+        ]
+        def find_value(data: dict, keys: list[str]) -> Union[float,None]:
+            # Find the first instance of any key in data and return its value
+            for key in keys:
+                if key in data:
+                    return data[key]
+            return None
 
-        try:
-            dsun = self._data['DSUN_OBS'] # AIA, EUVI, COR, SWAP, SXT
-        except Exception as e:
-            try:
-                rsun = self._data['SOLAR_R'] # EIT
-            except Exception as e:
-                try:
-                    rsun = self._data['RADIUS'] # MDI
-                except Exception as e:
-                    #
-                    value = 1
-
-            try:
-                rsun
-            except NameError:
-                #skipping
-                value = 1
-            else:
+        dsun = find_value(self._data, dsun_keys)
+        if dsun is None:
+            rsun = find_value(self._data, rsun_keys)
+            if rsun is not None:
                 scale = self._data['CDELT1']
                 if scale == 0 :
                     print('JP2 WARNING! Invalid value for CDELT1 (' + self._filepath + '): ' + scale)
@@ -243,9 +265,7 @@ class JP2parser:
 
         # HMI continuum images may have DSUN = 0.00
         # LASCO/MDI may have rsun=0.00
-        try:
-            dsun
-        except NameError:
+        if dsun is None:
             dsun = __HV_CONSTANT_AU__
 
         if dsun <= 0:
@@ -376,3 +396,17 @@ class JP2parser:
         except Exception as e:
             # AIA, EIT, and MDI do their own rotation
             return False
+
+    def _process_rhessi_extras(self, image: dict, imageData: GenericMap) -> dict:
+        """
+        Performs extra processing specific to RHESSI images.
+        This extracts the energy band and reconstruction methods into the img dict.
+        """
+        image[
+            "energy_band"
+        ] = f"{imageData.meta['energy_l']}_{imageData.meta['energy_h']}"
+        image["reconstruction_method"] = self._helioviewer[
+            "HV_RHESSI_IMAGE_RECONSTRUCTION_METHOD"
+        ]
+        return image
+
