@@ -123,6 +123,34 @@ class Module_WebClient implements Module {
      *
      * TODO: Combine with getJP2Image? (e.g. "&display=true")
      */
+    public function getClosestImageDatesForSources() {
+
+        include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
+
+        $imgIndex = new Database_ImgIndex();
+
+        $sources = trim($this->_params['sources']);
+        $source_ids = explode(',', $sources);
+
+        $results = [];
+        
+        foreach($source_ids as $sid) {
+            $closestImages = $imgIndex->getClosestDataBeforeAndAfter($this->_params['date'], $sid);
+            $results[$sid]['prev_date'] = $closestImages['prev_date'];
+            $results[$sid]['next_date'] = $closestImages['next_date'];
+        }
+
+        // Print result
+        $this->_printJSON(json_encode($results));
+    }
+
+    /**
+     * Finds the closest image available for a given time and datasource
+     *
+     * @return JSON meta information for matching image
+     *
+     * TODO: Combine with getJP2Image? (e.g. "&display=true")
+     */
     public function getClosestImage() {
         include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
 
@@ -1661,6 +1689,13 @@ class Module_WebClient implements Module {
                'bools'      => array('switchSources'),
                'alphanum' => array('callback'),
                'ints'     => array('sourceId')
+            );
+            break;
+
+        case 'getClosestImageDatesForSources':
+            $expected = array(
+               'required' => array('date', 'sources'),
+               'dates'    => array('date'),
             );
             break;
         case 'getDataSources':
