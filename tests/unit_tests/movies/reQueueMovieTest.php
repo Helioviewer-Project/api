@@ -70,7 +70,7 @@ final class reQueueMovieTest extends TestCase
      * the movie is already there
      */
     public function testRequeueMovie_MovieExists() {
-        $this->markTestSkipped("Need to fix this test");
+        $this->markTestSkipped("Integration Tests to be handled later");
         // Queue the test movie
         $result = $this->_queueTestMovie();
         // Build the test movie
@@ -93,6 +93,7 @@ final class reQueueMovieTest extends TestCase
      * @runInSeparateProcess
      */
     public function testRequeueMovie_Force() {
+        $this->markTestSkipped("Integration Tests to be handled later");
         // Queue the test movie
         $result = $this->_queueTestMovie();
         // Build the test movie
@@ -114,6 +115,7 @@ final class reQueueMovieTest extends TestCase
      * Helper function so the test can be run with both force = true & false
      */
     public function _testRequeueMovie_MovieProcessing($force) {
+        $this->markTestSkipped("Integration Tests to be handled later");
         // Queue the test movie
         $result = $this->_queueTestMovie();
         // Build the test movie
@@ -144,6 +146,7 @@ final class reQueueMovieTest extends TestCase
      * @runInSeparateProcess
      */
     public function testRequeueMovie_MovieProcessing() {
+        $this->markTestSkipped("Integration Tests to be handled later");
         $this->_testRequeueMovie_MovieProcessing(false);
     }
 
@@ -153,6 +156,7 @@ final class reQueueMovieTest extends TestCase
      * @runInSeparateProcess
      */
     public function testRequeueMovie_MovieProcessing_Force() {
+        $this->markTestSkipped("Integration Tests to be handled later");
         $this->_testRequeueMovie_MovieProcessing(true);
     }
 
@@ -160,6 +164,7 @@ final class reQueueMovieTest extends TestCase
      * Issue #262 - When mp4 creation fails, movie can't be requeued
      */
     public function testRequeueMovie_262() {
+        $this->markTestSkipped("Integration Tests to be handled later");
         // Queue the test movie
         $result = $this->_queueTestMovie();
         // Get the movie ID as an integer

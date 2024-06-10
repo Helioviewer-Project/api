@@ -224,9 +224,14 @@ class Module_SolarEvents implements Module {
     }
 
     public function events() {
-        $start = new DateTimeImmutable($this->_params['startTime']);
+        // The given time is the observation time.
+        $observationTime = new DateTimeImmutable($this->_params['startTime']);
+        // The query start time is 12 hours earlier.
+        $start = $observationTime->sub(new DateInterval("PT12H"));
+        // The query duration will be 24 hours.
+        // This results in a query of events over 24 hours with the given time
+        // at the center.
         $length = new DateInterval('P1D');
-        $observationTime = $this->_params['startTime'];
 
         // Check if any specific datasources were requested
         if (array_key_exists('sources', $this->_options)) {
@@ -240,7 +245,6 @@ class Module_SolarEvents implements Module {
                 $hekData = $this->getHekEvents();
             }
 
-            // TODO: start should be the beginning of the day, Time = 00:00:00
             // Query the rest of the data
             $data = Helper_EventInterface::GetEvents($start, $length, $observationTime, $sources);
 

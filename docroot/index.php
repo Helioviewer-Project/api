@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Helioviewer Web Server
  *
@@ -21,29 +22,40 @@
  *    web-client install to connect with)
  *  = Add getPlugins method to JHelioviewer module (empty function for now)
  */
+require_once __DIR__.'/../vendor/autoload.php';
 require_once '../src/Config.php';
 require_once '../src/Helper/ErrorHandler.php';
+
+use Helioviewer\Api\Request\RequestParams;
+use Helioviewer\Api\Request\RequestException;
 
 $config = new Config('../settings/Config.ini');
 date_default_timezone_set('UTC');
 register_shutdown_function('shutdownFunction');
-
 
 if ( array_key_exists('docs', $_GET) ) {
     printAPIDocs();
     exit;
 }
 
+try {
+    // Parse request and its variables
+    $params = RequestParams::collect();
+} catch (RequestException $re) {
 
-// For now, accept GET or POST requests for any API endpoint
-if ( isset($_REQUEST['action']) ) {
-    if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-        $params = $_GET;
-    }
-    else {
-        $params = $_POST;
-    }
+    // Set the content type to JSON
+    header('Content-Type: application/json');
+
+    // Set the HTTP status code
+    http_response_code($re->getCode());
+
+    echo json_encode([
+        'success' => false,
+        'message' => $re->getMessage(),
+    ]);
+    exit;
 }
+
 
 
 // Redirect to API Documentation if no API request is being made.
@@ -78,6 +90,8 @@ function loadModule($params) {
         'updateDataCoverage'        => 'WebClient', // Deprecated, remove in V3, replaced by management scripts
         'shortenURL'                => 'WebClient',
         'goto'                      => 'WebClient',
+        'saveWebClientState'        => 'WebClient',
+        'getWebClientState'         => 'WebClient',
         'takeScreenshot'            => 'WebClient',
         'getRandomSeed'             => 'WebClient',
         'getJP2Image'               => 'JHelioviewer',
