@@ -33,6 +33,6 @@ scipy==1.11.4
 six==1.16.0
 sunpy==5.1.0
 tomli==2.0.1
-tqdm==4.66.1
+tqdm==4.66.3
 yarl==1.9.4
 zipp==3.17.0
