@@ -131,7 +131,7 @@ class Module_Movies implements Module {
         // on front-end, but should also be done before queuing a request.
 
         // Determine the ROI
-        $roi       = $this->_getMovieROI($options);
+        $roi       = $this->_getMovieROI($options, $json_params);
         $roiString = $roi->getPolygonString();
 
         $numPixels = $roi->getPixelWidth() * $roi->getPixelHeight();
@@ -317,7 +317,7 @@ class Module_Movies implements Module {
         // on front-end, but should also be done before queuing a request.
 
         // Determine the ROI
-        $roi       = $this->_getMovieROI($options);
+        $roi       = $this->_getMovieROI($options, $this->_params);
         $roiString = $roi->getPolygonString();
 
         $numPixels = $roi->getPixelWidth() * $roi->getPixelHeight();
@@ -720,7 +720,7 @@ class Module_Movies implements Module {
      * Returns the region of interest for the movie request or throws an error
      * if one was not properly specified.
      */
-    private function _getMovieROI($options) {
+    private function _getMovieROI($options, $params) {
 
         include_once HV_ROOT_DIR.'/../src/Helper/RegionOfInterest.php';
 
@@ -731,7 +731,7 @@ class Module_Movies implements Module {
             !isset($options['x2']) && !isset($options['y2']) &&
             !isset($options['x0']) && !isset($options['y0']) &&
             !isset($options['width']) && !isset($options['height']) ) {
-            $defaultOptions = $this->_getDefaultROIOptions($options['imageScale']);
+            $defaultOptions = $this->_getDefaultROIOptions($params['imageScale']);
             $x1 = $defaultOptions['x1'];
             $y1 = $defaultOptions['y1'];
             $x2 = $defaultOptions['x2'];
@@ -751,14 +751,14 @@ class Module_Movies implements Module {
             // Region of interest (top-left and bottom-right coords in
             // arcseconds)
             $x1 = $options['x0'] - 0.5 * $options['width']
-                * $options['imageScale'];
+                * $params['imageScale'];
             $y1 = $options['y0'] - 0.5 * $options['height']
-                * $options['imageScale'];
+                * $params['imageScale'];
 
             $x2 = $options['x0'] + 0.5 * $options['width']
-                * $options['imageScale'];
+                * $params['imageScale'];
             $y2 = $options['y0'] + 0.5 * $options['height']
-                * $options['imageScale'];
+                * $params['imageScale'];
         }
         else {
             throw new Exception(
@@ -766,7 +766,7 @@ class Module_Movies implements Module {
         }
 
         $roi = new Helper_RegionOfInterest($x1, $y1, $x2, $y2,
-            $options['imageScale']);
+            $params['imageScale']);
 
         return $roi;
     }
