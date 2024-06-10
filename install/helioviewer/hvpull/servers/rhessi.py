@@ -21,7 +21,3 @@ class RHESSIDataServer(DataServer):
             for energy_band in bands:
                 dirs.append(os.path.join(self.uri, date, energy_band))
         return dirs
-
-    def get_starttime(self):
-        """Default start time to use when retrieving data"""
-        return datetime.datetime.now() - datetime.timedelta(days=3)
