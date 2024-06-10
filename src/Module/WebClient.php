@@ -71,6 +71,10 @@ class Module_WebClient implements Module {
 
         $info = $imgIndex->getScreenshot($this->_params['id']);
 
+        if(!$info) {
+            return $this->_sendResponse(404, "NOT FOUND", "Screenshot not found");
+        }
+
         $layers = new Helper_HelioviewerLayers($info['dataSourceString']);
 
         $dir = sprintf('%s/screenshots/%s/%s/',
