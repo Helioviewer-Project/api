@@ -424,8 +424,10 @@ class Database_Statistics {
         // Array to keep track of counts for each action
         $counts = array(
             "buildMovie"                       => array(),
+            "postMovie"                        => array(),
             "getClosestData"                   => array(),
             "getClosestImage"                  => array(),
+            "getClosestImageDatesForSources"   => array(),
             "getJPX"                           => array(),
             "getJPXClosestToMidPoint"          => array(),
             "takeScreenshot"                   => array(),
@@ -447,10 +449,12 @@ class Database_Statistics {
         // Summary array
         $summary = array(
             "buildMovie"                       => 0,
+            "postMovie"                        => 0,
             "getClosestData"                   => 0,
             "getClosestImage"                  => 0,
             "getJPX"                           => 0,
             "getJPXClosestToMidPoint"          => 0,
+            "getClosestImageDatesForSources"   => 0,
             "takeScreenshot"                   => 0,
             "postScreenshot"                   => 0,
             "uploadMovieToYouTube"             => 0,
@@ -832,6 +836,7 @@ class Database_Statistics {
             'getWebClientState'           => array(),
             'goto'                        => array(),
             'takeScreenshot'              => array(),
+            'postScreenshot'              => array(),
             'getRandomSeed'               => array(),
             'getJP2Image'                 => array(),
             'getJPX'                      => array(),
@@ -865,6 +870,7 @@ class Database_Statistics {
             'getGeometryServiceData'      => array(),
             'buildMovie'                  => array(),//this one happens in HelioviewerMovie.php
             "getClosestData"              => array(),
+            "getClosestImageDatesForSources" => array(),
             "embed"                       => array(),
             "minimal"                     => array(),
             "standard"                    => array(),
@@ -883,6 +889,7 @@ class Database_Statistics {
             "total"                       => 0,
             'downloadScreenshot'          => 0,
             'getClosestImage'             => 0,
+            "getClosestImageDatesForSources" => 0,
             'getDataSources'              => 0,
             'getJP2Header'                => 0,
             'getNewsFeed'                 => 0,
@@ -899,6 +906,7 @@ class Database_Statistics {
             'getWebClientState'           => 0,
             'goto'                        => 0,
             'takeScreenshot'              => 0,
+            'postScreenshot'              => 0,
             'getRandomSeed'               => 0,
             'getJP2Image'                 => 0,
             'getJPX'                      => 0,

@@ -173,7 +173,7 @@ function loadModule($params) {
                 $actions_to_keep_stats_for = [
                     'getClosestImage', 
                     'takeScreenshot', 
-                    'postsScreenshot', 
+                    'postScreenshot', 
                     'getJPX', 
                     'getJPXClosestToMidPoint', 
                     'uploadMovieToYouTube', 
@@ -182,8 +182,7 @@ function loadModule($params) {
 
                 // Note that in addition to the above, buildMovie requests and
                 // addition to getTile when the tile was already in the cache.
-                if ( HV_ENABLE_STATISTICS_COLLECTION &&
-                    in_array($params['action'], $actions_to_keep_stats_for) ) {
+                if ( HV_ENABLE_STATISTICS_COLLECTION && in_array($params['action'], $actions_to_keep_stats_for) ) {
 
                     include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
                     $statistics = new Database_Statistics();

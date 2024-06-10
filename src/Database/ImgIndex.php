@@ -49,14 +49,14 @@ class Database_ImgIndex {
 
         $this->_dbConnect();
 
-		// old implementation removed for events strings
-		// used to be $this->events->serialize();
-		$old_events_layer_string = ""; 
+        // old implementation removed for events strings
+        // used to be $this->events->serialize();
+        $old_events_layer_string = ""; 
 
-		// old if events labels are shown switch , removed for new implementation
-		// used to be $this->eventsLabels;
-		$old_events_labels_bool = false; 
-		
+        // old if events labels are shown switch , removed for new implementation
+        // used to be $this->eventsLabels;
+        $old_events_labels_bool = false; 
+        
 
         $sql = sprintf(
                   "INSERT INTO screenshots "
@@ -549,7 +549,7 @@ class Database_ImgIndex {
                  . "WHERE "
                  .     "sourceId " . " = %d AND "
                  .     "date "     . "> '%s' "
-                 . "ORDER BY date DESC "
+                 . "ORDER BY date ASC "
                  . "LIMIT 1;",
                  (int)$sourceId,
                  $this->_dbConnection->link->real_escape_string($datestr)

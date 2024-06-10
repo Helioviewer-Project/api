@@ -129,12 +129,9 @@ class Module_WebClient implements Module {
 
         $imgIndex = new Database_ImgIndex();
 
-        $sources = trim($this->_params['sources']);
-        $source_ids = explode(',', $sources);
-
         $results = [];
         
-        foreach($source_ids as $sid) {
+        foreach($this->_params['sources'] as $sid) {
             $closestImages = $imgIndex->getClosestDataBeforeAndAfter($this->_params['date'], $sid);
             $results[$sid]['prev_date'] = $closestImages['prev_date'];
             $results[$sid]['next_date'] = $closestImages['next_date'];
@@ -1696,6 +1693,7 @@ class Module_WebClient implements Module {
             $expected = array(
                'required' => array('date', 'sources'),
                'dates'    => array('date'),
+               'array_ints'  => array('sources'),
             );
             break;
         case 'getDataSources':

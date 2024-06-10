@@ -56,19 +56,21 @@ class Database_MovieDatabase {
 
         $startTime = isoDateToMySQL($startTime);
         $endTime   = isoDateToMySQL($endTime);
+
         if($reqObservationDate != false){
-	        $reqObservationDate   = '"'.$this->_dbConnection->link->real_escape_string(isoDateToMySQL($reqObservationDate)).'"';
+            $reqObservationDate   = '"'.$this->_dbConnection->link->real_escape_string(isoDateToMySQL($reqObservationDate)).'"';
         }else{
-	        $reqObservationDate   = "NULL";
+            $reqObservationDate   = "NULL";
         }
 
-		// old implementation removed for events strings
-		// used to be $this->events->serialize();
-		$old_events_layer_string = ""; 
+        // !Attention we are keeping those fields for current rows in movies and screenshots tables
+        // old implementation removed for events strings
+        // used to be $this->events->serialize();
+        $old_events_layer_string = ""; 
 
-		// old if events labels are shown switch , removed for new implementation
-		// used to be $this->eventsLabels;
-		$old_events_labels_bool = false; 
+        // old if events labels are shown switch , removed for new implementation
+        // used to be $this->eventsLabels;
+        $old_events_labels_bool = false; 
 
         $sql = sprintf(
                    'INSERT INTO movies '
