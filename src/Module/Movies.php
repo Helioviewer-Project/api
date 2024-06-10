@@ -783,10 +783,9 @@ class Module_Movies implements Module {
      * use of prior actual movie generation times and will not require use of
      * manually-selected system-dependent coefficients
      */
-    private function _estimateNumFrames($db, $layers, $startTime, $endTime) {
+    private function _estimateNumFrames($db, $layers, $startTime, $endTime) 
+    {
         $numFrames = 0;
-        $sql =  'SELECT COUNT(*) FROM images WHERE DATE BETWEEN "%s" ' .
-                'AND "%s" AND sourceId=%d;';
 
         // Estimate number of movies frames for each layer
         foreach ( $layers->toArray() as $layer ) {
