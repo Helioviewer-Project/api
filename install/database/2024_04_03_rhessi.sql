@@ -65,7 +65,7 @@ VALUES
 (99, 'Reconstruction',  'Back Projection',  'Back_Projection', 'Back Projection', 3),
 
 (100, 'Observatory',    'RHESSI',           'RHESSI',          'RHESSI',          1),
-(100, 'Energy Band',    '100-300keV',       '100.0_300.0',     '50keV to 100keV', 2),
+(100, 'Energy Band',    '100-300keV',       '100.0_300.0',     '100keV to 300keV', 2),
 (100, 'Reconstruction', 'Back Projection',  'Back_Projection', 'Back Projection', 3),
 
 (101, 'Observatory',    'RHESSI',           'RHESSI',          'RHESSI',          1),
@@ -89,7 +89,7 @@ VALUES
 (105, 'Reconstruction', 'Clean',            'Clean',           'Clean',           3),
 
 (106, 'Observatory',    'RHESSI',           'RHESSI',          'RHESSI',          1),
-(106, 'Energy Band',    '100-300keV',       '100.0_300.0',     '50keV to 100keV', 2),
+(106, 'Energy Band',    '100-300keV',       '100.0_300.0',     '100keV to 300keV', 2),
 (106, 'Reconstruction', 'Clean',            'Clean',           'Clean',           3),
 
 (107, 'Observatory',    'RHESSI',           'RHESSI',          'RHESSI',          1),
@@ -113,7 +113,7 @@ VALUES
 (111, 'Reconstruction', 'Clean 59',         'Clean59',         'Clean 59',        3),
 
 (112, 'Observatory',    'RHESSI',           'RHESSI',          'RHESSI',          1),
-(112, 'Energy Band',    '100-300keV',       '100.0_300.0',     '50keV to 100keV', 2),
+(112, 'Energy Band',    '100-300keV',       '100.0_300.0',     '100keV to 300keV', 2),
 (112, 'Reconstruction', 'Clean 59',         'Clean59',         'Clean 59',        3),
 
 (113, 'Observatory',    'RHESSI',           'RHESSI',          'RHESSI',          1),
@@ -137,7 +137,7 @@ VALUES
 (117, 'Reconstruction', 'MEM GE',           'MEM_GE',          'MEM GE',          3),
 
 (118, 'Observatory',    'RHESSI',           'RHESSI',          'RHESSI',          1),
-(118, 'Energy Band',    '100-300keV',       '100.0_300.0',     '50keV to 100keV', 2),
+(118, 'Energy Band',    '100-300keV',       '100.0_300.0',     '100keV to 300keV', 2),
 (118, 'Reconstruction', 'MEM GE',           'MEM_GE',          'MEM GE',          3),
 
 (119, 'Observatory',    'RHESSI',           'RHESSI',          'RHESSI',          1),
@@ -161,7 +161,7 @@ VALUES
 (123, 'Reconstruction', 'VIS CS',           'VIS_CS',          'VIS CS',          3),
 
 (124, 'Observatory',    'RHESSI',           'RHESSI',          'RHESSI',          1),
-(124, 'Energy Band',    '100-300keV',       '100.0_300.0',     '50keV to 100keV', 2),
+(124, 'Energy Band',    '100-300keV',       '100.0_300.0',     '100keV to 300keV', 2),
 (124, 'Reconstruction', 'VIS CS',           'VIS_CS',          'VIS CS',          3),
 
 (125, 'Observatory',    'RHESSI',           'RHESSI',          'RHESSI',          1),
@@ -185,5 +185,5 @@ VALUES
 (129, 'Reconstruction', 'VIS FWDFIT',       'VIS_FWDFIT',      'VIS FWDFIT',      3),
 
 (130, 'Observatory',    'RHESSI',           'RHESSI',          'RHESSI',          1),
-(130, 'Energy Band',    '100-300keV',       '100.0_300.0',     '50keV to 100keV', 2),
+(130, 'Energy Band',    '100-300keV',       '100.0_300.0',     '100keV to 300keV', 2),
 (130, 'Reconstruction', 'VIS FWDFIT',       'VIS_FWDFIT',      'VIS FWDFIT',      3);
