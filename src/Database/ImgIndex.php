@@ -1246,7 +1246,9 @@ class Database_ImgIndex {
     public function getDataSourcesByInstrument() {
         $this->_dbConnect();
 
-        $sql = 'SELECT '
+        // RHESSI doesn't use the "Instrument" label, so add on its own query in the expected format.
+        $sql = 'SELECT name as instName, id, description as sourceName FROM datasources WHERE name = \'RHESSI\' UNION '
+             . 'SELECT '
              .     'dsp.name as "instName", '
              .     'ds.id, '
              .     'ds.name as "sourceName" '
@@ -1258,7 +1260,8 @@ class Database_ImgIndex {
              .     'dsp.label = "Instrument" '
              . 'GROUP BY '
              .     'dsp.name, ds.name '
-             . 'ORDER BY dsp.name';
+             . 'ORDER BY instName';
+        echo $sql;
         try {
             $result = $this->_dbConnection->query($sql);
         }
