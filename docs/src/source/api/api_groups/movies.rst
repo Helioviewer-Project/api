@@ -26,6 +26,7 @@ See the Coordinates Appendix for more infomration about working with the coordin
 used by Helioviewer.org.
 
 .. include:: movies/queueMovie.rst
+.. include:: movies/postMovie.rst
 .. include:: movies/reQueueMovie.rst
 .. include:: movies/getMovieStatus.rst
 .. include:: movies/downloadMovie.rst
