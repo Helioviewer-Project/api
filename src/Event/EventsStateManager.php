@@ -35,51 +35,53 @@ class EventsStateManager
         $this->events_tree_label_visibility = [];
 
         foreach($events_state as $eventHelioGroupName => $eventHelioGroupState) { // CCMC or HEK state
+            
+            // If  we don't have visible markers for CCMC or HEK then no need to handle them
+            if (array_key_exists('markers_visible', $eventHelioGroupState) && $eventHelioGroupState['markers_visible'] != true) {
+                continue;
+            }
 
-            // If  we don't have visible markers for CCMC or HEK then no need to handle them, that is easy
-            if ($eventHelioGroupState['markers_visible']) {
 
-                foreach($eventHelioGroupState['layers'] as $eventHelioGroupLayer) {
+            foreach($eventHelioGroupState['layers'] as $eventHelioGroupLayer) {
 
-                    $layer_event_type = $eventHelioGroupLayer['event_type'];
-                
-                    if (!array_key_exists($layer_event_type, $this->events_tree)) {
-                        $this->events_tree[$layer_event_type] = [];
-                        $this->events_tree_label_visibility[$layer_event_type] = $eventHelioGroupState['labels_visible'];
-                    }
-
-                    // This damn all fix
-                    if (in_array("all",$eventHelioGroupLayer['frms'])) {
-                        $this->events_tree[$layer_event_type] = "all_frms";
-                    } else {
-
-                        foreach($eventHelioGroupLayer['frms'] as $eventLayerFrm) {
-                            if (!array_key_exists($eventLayerFrm, $this->events_tree[$layer_event_type])) {
-                                $this->events_tree[$layer_event_type][$eventLayerFrm] = 'all_event_instances';
-                            }
-                        }
-
-                        foreach($eventHelioGroupLayer['event_instances'] as $eventLayerEventInstance) {
-
-                            $event_instance_frm_pieces = explode('--',$eventLayerEventInstance);
-                            $event_instance_frm = $event_instance_frm_pieces[1];
-
-                            // if we have frms all included like "frm1" and in event instance "flare--frm1--event1" 
-                            // we just ignore those since they are all included into the tree with frm1 anyways
-                            // this is also indicates, eventsState is invalid somehow   
-                            if (in_array($event_instance_frm, $eventHelioGroupLayer['frms'])) {
-                                continue;
-                            }
-                            
-                            if (!array_key_exists($event_instance_frm, $this->events_tree[$layer_event_type])) {
-                                $this->events_tree[$layer_event_type][$event_instance_frm] = [];
-                            }
-
-                            $this->events_tree[$layer_event_type][$event_instance_frm][] = $eventLayerEventInstance;
-                        }
-                    }
-                    
+                $layer_event_type = $eventHelioGroupLayer['event_type'];
+            
+                if (!array_key_exists($layer_event_type, $this->events_tree)) {
+                    $this->events_tree[$layer_event_type] = [];
+                    $this->events_tree_label_visibility[$layer_event_type] = $eventHelioGroupState['labels_visible'];
                 }
+
+                // This damn all fix
+                if (in_array("all",$eventHelioGroupLayer['frms'])) {
+                    $this->events_tree[$layer_event_type] = "all_frms";
+                } else {
+
+                    foreach($eventHelioGroupLayer['frms'] as $eventLayerFrm) {
+                        if (!array_key_exists($eventLayerFrm, $this->events_tree[$layer_event_type])) {
+                            $this->events_tree[$layer_event_type][$eventLayerFrm] = 'all_event_instances';
+                        }
+                    }
+
+                    foreach($eventHelioGroupLayer['event_instances'] as $eventLayerEventInstance) {
+
+                        $event_instance_frm_pieces = explode('--',$eventLayerEventInstance);
+                        $event_instance_frm = $event_instance_frm_pieces[1];
+
+                        // if we have frms all included like "frm1" and in event instance "flare--frm1--event1" 
+                        // we just ignore those since they are all included into the tree with frm1 anyways
+                        // this is also indicates, eventsState is invalid somehow   
+                        if (in_array($event_instance_frm, $eventHelioGroupLayer['frms'])) {
+                            continue;
+                        }
+                        
+                        if (!array_key_exists($event_instance_frm, $this->events_tree[$layer_event_type])) {
+                            $this->events_tree[$layer_event_type][$event_instance_frm] = [];
+                        }
+
+                        $this->events_tree[$layer_event_type][$event_instance_frm][] = $eventLayerEventInstance;
+                    }
+                }
+                
             }
         }
 
