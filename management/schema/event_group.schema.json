@@ -1,0 +1,58 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://api.helioviewer.org/schema/client_state.schema.json",
+    "title": "Event Group",
+    "description": "Contains visibility settings for a group of events",
+    "additionalProperties": false,
+    "type": "object",
+    "required": ["labels_visible", "layers"],
+    "properties": {
+        "id": {
+            "type": "string",
+            "enum": [
+                "HEK",
+                "CCMC",
+                "RHESSI"
+            ]
+        },
+        "visible": { "type": "boolean" },
+        "labels_visible": { "type": "boolean" },
+        "markers_visible": { "type": "boolean" },
+        "layer_available_visible": { "type": "boolean" },
+        "layers": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["frms", "event_type", "event_instances"],
+                "properties": {
+                    "frms": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "maxLength": 30
+                        }
+                    },
+                    "open": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 1
+                    },
+                    "event_type": {
+                        "type": "string",
+                        "minLength": 2,
+                        "maxLength": 2
+                    },
+                    "event_instances": {
+                        "type": "array",
+                        "maxItems": 20,
+                        "items": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 120
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

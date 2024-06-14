@@ -1,0 +1,63 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://api.helioviewer.org/schema/celestial_bodies.schema.json",
+    "title": "Celestial Bodies",
+    "description": "State information for the celestial_bodies section of the Helioviewer UI",
+    "additionalProperties": false,
+    "properties": {
+        "soho": {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "enum": [
+                    "soho-mercury-tree-label",
+                    "soho-venus-tree-label",
+                    "soho-mars-tree-label",
+                    "soho-jupiter-tree-label",
+                    "soho-saturn-tree-label",
+                    "soho-uranus-tree-label",
+                    "soho-neptune-tree-label",
+                    "soho-psp-tree-branch",
+                    "soho-psp-tree-label",
+                    "soho-psp-tree-trajectory"
+                  ]
+            }
+        },
+        "stereo_a": {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "enum": [
+                    "stereo_a-mercury-tree-label",
+                    "stereo_a-venus-tree-label",
+                    "stereo_a-mars-tree-label",
+                    "stereo_a-jupiter-tree-label",
+                    "stereo_a-saturn-tree-label",
+                    "stereo_a-uranus-tree-label",
+                    "stereo_a-neptune-tree-label",
+                    "stereo_a-psp-tree-branch",
+                    "stereo_a-psp-tree-label",
+                    "stereo_a-psp-tree-trajectory"
+                  ]
+            }
+        },
+        "stereo_b": {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "enum": [
+                    "stereo_b-mercury-tree-label",
+                    "stereo_b-venus-tree-label",
+                    "stereo_b-mars-tree-label",
+                    "stereo_b-jupiter-tree-label",
+                    "stereo_b-saturn-tree-label",
+                    "stereo_b-uranus-tree-label",
+                    "stereo_b-neptune-tree-label",
+                    "stereo_b-psp-tree-branch",
+                    "stereo_b-psp-tree-label",
+                    "stereo_b-psp-tree-trajectory"
+                  ]
+            }
+        }
+    }
+}
