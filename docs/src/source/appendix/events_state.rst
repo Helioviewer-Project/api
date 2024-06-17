@@ -4,7 +4,7 @@ Events State
 ============
 
 This document describes the structure of the events state JSON string, 
-which is used for filtering included event markers into the screenshots and movies , also for controlling the visibility of their labels.
+which is used for filtering included event markers into the screenshots and movies, also for controlling the visibility of their labels.
 
 Structure
 ---------
