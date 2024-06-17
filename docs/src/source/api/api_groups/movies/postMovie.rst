@@ -82,7 +82,7 @@ Request JSON object consist of following parameters
      - Optional
      - string
      - mp4
-     - Movie format (`mp4`, `webm`, `flv`). Default value is `mp4`.
+     - Movie format (`mp4`, `webm`). Default value is `mp4`.
    * - ``frameRate``
      - Optional
      - string
