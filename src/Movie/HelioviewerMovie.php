@@ -156,6 +156,9 @@ class Movie_HelioviewerMovie {
         // Data Layers
         $this->_layers = new Helper_HelioviewerLayers($info['dataSourceString']);
 
+        // ATTENTION! These two fields eventsLabels and eventSourceString needs to be kept in DB schema
+        // We are keeping them to support old takeScreenshot , queueMovie requests
+       
         // Events Manager
         $events_state_from_info = json_decode($info['eventsState'], true);
 

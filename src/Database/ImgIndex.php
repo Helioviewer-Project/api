@@ -49,6 +49,9 @@ class Database_ImgIndex {
 
         $this->_dbConnect();
 
+        // ATTENTION! These two fields eventsLabels and eventSourceString needs to be kept in DB schema
+        // We are keeping them to support old takeScreenshot , queueMovie requests
+
         // old implementation removed for events strings
         // used to be $this->events->serialize();
         $old_events_layer_string = ""; 

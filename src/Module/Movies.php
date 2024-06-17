@@ -1,5 +1,4 @@
 <?php
-/* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
 /**
  * Helioviewer Movies Module class definition
  * Movie generation and display.
@@ -308,8 +307,11 @@ class Module_Movies implements Module {
             $event_labels = (bool)$this->_params['eventLabels'];
         }
 
-		// Events manager built from old logic
-		$events_manager = EventsStateManager::buildFromLegacyEventStrings($events_legacy_string, $event_labels);
+        // ATTENTION! These two fields eventsLabels and eventSourceString needs to be kept in DB schema
+        // We are keeping them to support old takeScreenshot , queueMovie requests
+        
+        // Events manager built from old logic
+        $events_manager = EventsStateManager::buildFromLegacyEventStrings($events_legacy_string, $event_labels);
 
         // TODO 2012/04/11
         // Discard any layers which do not share an overlap with the roi to

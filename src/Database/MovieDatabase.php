@@ -63,7 +63,9 @@ class Database_MovieDatabase {
             $reqObservationDate   = "NULL";
         }
 
-        // !Attention we are keeping those fields for current rows in movies and screenshots tables
+        // ATTENTION! These two fields eventsLabels and eventSourceString needs to be kept in DB schema
+        // We are keeping them to support old takeScreenshot , queueMovie requests
+        
         // old implementation removed for events strings
         // used to be $this->events->serialize();
         $old_events_layer_string = ""; 

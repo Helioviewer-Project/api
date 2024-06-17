@@ -592,6 +592,10 @@ class Module_WebClient implements Module {
             $event_labels = (bool)$this->_params['eventLabels'];
         }
 
+
+        // ATTENTION! These two fields eventsLabels and eventSourceString needs to be kept in DB schema
+        // We are keeping them to support old takeScreenshot , queueMovie requests
+        
         // Events manager built from old logic
         $events_manager = EventsStateManager::buildFromLegacyEventStrings($events_legacy_string, $event_labels);
 
@@ -693,6 +697,9 @@ class Module_WebClient implements Module {
         $events_state_from_metadata = json_decode($metaData['eventsState'], true);
         $events_manager;
 
+        // ATTENTION! These two fields eventsLabels and eventSourceString needs to be kept in DB schema
+        // We are keeping them to support old takeScreenshot , queueMovie requests
+        
         if(!empty($events_state_from_metadata)) {
             $events_manager = EventsStateManager::buildFromEventsState($events_state_from_metadata);
         } else {
@@ -788,7 +795,6 @@ class Module_WebClient implements Module {
         $client_state = new ClientState();
 
         try {
-
             $state_key = $client_state->upsert($this->_params['json']);
 
             return $this->_sendResponse(200, 'OK', $state_key);
@@ -1357,6 +1363,9 @@ class Module_WebClient implements Module {
         include_once HV_ROOT_DIR.'/../src/Helper/RegionOfInterest.php';
         $range = 6000;
         $roi = new Helper_RegionOfInterest(-$range, -$range, $range, $range, 15);
+
+        // ATTENTION! These two fields eventsLabels and eventSourceString needs to be kept in DB schema
+        // We are keeping them to support old takeScreenshot , queueMovie requests
 
         // Create empty events object required for screenshots.
         $events_manager = EventStateManager::buildFromLegacyEventStrings('', false);
