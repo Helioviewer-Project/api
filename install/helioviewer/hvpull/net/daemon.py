@@ -563,6 +563,8 @@ class ImageRetrievalDaemon:
             # Move to archive
             if image_params['observatory'] == "Hinode":
                 directory = os.path.join(self.image_archive, image_params['nickname'], date_str, str(image_params['filter1']), str(image_params['filter2']))
+            elif image_params['observatory'] == "RHESSI":
+                directory = os.path.join(self.image_archive, image_params['nickname'], date_str, str(image_params['reconstruction_method']))
             else:
                 directory = os.path.join(self.image_archive, image_params['nickname'], date_str, str(image_params['measurement']))
 
@@ -657,7 +659,7 @@ class ImageRetrievalDaemon:
         """Sends an email notification to the Helioviewer admin(s) when a
         one of the data sources becomes unreachable."""
         # If no server was specified, don't do anything
-        if self.email_server is "":
+        if self.email_server == "":
             return
 
         # import email modules
@@ -708,7 +710,7 @@ class ImageRetrievalDaemon:
 
         # Cprecincts
         if cprecincts is not None:
-            command += " Cprecincts=\{%d,%d\}" % (cprecincts[0], cprecincts[1])
+            command += " Cprecincts={%d,%d}" % (cprecincts[0], cprecincts[1])
 
         # Hide output
         command += " >/dev/null"
@@ -918,7 +920,8 @@ class ImageRetrievalDaemon:
             "suvi": "SUVIDataServer",
             "iris": "IRISDataServer",
             "hv_iris": "HvIRISDataServer",
-            "halpha": "GongDataServer"
+            "halpha": "GongDataServer",
+            "rhessi": "RHESSIDataServer"
         }
 
     @classmethod

@@ -4,7 +4,7 @@ import logging
 import threading
 import time
 import shutil
-from downloader_interface import Downloader
+from .downloader_interface import Downloader
 
 class LocalFileMove(Downloader):
     def __init__(self, incoming, queue):

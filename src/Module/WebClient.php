@@ -268,7 +268,8 @@ class Module_WebClient implements Module {
         $offsetX =   $image['refPixelX'] - ($image['width']  / 2);
         $offsetY = -($image['refPixelY'] - ($image['height'] / 2));
         // Create the tile
-        $classname = $this->_getImageClass($image);
+        require_once HV_ROOT_DIR.'/../src/Image/Factory.php';
+        $classname = Image_Factory::getImageClass($image);
                $this->_options['date'] = $image['date'];
         $tile = new $classname(
             $jp2, $filepath, $region, $image['uiLabels'],
@@ -283,37 +284,6 @@ class Module_WebClient implements Module {
         // Save and display
         $tile->save();
         $tile->display();
-    }
-
-    /**
-     *
-     */
-    private function _getImageClass($image) {
-        // TODO 2011/04/18: Generalize process of choosing class to use
-        //error_log(json_encode($image['uiLabels']));
-        if ( count($image['uiLabels']) >= 3
-          && $image['uiLabels'][1]['name'] == 'SECCHI' ) {
-
-            if ( substr($image['uiLabels'][2]['name'], 0, 3) == 'COR' ) {
-                $type = 'CORImage';
-            }
-            else {
-                $type = strtoupper($image['uiLabels'][2]['name']).'Image';
-            }
-        }
-        else if ($image['uiLabels'][0]['name'] == 'TRACE') {
-            $type = strtoupper($image['uiLabels'][0]['name']).'Image';
-        }
-        else if ($image['uiLabels'][0]['name'] == 'Hinode') {
-            $type = 'XRTImage';
-        }
-        else if (count($image['uiLabels']) >=2) {
-            $type = strtoupper($image['uiLabels'][1]['name']).'Image';
-        }
-
-        include_once HV_ROOT_DIR.'/../src/Image/ImageType/'.$type.'.php';
-        $classname = 'Image_ImageType_'.$type;
-        return $classname;
     }
 
     /**
@@ -395,7 +365,8 @@ class Module_WebClient implements Module {
         $roi = $this->_tileCoordinatesToROI($params['x'], $params['y'], $params['imageScale'], $image['scale'], $tileSize, $offsetX, $offsetY);
 
         // Choose type of tile to create
-        $classname = $this->_getImageClass($image);
+        require_once HV_ROOT_DIR.'/../src/Image/Factory.php';
+        $classname = Image_Factory::getImageClass($image);
 
         //Difference JP2 File
         if(isset($params['difference']) && $params['difference'] > 0){

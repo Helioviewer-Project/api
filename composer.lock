@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "96f4cb9cd463833e7fba284e387128f0",
+    "content-hash": "e4dc2128cb1601024af4b437eaba6021",
     "packages": [
         {
             "name": "guzzlehttp/guzzle",
@@ -333,16 +333,16 @@
         },
         {
             "name": "helioviewer/event-interface",
-            "version": "v0.1.0",
+            "version": "v0.2.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/dgarciabriseno/helioviewer-event-interface.git",
-                "reference": "130a746151a0849bc4d6f3af34c3b01d5d2bf1dc"
+                "reference": "ce4120824fb500def39588fe157e90eaa8d33c32"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dgarciabriseno/helioviewer-event-interface/zipball/130a746151a0849bc4d6f3af34c3b01d5d2bf1dc",
-                "reference": "130a746151a0849bc4d6f3af34c3b01d5d2bf1dc",
+                "url": "https://api.github.com/repos/dgarciabriseno/helioviewer-event-interface/zipball/ce4120824fb500def39588fe157e90eaa8d33c32",
+                "reference": "ce4120824fb500def39588fe157e90eaa8d33c32",
                 "shasum": ""
             },
             "require": {
@@ -378,10 +378,10 @@
             ],
             "description": "Interface for querying external data sources for Helioviewer",
             "support": {
-                "source": "https://github.com/dgarciabriseno/helioviewer-event-interface/tree/v0.1.0",
+                "source": "https://github.com/dgarciabriseno/helioviewer-event-interface/tree/v0.2.1",
                 "issues": "https://github.com/dgarciabriseno/helioviewer-event-interface/issues"
             },
-            "time": "2024-05-22T18:20:01+00:00"
+            "time": "2024-05-29T18:06:19+00:00"
         },
         {
             "name": "matomo/device-detector",

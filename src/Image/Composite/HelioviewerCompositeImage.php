@@ -259,27 +259,8 @@ class Image_Composite_HelioviewerCompositeImage {
         $tmpFile = $this->_dir . '/' . rand() . '.' . $ext;
 
         // Choose type of image to create
-        if ( $layer['uiLabels'][1]['name'] == 'SECCHI' ) {
-            if ( substr($layer['uiLabels'][2]['name'], 0, 3) == 'COR' ) {
-                $type = 'CORImage';
-            }
-            else {
-                $type = strtoupper($layer['uiLabels'][2]['name']).'Image';
-            }
-        }
-        else if ($layer['uiLabels'][0]['name'] == 'TRACE') {
-            $type = strtoupper($layer['uiLabels'][0]['name']).'Image';
-        }
-        else if ($layer['uiLabels'][0]['name'] == 'Hinode') {
-            $type = 'XRTImage';
-        }
-        else {
-            $type = strtoupper($layer['uiLabels'][1]['name']).'Image';
-        }
-
-        include_once HV_ROOT_DIR.'/../src/Image/ImageType/'.$type.'.php';
-
-        $classname = 'Image_ImageType_'.$type;
+        require_once HV_ROOT_DIR.'/../src/Image/Factory.php';
+        $classname = Image_Factory::getImageClass($layer);
 
 		//Difference JP2 File
 		if(isset($layer['difference']) && $layer['difference'] > 0){
