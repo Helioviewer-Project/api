@@ -9,7 +9,7 @@ GET /v2/getMovieStatus/
     +===========+==========+=========+=========+================================================================================+
     | id        | Required | string  | VXvX5   | Unique movie identifier (provided by the response to a `queueMovie` request).  |
     +-----------+----------+---------+---------+--------------------------------------------------------------------------------+
-    | format    | Required | string  | mp4     | Movie format (`mp4`, `webm`, or `flv`).                                        |
+    | format    | Required | string  | mp4     | Movie format (`mp4`, `webm`).                                                  |
     +-----------+----------+---------+---------+--------------------------------------------------------------------------------+
     | verbose   | Optional | boolean | true    | Optionally include extra metadata in the response.                             |
     +-----------+----------+---------+---------+--------------------------------------------------------------------------------+

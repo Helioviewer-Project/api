@@ -16,16 +16,15 @@
     // Script was called directly.  Redirect to an API-version specific URL.
     if (realpath(__FILE__) == $_SERVER['SCRIPT_FILENAME']) {
         require_once dirname(realpath(__FILE__)).'/../../src/Config.php';
-        $config = new Config(dirname(realpath(__FILE__))
-                . '/../../settings/Config.ini');
+        $config = new Config(dirname(realpath(__FILE__)) . '/../../settings/Config.ini');
         header('Location: '.HV_WEB_ROOT_URL.'/docs/'.$api_version);
     }
 
 
     function import_xml($api_version, &$api_xml_path, &$xml) {
-        $api_xml_path = dirname(realpath(__FILE__)) . '/' . $api_version
-                           . '/api_definitions.xml';
-        $xml = simplexml_load_file($api_xml_path);
+        $api_xml_url = sprintf("%s/docs/%s/api_definitions.xml", "https://api.helioviewer.org", $api_version);
+        $xml = simplexml_load_file($api_xml_url);
+        $api_xml_path = dirname(realpath(__FILE__)) . '/' . $api_version. '/api_definitions.xml';
     }
 
     function output_html($api_version) {

@@ -13,11 +13,25 @@ class Event_HEKEventNormalizer
         // Normalizes event FRMs into the main data container.
         // FRMs make up everything in the Helioviewer Event Format except for the data itself.
         $event_container = self::NormalizeFRMs($event_types);
+
+        // Count if any label in our events is more than once
+        $all_event_labels = array_map(fn($e): string => self::CreateEventLabel($e), $events);
+        $all_event_labels_counts = array_count_values($all_event_labels);
+        $dublicate_labels = array_filter($all_event_labels_counts, fn($v, $k): bool => $v > 1, ARRAY_FILTER_USE_BOTH);
+        $dublicate_labels = array_keys($dublicate_labels);
+
         foreach ($events as &$event) {
             // Operates in-place to assign eve
             $event['hv_hpc_x'] = $event['hv_hpc_x_final'];
             $event['hv_hpc_y'] = $event['hv_hpc_y_final'];
+
             $event['label'] = self::CreateEventLabel($event);
+
+            if(in_array($event['label'], $dublicate_labels)) {
+                $event['label'] = self::CreateEventLabel($event) . " ". number_format($event['event_coord1'],2).",".number_format($event['event_coord2'],2);
+                $event['short_label'] = self::CreateEventLabel($event) ." ". number_format($event['event_coord1'],2).",".number_format($event['event_coord2'],2);
+            }
+
             $event['version'] = $event['frm_specificid'];
             $event['id'] = $event['kb_archivid'];
             $event['type'] = $event['event_type'];
@@ -25,6 +39,7 @@ class Event_HEKEventNormalizer
             $event['end'] = $event['event_endtime'];
             self::AssignEventToFRM($event_container, $event);
         }
+
         return $event_container;
     }
 

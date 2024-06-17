@@ -48,19 +48,31 @@ class Database_MovieDatabase {
      * @return int  Identifier in the `movies` table or boolean false
      */
     public function insertMovie($startTime, $endTime, $reqObservationDate, $imageScale, $roi,
-        $maxFrames, $watermark, $layerString, $layerBitMask, $eventString,
-        $eventsLabels, $movieIcons, $followViewport, $scale, $scaleType, $scaleX, $scaleY, $numLayers,
+        $maxFrames, $watermark, $layerString, $layerBitMask, $eventsStateString,
+        $movieIcons, $followViewport, $scale, $scaleType, $scaleX, $scaleY, $numLayers,
         $queueNum, $frameRate, $movieLength, $size, $switchSources, $celestialBodies) {
 
         $this->_dbConnect();
 
         $startTime = isoDateToMySQL($startTime);
         $endTime   = isoDateToMySQL($endTime);
+
         if($reqObservationDate != false){
-	        $reqObservationDate   = '"'.$this->_dbConnection->link->real_escape_string(isoDateToMySQL($reqObservationDate)).'"';
+            $reqObservationDate   = '"'.$this->_dbConnection->link->real_escape_string(isoDateToMySQL($reqObservationDate)).'"';
         }else{
-	        $reqObservationDate   = "NULL";
+            $reqObservationDate   = "NULL";
         }
+
+        // ATTENTION! These two fields eventsLabels and eventSourceString needs to be kept in DB schema
+        // We are keeping them to support old takeScreenshot , queueMovie requests
+        
+        // old implementation removed for events strings
+        // used to be $this->events->serialize();
+        $old_events_layer_string = ""; 
+
+        // old if events labels are shown switch , removed for new implementation
+        // used to be $this->eventsLabels;
+        $old_events_labels_bool = false; 
 
         $sql = sprintf(
                    'INSERT INTO movies '
@@ -78,6 +90,7 @@ class Database_MovieDatabase {
                  .     'dataSourceBitMask ' . ' = %d, '
                  .     'eventSourceString ' . ' ="%s", '
                  .     'eventsLabels '      . ' = %b, '
+                 .     'eventsState '       . ' = "%s", '
                  .     'movieIcons '        . ' = %b, '
                  .     'followViewport '    . ' = %b, '
                  .     'scale '             . ' = %b, '
@@ -107,8 +120,9 @@ class Database_MovieDatabase {
                  (bool)$watermark,
                  $this->_dbConnection->link->real_escape_string($layerString),
                  $layerBitMask,
-                 $this->_dbConnection->link->real_escape_string($eventString),
-                 (bool)$eventsLabels,
+                 $old_events_layer_string, //  eventsSourceString is always empty not used any more
+                 $old_events_labels_bool, // eventLabels is not used anymore
+                 $this->_dbConnection->link->real_escape_string($eventsStateString),
                  (bool)$movieIcons,
                  (bool)$followViewport,
                  (bool)$scale,
@@ -130,7 +144,7 @@ class Database_MovieDatabase {
         }
         catch (Exception $e) {
             error_log("Failed to insert movie: " . $e->getMessage());
-            return false;
+            throw new \Exception("Could create movie in our database", 2, $e); 
         }
 
         return $this->_dbConnection->getInsertId();

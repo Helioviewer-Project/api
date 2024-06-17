@@ -34,18 +34,19 @@ class Validation_InputValidator
     {
         // Validation checks
         $checks = array(
-            "required" => "checkForMissingParams",
-            "alphanum" => "checkAlphaNumericStrings",
-            "ints"     => "checkInts",
-            "floats"   => "checkFloats",
-            "bools"    => "checkBools",
-            "dates"    => "checkDates",
-            "encoded"  => "checkURLEncodedStrings",
-            "urls"     => "checkURLs",
-            "files"    => "checkFilePaths",
-            "uuids"    => "checkUUIDs",
-            "layer"    => "checkLayerValidity",
-            "choices"  => "checkChoices"
+            "required"   => "checkForMissingParams",
+            "alphanum"   => "checkAlphaNumericStrings",
+            "ints"       => "checkInts",
+            "array_ints" => "checkOfArrayInts",
+            "floats"     => "checkFloats",
+            "bools"      => "checkBools",
+            "dates"      => "checkDates",
+            "encoded"    => "checkURLEncodedStrings",
+            "urls"       => "checkURLs",
+            "files"      => "checkFilePaths",
+            "uuids"      => "checkUUIDs",
+            "layer"      => "checkLayerValidity",
+            "choices"    => "checkChoices"
         );
 
         // Run validation checks
@@ -207,6 +208,36 @@ class Validation_InputValidator
                 } else {
                     $params[$int] = (int) $params[$int];
                 }
+            }
+        }
+    }
+
+
+    /**
+     * Typecasts validates and fixes types for array integer parameters
+     *
+     * @param array $ints    A list of integer array parameters which are used by an action.
+     * @param array &$params The parameters that were passed in
+     *
+     * @return void
+     */
+    public static function checkOfArrayInts($ints, &$params)
+    {
+        foreach ($ints as $int) {
+            if (isset($params[$int])) {
+
+
+                $integers_to_check = explode(',',$params[$int]);
+                $validated_ints = [];
+
+                foreach($integers_to_check as $itc) {
+                    if (filter_var(trim($itc), FILTER_VALIDATE_INT) === false) {
+                        throw new InvalidArgumentException("Invalid value for $int. Please specify an integer array value, as ex:1,2,3", 25);
+                    }
+                    $validated_ints[] = (int) trim($itc);
+                }
+
+                $params[$int] = $validated_ints;
             }
         }
     }
