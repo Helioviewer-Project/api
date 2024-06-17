@@ -71,7 +71,7 @@ Request JSON object consist of following parameters
        |    },
        |    ....
        | }
-     - | List feature/event types and FRMs to use to annotate the movie. Use the empty string to indicate that no feature/event annotations should be shown.
+     - | Optional list of feature/event types to use to annotate the movie.
        | To get more information about this structure, please see document : :ref:`events-state-page`
    * - ``imageScale``
      - Required
