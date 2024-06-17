@@ -7,9 +7,9 @@ postMovie
 
 **Content-Type:** ``application/json``
 
-Create a custom movie with a POST request by submitting JSON structure to the movie generation queue.
+Create a custom movie with a POST request by submitting JSON to the movie generation queue.
 The response returned will provide you with a unique Movie ID that can be used
-to check on the status of your movie (via `getMovieStatus <#getmoviestatus>`_)
+to check the status of your movie (via `getMovieStatus <#getmoviestatus>`_)
 and to download your movie (via `downloadMovie <#downloadmovie>`_).
 
 Request Format
