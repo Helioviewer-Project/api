@@ -88,7 +88,7 @@ Below is an example of a Event State JSON object:
 Description
 -----------
 
-- **labels_visible**: This boolean field indicates whether the labels for all the event labels under this HEK tree configuration should be visible. If set to `true`, labels are visible; if set to `false`, labels are hidden.
+- **labels_visible**: This boolean field indicates whether the labels for all the event labels under this tree configuration should be visible. If set to `true`, labels are visible; if set to `false`, labels are hidden.
 - **layers**: This array contains filtering configuration specifying which events should be included in to the generated screenshots and movies. Each layer provides different levels of filtering:
 
   - **event_type**: Includes all the events under this event pin.
