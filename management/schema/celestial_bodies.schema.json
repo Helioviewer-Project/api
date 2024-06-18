@@ -29,6 +29,7 @@
                 "type": "string",
                 "enum": [
                     "stereo_a-mercury-tree-label",
+                    "stereo_a-earth-tree-label",
                     "stereo_a-venus-tree-label",
                     "stereo_a-mars-tree-label",
                     "stereo_a-jupiter-tree-label",
@@ -48,6 +49,7 @@
                 "enum": [
                     "stereo_b-mercury-tree-label",
                     "stereo_b-venus-tree-label",
+                    "stereo_b-earth-tree-label",
                     "stereo_b-mars-tree-label",
                     "stereo_b-jupiter-tree-label",
                     "stereo_b-saturn-tree-label",
