@@ -1,0 +1,41 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://api.helioviewer.org/schema/client_state.schema.json",
+    "title": "Client State",
+    "description": "State information used to initialize the helioviewer.org UI",
+    "additionalProperties": false,
+    "type": "object",
+    "properties": {
+        "date": { "type": "number" },
+        "centerX": { "type": "number" },
+        "centerY": { "type": "number" },
+        "imageScale": { "type": "number" },
+        "eventLayers": {
+            "type": "object",
+            "patternProperties": {
+                "^[a-zA-Z_]{1,11}$": {
+                    "$ref": "https://api.helioviewer.org/schema/event_group.schema.json"
+                }
+            },
+            "additionalProperties": false
+        },
+        "imageLayers": {
+            "type": "array",
+            "items": {
+                "$ref": "https://api.helioviewer.org/schema/image_layer.schema.json"
+            }
+        },
+        "celestialBodies": {
+            "$ref": "https://api.helioviewer.org/schema/celestial_bodies.schema.json"
+        }
+    },
+    "required": [
+        "date",
+        "centerX",
+        "centerY",
+        "imageScale",
+        "eventLayers",
+        "imageLayers",
+        "celestialBodies"
+    ]
+}
