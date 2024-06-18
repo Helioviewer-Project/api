@@ -4,12 +4,11 @@
     "title": "Post Screenshot Parameters",
     "description": "Information used to generate a screenshot via helioviewer.org",
     "type": "object",
-    "additionalProperties": false,
+    "required": ["date", "imageScale", "layers"],
     "properties": {
-        "required": ["date", "imageScale", "layers"],
         "date": {
             "type": "string",
-            "pattern": "\\d{4}-\\d{2}\\d{2}T\\d{2}:\\d{2}:\\d{2}Z"
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?Z$"
         },
         "imageScale": { "type": "number" },
         "layers": {

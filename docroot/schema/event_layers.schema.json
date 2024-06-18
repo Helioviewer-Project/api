@@ -46,7 +46,8 @@
                             },
                             "event_type": {
                                 "type": "string",
-                                "pattern": "^[A-Z0-9]{2}"
+                                "pattern": "^[A-Z0-9]{2}$",
+                                "maxLength": 2
                             },
                             "event_instances": {
                                 "type": "array",

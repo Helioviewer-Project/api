@@ -4,16 +4,15 @@
     "title": "Post Movie Parameters",
     "description": "Information used to generate a movie via helioviewer.org",
     "type": "object",
-    "additionalProperties": false,
+    "required": ["startTime", "endTime", "layers"],
     "properties": {
-        "required": ["startTime", "endTime", "layers"],
         "startTime": {
             "type": "string",
-            "pattern": "\\d{4}-\\d{2}\\d{2}T\\d{2}:\\d{2}:\\d{2}Z"
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?Z$"
         },
         "endTime": {
             "type": "string",
-            "pattern": "\\d{4}-\\d{2}\\d{2}T\\d{2}:\\d{2}:\\d{2}Z"
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?Z$"
         },
         "layers": {
             "type": "string",
@@ -26,7 +25,7 @@
         "imageScale": { "type": "number" },
         "format": {
             "type": "string",
-            "enum": ["mp4, webm"]
+            "enum": ["mp4", "webm"]
         },
         "frameRate": { "type": "number" },
         "maxFrames": { "type": "number" },
@@ -58,7 +57,7 @@
         "followViewport": { "type": "number" },
         "reqObservationDate": {
             "type": "string",
-            "pattern": "\\d{4}-\\d{2}\\d{2}T\\d{2}:\\d{2}:\\d{2}Z"
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?Z$"
         }
     }
 }
