@@ -10,9 +10,16 @@
  * @package  Helioviewer
  * @author   Jeff Stys <jeff.stys@nasa.gov>
  * @author   Keith Hughitt <keith.hughitt@nasa.gov>
+ * @author   Daniel Garcia Briseno <daniel.garciabriseno@nasa.gov>
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     https://github.com/Helioviewer-Project
  */
+
+use Opis\JsonSchema\{
+    Validator,
+    ValidationResult,
+    Errors\ErrorFormatter,
+};
 
 class Validation_InputValidator
 {
@@ -46,7 +53,8 @@ class Validation_InputValidator
             "files"      => "checkFilePaths",
             "uuids"      => "checkUUIDs",
             "layer"      => "checkLayerValidity",
-            "choices"    => "checkChoices"
+            "choices"    => "checkChoices",
+            "schema"     => "checkJsonSchema"
         );
 
         // Run validation checks
@@ -422,6 +430,20 @@ class Validation_InputValidator
                 } catch (InvalidArgumentException $e) {
                     throw new InvalidArgumentException("Invalid baseDiffTime in layer string: " . $layer["baseDiffTime"] . "<br/>" . self::DATE_MESSAGE);
                 }
+            }
+        }
+    }
+
+    public static function checkJsonSchema(array $json_fields, array &$params) {
+        $validator = new Validator();
+        $validator->resolver()->registerPrefix("https://api.helioviewer.org/schema", HV_ROOT_DIR . "/schema");
+        foreach ($json_fields as $param_key => $schema) {
+            $data = $params[$param_key];
+            $result = $validator->validate($data, $schema);
+
+            if (!$result->isValid()) {
+                $error = (new ErrorFormatter())->format($result->error());
+                throw new InvalidArgumentException("Invalid JSON: " . print_r($error, true));
             }
         }
     }

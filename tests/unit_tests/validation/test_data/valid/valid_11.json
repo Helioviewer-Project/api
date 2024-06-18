@@ -1,0 +1,130 @@
+{
+  "date": 1715731311000,
+  "centerX": -3018.5704096094664,
+  "centerY": -410.28075595668,
+  "imageScale": 38.72705408,
+  "eventLayers": {
+    "tree_HEK": {
+      "id": "HEK",
+      "layers": [
+        {
+          "frms": [],
+          "open": 1,
+          "event_type": "AR",
+          "event_instances": [
+            "AR--NOAA_SWPC_Observer--aXZvOi8vaGVsaW8taW5mb3JtYXRpY3Mub3JnL0FSX05PQUFTV1BDT2JzZXJ2ZXJfMjAyNDA1MTVfMDI0ODIxX05PQUExMzY3MV8yMDI0MDUxNQ__",
+            "AR--NOAA_SWPC_Observer--aXZvOi8vaGVsaW8taW5mb3JtYXRpY3Mub3JnL0FSX05PQUFTV1BDT2JzZXJ2ZXJfMjAyNDA1MTVfMDI0ODIzX05PQUExMzY3Ml8yMDI0MDUxNQ__",
+            "AR--NOAA_SWPC_Observer--aXZvOi8vaGVsaW8taW5mb3JtYXRpY3Mub3JnL0FSX05PQUFTV1BDT2JzZXJ2ZXJfMjAyNDA1MTVfMDI0ODE5X05PQUExMzY3MF8yMDI0MDUxNQ__",
+            "AR--NOAA_SWPC_Observer--aXZvOi8vaGVsaW8taW5mb3JtYXRpY3Mub3JnL0FSX05PQUFTV1BDT2JzZXJ2ZXJfMjAyNDA1MTVfMDI0ODQwX05PQUExMzY4MF8yMDI0MDUxNQ__",
+            "AR--NOAA_SWPC_Observer--aXZvOi8vaGVsaW8taW5mb3JtYXRpY3Mub3JnL0FSX05PQUFTV1BDT2JzZXJ2ZXJfMjAyNDA1MTVfMDI0ODQzX05PQUExMzY4Ml8yMDI0MDUxNQ__",
+            "AR--NOAA_SWPC_Observer--aXZvOi8vaGVsaW8taW5mb3JtYXRpY3Mub3JnL0FSX05PQUFTV1BDT2JzZXJ2ZXJfMjAyNDA1MTVfMDI0ODM1X05PQUExMzY3OF8yMDI0MDUxNQ__",
+            "AR--NOAA_SWPC_Observer--aXZvOi8vaGVsaW8taW5mb3JtYXRpY3Mub3JnL0FSX05PQUFTV1BDT2JzZXJ2ZXJfMjAyNDA1MTVfMDI0ODI2X05PQUExMzY3M18yMDI0MDUxNQ__",
+            "AR--NOAA_SWPC_Observer--aXZvOi8vaGVsaW8taW5mb3JtYXRpY3Mub3JnL0FSX05PQUFTV1BDT2JzZXJ2ZXJfMjAyNDA1MTVfMDI0ODM4X05PQUExMzY3OV8yMDI0MDUxNQ__",
+            "AR--NOAA_SWPC_Observer--aXZvOi8vaGVsaW8taW5mb3JtYXRpY3Mub3JnL0FSX05PQUFTV1BDT2JzZXJ2ZXJfMjAyNDA1MTVfMDI0ODI4X05PQUExMzY3NF8yMDI0MDUxNQ__",
+            "AR--NOAA_SWPC_Observer--aXZvOi8vaGVsaW8taW5mb3JtYXRpY3Mub3JnL0FSX05PQUFTV1BDT2JzZXJ2ZXJfMjAyNDA1MTVfMDI0ODMwX05PQUExMzY3NV8yMDI0MDUxNQ__",
+            "AR--NOAA_SWPC_Observer--aXZvOi8vaGVsaW8taW5mb3JtYXRpY3Mub3JnL0FSX05PQUFTV1BDT2JzZXJ2ZXJfMjAyNDA1MTVfMDI0ODMzX05PQUExMzY3Nl8yMDI0MDUxNQ__"
+          ]
+        },
+        {
+          "frms": [
+            "EGSO_SFC"
+          ],
+          "open": 1,
+          "event_type": "SS",
+          "event_instances": []
+        }
+      ],
+      "visible": true,
+      "labels_visible": false,
+      "markers_visible": false,
+      "layer_available_visible": false
+    },
+    "tree_CCMC": {
+      "id": "CCMC",
+      "layers": [
+        {
+          "frms": [
+            "CME"
+          ],
+          "open": 1,
+          "event_type": "C3",
+          "event_instances": []
+        }
+      ],
+      "visible": true,
+      "labels_visible": true,
+      "markers_visible": true,
+      "layer_available_visible": false
+    },
+    "tree_RHESSI": {
+      "id": "RHESSI",
+      "layers": [
+        {
+          "frms": [
+            "all"
+          ],
+          "open": 1,
+          "event_type": "F2",
+          "event_instances": []
+        }
+      ],
+      "visible": true,
+      "labels_visible": false,
+      "markers_visible": true,
+      "layer_available_visible": true
+    }
+  },
+  "imageLayers": [
+    {
+      "opacity": 100,
+      "visible": true,
+      "diffTime": 1,
+      "uiLabels": [
+        {
+          "name": "SDO",
+          "label": "Observatory"
+        },
+        {
+          "name": "AIA",
+          "label": "Instrument"
+        },
+        {
+          "name": "1600",
+          "label": "Measurement"
+        }
+      ],
+      "diffCount": 60,
+      "Instrument": "AIA",
+      "difference": 0,
+      "Measurement": "1600",
+      "Observatory": "SDO",
+      "baseDiffTime": "2024/06/17 10:49:02"
+    }
+  ],
+  "celestialBodies": {
+    "soho": [
+      "soho-mercury-tree-label",
+      "soho-mars-tree-label",
+      "soho-jupiter-tree-label",
+      "soho-uranus-tree-label"
+    ],
+    "stereo_a": [
+      "stereo_a-mercury-tree-label",
+      "stereo_a-venus-tree-label",
+      "stereo_a-earth-tree-label",
+      "stereo_a-mars-tree-label",
+      "stereo_a-jupiter-tree-label",
+      "stereo_a-saturn-tree-label",
+      "stereo_a-uranus-tree-label",
+      "stereo_a-neptune-tree-label",
+      "stereo_a-psp-tree-branch"
+    ],
+    "stereo_b": [
+      "stereo_b-mercury-tree-label",
+      "stereo_b-earth-tree-label",
+      "stereo_b-mars-tree-label",
+      "stereo_b-jupiter-tree-label",
+      "stereo_b-saturn-tree-label"
+    ]
+  }
+}

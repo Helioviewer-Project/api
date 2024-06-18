@@ -778,9 +778,9 @@ class Module_WebClient implements Module {
     }
 
     /**
-     * This function returns the event state for the given id 
+     * This function returns the event state for the given id
      */
-    public function getWebClientState() 
+    public function getWebClientState()
     {
         require_once HV_ROOT_DIR.'/../src/Database/ClientState.php';
 
@@ -1530,7 +1530,7 @@ class Module_WebClient implements Module {
      *
      * @param int    $code HTTP response code to return
      * @param string $message  Message for the response code,
-     * @param mixed  $data Data can be anything 
+     * @param mixed  $data Data can be anything
      *
      * @return void
      */
@@ -1641,6 +1641,7 @@ class Module_WebClient implements Module {
         case 'saveWebClientState':
             $expected = array(
                'required' => array('json'),
+               'schema' => array('json' => 'https://api.helioviewer.org/schema/client_state.schema.json')
             );
             break;
 
