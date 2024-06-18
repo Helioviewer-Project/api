@@ -19,6 +19,7 @@ use Opis\JsonSchema\{
     Validator,
     ValidationResult,
     Errors\ErrorFormatter,
+    Helper
 };
 
 class Validation_InputValidator
@@ -438,7 +439,11 @@ class Validation_InputValidator
         $validator = new Validator();
         $validator->resolver()->registerPrefix("https://api.helioviewer.org/schema", HV_ROOT_DIR . "/schema");
         foreach ($json_fields as $param_key => $schema) {
-            $data = $params[$param_key];
+            // the json validator requires a php class instance to quality as
+            // a javascript object. An associative array is not an "object"
+            // to the validator. This helper function converts an associative
+            // array to a php stdClass instance
+            $data = Helper::toJSON($params[$param_key]);
             $result = $validator->validate($data, $schema);
 
             if (!$result->isValid()) {
