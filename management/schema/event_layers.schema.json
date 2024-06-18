@@ -1,0 +1,67 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://api.helioviewer.org/schema/event_layers.schema.json",
+    "title": "Event Layers",
+    "description": "Contains visibility settings for multiple groups of events",
+    "type": "object",
+    "additionalProperties": false,
+    "patternProperties": {
+        "^[a-zA-Z_]{1,11}$": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["labels_visible", "layers"],
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "enum": [
+                        "HEK",
+                        "CCMC",
+                        "RHESSI"
+                    ]
+                },
+                "visible": { "type": "boolean" },
+                "labels_visible": { "type": "boolean" },
+                "markers_visible": { "type": "boolean" },
+                "layer_available_visible": { "type": "boolean" },
+                "layers": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["frms", "event_type", "event_instances"],
+                        "properties": {
+                            "frms": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string",
+                                    "pattern": "^\\w+$",
+                                    "minLength": 1,
+                                    "maxLength": 30
+                                }
+                            },
+                            "open": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 1
+                            },
+                            "event_type": {
+                                "type": "string",
+                                "pattern": "^[A-Z0-9]{2}"
+                            },
+                            "event_instances": {
+                                "type": "array",
+                                "maxItems": 20,
+                                "items": {
+                                    "type": "string",
+                                    "pattern": "^[a-zA-Z-]{2}--[a-zA-Z0-9_]{1,30}--[a-zA-Z0-9_.\\()+]+$",
+                                    "minLength": 1,
+                                    "maxLength": 150
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

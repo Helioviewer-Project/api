@@ -3,21 +3,15 @@
     "$id": "https://api.helioviewer.org/schema/client_state.schema.json",
     "title": "Client State",
     "description": "State information used to initialize the helioviewer.org UI",
-    "additionalProperties": false,
     "type": "object",
+    "additionalProperties": false,
     "properties": {
         "date": { "type": "number" },
         "centerX": { "type": "number" },
         "centerY": { "type": "number" },
         "imageScale": { "type": "number" },
         "eventLayers": {
-            "type": "object",
-            "patternProperties": {
-                "^[a-zA-Z_]{1,11}$": {
-                    "$ref": "https://api.helioviewer.org/schema/event_group.schema.json"
-                }
-            },
-            "additionalProperties": false
+            "$ref": "https://api.helioviewer.org/schema/event_layers.schema.json"
         },
         "imageLayers": {
             "type": "array",
