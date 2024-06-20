@@ -1,0 +1,95 @@
+{
+  "date": 1712557812000,
+  "centerX": -172.3873528481749,
+  "centerY": -216.25766746329495,
+  "imageScale": 0.60511022,
+  "eventLayers": {
+    "allowed": {
+      "id": "HEK",
+      "layers": [],
+      "visible": true,
+      "labels_visible": true,
+      "markers_visible": true,
+      "layer_available_visible": false
+    }
+  },
+  "imageLayers": [
+    {
+      "end": "2024-04-08 06:30:13",
+      "start": "2024-04-08 06:19:24",
+      "opacity": 35,
+      "visible": true,
+      "diffTime": 1,
+      "nickname": "IRIS SJI 2796",
+      "sourceId": 89,
+      "uiLabels": [
+        {
+          "name": "IRIS",
+          "label": "Observatory"
+        },
+        {
+          "name": "SJI",
+          "label": "Instrument"
+        },
+        {
+          "name": "2796",
+          "label": "Measurement"
+        }
+      ],
+      "diffCount": 60,
+      "Instrument": "SJI",
+      "difference": 0,
+      "Measurement": "2796",
+      "Observatory": "IRIS",
+      "baseDiffTime": "2024/06/12 08:32:57",
+      "layeringOrder": 1
+    },
+    {
+      "end": "2024-06-11 06:38:14",
+      "start": "2012-07-05 00:09:05",
+      "opacity": 100,
+      "visible": "1",
+      "diffTime": 1,
+      "nickname": "AIA 1600",
+      "sourceId": 15,
+      "uiLabels": [
+        {
+          "name": "SDO",
+          "label": "Observatory"
+        },
+        {
+          "name": "AIA",
+          "label": "Instrument"
+        },
+        {
+          "name": "1600",
+          "label": "Measurement"
+        }
+      ],
+      "diffCount": 60,
+      "Instrument": "AIA",
+      "difference": 0,
+      "Measurement": "1600",
+      "Observatory": "SDO",
+      "baseDiffTime": "2024/04/08 05:30:13",
+      "layeringOrder": 1
+    }
+  ],
+  "celestialBodies": {
+    "soho": [
+      "soho-mercury-tree-label",
+      "soho-venus-tree-label",
+      "soho-mars-tree-label",
+      "soho-jupiter-tree-label",
+      "soho-saturn-tree-label",
+      "soho-uranus-tree-label",
+      "soho-neptune-tree-label"
+    ],
+    "stereo_a": [
+      "stereo_a-mercury-tree-label"
+    ],
+    "stereo_b": [
+      "stereo_b-mercury-tree-label"
+    ]
+  }
+}

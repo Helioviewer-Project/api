@@ -309,7 +309,7 @@ class Module_Movies implements Module {
 
         // ATTENTION! These two fields eventsLabels and eventSourceString needs to be kept in DB schema
         // We are keeping them to support old takeScreenshot , queueMovie requests
-        
+
         // Events manager built from old logic
         $events_manager = EventsStateManager::buildFromLegacyEventStrings($events_legacy_string, $event_labels);
 
@@ -785,7 +785,7 @@ class Module_Movies implements Module {
      * use of prior actual movie generation times and will not require use of
      * manually-selected system-dependent coefficients
      */
-    private function _estimateNumFrames($db, $layers, $startTime, $endTime) 
+    private function _estimateNumFrames($db, $layers, $startTime, $endTime)
     {
         $numFrames = 0;
 
@@ -1535,9 +1535,10 @@ class Module_Movies implements Module {
                 'ints'     => array('maxFrames', 'width', 'height', 'size')
             );
             break;
-        case 'postMovie': 
+        case 'postMovie':
             $expected = [
                 'required' => ['json'],
+                'schema' => ['json' => 'https://api.helioviewer.org/schema/post_movie.schema.json']
             ];
             break;
         case 'reQueueMovie':
@@ -1606,7 +1607,7 @@ class Module_Movies implements Module {
      *
      * @param int    $code HTTP response code to return
      * @param string $message  Message for the response code,
-     * @param mixed  $data Data can be anything 
+     * @param mixed  $data Data can be anything
      *
      * @return void
      */
