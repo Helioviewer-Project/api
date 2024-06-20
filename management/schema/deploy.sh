@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+set -e
 DOCROOT_DIR=../../docroot
 SCHEMA_DIR=$DOCROOT_DIR/schema
 # If this script isn't running from the expected location, then crash
