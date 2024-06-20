@@ -85,6 +85,8 @@ final class WebClientTest extends TestCase
         // Set up the client
         $client = new Module_WebClient($params);
         $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("centerY");
+        $this->expectExceptionMessage("must match the type: number");
         $client->execute();
     }
 
