@@ -45,4 +45,49 @@ final class WebClientTest extends TestCase
 
         $result = $client->execute();
     }
+
+    /**
+     * Verifying that the web client state validates incoming json against
+     * the client_state schema.
+     * @runInSeparateProcess
+     */
+    public function test_saveWebClientState_valid() {
+        $json_string = file_get_contents(__DIR__ . "/test_data/valid.json");
+        if ($json_string === false) {
+          throw new Exception("Failed to read test json file.");
+        }
+        $json = json_decode($json_string, true);
+        $params = array(
+          'action' => 'saveWebClientState',
+          'json' => $json
+        );
+        // Set up the client
+        $client = new Module_WebClient($params);
+        $client->execute();
+        $this->expectNotToPerformAssertions();
+    }
+
+    /**
+     * Verifying that the web client state validates incoming json against
+     * the client_state schema.
+     * @runInSeparateProcess
+     */
+    public function test_saveWebClientState_invalid() {
+        $json_string = file_get_contents(__DIR__ . "/test_data/invalid.json");
+        if ($json_string === false) {
+          throw new Exception("Failed to read test json file.");
+        }
+        $json = json_decode($json_string, true);
+        $params = array(
+          'action' => 'saveWebClientState',
+          'json' => $json
+        );
+        // Set up the client
+        $client = new Module_WebClient($params);
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("centerY");
+        $this->expectExceptionMessage("must match the type: number");
+        $client->execute();
+    }
+
 }

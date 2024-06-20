@@ -130,7 +130,7 @@ class Module_WebClient implements Module {
         $imgIndex = new Database_ImgIndex();
 
         $results = [];
-        
+
         foreach($this->_params['sources'] as $sid) {
             $closestImages = $imgIndex->getClosestDataBeforeAndAfter($this->_params['date'], $sid);
             $results[$sid]['prev_date'] = $closestImages['prev_date'];
@@ -423,7 +423,7 @@ class Module_WebClient implements Module {
      *
      * @return image/jpeg or JSON
      */
-    public function postScreenshot() 
+    public function postScreenshot()
     {
         include_once HV_ROOT_DIR.'/../src/Image/Composite/HelioviewerScreenshot.php';
         include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerLayers.php';
@@ -474,16 +474,16 @@ class Module_WebClient implements Module {
 
         // Create the screenshot
         $screenshot = new Image_Composite_HelioviewerScreenshot(
-            $layers, 
-            $events_manager, 
-            $movieIcons, 
-            $celestialBodies, 
-            $scale, 
-            $scaleType, 
+            $layers,
+            $events_manager,
+            $movieIcons,
+            $celestialBodies,
+            $scale,
+            $scaleType,
             $scaleX,
-            $scaleY, 
-            $json_params['date'], 
-            $roi, 
+            $scaleY,
+            $json_params['date'],
+            $roi,
             $json_params
         );
 
@@ -545,8 +545,8 @@ class Module_WebClient implements Module {
                 'trajectories' => $celestialBodiesTrajectories
             );
         } else {
-            $celestialBodies = array( 
-                "labels" => "", 
+            $celestialBodies = array(
+                "labels" => "",
                 "trajectories" => ""
             );
         }
@@ -566,22 +566,22 @@ class Module_WebClient implements Module {
 
         // ATTENTION! These two fields eventsLabels and eventSourceString needs to be kept in DB schema
         // We are keeping them to support old takeScreenshot , queueMovie requests
-        
+
         // Events manager built from old logic
         $events_manager = EventsStateManager::buildFromLegacyEventStrings($events_legacy_string, $event_labels);
 
         // Create the screenshot
         $screenshot = new Image_Composite_HelioviewerScreenshot(
-            $layers, 
-            $events_manager, 
-            $movieIcons, 
-            $celestialBodies, 
-            $scale, 
-            $scaleType, 
+            $layers,
+            $events_manager,
+            $movieIcons,
+            $celestialBodies,
+            $scale,
+            $scaleType,
             $scaleX,
-            $scaleY, 
-            $this->_params['date'], 
-            $roi, 
+            $scaleY,
+            $this->_params['date'],
+            $roi,
             $this->_options
         );
 
@@ -670,7 +670,7 @@ class Module_WebClient implements Module {
 
         // ATTENTION! These two fields eventsLabels and eventSourceString needs to be kept in DB schema
         // We are keeping them to support old takeScreenshot , queueMovie requests
-        
+
         if(!empty($events_state_from_metadata)) {
             $events_manager = EventsStateManager::buildFromEventsState($events_state_from_metadata);
         } else {
@@ -683,16 +683,16 @@ class Module_WebClient implements Module {
 
         // Create the screenshot
         $screenshot = new Image_Composite_HelioviewerScreenshot(
-            $layers, 
-            $events_manager, 
+            $layers,
+            $events_manager,
             (bool)$metaData['movieIcons'],
             $celestialBodies,
-            (bool)$metaData['scale'], 
+            (bool)$metaData['scale'],
             $metaData['scaleType'],
-            $metaData['scaleX'], 
+            $metaData['scaleX'],
             $metaData['scaleY'],
-            $metaData['observationDate'], 
-            $roi, 
+            $metaData['observationDate'],
+            $roi,
             $options
         );
     }
@@ -778,9 +778,9 @@ class Module_WebClient implements Module {
     }
 
     /**
-     * This function returns the event state for the given id 
+     * This function returns the event state for the given id
      */
-    public function getWebClientState() 
+    public function getWebClientState()
     {
         require_once HV_ROOT_DIR.'/../src/Database/ClientState.php';
 
@@ -1348,19 +1348,19 @@ class Module_WebClient implements Module {
         // Create the base screenshot image
         include_once HV_ROOT_DIR.'/../src/Image/Composite/HelioviewerScreenshot.php';
         $screenshot = new Image_Composite_HelioviewerScreenshot(
-            $layers, 
+            $layers,
             $events_manager,
-            false, 
-            $celestialBodies, 
-            false, 
-            'earth', 
-            0, 
-            0, 
-            $now_str, 
+            false,
+            $celestialBodies,
+            false,
+            'earth',
+            0,
+            0,
+            $now_str,
             $roi,
             [
-                'grayscale' => true, 
-                'eclipse' => true, 
+                'grayscale' => true,
+                'eclipse' => true,
                 'moon' => $this->_options['moon']
             ]
         );
@@ -1434,7 +1434,7 @@ class Module_WebClient implements Module {
      *  1) x1, y1, x2, y2, OR
      *  2) x0, y0, width, height
      */
-     private function _getRegionOfInterest($options, $params) 
+     private function _getRegionOfInterest($options, $params)
      {
 
         include_once HV_ROOT_DIR.'/../src/Helper/RegionOfInterest.php';
@@ -1530,7 +1530,7 @@ class Module_WebClient implements Module {
      *
      * @param int    $code HTTP response code to return
      * @param string $message  Message for the response code,
-     * @param mixed  $data Data can be anything 
+     * @param mixed  $data Data can be anything
      *
      * @return void
      */
@@ -1641,6 +1641,7 @@ class Module_WebClient implements Module {
         case 'saveWebClientState':
             $expected = array(
                'required' => array('json'),
+               'schema' => array('json' => 'https://api.helioviewer.org/schema/client_state.schema.json')
             );
             break;
 
@@ -1767,6 +1768,7 @@ class Module_WebClient implements Module {
         case 'postScreenshot':
             $expected = [
                 'required' => ['json'],
+                'schema' => ['json' => 'https://api.helioviewer.org/schema/post_screenshot.schema.json']
             ];
             break;
         case 'getStatus':
