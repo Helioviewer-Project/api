@@ -61,4 +61,60 @@ final class ValidatorTest extends TestCase
         // that no exception was raised.
         $this->assertTrue(true);
     }
+
+    public function test_ValidateArrayIntegersProblem1(): void
+    {
+        // The expected layer string to be given
+        $input = array(
+            'sources' => ''
+        );
+
+        $rules = array(
+            'array_ints' => array('sources')
+        );
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid value for sources. Please specify an integer array value, as ex:1,2,3');
+        Validation_InputValidator::checkInput($rules, $input, $input) ;
+        // checkInput will raise an exception if it fails, so assertTrue means
+        // that no exception was raised.
+    }
+
+    public function test_ValidateArrayIntegersProblem2(): void
+    {
+        // The expected layer string to be given
+        $input = array(
+            'sources' => 'a,1,2'
+        );
+
+        $rules = array(
+            'array_ints' => array('sources')
+        );
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid value for sources. Please specify an integer array value, as ex:1,2,3');
+        Validation_InputValidator::checkInput($rules, $input, $input) ;
+        // checkInput will raise an exception if it fails, so assertTrue means
+        // that no exception was raised.
+    }
+
+    public function test_ValidateArrayIntegersCorrectly(): void
+    {
+        // The expected layer string to be given
+        $input = array(
+            'sources' => '4,1,2'
+        );
+
+        $rules = array(
+            'array_ints' => array('sources')
+        );
+
+        Validation_InputValidator::checkInput($rules, $input, $input) ;
+
+        $this->assertEquals($input, [
+            'sources' => [4,1,2]
+        ]);
+        // checkInput will raise an exception if it fails, so assertTrue means
+        // that no exception was raised.
+    }
 }

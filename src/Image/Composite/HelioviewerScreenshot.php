@@ -13,8 +13,8 @@
  */
 require_once HV_ROOT_DIR.'/../src/Image/Composite/HelioviewerCompositeImage.php';
 
-class Image_Composite_HelioviewerScreenshot
-    extends Image_Composite_HelioviewerCompositeImage {
+class Image_Composite_HelioviewerScreenshot extends Image_Composite_HelioviewerCompositeImage 
+{
 
     public $id;
     public $timestamp;
@@ -22,23 +22,23 @@ class Image_Composite_HelioviewerScreenshot
     /**
      * Creates a new screenshot
      */
-    public function __construct($layers, $events, $eventLabels, $movieIcons, $celestialBodies, $scale,
-        $scaleType, $scaleX, $scaleY, $obsDate, $roi, $options) {
+    public function __construct($layers, $eventsManager, $movieIcons, $celestialBodies, $scale, $scaleType, $scaleX, $scaleY, $obsDate, $roi, $options) {
 
-        parent::__construct($layers, $events, $eventLabels, $movieIcons, $celestialBodies, $scale,
-            $scaleType, $scaleX, $scaleY, $obsDate, $roi, $options);
+        parent::__construct($layers, $eventsManager, $movieIcons, $celestialBodies, $scale, $scaleType, $scaleX, $scaleY, $obsDate, $roi, $options);
 
-        if ( array_key_exists('action', $options) &&
-             $options['action'] == 'downloadScreenshot' ) {
+        if ( array_key_exists('action', $options) && $options['action'] == 'downloadScreenshot' ) {
 
             $this->id = $options['id'];
             $this->timestamp = $options['timestamp'];
             $this->date = $options['observationDate'];
-        }
-        else {
+
+        } else {
+
             $this->id = $this->_getScreenshotId();
             $this->timestamp = date('Y-m-d');
+
         }
+
         $this->build($this->_buildFilepath());
 
         //TODO: Either include a status field in db, or remove entry if
@@ -57,12 +57,7 @@ class Image_Composite_HelioviewerScreenshot
             HV_CACHE_DIR,
             date('Y/m/d', $created->getTimestamp()),
             $this->id,
-            substr(
-                str_replace(
-                    array(':', '-', 'T', 'Z', ' '),
-                    '_',
-                    $this->date),
-                0, 19),
+            substr(str_replace(array(':', '-', 'T', 'Z', ' '), '_', $this->date), 0, 19),
             $this->layers->toString()
         );
     }
@@ -72,7 +67,8 @@ class Image_Composite_HelioviewerScreenshot
      *
      * @return int Screenshot id
      */
-    private function _getScreenshotId() {
+    private function _getScreenshotId() 
+    {
         return $this->db->insertScreenshot(
             $this->date,
             $this->imageScale,
@@ -80,8 +76,7 @@ class Image_Composite_HelioviewerScreenshot
             $this->watermark,
             $this->layers->serialize(),
             $this->layers->getBitMask(),
-            $this->events->serialize(),
-            $this->eventsLabels,
+            $this->eventsManager->export(),
             $this->movieIcons,
             $this->scale,
             $this->scaleType,

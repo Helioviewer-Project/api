@@ -34,6 +34,9 @@ Contains scripts related to data coverage and usage statistics.
 ## data
 Contains scripts to help with managing image data.
 
+## schema
+Contains scripts to help with JSON validation
+
 ## config.php
 Import into php scripts to load the configured Config.ini.
 This is a compatibility layer so that every script doesn't need to search '../../../' to load the main Config.php.

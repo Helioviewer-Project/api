@@ -6,6 +6,7 @@ if(empty($QUEUE)) {
 
 require_once __DIR__.'/../lib/Resque.php';
 require_once __DIR__.'/../lib/Resque/Worker.php';
+require_once __DIR__.'/../vendor/autoload.php'; 
 
 $REDIS_BACKEND = getenv('REDIS_BACKEND');
 if(!empty($REDIS_BACKEND)) {
