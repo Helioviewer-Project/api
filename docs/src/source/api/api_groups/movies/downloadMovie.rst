@@ -11,7 +11,7 @@ Download a custom movie in one of three file formats.
     +===========+==========+=========+=========+==================================================================================================+
     |    id     | Required | string  |  VXvX5  |          Unique movie identifier (provided by the response to a `queueMovie` request).           |
     +-----------+----------+---------+---------+--------------------------------------------------------------------------------------------------+
-    |  format   | Required | string  |   mp4   |                             Movie Format (`mp4`, `webm`, or `flv`).                              |
+    |  format   | Required | string  |   mp4   |                             Movie Format (`mp4`, `webm`).                                        |
     +-----------+----------+---------+---------+--------------------------------------------------------------------------------------------------+
     |    hq     | Optional | boolean |  true   | Optionally download a higher-quality movie file (valid for .mp4 movies only, ignored otherwise). |
     +-----------+----------+---------+---------+--------------------------------------------------------------------------------------------------+

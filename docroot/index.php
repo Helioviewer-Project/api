@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Helioviewer Web Server
  *
@@ -21,29 +22,43 @@
  *    web-client install to connect with)
  *  = Add getPlugins method to JHelioviewer module (empty function for now)
  */
+require_once __DIR__.'/../vendor/autoload.php';
 require_once '../src/Config.php';
 require_once '../src/Helper/ErrorHandler.php';
+
+use Helioviewer\Api\Request\RequestParams;
+use Helioviewer\Api\Request\RequestException;
 
 $config = new Config('../settings/Config.ini');
 date_default_timezone_set('UTC');
 register_shutdown_function('shutdownFunction');
 
-
-if ( array_key_exists('docs', $_GET) ) {
-    printAPIDocs();
+// Options requests are just for validating CORS 
+// Lets just pass them through
+if ( array_key_exists('REQUEST_METHOD', $_SERVER) && $_SERVER['REQUEST_METHOD'] == 'OPTIONS' ) {
+    echo 'OK';  
     exit;
 }
 
+try {
+    // Parse request and its variables
+    $params = RequestParams::collect();
+} catch (RequestException $re) {
 
-// For now, accept GET or POST requests for any API endpoint
-if ( isset($_REQUEST['action']) ) {
-    if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-        $params = $_GET;
-    }
-    else {
-        $params = $_POST;
-    }
+    // Set the content type to JSON
+    header('Content-Type: application/json');
+
+    // Set the HTTP status code
+    http_response_code($re->getCode());
+
+    echo json_encode([
+        'success' => false,
+        'message' => $re->getMessage(),
+        'data' => [],
+    ]);
+    exit;
 }
+
 
 
 // Redirect to API Documentation if no API request is being made.
@@ -63,66 +78,65 @@ if ( !isset($params) || !loadModule($params) ) {
 function loadModule($params) {
 
     $valid_actions = array(
-        'downloadScreenshot'        => 'WebClient',
-        'getClosestImage'           => 'WebClient',
-        'getDataSources'            => 'WebClient',
-        'getJP2Header'              => 'WebClient',
-        'getNewsFeed'               => 'WebClient',
-        'getStatus'                 => 'WebClient',
-        'getSciDataScript'          => 'WebClient',
-        'getTile'                   => 'WebClient',
-        'downloadImage'             => 'WebClient',
-        'getUsageStatistics'        => 'WebClient',
-        'getDataCoverageTimeline'   => 'WebClient',
-        'getDataCoverage'           => 'WebClient',
-        'updateDataCoverage'        => 'WebClient', // Deprecated, remove in V3, replaced by management scripts
-        'shortenURL'                => 'WebClient',
-        'goto'                      => 'WebClient',
-        'takeScreenshot'            => 'WebClient',
-        'getRandomSeed'             => 'WebClient',
-        'getJP2Image'               => 'JHelioviewer',
-        'getJPX'                    => 'JHelioviewer',
-        'getJPXClosestToMidPoint'   => 'JHelioviewer',
-        'launchJHelioviewer'        => 'JHelioviewer',
-        'downloadMovie'             => 'Movies',
-        'getMovieStatus'            => 'Movies',
-        'playMovie'                 => 'Movies',
-        'queueMovie'                => 'Movies',
-        'reQueueMovie'              => 'Movies',
-        'uploadMovieToYouTube'      => 'Movies',
-        'checkYouTubeAuth'          => 'Movies',
-        'getYouTubeAuth'            => 'Movies',
-        'getUserVideos'             => 'Movies',
-        'getObservationDateVideos'  => 'Movies',
-        'events'                    => 'SolarEvents',
-        'getEventFRMs'              => 'SolarEvents',
-        'getEvent'                  => 'SolarEvents',
-        'getFRMs'                   => 'SolarEvents',
-        'getDefaultEventTypes'      => 'SolarEvents',
-        'getEvents'                 => 'SolarEvents',
-        'importEvents'              => 'SolarEvents', // Deprecated, remove in V3, replaced by management scripts
-        'getEventsByEventLayers'    => 'SolarEvents',
-        'getEventGlossary'          => 'SolarEvents',
-        'getSolarBodiesGlossary'    => 'SolarBodies',
-        'getSolarBodies'            => 'SolarBodies',
-        'getTrajectoryTime'         => 'SolarBodies',
-        'logNotificationStatistics' => 'WebClient',
-        'getEclipseImage'           => 'WebClient'                   
+        'downloadScreenshot'             => 'WebClient',
+        'getClosestImage'                => 'WebClient',
+        'getDataSources'                 => 'WebClient',
+        'getJP2Header'                   => 'WebClient',
+        'getNewsFeed'                    => 'WebClient',
+        'getStatus'                      => 'WebClient',
+        'getSciDataScript'               => 'WebClient',
+        'getTile'                        => 'WebClient',
+        'downloadImage'                  => 'WebClient',
+        'getUsageStatistics'             => 'WebClient',
+        'getDataCoverageTimeline'        => 'WebClient',
+        'getDataCoverage'                => 'WebClient',
+        'updateDataCoverage'             => 'WebClient', // Deprecated, remove in V3, replaced by management scripts
+        'shortenURL'                     => 'WebClient',
+        'goto'                           => 'WebClient',
+        'saveWebClientState'             => 'WebClient',
+        'getWebClientState'              => 'WebClient',
+        'takeScreenshot'                 => 'WebClient',
+        'postScreenshot'                 => 'WebClient',
+        'getRandomSeed'                  => 'WebClient',
+        'getJP2Image'                    => 'JHelioviewer',
+        'getJPX'                         => 'JHelioviewer',
+        'getJPXClosestToMidPoint'        => 'JHelioviewer',
+        'launchJHelioviewer'             => 'JHelioviewer',
+        'downloadMovie'                  => 'Movies',
+        'getMovieStatus'                 => 'Movies',
+        'playMovie'                      => 'Movies',
+        'queueMovie'                     => 'Movies',
+        'postMovie'                      => 'Movies',
+        'reQueueMovie'                   => 'Movies',
+        'uploadMovieToYouTube'           => 'Movies',
+        'checkYouTubeAuth'               => 'Movies',
+        'getYouTubeAuth'                 => 'Movies',
+        'getUserVideos'                  => 'Movies',
+        'getObservationDateVideos'       => 'Movies',
+        'events'                         => 'SolarEvents',
+        'getEventFRMs'                   => 'SolarEvents',
+        'getEvent'                       => 'SolarEvents',
+        'getFRMs'                        => 'SolarEvents',
+        'getDefaultEventTypes'           => 'SolarEvents',
+        'getEvents'                      => 'SolarEvents',
+        'importEvents'                   => 'SolarEvents', // Deprecated, remove in V3, replaced by management scripts
+        'getEventsByEventLayers'         => 'SolarEvents',
+        'getEventGlossary'               => 'SolarEvents',
+        'getSolarBodiesGlossary'         => 'SolarBodies',
+        'getSolarBodies'                 => 'SolarBodies',
+        'getTrajectoryTime'              => 'SolarBodies',
+        'logNotificationStatistics'      => 'WebClient',
+        'getEclipseImage'                => 'WebClient', 
+        'getClosestImageDatesForSources' => 'WebClient',
     );
 
     include_once HV_ROOT_DIR.'/../src/Validation/InputValidator.php';
 
     try {
-        if ( !array_key_exists('action', $params) ||
-             !array_key_exists($params['action'], $valid_actions) ) {
+        if ( !array_key_exists($params['action'], $valid_actions) ) {
+            throw new \InvalidArgumentException('Invalid action specified.<br />Consult the <a href="https://api.helioviewer.org/docs/v2/">API Documentation</a> for a list of valid actions.');
+        } else {
 
-            $url = HV_WEB_ROOT_URL.'/docs/';
-            throw new Exception(
-                'Invalid action specified.<br />Consult the <a href="'.$url.'">' .
-                'API Documentation</a> for a list of valid actions.', 26
-            );
-        }
-        else {
             //Set-up variables for rate-limiting
             $prefix = HV_RATE_LIMIT_PREFIX;
             //Use IP address as identifier.
@@ -156,13 +170,19 @@ function loadModule($params) {
                 $module->execute();
 
                 // Update usage stats
-                $actions_to_keep_stats_for = array('getClosestImage',
-                    'takeScreenshot', 'getJPX', 'getJPXClosestToMidPoint', 'uploadMovieToYouTube', 'getRandomSeed');
+                $actions_to_keep_stats_for = [
+                    'getClosestImage', 
+                    'takeScreenshot', 
+                    'postScreenshot', 
+                    'getJPX', 
+                    'getJPXClosestToMidPoint', 
+                    'uploadMovieToYouTube', 
+                    'getRandomSeed',
+                ];
 
                 // Note that in addition to the above, buildMovie requests and
                 // addition to getTile when the tile was already in the cache.
-                if ( HV_ENABLE_STATISTICS_COLLECTION &&
-                    in_array($params['action'], $actions_to_keep_stats_for) ) {
+                if ( HV_ENABLE_STATISTICS_COLLECTION && in_array($params['action'], $actions_to_keep_stats_for) ) {
 
                     include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
                     $statistics = new Database_Statistics();
@@ -184,9 +204,34 @@ function loadModule($params) {
                 //limit exceeded
             }
         }
-    }
-    catch (Exception $e) {
+    } catch (\InvalidArgumentException $e) {
+            
+        // Proper response code
+        http_response_code(400);
+
+        // Determine the content type of the request
+        $content_type = $_SERVER['CONTENT_TYPE'] ?? '';
+
+        // If the request is posting JSON
+        if('application/json' === $content_type) {
+
+            // Set the content type to JSON
+            header('Content-Type: application/json');
+
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => [],
+            ]);
+            exit;
+        }
+
         printHTMLErrorMsg($e->getMessage());
+
+    } catch (Exception $e) {
+        
+        printHTMLErrorMsg($e->getMessage());
+        
     }
 
     return true;
@@ -249,8 +294,7 @@ function shutDownFunction() {
     $error = error_get_last();
 
     if (!is_null($error) && $error['type'] == 1) {
-        handleError(sprintf("%s:%d - %s", $error['file'], $error['line'],
-            $error['message']), $error->getCode());
+        handleError(sprintf("%s:%d - %s", $error['file'], $error['line'], $error['message']));
     }
 }
 ?>

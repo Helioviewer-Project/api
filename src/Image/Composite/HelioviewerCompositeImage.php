@@ -35,8 +35,7 @@ class Image_Composite_HelioviewerCompositeImage {
     protected $height;
     protected $interlace;
     protected $layers;
-    protected $events;
-    protected $eventsLabels;
+    protected $eventsManager;
     protected $movieIcons;
     protected $scale;
     protected $scaleType;
@@ -75,8 +74,7 @@ class Image_Composite_HelioviewerCompositeImage {
      *
      * @return void
      */
-    public function __construct($layers, $events, $eventLabels, $movieIcons, $celestialBodies, $scale,
-        $scaleType, $scaleX, $scaleY, $obsDate, $roi, $options) {
+    public function __construct($layers, $eventsManager, $movieIcons, $celestialBodies, $scale, $scaleType, $scaleX, $scaleY, $obsDate, $roi, $options) {
 
         set_time_limit(90); // Extend time limit to avoid timeouts
 
@@ -107,8 +105,7 @@ class Image_Composite_HelioviewerCompositeImage {
 
         $this->db = $options['database'] ? $options['database'] : new Database_ImgIndex();
         $this->layers = $layers;
-        $this->events = $events;
-        $this->eventsLabels = $eventLabels;
+        $this->eventsManager = $eventsManager;
         $this->movieIcons = $movieIcons;
         $this->scale  = $scale;
         $this->scaleType = $scaleType;
@@ -202,7 +199,8 @@ class Image_Composite_HelioviewerCompositeImage {
      *
      * @return object A HelioviewerImage instance (e.g. AIAImage or LASCOImage)
      */
-    private function _buildImageLayer($layer) {
+    private function _buildImageLayer($layer) 
+	{
         $image = $this->db->getClosestData($this->date, $layer['sourceId']);
 
         // Instantiate a JP2Image
@@ -261,27 +259,8 @@ class Image_Composite_HelioviewerCompositeImage {
         $tmpFile = $this->_dir . '/' . rand() . '.' . $ext;
 
         // Choose type of image to create
-        if ( $layer['uiLabels'][1]['name'] == 'SECCHI' ) {
-            if ( substr($layer['uiLabels'][2]['name'], 0, 3) == 'COR' ) {
-                $type = 'CORImage';
-            }
-            else {
-                $type = strtoupper($layer['uiLabels'][2]['name']).'Image';
-            }
-        }
-        else if ($layer['uiLabels'][0]['name'] == 'TRACE') {
-            $type = strtoupper($layer['uiLabels'][0]['name']).'Image';
-        }
-        else if ($layer['uiLabels'][0]['name'] == 'Hinode') {
-            $type = 'XRTImage';
-        }
-        else {
-            $type = strtoupper($layer['uiLabels'][1]['name']).'Image';
-        }
-
-        include_once HV_ROOT_DIR.'/../src/Image/ImageType/'.$type.'.php';
-
-        $classname = 'Image_ImageType_'.$type;
+        require_once HV_ROOT_DIR.'/../src/Image/Factory.php';
+        $classname = Image_Factory::getImageClass($layer);
 
 		//Difference JP2 File
 		if(isset($layer['difference']) && $layer['difference'] > 0){
@@ -437,11 +416,9 @@ class Image_Composite_HelioviewerCompositeImage {
             // For single layer images the composite image is simply the first
             // image layer
             $image = $this->_imageLayers[0]->getIMagickImage();
-    }
+		}
 
-        if ( count($this->events) > 0 &&
-             $this->date != '2999-01-01T00:00:00.000Z') {
-
+        if ( $this->eventsManager->hasEvents() && $this->date != '2999-01-01T00:00:00.000Z') {
             $this->_addEventLayer($image);
         }
 
@@ -598,6 +575,7 @@ class Image_Composite_HelioviewerCompositeImage {
      * @return void
      */
     private function _addEventLayer($imagickImage) {
+
         if ( $this->width < 200 || $this->height < 200 ) {
             return;
         }
@@ -611,35 +589,81 @@ class Image_Composite_HelioviewerCompositeImage {
         // Collect events from all data sources.
         $hek = new Event_HEKAdapter();
         $event_categories = $hek->getNormalizedEvents($this->date, Array());
-        $startDate = new DateTimeImmutable($this->date);
+
+        $observationTime = new DateTimeImmutable($this->date);
+        $startDate = $observationTime->sub(new DateInterval("PT12H"));
         $length = new DateInterval("P1D");
-        $event_categories = array_merge($event_categories, Helper_EventInterface::GetEvents($startDate, $length, $this->date));
+        $event_categories = array_merge($event_categories, Helper_EventInterface::GetEvents($startDate, $length, $observationTime));
 
         // Lay down all relevant event REGIONS first
-        $allowedFRMs = $this->events->toArray();
+
         $events_to_render = [];
-        foreach($event_categories as $event_category) {
-            foreach( $allowedFRMs as $j => $frm ) {
-                // Match the 2 letter abbreviation to all the event groups.
-                if ($event_category['pin'] == $frm['event_type']) {
-                    // Find the specific FRM within the group
-                    foreach ($event_category['groups'] as $group) {
-                        // Match the group name to the frm name
-                        $underscored_name = str_replace(' ', '_', $group['name']);
-                        if ($frm['frm_name'] == 'all' ||
-                            strpos($frm['frm_name'], $underscored_name) !== false) {
-                            // This group of events was selected to show up in the image.
-                            // Merge them into the final list of events.
-                            foreach ($group['data'] as &$event) {
-                                $event['concept'] = $event_category['name'];
+        $events_manager = $this->eventsManager;
+        $add_label_visibility_and_concept = function($events_data, $event_cat_pin, $event_group_name) use ($events_manager) {
+            return array_map(function($ed) use ($events_manager, $event_cat_pin, $event_group_name) {
+                $ed['concept'] = $event_group_name;
+                $ed['label_visibility'] = $events_manager->isEventTypeLabelVisible($event_cat_pin) ? true : false;
+                return $ed;
+            }, $events_data);
+        };
+
+
+        foreach($event_categories as $event_cat) {
+            
+            $event_cat_pin = $event_cat['pin'];
+
+            // if we dont  have any configuration for this event_type
+            if (!$this->eventsManager->hasEventsForEventType($event_cat_pin)) {
+                continue;
+            }
+
+            // Are we going to go for all children of this event type
+            if ($this->eventsManager->appliesAllEventsForEventType($event_cat_pin)) {
+
+                foreach($event_cat['groups'] as $ecg) {
+                    $events_to_render = array_merge(
+                        $events_to_render,  
+                        $add_label_visibility_and_concept($ecg['data'], $event_cat_pin, $ecg['name'])
+                    );
+                }
+
+                continue;
+                
+            }
+
+            // Check each group  now 
+            foreach($event_cat['groups'] as $event_cat_group) {
+                
+                // Applies for event type
+                if($this->eventsManager->appliesFrmForEventType($event_cat_pin, $event_cat_group['name'])) {
+                    
+                    // applies all events for this group
+                    if($this->eventsManager->appliesAllEventInstancesForFrm($event_cat_pin, $event_cat_group['name'])) {
+                        $events_to_render = array_merge(
+                            $events_to_render,  
+                            $add_label_visibility_and_concept($event_cat_group['data'], $event_cat_pin, $event_cat_group['name'])
+                        );
+                    } else {
+
+                        // applies some events for this group
+                        $events_filtered_for_event_instances = [];
+
+                        foreach($event_cat_group['data'] as $ev) {
+
+                            if ($this->eventsManager->appliesEventInstance($event_cat_pin, $event_cat_group['name'], $ev)) {
+                                $events_filtered_for_event_instances[] = $ev;
                             }
-                            // The variable $event is re-used later so it must be unset so that it is not left pointing to the last member of the group array.
-                            // See the warning here https://www.php.net/manual/en/control-structures.foreach.php
-                            unset($event);
-                            $events_to_render = array_merge($events_to_render, $group['data']);
+
                         }
+
+                        $events_to_render = array_merge(
+                            $events_to_render,  
+                            $add_label_visibility_and_concept($events_filtered_for_event_instances, $event_cat_pin, $event_cat_group['name'])
+                        );
+
                     }
                 }
+            
             }
         }
 
@@ -654,16 +678,15 @@ class Image_Composite_HelioviewerCompositeImage {
 
                 if ( $width >= 1 && $height >= 1 ) {
 
-                    $region_polygon = new IMagick(
-                        HV_ROOT_DIR.'/'.urldecode($event['hv_poly_url']) );
+                    $region_polygon = new IMagick(HV_ROOT_DIR.'/'.urldecode($event['hv_poly_url']) );
 
                     $x = (( $event['hv_poly_hpc_x_final']
                           - $this->roi->left()) / $this->roi->imageScale());
                     $y = (( $event['hv_poly_hpc_y_final']
                           - $this->roi->top() ) / $this->roi->imageScale());
 
-					$x = $x - $this->_timeOffsetX;
-					$y = $y - $this->_timeOffsetY;
+                    $x = $x - $this->_timeOffsetX;
+                    $y = $y - $this->_timeOffsetY;
 
                     $region_polygon->resizeImage(
                         $width, $height, Imagick::FILTER_LANCZOS,1);
@@ -705,8 +728,7 @@ class Image_Composite_HelioviewerCompositeImage {
 			$y = $y - $this->_timeOffsetY;
 
             $imagickImage->compositeImage($marker, IMagick::COMPOSITE_DISSOLVE, $x - $markerPinPixelOffsetX, $y - $markerPinPixelOffsetY);
-
-            if ( $this->eventsLabels == true ) {
+            if ($event['label_visibility']) {
                 $x = $x + 11;
                 $y = $y - 24;
 
@@ -1579,8 +1601,7 @@ class Image_Composite_HelioviewerCompositeImage {
     public function display() {
         $fileinfo = new finfo(FILEINFO_MIME);
         $mimetype = $fileinfo->file($this->_filepath);
-        header("Content-Disposition: inline; filename=\"" .
-            $this->_filename . "\"");
+        header("Content-Disposition: inline; filename=\"". $this->_filename ."\"");
         header('Content-type: ' . $mimetype);
         $this->_composite->setImageFormat('png32');
         echo $this->_composite;

@@ -901,6 +901,7 @@ print("Starting SQL query in movies, screenshots, movies_jpx, statistics tables 
 
 hv={}
 query = "SELECT id, date_format(timestamp, '%Y-%m-%d 00:00:00') as date, count(*) as count FROM {} GROUP BY date_format(timestamp, '%Y-%m-%d 00:00:00');"
+embed_query = "SELECT id, date_format(datetime, '%Y-%m-%d 00:00:00') as date, count(*) as count FROM {} GROUP BY date_format(datetime, '%Y-%m-%d 00:00:00');"
 
 start_time=time.time()
 
@@ -908,7 +909,7 @@ hv['hv_movies'] = sql_query(query.format('movies'))
 
 hv['Jhv_movies'] = sql_query(query.format('movies_jpx'))
 
-hv['embed_service'] = sql_query(query.format("statistics WHERE action=\'embed\'"))
+hv['embed_service'] = sql_query(embed_query.format("redis_stats WHERE action=\'embed\'"))
 hv['embed_service']['date'] = pd.to_datetime(hv['embed_service']['date'])
 #df_em = pd.read_csv('embed.csv')
 #df_em['timestamp'] = pd.to_datetime(df_em['timestamp'])
@@ -921,7 +922,7 @@ hv['embed_service'] = hv['embed_service'].reset_index(drop=True)
 
 hv['hv_screenshots'] = sql_query(query.format('screenshots'))
 
-hv['hv_student'] = sql_query(query.format("statistics WHERE action=\'minimal\'"))
+hv['hv_student'] = sql_query(embed_query.format("redis_stats WHERE action=\'minimal\'"))
 
 print("Query completed in %d seconds."%(time.time()-start_time))
 
@@ -2004,9 +2005,9 @@ print("Starting SQL query in movies and statistics table of hv database...")
 query = "SELECT id, date_format(timestamp, '%Y-%m-%d 00:00:00') as date, count(*) as count FROM {} GROUP BY date_format(timestamp, '%Y-%m-%d 00:00:00');"
 hv['hv_movies'] = sql_query(query.format('movies'))
 
-hv['embed'] = sql_query(query.format("statistics WHERE action=\'embed\'"))
+hv['embed'] = sql_query(embed_query.format("redis_stats WHERE action=\'embed\'"))
 
-hv['Jhv_movies'] = sql_query(query.format("statistics WHERE action=\'getJPX\'"))
+hv['Jhv_movies'] = sql_query(embed_query.format("redis_stats WHERE action=\'getJPX\'"))
 
 for key in hv.keys():
     if skip_empty_table(hv[key], key):
@@ -2270,11 +2271,11 @@ print("Query completed in %d seconds"%(time.time()-start_time))
 heirarchy = {
     "Total":["total","rate_limit_exceeded"],
     "Client Sites":["standard","embed","minimal"],
-    "Images":["takeScreenshot","getTile","getClosestImage","getJP2Image-web","getJP2Image-jpip","getJP2Image","downloadScreenshot","getJPX","getJPXClosestToMidPoint"],
-    "Movies":["buildMovie","getMovieStatus","queueMovie","reQueueMovie","playMovie","downloadMovie","getUserVideos","getObservationDateVideos","uploadMovieToYouTube","checkYouTubeAuth","getYouTubeAuth"],
+    "Images":["takeScreenshot","postScreenshot","getTile","getClosestImage","getJP2Image-web","getJP2Image-jpip","getJP2Image","downloadScreenshot","getJPX","getJPXClosestToMidPoint"],
+    "Movies":["buildMovie","postMovie","getMovieStatus","queueMovie","postMovie","reQueueMovie","playMovie","downloadMovie","getUserVideos","getObservationDateVideos","uploadMovieToYouTube","checkYouTubeAuth","getYouTubeAuth"],
     "Events":["getEventGlossary","getEvents","getFRMs","getEvent","getEventFRMs","getDefaultEventTypes","getEventsByEventLayers","importEvents"],
-    "Data":["getRandomSeed","getDataSources","getJP2Header","getDataCoverage","getStatus","getNewsFeed","getDataCoverageTimeline","getClosestData","getSolarBodiesGlossary","getSolarBodies","getTrajectoryTime","sciScript-SSWIDL","sciScript-SunPy","getSciDataScript","updateDataCoverage","getEclipseImage"],
-    "Other":["shortenURL","getUsageStatistics","movie-notifications-granted","movie-notifications-denied","logNotificationStatistics","launchJHelioviewer"],
+    "Data":["getRandomSeed","getDataSources","getJP2Header","getDataCoverage","getStatus","getNewsFeed","getDataCoverageTimeline","getClosestData","getSolarBodiesGlossary","getSolarBodies","getTrajectoryTime","sciScript-SSWIDL","sciScript-SunPy","getSciDataScript","updateDataCoverage","getEclipseImage", "getClosestImageDatesForSources"],
+    "Other":["shortenURL","getUsageStatistics","movie-notifications-granted","movie-notifications-denied","logNotificationStatistics","launchJHelioviewer", "saveWebClientState", "getWebClientState"],
     "WebGL":["getTexture","getGeometryServiceData"]
 };
 

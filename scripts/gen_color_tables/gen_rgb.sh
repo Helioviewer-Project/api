@@ -1,19 +1,17 @@
 # All-in-one script to create color tables for new Helioviewer images
 usage() {
-    echo "Usage: ./gen_rgb.sh name sunpy_fn sunpy_fn_args"
+    echo "Usage: ./gen_rgb.sh sunpy_cm output_file"
     echo ""
     echo "Creates color tables for use in Helioviewer"
-    echo "See https://github.com/sunpy/sunpy/blob/main/sunpy/visualization/colormaps/color_tables.py for available functions"
+    echo "See https://github.com/sunpy/sunpy/blob/main/sunpy/visualization/colormaps/cm.py for available color tables"
 }
-if [ $# -lt 3 ]; then
+if [ $# -lt 2 ]; then
     usage
     exit
 fi
 
-name=$1
-sunpy_fn=$2
-shift; shift
-sunpy_args=$@
+sunpy_cm=$1
+name=$2
 
-python gen_rgb.py "${name}_${sunpy_args}" $sunpy_fn -a $sunpy_args
-php gen_color_table.php "${name}_${sunpy_args}"
+python gen_rgb.py "$name" $sunpy_cm
+php gen_color_table.php "$name"

@@ -6,16 +6,11 @@ include_once HV_ROOT_DIR.'/../scripts/rot_hpc.php';
 use HelioviewerEventInterface\Events;
 
 class Helper_EventInterface {
-    public static function GetEvents(DateTimeInterface $start, DateInterval $length, string $observationTime, ?array $sources = null): array {
-        $applyRotation = function ($hv_event) use ($observationTime) {
-            // Apply solar rotation from the event time to the current observation time
-            list($hv_event->hv_hpc_x, $hv_event->hv_hpc_y) = rot_hpc($hv_event->hpc_x, $hv_event->hpc_y, $hv_event->start, $observationTime);
-            return $hv_event;
-        };
+    public static function GetEvents(DateTimeInterface $start, DateInterval $length, DateTimeInterface $observationTime, ?array $sources = null): array {
         if (is_null($sources)) {
-            return Events::GetAll($start, $length, $applyRotation);
+            return Events::GetAll($start, $length, $observationTime);
         } else {
-            return Events::GetFromSource($sources, $start, $length, $applyRotation);
+            return Events::GetFromSource($sources, $start, $length, $observationTime);
         }
     }
 }

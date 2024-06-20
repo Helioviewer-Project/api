@@ -105,6 +105,8 @@ The data field is where the actual event specific data goes.
     | views    | | List of views into the data.                                            |
     |          | | This is parsed into the tabs that appear on Helioviewer                 |
     +----------+---------------------------------------------------------------------------+
+    | title    | Event information dialog popup title                                      |
+    +----------+---------------------------------------------------------------------------+
 
 The event object allows normalized positioning and labeling for any type of event while still containing the event-specific data.
 Helioviewer is using this format for all features and events.

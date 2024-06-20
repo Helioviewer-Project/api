@@ -11,7 +11,7 @@ Output an HTML web page with the requested movie embedded within.
     +===========+==========+=========+=========+==================================================================================================+
     | id        | Required | string  | VXvX5   | Unique movie identifier (provided by the response to a `queueMovie` request).                    |
     +-----------+----------+---------+---------+--------------------------------------------------------------------------------------------------+
-    | format    | Required | string  | mp4     | Movie format (mp4, webm, or flv).                                                                |
+    | format    | Required | string  | mp4     | Movie format (mp4, webm).                                                                        |
     +-----------+----------+---------+---------+--------------------------------------------------------------------------------------------------+
     | hq        | Optional | boolean | true    | Optionally download a higher-quality movie file (valid for .mp4 movies only, ignored otherwise). |
     +-----------+----------+---------+---------+--------------------------------------------------------------------------------------------------+

@@ -12,7 +12,8 @@
         "suvi"     => genRobLink("SUVI", "https://www.ncei.noaa.gov/products/goes-r-solar-ultraviolet-imagers-suvi"),
         "ncar"     => genProviderLink("NCAR", "https://www2.hao.ucar.edu/mlso/instruments/cosmo-k-coronagraph-k-cor"),
         "harvard"  => genProviderLink("Harvard", "https://xrt.cfa.harvard.edu/"),
-        "MSU"      => genProviderLink("MSU", "http://ylstone.physics.montana.edu/ylegacy/")
+        "MSU"      => genProviderLink("MSU", "http://ylstone.physics.montana.edu/ylegacy/"),
+        "RHESSI"   => genProviderLink("RHESSI", "https://hesperia.gsfc.nasa.gov/rhessi3/")
     );
 
     // Attribution
@@ -28,7 +29,8 @@
         "SUVI"   => $PROVIDERS['suvi'],
         "COSMO"  => $PROVIDERS['ncar'],
         "XRT"    => $PROVIDERS['harvard'],
-        "SXT"    => $PROVIDERS['MSU']
+        "SXT"    => $PROVIDERS['MSU'],
+        "RHESSI" => $PROVIDERS['RHESSI']
     );
 
     const COVERAGE = array (
@@ -47,7 +49,8 @@
         "IRIS"   => "IRIS_coverage.html",
         "SWAP"   => "PROBA2_coverage.html",
         "SXT"    => "Yohkoh_coverage.html",
-        "XRT"    => "Hinode_coverage.html"
+        "XRT"    => "Hinode_coverage.html",
+        "RHESSI" => "RHESSI_coverage.html"
     );
 
     const TABLE_ROW_TEMPLATE = "<tr class='%s'><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td align='center'>%s</td></tr>";
@@ -292,7 +295,6 @@
 
         // Get a list of the datasources grouped by instrument
         $instruments = $imgIndex->getDataSourcesByInstrument();
-
         // Create table of datasource statuses
         foreach($instruments as $name => $datasources) {
             $oldest = array(

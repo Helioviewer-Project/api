@@ -43,13 +43,23 @@ class Database_ImgIndex {
      *
      * @return int Identifier in the `screenshots` table
      */
-    public function insertScreenshot($date, $imageScale, $roi, $watermark,
-        $layers, $bitmask, $events, $eventsLabels, $movieIcons, $scale, $scaleType,
-        $scaleX, $scaleY, $numLayers, $switchSources, $celestialLabels, $celestialTrajectories) {
+    public function insertScreenshot($date, $imageScale, $roi, $watermark, $layers, $bitmask, $eventsStateString, $movieIcons, $scale, $scaleType,$scaleX, $scaleY, $numLayers, $switchSources, $celestialLabels, $celestialTrajectories) {
 
         include_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
 
         $this->_dbConnect();
+
+        // ATTENTION! These two fields eventsLabels and eventSourceString needs to be kept in DB schema
+        // We are keeping them to support old takeScreenshot , queueMovie requests
+
+        // old implementation removed for events strings
+        // used to be $this->events->serialize();
+        $old_events_layer_string = ""; 
+
+        // old if events labels are shown switch , removed for new implementation
+        // used to be $this->eventsLabels;
+        $old_events_labels_bool = false; 
+        
 
         $sql = sprintf(
                   "INSERT INTO screenshots "
@@ -64,7 +74,8 @@ class Database_ImgIndex {
                 .     "dataSourceBitMask " . " = %d, "
                 .     "eventSourceString " . " ='%s', "
                 .     "eventsLabels "      . " = %b, "
-                .     "movieIcons "      . " = %b, "
+                .     "eventsState "       . " = '%s', "
+                .     "movieIcons "        . " = %b, "
                 .     "scale "             . " = %b, "
                 .     "scaleType "         . " ='%s', "
                 .     "scaleX "            . " = %f, "
@@ -74,23 +85,18 @@ class Database_ImgIndex {
                 .     "celestialBodiesLabels" . " = '%s', "
                 .     "celestialBodiesTrajectories" . " = '%s';",
 
-                $this->_dbConnection->link->real_escape_string(
-                    isoDateToMySQL($date) ),
+                $this->_dbConnection->link->real_escape_string(isoDateToMySQL($date)),
                 (float)$imageScale,
-                $this->_dbConnection->link->real_escape_string(
-                    $roi ),
+                $this->_dbConnection->link->real_escape_string($roi),
                 (bool)$watermark,
-                $this->_dbConnection->link->real_escape_string(
-                    $layers ),
-                bindec($this->_dbConnection->link->real_escape_string(
-                    (binary)$bitmask ) ),
-                $this->_dbConnection->link->real_escape_string(
-                    $events ),
-                (bool)$eventsLabels,
+                $this->_dbConnection->link->real_escape_string($layers),
+                bindec($this->_dbConnection->link->real_escape_string((binary)$bitmask)),
+                $old_events_layer_string, //  eventsSourceString is always empty not used any more
+                $old_events_labels_bool, // eventLabels is not used anymore
+                $this->_dbConnection->link->real_escape_string($eventsStateString),
                 (bool)$movieIcons,
                 (bool)$scale,
-                $this->_dbConnection->link->real_escape_string(
-                    $scaleType ),
+                $this->_dbConnection->link->real_escape_string($scaleType),
                 (float)$scaleX,
                 (float)$scaleY,
                 (int)$numLayers,
@@ -98,11 +104,11 @@ class Database_ImgIndex {
                 $celestialLabels,
                 $celestialTrajectories
                );
+
         try {
             $result = $this->_dbConnection->query($sql);
-        }
-        catch (Exception $e) {
-            return false;
+        } catch (Exception $e) {
+            throw new \Exception("Could not create screenshot in our database", 2, $e); 
         }
 
         return $this->_dbConnection->getInsertId();
@@ -501,6 +507,74 @@ class Database_ImgIndex {
 
         return "";
     }
+
+    /**
+     * Return the closest matches from the `data` table whose time is just before and just after of the given time
+     * there can be null dates, if there is before or after image
+     * @param string $date     UTC date string like "2003-10-05T00:00:00Z"
+     * @param int    $sourceId The data source identifier in the database
+     *
+     * @return array Array containing 1 next image and 1 prev date image
+     */
+    public function getClosestDataBeforeAndAfter($date, $sourceId) 
+    {
+        include_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
+
+        $this->_dbConnect();
+
+        $datestr = isoDateToMySQL($date);
+
+        // Before date first image
+        $sql_before = sprintf(
+                   "SELECT date "
+                 . "FROM data "
+                 . "WHERE "
+                 .     "sourceId " . " = %d AND "
+                 .     "date "     . "< '%s' "
+                 . "ORDER BY date DESC "
+                 . "LIMIT 1;",
+                 (int)$sourceId,
+                 $this->_dbConnection->link->real_escape_string($datestr)
+               );
+
+        try {
+            $result = $this->_dbConnection->query($sql_before);
+        } catch (Exception $e) {
+            throw new \Exception("Unable to find before image for ".$date." and sourceId:".$sourceId, 2, $e);
+        }
+
+        $before_date = $result->fetch_array(MYSQLI_ASSOC);
+
+        // After date first image
+        $sql_after = sprintf(
+                   "SELECT date "
+                 . "FROM data "
+                 . "WHERE "
+                 .     "sourceId " . " = %d AND "
+                 .     "date "     . "> '%s' "
+                 . "ORDER BY date ASC "
+                 . "LIMIT 1;",
+                 (int)$sourceId,
+                 $this->_dbConnection->link->real_escape_string($datestr)
+               );
+
+        try {
+            $result = $this->_dbConnection->query($sql_after);
+        } catch (Exception $e) {
+            throw new \Exception("Unable to find before image for ".$date." and sourceId:".$sourceId, 2, $e);
+        }
+
+        // pre($result);
+        $after_date = $result->fetch_array(MYSQLI_ASSOC);
+
+        return [
+            'prev_date' => $before_date ? $before_date['date']: null,
+            'next_date'  => $after_date ? $after_date['date'] : null,
+        ];
+
+    }
+
+
 
     /**
      * Return the closest match from the `data` table whose time is on
@@ -1246,7 +1320,9 @@ class Database_ImgIndex {
     public function getDataSourcesByInstrument() {
         $this->_dbConnect();
 
-        $sql = 'SELECT '
+        // RHESSI doesn't use the "Instrument" label, so add on its own query in the expected format.
+        $sql = 'SELECT name as instName, id, description as sourceName FROM datasources WHERE name = \'RHESSI\' UNION '
+             . 'SELECT '
              .     'dsp.name as "instName", '
              .     'ds.id, '
              .     'ds.name as "sourceName" '
@@ -1258,7 +1334,8 @@ class Database_ImgIndex {
              .     'dsp.label = "Instrument" '
              . 'GROUP BY '
              .     'dsp.name, ds.name '
-             . 'ORDER BY dsp.name';
+             . 'ORDER BY instName';
+        echo $sql;
         try {
             $result = $this->_dbConnection->query($sql);
         }
