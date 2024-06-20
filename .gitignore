@@ -69,7 +69,6 @@ docroot/resources/JSON/celestial-objects*
 docroot/resources/JSON/celestial-bodies*
 docroot/docs/v2
 docroot/status.xml
-docroot/schema
 py_env
 py_venv_local_sunpy
 vendor
