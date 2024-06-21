@@ -23,7 +23,7 @@
         "scaleType": {
             "type": "string",
             "enum": [
-                "earth", "scalebar"
+                "earth", "scalebar", "disabled"
             ]
         },
         "scaleX": { "type": "number" },
