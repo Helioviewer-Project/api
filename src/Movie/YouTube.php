@@ -9,7 +9,6 @@
  * @author   Jeff Stys <jeff.stys@nasa.gov>
  * @author   Keith Hughitt <keith.hughitt@nasa.gov>
  * @author   Serge Zahniy <serge.zahniy@nasa.gov>
- * @author   Daniel Garcia Briseno <daniel.garciabriseno@nasa.gov>
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     https://github.com/Helioviewer-Project
  */
