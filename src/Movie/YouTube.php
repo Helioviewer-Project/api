@@ -14,11 +14,6 @@
  */
 
 class Movie_YouTube {
-
-    private $_appId;
-    private $_clientId;
-    private $_testURL;
-    private $_uploadURL;
     private $_httpClient;
     private $_youTube;
 
@@ -28,15 +23,6 @@ class Movie_YouTube {
      * @return void
      */
     public function __construct() {
-
-        include_once 'GoogleSDK/src/Google/autoload.php';
-
-        $this->_appId     = 'Helioviewer.org User Video Uploader';
-        $this->_clientId  = 'Helioviewer.org (2.4.0)';
-
-        //$this->_testURL   = 'http://gdata.youtube.com/feeds/api/users/default/uploads?max-results=1';
-        //$this->_uploadURL = 'http://uploads.gdata.youtube.com/feeds/api/users/default/uploads';
-
         if ( !isset($_SESSION) ) {
             # Note: If same user begins upload, and then shortly after tried
             # to upload a video again, PHP may hang when attempting to call
@@ -45,17 +31,17 @@ class Movie_YouTube {
             session_start();
         }
 
-		
+
 		$this->_httpClient = new Google_Client();
 		$this->_httpClient->setApplicationName("Helioviewer");
 		$this->_httpClient->setClientId(HV_GOOGLE_OAUTH2_CLIENT_ID);
 		$this->_httpClient->setClientSecret(HV_GOOGLE_OAUTH2_CLIENT_SECRET);
 		$this->_httpClient->setScopes('https://www.googleapis.com/auth/youtube.upload');
-		
+
         // Post-auth upload URL
         $redirect = filter_var(HV_WEB_ROOT_URL . '?action=uploadMovieToYouTube&html=true', FILTER_SANITIZE_URL);
 		$this->_httpClient->setRedirectUri($redirect);
-		
+
 		//set proxy config for curl io
 		if(!empty(HV_PROXY_HOST)){
 			$io = new Google_IO_Curl($this->_httpClient);
@@ -67,7 +53,7 @@ class Movie_YouTube {
 			$io->setOptions($curloptions);
 			$this->_httpClient->setIo($io);
 		}
-		
+
     }
 
     /**
@@ -82,7 +68,7 @@ class Movie_YouTube {
         // Re-confirm authorization and convert single-use token to session
         // token if applicable
         $this->_checkAuthorization();
-        
+
         // Once we have a session token get an AuthSubHttpClient
         $this->_httpClient->setAccessToken($_SESSION['sessionToken']);
 
@@ -115,7 +101,7 @@ class Movie_YouTube {
         if ( !isset($_SESSION['sessionToken']) ) {
             return false;
         }
-		
+
 		$this->_httpClient->setAccessToken($_SESSION['sessionToken']);
         $this->_youTube    = $this->_getYoutubeInstance();
 
@@ -202,7 +188,7 @@ class Movie_YouTube {
 
         return $yt;
     }
-	
+
 	/**
      * Uploads a single video to YouTube
      *
@@ -225,21 +211,21 @@ class Movie_YouTube {
 		$snippet->setDescription($description);
 		$snippet->setTags($tags);
 		//$snippet->setPublishedAt(array('Helioviewer.org'));
-		
+
 		// Numeric video category. See
-		// https://developers.google.com/youtube/v3/docs/videoCategories/list 
+		// https://developers.google.com/youtube/v3/docs/videoCategories/list
 		$snippet->setCategoryId("28");
-		
+
 		// Set the video's status to "public". Valid statuses are "public",
 		// "private" and "unlisted".
 		$status = new Google_Service_YouTube_VideoStatus();
 		$status->privacyStatus = "public";
-		
+
 		// Associate the snippet and status objects with a new video resource.
 		$video = new Google_Service_YouTube_Video();
 		$video->setSnippet($snippet);
 		$video->setStatus($status);
-		
+
 		//Proceed to upload
 		$this->_uploadVideoToYouTube($video, $filepath, $id, $title, $description, $tags, $share, $html);
 
@@ -327,14 +313,14 @@ class Movie_YouTube {
 			// reliable connection as fewer chunks lead to faster uploads. Set a lower
 			// value for better recovery on less reliable connections.
 			$chunkSizeBytes = 1 * 1024 * 1024;
-            
+
             // Setting the defer flag to true tells the client to return a request which can be called
 			// with ->execute(); instead of making the API call immediately.
 			$this->_httpClient->setDefer(true);
-			
+
 			// Create a request for the API's videos.insert method to create and upload the video.
 			$insertRequest = $this->_youTube->videos->insert("status,snippet", $video);
-			
+
 			// Create a MediaFileUpload object for resumable uploads.
 			$media = new Google_Http_MediaFileUpload(
 			    $this->_httpClient,
@@ -353,9 +339,9 @@ class Movie_YouTube {
 				$chunk = fread($handle, $chunkSizeBytes);
 				$status = $media->nextChunk($chunk);
 			}
-			
+
 			fclose($handle);
-			
+
 			// If you want to make other calls after the file upload, set setDefer back to false
 			$this->_httpClient->setDefer(false);
         }
