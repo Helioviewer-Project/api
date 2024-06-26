@@ -54,7 +54,7 @@
                                 "maxItems": 20,
                                 "items": {
                                     "type": "string",
-                                    "pattern": "^[a-zA-Z-]{2}--[a-zA-Z0-9_]{1,30}--[a-zA-Z0-9_.\\()+]+$",
+                                    "pattern": "^[a-zA-Z0-9]{2}--[a-zA-Z0-9_]{1,30}--[a-zA-Z0-9_.\\()+]+$",
                                     "minLength": 1,
                                     "maxLength": 150
                                 }
