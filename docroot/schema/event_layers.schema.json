@@ -40,9 +40,11 @@
                                 }
                             },
                             "open": {
-                                "type": "integer",
-                                "minimum": 0,
-                                "maximum": 1
+                                "oneOf": [
+                                    {"type": "boolean" },
+                                    {"type": "integer", "minimum": 0, "maximum": 1},
+                                    {"type": "string", "enum": ["1", "0"]}
+                                ]
                             },
                             "event_type": {
                                 "type": "string",

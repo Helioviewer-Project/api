@@ -25,12 +25,12 @@
         "visible": {
             "oneOf": [
                 {"type": "boolean" },
-                {"type": "number", "minimum": 0, "maximum": 1},
+                {"type": "integer", "minimum": 0, "maximum": 1},
                 {"type": "string", "enum": ["1", "0"]}
             ]
         },
         "diffTime": {
-            "type": "number",
+            "type": "integer",
             "minimum": 0,
             "maximum": 6
         },
@@ -40,8 +40,8 @@
                 {{DATA_NICKNAMES}}
             ]
         },
-        "sourceId": { "type": "number" },
-        "layeringOrder": { "type": "number" },
+        "sourceId": { "type": "integer" },
+        "layeringOrder": { "type": "integer" },
         "uiLabels": {
             "type": "array",
             "items": {
@@ -67,7 +67,7 @@
         },
         "diffCount": { "type": "number" },
         "difference": {
-            "type": "number",
+            "type": "integer",
             "minimum": 0,
             "maximum": 2
         },
