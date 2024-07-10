@@ -42,7 +42,7 @@
                             "open": {
                                 "oneOf": [
                                     {"type": "boolean" },
-                                    {"type": "number", "minimum": 0, "maximum": 1},
+                                    {"type": "integer", "minimum": 0, "maximum": 1},
                                     {"type": "string", "enum": ["1", "0"]}
                                 ]
                             },
