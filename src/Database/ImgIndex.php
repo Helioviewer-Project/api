@@ -1335,7 +1335,6 @@ class Database_ImgIndex {
              . 'GROUP BY '
              .     'dsp.name, ds.name '
              . 'ORDER BY instName';
-        echo $sql;
         try {
             $result = $this->_dbConnection->query($sql);
         }
