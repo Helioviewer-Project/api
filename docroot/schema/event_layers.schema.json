@@ -34,7 +34,7 @@
                                 "type": "array",
                                 "items": {
                                     "type": "string",
-                                    "pattern": "^\\w+$",
+                                    "pattern": "^[a-zA-Z0-9_-]+$",
                                     "minLength": 1,
                                     "maxLength": 40
                                 }
