@@ -54,12 +54,12 @@ class Database_ImgIndex {
 
         // old implementation removed for events strings
         // used to be $this->events->serialize();
-        $old_events_layer_string = ""; 
+        $old_events_layer_string = "";
 
         // old if events labels are shown switch , removed for new implementation
         // used to be $this->eventsLabels;
-        $old_events_labels_bool = false; 
-        
+        $old_events_labels_bool = false;
+
 
         $sql = sprintf(
                   "INSERT INTO screenshots "
@@ -108,7 +108,7 @@ class Database_ImgIndex {
         try {
             $result = $this->_dbConnection->query($sql);
         } catch (Exception $e) {
-            throw new \Exception("Could not create screenshot in our database", 2, $e); 
+            throw new \Exception("Could not create screenshot in our database", 2, $e);
         }
 
         return $this->_dbConnection->getInsertId();
@@ -516,7 +516,7 @@ class Database_ImgIndex {
      *
      * @return array Array containing 1 next image and 1 prev date image
      */
-    public function getClosestDataBeforeAndAfter($date, $sourceId) 
+    public function getClosestDataBeforeAndAfter($date, $sourceId)
     {
         include_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
 
@@ -764,7 +764,7 @@ class Database_ImgIndex {
 
 		if($dataSplit){
 			$sql = sprintf(
-	                   "SELECT COUNT(id) as count FROM data WHERE (".$this->getDatasourceIDsString($sourceId)." AND date BETWEEN '%s' AND '%s') OR (".$this->getDatasourceIDsString($sourceId2)." AND date BETWEEN '%s' AND '%s') LIMIT 1;",
+	                   "SELECT COUNT(*) as count FROM data WHERE (".$this->getDatasourceIDsString($sourceId)." AND date BETWEEN '%s' AND '%s') OR (".$this->getDatasourceIDsString($sourceId2)." AND date BETWEEN '%s' AND '%s') LIMIT 1;",
 					   $this->_dbConnection->link->real_escape_string($startDate),
 					   $this->_dbConnection->link->real_escape_string($middleDate),
 					   $this->_dbConnection->link->real_escape_string($middleDate),
@@ -772,7 +772,7 @@ class Database_ImgIndex {
 	                );
 		}else{
 			$sql = sprintf(
-                   "SELECT COUNT(id) as count FROM data WHERE ".$this->getDatasourceIDsString($sourceId)." AND date BETWEEN '%s' AND '%s' LIMIT 1;",
+                   "SELECT COUNT(*) as count FROM data WHERE ".$this->getDatasourceIDsString($sourceId)." AND date BETWEEN '%s' AND '%s' LIMIT 1;",
 				   $this->_dbConnection->link->real_escape_string($startDate),
 				   $this->_dbConnection->link->real_escape_string($endDate)
                 );
