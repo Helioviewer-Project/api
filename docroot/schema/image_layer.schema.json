@@ -18,9 +18,10 @@
             "$comment": "Must match php's 'Y-m-d H:i:s' format, or more plainly: YYYY-MM-DD HH:mm:ss"
         },
         "opacity": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 100
+            "oneOf": [
+                { "type": "number", "minimum": 0, "maximum": 100 },
+                { "type": "string", "pattern": "^\\d{0,3}$" }
+            ]
         },
         "visible": {
             "oneOf": [
