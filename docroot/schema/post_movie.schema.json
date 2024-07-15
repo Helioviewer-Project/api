@@ -53,7 +53,13 @@
             "maxLength": 1000
         },
         "size": { "type": "number" },
-        "movieIcons": { "type": "number" },
+        "movieIcons": {
+            "oneOf": [
+                {"type": "boolean" },
+                {"type": "integer", "minimum": 0, "maximum": 1},
+                {"type": "string", "enum": ["1", "0"]}
+            ]
+        },
         "followViewport": { "type": "number" },
         "reqObservationDate": {
             "type": "string",
