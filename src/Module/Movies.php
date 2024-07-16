@@ -1294,10 +1294,15 @@ class Module_Movies implements Module {
 	}
 
     /**
-     *
-     *
+     * Checks if the given movie exists on disk.
+     * If the movie doesn't exist and allowRegeneration is true, then the movie
+     * will be queued for processing.
      */
-    public function _verifyMediaExists($movie, $allowRegeneration=true) {
+    public function _verifyMediaExists(Movie_HelioviewerMovie $movie, $allowRegeneration=true): bool {
+        // If the movie isn't complete, it's guaranteed to not exist
+        if (!$movie->isComplete()) {
+            return false;
+        }
 
         // Check for missing movie or preview images
         $media_exists = true;
@@ -1354,7 +1359,7 @@ class Module_Movies implements Module {
         // Check that the movie (in the requested format) as well as
         // its thumbnail images exist on disk.  If not, silently
         // queue the movie for re-generation.
-        $this->_verifyMediaExists($movie, $allowRegeneration=true);
+        $this->_verifyMediaExists($movie, true);
 
         // Default options
         $defaults = array(
