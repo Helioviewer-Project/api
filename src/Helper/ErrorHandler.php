@@ -71,7 +71,7 @@ function handleError($msg, $errorCode=255) {
 }
 
 function logException(Exception $exception, string $prefix='') {
-    $message = $exception->getFile() . ":" . $exception->getLine() . " - " . $exception->getMessage();
+    $message = $exception->getFile() . ":" . $exception->getLine() . " - " . $exception->getMessage() . "\n" . $exception->getTraceAsString();
     logErrorMsg($message, $prefix);
 }
 

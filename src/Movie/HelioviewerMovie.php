@@ -37,6 +37,13 @@ require_once HV_ROOT_DIR . '/../src/Helper/Serialize.php';
 
 use Helioviewer\Api\Event\EventsStateManager;
 
+/**
+ * Exception to throw when performing an operation on a movie instance
+ * that hasn't been processed into a movie.
+ */
+class MovieNotCompletedException extends Exception {}
+class MovieLookupException extends Exception {}
+
 class Movie_HelioviewerMovie {
     const STATUS_QUEUED = 0;
     const STATUS_PROCESSING = 1;
@@ -158,7 +165,7 @@ class Movie_HelioviewerMovie {
 
         // ATTENTION! These two fields eventsLabels and eventSourceString needs to be kept in DB schema
         // We are keeping them to support old takeScreenshot , queueMovie requests
-       
+
         // Events Manager
         $events_state_from_info = json_decode($info['eventsState'], true);
 
@@ -170,9 +177,6 @@ class Movie_HelioviewerMovie {
 
         // Regon of interest
         $this->_roi = Helper_RegionOfInterest::parsePolygonString($info['roi'], $info['imageScale']);
-
-        // Get timestamps for frames in the key movie layer
-        $this->_getTimeStamps();
     }
 
     private function _dbSetup() {
@@ -268,9 +272,13 @@ class Movie_HelioviewerMovie {
     /**
      * Returns information about the completed movie
      *
+     * @throws
      * @return array A list of movie properties and a URL to the finished movie
      */
     public function getCompletedMovieInformation($verbose=false) {
+        if (!$this->isComplete()) {
+            throw new MovieNotCompletedException("Movie $this->publicId has not been completed.");
+        }
 
         $info = array(
             'frameRate'  => $this->frameRate,
@@ -288,7 +296,7 @@ class Movie_HelioviewerMovie {
         if ($verbose) {
             $extra = array(
                 'timestamp'  => $this->timestamp,
-                'duration'   => $this->getDuration(),
+                'duration'   => $this->_getDuration(),
                 'imageScale' => $this->imageScale,
                 'layers'     => $this->_layers->serialize(),
                 'events'     => $this->_eventsManager->getState(),
@@ -301,6 +309,10 @@ class Movie_HelioviewerMovie {
         }
 
         return $info;
+    }
+
+    public function isComplete(): bool {
+        return $this->status == Movie_HelioviewerMovie::STATUS_COMPLETED;
     }
 
     /**
@@ -325,8 +337,19 @@ class Movie_HelioviewerMovie {
         return $this->_buildDir().$this->_buildFilename($highQuality);
     }
 
-    public function getDuration() {
+    private function _getDuration() {
         return $this->numFrames / $this->frameRate;
+    }
+
+    /**
+     * Returns the duration of the movie in seconds
+     * @throws MovieNotCreatedException if the movie has not been processed
+     */
+    public function getDuration() {
+        if (!$this->isComplete()) {
+            throw new MovieNotCompletedException("Duration for $this->publicId is unknown since the movie has not been processed yet.");
+        }
+        return $this->_getDuration();
     }
 
     public function getURL() {
@@ -397,6 +420,20 @@ class Movie_HelioviewerMovie {
             $this->publicId);
     }
 
+    private function _getStartDate() {
+        if (is_null($this->startDate)) {
+            $this->_prepDates();
+        }
+        return $this->startDate;
+    }
+
+    private function _getEndDate() {
+        if (is_null($this->endDate)) {
+            $this->_prepDates();
+        }
+        return $this->endDate;
+    }
+
     /**
      * Determines filename to use for the movie
      *
@@ -405,11 +442,8 @@ class Movie_HelioviewerMovie {
      * @return string Movie filename
      */
     private function _buildFilename($highQuality=false) {
-        if (is_null($this->startDate)) {
-            $this->_prepDates();
-        }
-        $start = str_replace(array(':', '-', ' '), '_', $this->startDate);
-        $end   = str_replace(array(':', '-', ' '), '_', $this->endDate);
+        $start = str_replace(array(':', '-', ' '), '_', $this->_getStartDate());
+        $end   = str_replace(array(':', '-', ' '), '_', $this->_getEndDate());
 
         $suffix = ($highQuality && $this->format == 'mp4') ? '-hq' : '';
 
@@ -440,7 +474,7 @@ class Movie_HelioviewerMovie {
             'movie'     => true,
             'size'      => $this->size,
             'followViewport' => $this->followViewport,
-            'startDate' => $this->startDate,
+            'startDate' => $this->_getStartDate(),
             'reqStartDate' => $this->reqStartDate,
             'reqEndDate' => $this->reqEndDate,
             'reqObservationDate' => $this->reqObservationDate,
@@ -454,7 +488,7 @@ class Movie_HelioviewerMovie {
         $numFailures = 0;
 
         // Compile frames
-        foreach ($this->_timestamps as $time) {
+        foreach ($this->_getTimeStamps() as $time) {
 
             $filepath =  sprintf('%sframes/frame%d.bmp', $this->directory, $frameNum);
 
@@ -546,6 +580,11 @@ class Movie_HelioviewerMovie {
         $preview->destroy();
     }
 
+    private function markFinished(string $format, float $time_to_build) {
+        $this->_db->markMovieAsFinished($this->id, $format, $time_to_build);
+        $this->status = Movie_HelioviewerMovie::STATUS_COMPLETED;
+    }
+
     /**
      * Builds the requested movie
      *
@@ -630,7 +669,7 @@ class Movie_HelioviewerMovie {
 
         // Mark mp4 movie as completed
         $t2 = time();
-        $this->_db->markMovieAsFinished($this->id, 'mp4', $t2 - $t1);
+        $this->markFinished('mp4', $t2 - $t1);
 
 
         // Create a low-quality webm movie for in-browser use if requested
@@ -640,13 +679,18 @@ class Movie_HelioviewerMovie {
 
         // Mark movie as completed
         $t4 = time();
-        $this->_db->markMovieAsFinished($this->id, 'webm', $t4 - $t3);
+        $this->markFinished('webm', $t4 - $t3);
     }
 
     /**
      * Returns a human-readable title for the video
+     * @throws MovieNotCompletedException since the title relies on the layer dates from processing the movie.
      */
     public function getTitle() {
+        if (!$this->isComplete()) {
+            throw new MovieNotCompletedException("The title for $this->publicId is not available yet");
+        }
+
         date_default_timezone_set('UTC');
 
         $layerString = $this->_layers->toHumanReadableString();
@@ -661,14 +705,14 @@ class Movie_HelioviewerMovie {
     public function getDateString() {
         date_default_timezone_set('UTC');
 
-        if (substr($this->startDate, 0, 9) == substr($this->endDate, 0, 9)) {
-            $endDate = substr($this->endDate, 11);
+        if (substr($this->_getStartDate(), 0, 9) == substr($this->_getEndDate(), 0, 9)) {
+            $endDate = substr($this->_getEndDate(), 11);
         }
         else {
-            $endDate = $this->endDate;
+            $endDate = $this->_getEndDate();
         }
 
-        return sprintf('%s - %s UTC', $this->startDate, $endDate);
+        return sprintf('%s - %s UTC', $this->_getStartDate(), $endDate);
     }
 
     /**
@@ -680,7 +724,12 @@ class Movie_HelioviewerMovie {
      * included may be reduced to ensure that the total number of
      * SubFieldImages needed does not exceed HV_MAX_MOVIE_FRAMES
      */
-    private function _getTimeStamps() {
+    private function _getTimeStamps(): array {
+        // If timestamps have already been processed, return them.
+        if (!empty($this->_timestamps)) {
+            return $this->_timestamps;
+        }
+
         $this->_dbSetup();
 
         $layerCounts = array();
@@ -689,6 +738,9 @@ class Movie_HelioviewerMovie {
         // duration for each layer
         foreach ($this->_layers->toArray() as $layer) {
             $n = $this->_db->getDataCount($this->reqStartDate, $this->reqEndDate, $layer['sourceId'], $this->switchSources);
+            if ($n === false) {
+                throw new MovieLookupException("Failed to query data count for $this->publicId on source " . $layer['sourceId']);
+            }
 
             $layerCounts[$layer['sourceId']] = $n;
         }
@@ -721,6 +773,8 @@ class Movie_HelioviewerMovie {
             $index = round($i * (sizeOf($entireRange) / $numFrames));
             array_push($this->_timestamps, $entireRange[$index]['date']);
         }
+
+        return $this->_timestamps;
     }
 
     /**
@@ -746,8 +800,8 @@ class Movie_HelioviewerMovie {
     private function _prepDates() {
         if ($this->status != 2) {
             // Store actual start and end dates that will be used for the movie
-            $this->startDate = $this->_timestamps[0];
-            $this->endDate   = $this->_timestamps[sizeOf($this->_timestamps) - 1];
+            $this->startDate = $this->_getTimeStamps()[0];
+            $this->endDate   = $this->_getTimeStamps()[sizeOf($this->_getTimeStamps()) - 1];
         }
     }
 
@@ -762,7 +816,7 @@ class Movie_HelioviewerMovie {
 
         $this->filename = $this->_buildFilename();
 
-        $this->numFrames = sizeOf($this->_timestamps);
+        $this->numFrames = sizeOf($this->_getTimeStamps());
 
         if ($this->numFrames == 0) {
             $this->_abort('No images available for the requested time range');
@@ -796,7 +850,7 @@ class Movie_HelioviewerMovie {
 
         // Update movie entry in database with new details
         $this->_db->storeMovieProperties(
-            $this->id, $this->startDate, $this->endDate, $this->numFrames,
+            $this->id, $this->_getStartDate(), $this->_getEndDate(), $this->numFrames,
             $this->frameRate, $this->movieLength, $width, $height
         );
     }
@@ -869,6 +923,5 @@ class Movie_HelioviewerMovie {
 </html>
 <?php
     }
-
 }
 ?>
