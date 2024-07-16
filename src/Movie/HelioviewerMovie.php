@@ -42,6 +42,7 @@ use Helioviewer\Api\Event\EventsStateManager;
  * that hasn't been processed into a movie.
  */
 class MovieNotCompletedException extends Exception {}
+class MovieLookupException extends Exception {}
 
 class Movie_HelioviewerMovie {
     const STATUS_QUEUED = 0;
@@ -737,6 +738,9 @@ class Movie_HelioviewerMovie {
         // duration for each layer
         foreach ($this->_layers->toArray() as $layer) {
             $n = $this->_db->getDataCount($this->reqStartDate, $this->reqEndDate, $layer['sourceId'], $this->switchSources);
+            if ($n === false) {
+                throw new MovieLookupException("Failed to query data count for $this->publicId on source " . $layer['sourceId']);
+            }
 
             $layerCounts[$layer['sourceId']] = $n;
         }
