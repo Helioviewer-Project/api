@@ -23,7 +23,7 @@
         }
     },
     "require": {
-        "helioviewer/event-interface": "v0.2.1",
+        "helioviewer/event-interface": "v0.2.2",
         "matomo/device-detector": "dev-master",
         "opis/json-schema": "^2.3",
         "google/apiclient": "^2.16"
