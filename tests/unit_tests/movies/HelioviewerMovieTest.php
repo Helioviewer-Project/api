@@ -36,7 +36,7 @@ final class HelioviewerMovieTest extends TestCase
             $roi->getPolygonString(),
             10,
             true,
-            "[SOHO,LASCO,C2,white-light,2,100,0,60,1,2024-07-11T09:03:05.000Z]",
+            HelioviewerMovieTest::TEST_LAYER,
             bindec($layers->getBitMask()),
 			$events_manager->export(),
             false,
