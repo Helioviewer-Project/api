@@ -41,7 +41,7 @@
       "difference": 0,
       "Measurement": "2796",
       "Observatory": "IRIS",
-      "baseDiffTime": "2024/06/12 08:32:57",
+      "baseDiffTime": "2024-06-12T08:32:57.000Z",
       "layeringOrder": 1
     },
     {
@@ -71,7 +71,7 @@
       "difference": 0,
       "Measurement": "1600",
       "Observatory": "SDO",
-      "baseDiffTime": "2024/04/08 05:30:13",
+      "baseDiffTime": "2024-04-08T05:30:13.000Z",
       "layeringOrder": 1
     }
   ],
