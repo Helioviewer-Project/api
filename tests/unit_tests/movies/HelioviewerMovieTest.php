@@ -94,10 +94,12 @@ final class HelioviewerMovieTest extends TestCase
      * @depends testBuildMovie
      */
     public function testGetCompletedMovieInformation(string $movie_id) {
+        $today = new DateTime();
+        $today_date_path = $today->format('Y/m/d');
         $movie = new Movie_HelioviewerMovie($movie_id);
         // These should align with the generated test movie.
         // See InsertSohoTestMovie
-        $checkNonVerboseInfo = function($info, $movie_id) {
+        $checkNonVerboseInfo = function($info, $movie_id) use($today_date_path) {
             $this->assertEquals(1, $info['frameRate']);
             $this->assertEquals(5, $info['numFrames']);
             // These dates line up with the default environment's test data.
@@ -107,14 +109,14 @@ final class HelioviewerMovieTest extends TestCase
             $this->assertEquals(1000, $info['height']);
             $this->assertEquals("SOHO LASCO C2 white-light (2023-12-01 00:00:07 - 00:48:07 UTC)", $info['title']);
             $thumbnails = [
-                'icon' => HV_CACHE_URL . "/movies/2024/07/16/$movie_id/preview-icon.png",
-                'small' => HV_CACHE_URL . "/movies/2024/07/16/$movie_id/preview-small.png",
-                'medium' => HV_CACHE_URL . "/movies/2024/07/16/$movie_id/preview-medium.png",
-                'large' => HV_CACHE_URL . "/movies/2024/07/16/$movie_id/preview-large.png",
-                'full' => HV_CACHE_URL . "/movies/2024/07/16/$movie_id/preview-full.png",
+                'icon' => HV_CACHE_URL . "/movies/$today_date_path/$movie_id/preview-icon.png",
+                'small' => HV_CACHE_URL . "/movies/$today_date_path/$movie_id/preview-small.png",
+                'medium' => HV_CACHE_URL . "/movies/$today_date_path/$movie_id/preview-medium.png",
+                'large' => HV_CACHE_URL . "/movies/$today_date_path/$movie_id/preview-large.png",
+                'full' => HV_CACHE_URL . "/movies/$today_date_path/$movie_id/preview-full.png",
             ];
             $this->assertEquals($thumbnails, $info['thumbnails']);
-            $url = HV_CACHE_URL . "/movies/2024/07/16/$movie_id/2023_12_01_00_00_07_2023_12_01_00_48_07_LASCO_C2.mp4";
+            $url = HV_CACHE_URL . "/movies/$today_date_path/$movie_id/2023_12_01_00_00_07_2023_12_01_00_48_07_LASCO_C2.mp4";
             $this->assertEquals($url, $info['url']);
         };
         $info = $movie->getCompletedMovieInformation();
@@ -125,7 +127,6 @@ final class HelioviewerMovieTest extends TestCase
         $checkNonVerboseInfo($verboseInfo, $movie_id);
         // This should contain the time the movie was created
         $timestamp = DateTime::createFromFormat("Y-m-d H:i:s", $verboseInfo['timestamp']);
-        $today = new DateTime();
         // At least compare they have the same date
         $this->assertEquals($today->format('Y-m-d'), $timestamp->format('Y-m-d'));
         $this->assertEquals(5.0, $verboseInfo['duration']);
