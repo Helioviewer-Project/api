@@ -20,5 +20,12 @@ class SUVIDataServer(DataServer):
         for date in dates:
             for wavelength in wavelengths:
                 dirs.append(os.path.join(self.uri, wavelength, date))
+                split = date.split('/')
+                # Some dates older than 2024 aren't in day folders, but all files are
+                # in the month folder, so make sure that gets scanned.
+                dirs.append(os.path.join(self.uri, wavelength, split[0], split[1]))
 
-        return dirs
+        # list(set(x)) removes duplicates
+        deduped = list(set(dirs))
+        deduped.sort()
+        return deduped
