@@ -547,15 +547,15 @@ class ImageRetrievalDaemon:
             # an error.
             try:
                 if image_params['instrument'] == "AIA":
-                    transcode(self.kdu_transcode, filepath, cprecincts=[128, 128])
+                    transcoded = transcode(self.kdu_transcode, filepath, cprecincts=[128, 128])
                 else:
-                    transcode(self.kdu_transcode, filepath)
+                    transcoded = transcode(self.kdu_transcode, filepath)
                 # Remove old version and replace with transcoded one
                 # OSError
                 os.remove(filepath)
                 logging.info('Removed %s ' % filepath)
-                os.rename(tmp, filepath)
-                logging.info('Renamed %s to %s' % (tmp, filepath))
+                os.rename(transcoded, filepath)
+                logging.info('Renamed %s to %s' % (transcoded, filepath))
             except KduTranscodeError as e:
                 logging.error("kdu_transcode: " + e.get_message())
                 logging.error("Quitting due to kdu_transcode error")
