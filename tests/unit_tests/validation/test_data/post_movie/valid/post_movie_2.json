@@ -1,0 +1,49 @@
+{
+  "imageScale": 6.18140735516908,
+  "layers": "[SDO,AIA,131,1,100,0,60,1,2018-03-30T04:18:36.000Z]",
+  "eventsState": {
+    "tree_HEK": {
+      "id": "HEK",
+      "layers": [],
+      "visible": true,
+      "labels_visible": true,
+      "markers_visible": true,
+      "layer_available_visible": false
+    },
+    "tree_CCMC": {
+      "id": "CCMC",
+      "layers": [],
+      "visible": true,
+      "labels_visible": true,
+      "markers_visible": true,
+      "layer_available_visible": true
+    },
+    "tree_RHESSI": {
+      "id": "RHESSI",
+      "layers": [],
+      "visible": true,
+      "labels_visible": true,
+      "markers_visible": true,
+      "layer_available_visible": true
+    }
+  },
+  "scale": true,
+  "scaleType": "earth",
+  "scaleX": -2541,
+  "scaleY": 266,
+  "format": "mp4",
+  "size": 0,
+  "movieIcons": 0,
+  "followViewport": false,
+  "reqObservationDate": "2024-07-22T15:48:07.000Z",
+  "switchSources": false,
+  "celestialBodiesLabels": "soho-mercury,soho-venus,soho-mars,soho-jupiter,soho-saturn,soho-uranus,soho-neptune,stereo_b-mercury,stereo_b-venus,stereo_b-earth,stereo_b-mars,stereo_b-jupiter,stereo_b-saturn,stereo_b-uranus,stereo_b-neptune",
+  "celestialBodiesTrajectories": "",
+  "x1": -3813.9283381393225,
+  "x2": 4296.07811184251,
+  "y1": -776.8998873768866,
+  "y2": 3203.926449352001,
+  "startTime": "2024-07-22T03:48:07.000Z",
+  "endTime": "2024-07-23T03:48:07.000Z",
+  "frameRate": 15
+}

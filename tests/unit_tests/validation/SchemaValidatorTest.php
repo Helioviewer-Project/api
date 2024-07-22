@@ -17,11 +17,24 @@ const SHOULD_FAIL = false;
 
 final class SchemaValidatorTest extends TestCase
 {
+
+    private static function BuildTestDataFromFolder(string $directory, bool $expectation, string $schema) {
+        $test_data = [];
+        $files =  scandir($directory);
+        foreach ($files as $file) {
+            if ($file == "." || $file == "..") {
+                continue;
+            }
+            array_push($test_data, ["$directory/$file", $expectation, $schema]);
+        }
+        return $test_data;
+    }
+
     /**
      * Reads the list of test files from the test data folder
      * and returns test data in the format:
      * [
-     *  ["test_file", SHOULD_PASS/SHOULD_FAIL],
+     *  ["test_file", SHOULD_PASS/SHOULD_FAIL, schema_file],
      *  ...
      * ]
      *
@@ -31,30 +44,19 @@ final class SchemaValidatorTest extends TestCase
     public static function GetTestData(): array {
         $test_data = [];
 
-        $valid_files =  scandir(__DIR__ . "/test_data/valid");
-        foreach ($valid_files as $file) {
-            if ($file == "." || $file == "..") {
-                continue;
-            }
-            array_push($test_data, ["valid/$file", SHOULD_PASS]);
-        }
-
-        $invalid_files = scandir(__DIR__ . "/test_data/invalid");
-        foreach ($invalid_files as $file) {
-            if ($file == "." || $file == "..") {
-                continue;
-            }
-            array_push($test_data, ["invalid/$file", SHOULD_FAIL]);
-        }
+        $test_data = array_merge($test_data, self::BuildTestDataFromFolder(__DIR__ . "/test_data/client_state/valid", SHOULD_PASS, 'https://api.helioviewer.org/schema/client_state.schema.json'));
+        $test_data = array_merge($test_data, self::BuildTestDataFromFolder(__DIR__ . "/test_data/client_state/invalid", SHOULD_FAIL, 'https://api.helioviewer.org/schema/client_state.schema.json'));
+        $test_data = array_merge($test_data, self::BuildTestDataFromFolder(__DIR__ . "/test_data/post_movie/valid", SHOULD_PASS, 'https://api.helioviewer.org/schema/post_movie.schema.json'));
+        $test_data = array_merge($test_data, self::BuildTestDataFromFolder(__DIR__ . "/test_data/post_screenshot/valid", SHOULD_PASS, 'https://api.helioviewer.org/schema/post_screenshot.schema.json'));
         return $test_data;
     }
 
     /**
      * @dataProvider GetTestData
      */
-    public function test_ValidateJsonSchema(string $json_file, bool $expected_result): void
+    public function test_ValidateJsonSchema(string $json_file, bool $expected_result, string $schema): void
     {
-        $json = json_decode(file_get_contents(__DIR__ . "/test_data/" . $json_file));
+        $json = json_decode(file_get_contents($json_file));
         if (is_null($json)) {
             throw new Exception("Failed to parse $json_file as json");
         }
@@ -63,7 +65,7 @@ final class SchemaValidatorTest extends TestCase
         try {
             $params = [ 'json' => $json ];
             $expected = array(
-                'schema' => array('json' => 'https://api.helioviewer.org/schema/client_state.schema.json')
+                'schema' => array('json' => $schema)
             );
             $optional = [];
 

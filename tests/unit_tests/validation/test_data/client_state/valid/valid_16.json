@@ -1,0 +1,95 @@
+{
+  "date": 1697979187000,
+  "imageScale": 4.84088176,
+  "centerX": 100.29816701545585,
+  "centerY": 1064.2094221854543,
+  "imageLayers": [
+    {
+      "uiLabels": [
+        {
+          "label": "Observatory",
+          "name": "SDO"
+        },
+        {
+          "label": "Instrument",
+          "name": "AIA"
+        },
+        {
+          "label": "Measurement",
+          "name": "131"
+        }
+      ],
+      "Observatory": "SDO",
+      "Instrument": "AIA",
+      "Measurement": "131",
+      "visible": "1",
+      "opacity": 100,
+      "difference": 0,
+      "diffCount": 60,
+      "diffTime": 1,
+      "baseDiffTime": "2018-03-30T04:18:36.000Z",
+      "sourceId": 9,
+      "nickname": "AIA 131",
+      "layeringOrder": 1,
+      "start": "2010-06-02 00:05:35",
+      "end": "2024-07-22 15:48:07"
+    }
+  ],
+  "eventLayers": {
+    "tree_HEK": {
+      "id": "HEK",
+      "layers": [
+        {
+          "event_type": "CE",
+          "frms": [
+            "CACTus_\\(Computer_Aided_CME_Tracking\\)"
+          ],
+          "event_instances": [],
+          "open": 1
+        }
+      ],
+      "visible": true,
+      "labels_visible": true,
+      "markers_visible": true,
+      "layer_available_visible": false
+    },
+    "tree_CCMC": {
+      "id": "CCMC",
+      "layers": [],
+      "visible": true,
+      "labels_visible": true,
+      "markers_visible": true,
+      "layer_available_visible": true
+    },
+    "tree_RHESSI": {
+      "id": "RHESSI",
+      "layers": [],
+      "visible": true,
+      "labels_visible": true,
+      "markers_visible": true,
+      "layer_available_visible": true
+    }
+  },
+  "celestialBodies": {
+    "soho": [
+      "soho-mercury-tree-label",
+      "soho-venus-tree-label",
+      "soho-mars-tree-label",
+      "soho-jupiter-tree-label",
+      "soho-saturn-tree-label",
+      "soho-uranus-tree-label",
+      "soho-neptune-tree-label"
+    ],
+    "stereo_a": [],
+    "stereo_b": [
+      "stereo_b-mercury-tree-label",
+      "stereo_b-venus-tree-label",
+      "stereo_b-earth-tree-label",
+      "stereo_b-mars-tree-label",
+      "stereo_b-jupiter-tree-label",
+      "stereo_b-saturn-tree-label",
+      "stereo_b-uranus-tree-label",
+      "stereo_b-neptune-tree-label"
+    ]
+  }
+}
