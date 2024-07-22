@@ -12,8 +12,7 @@ import logging
 import os
 import subprocess
 import shutil
-import sunpy
-from random import shuffle
+import traceback
 from helioviewer.jp2 import process_jp2_images, BadImage, create_image_data
 from helioviewer.db  import get_db_cursor, mark_as_corrupt
 from helioviewer.hvpull.browser.basebrowser import NetworkError
@@ -527,8 +526,10 @@ class ImageRetrievalDaemon:
                 try:
                     image_params = create_image_data(filepath)
                 except:
+                    # Make sure the full exception gets into the log
+                    # so we can debug it.
+                    logging.error(traceback.format_exc())
                     raise BadImage("HEADER")
-                    logging.warn('BadImage("HEADER") error raised')
                 self._validate(image_params)
             except BadImage as e:
                 logging.warn("Quarantining invalid image: %s", filename)
