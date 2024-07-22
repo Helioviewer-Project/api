@@ -47,6 +47,7 @@ final class SchemaValidatorTest extends TestCase
         $test_data = array_merge($test_data, self::BuildTestDataFromFolder(__DIR__ . "/test_data/client_state/valid", SHOULD_PASS, 'https://api.helioviewer.org/schema/client_state.schema.json'));
         $test_data = array_merge($test_data, self::BuildTestDataFromFolder(__DIR__ . "/test_data/client_state/invalid", SHOULD_FAIL, 'https://api.helioviewer.org/schema/client_state.schema.json'));
         $test_data = array_merge($test_data, self::BuildTestDataFromFolder(__DIR__ . "/test_data/post_movie/valid", SHOULD_PASS, 'https://api.helioviewer.org/schema/post_movie.schema.json'));
+        $test_data = array_merge($test_data, self::BuildTestDataFromFolder(__DIR__ . "/test_data/post_screenshot/valid", SHOULD_PASS, 'https://api.helioviewer.org/schema/post_screenshot.schema.json'));
         return $test_data;
     }
 
