@@ -223,8 +223,13 @@ def build_transcode_cmd(transcoder: str, infile: str, outfile: str, corder: str,
     return command
 
 def transcode(transcoder: str, filepath: str, corder: str ='RPCL', orggen_plt: str ='yes', cprecincts=None) -> str:
-    """Transcodes JPEG 2000 images to allow support for use with JHelioviewer
-    and the JPIP server"""
+    """
+    Transcodes JPEG 2000 images to allow support for use with JHelioviewer
+    and the JPIP server
+
+    On success, returns the path to the transcoded file
+    On failure, raises a KduTranscode exception
+    """
     import subprocess
     import logging
 
