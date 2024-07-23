@@ -5,6 +5,14 @@ import sys
 from helioviewer.db import get_datasources, enable_datasource
 from helioviewer.jp2parser import JP2parser
 
+class KduTranscodeError(RuntimeError):
+    """Exception to raise an image cannot be transcoded."""
+    def __init__(self, message=""):
+        self.message = message
+
+    def get_message(self):
+        return self.message
+
 __INSERTS_PER_QUERY__ = 500
 __STEP_FXN_THROTTLE__ = 50
 
@@ -195,3 +203,60 @@ def getImageGroup(sourceId):
             groups["groupThree"] = ((offset - 38) // 6) + 10008
 
     return groups
+
+def build_transcode_cmd(transcoder: str, infile: str, outfile: str, corder: str, orggen_plt: str, cprecincts) -> list:
+    """
+    Returns a list of arguments suitable for subprocess.run with shell=False
+    """
+    # Base command
+    command = [
+        transcoder,
+        "-i",
+        infile,
+        "-o",
+        outfile
+    ]
+
+    # Corder
+    if corder is not None:
+        command.append("Corder=%s" % corder)
+
+    # ORGgen_plt
+    if orggen_plt is not None:
+        command.append("ORGgen_plt=%s" % orggen_plt)
+
+    # Cprecincts
+    if cprecincts is not None:
+        command.append("Cprecincts={%d,%d}" % (cprecincts[0], cprecincts[1]))
+    return command
+
+def transcode(transcoder: str, filepath: str, corder: str ='RPCL', orggen_plt: str ='yes', cprecincts=None) -> str:
+    """
+    Transcodes JPEG 2000 images to allow support for use with JHelioviewer
+    and the JPIP server
+
+    On success, returns the path to the transcoded file
+    On failure, raises a KduTranscode exception
+    """
+    import subprocess
+    import logging
+
+    tmp = filepath + '.tmp.jp2'
+    command = build_transcode_cmd(transcoder, filepath, tmp, corder, orggen_plt, cprecincts)
+
+    # Execute kdu_transcode (retry up to five times)
+    num_retries = 0
+
+    result = subprocess.run(command, capture_output=True)
+    while not os.path.isfile(tmp) and num_retries <= 5:
+        num_retries += 1
+        result = subprocess.run(command, capture_output=True)
+
+    # If transcode failed, raise an exception
+    if (result.returncode != 0) or (not os.path.isfile(tmp)):
+        logging.error(f'kdu_transcode failed on file {filepath}')
+        logging.error(f'kdu_transcode command was: {command}')
+        logging.error(f'kdu_transcode stdout: {result.stdout}')
+        logging.error(f'kdu_transcode stderr: {result.stderr}')
+        raise KduTranscodeError(filepath)
+    return tmp
