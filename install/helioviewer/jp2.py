@@ -204,22 +204,30 @@ def getImageGroup(sourceId):
 
     return groups
 
-def build_transcode_cmd(transcoder: str, infile: str, outfile: str, corder: str, orggen_plt: str, cprecincts) -> str:
+def build_transcode_cmd(transcoder: str, infile: str, outfile: str, corder: str, orggen_plt: str, cprecincts) -> list:
+    """
+    Returns a list of arguments suitable for subprocess.run with shell=False
+    """
     # Base command
-    command ='%s -i "%s" -o "%s"' % (transcoder, infile, outfile)
+    command = [
+        transcoder,
+        "-i",
+        infile,
+        "-o",
+        outfile
+    ]
 
     # Corder
     if corder is not None:
-        command += " Corder=%s" % corder
+        command.append("Corder=%s" % corder)
 
     # ORGgen_plt
     if orggen_plt is not None:
-        command += " ORGgen_plt=%s" % orggen_plt
+        command.append("ORGgen_plt=%s" % orggen_plt)
 
     # Cprecincts
     if cprecincts is not None:
-        command += " Cprecincts=\"{%d,%d}\"" % (cprecincts[0], cprecincts[1])
-    print(command)
+        command.append("Cprecincts={%d,%d}" % (cprecincts[0], cprecincts[1]))
     return command
 
 def transcode(transcoder: str, filepath: str, corder: str ='RPCL', orggen_plt: str ='yes', cprecincts=None) -> str:
@@ -239,10 +247,10 @@ def transcode(transcoder: str, filepath: str, corder: str ='RPCL', orggen_plt: s
     # Execute kdu_transcode (retry up to five times)
     num_retries = 0
 
-    result = subprocess.run(command, shell=True, capture_output=True)
+    result = subprocess.run(command, capture_output=True)
     while not os.path.isfile(tmp) and num_retries <= 5:
         num_retries += 1
-        result = subprocess.run(command, shell=True, capture_output=True)
+        result = subprocess.run(command, capture_output=True)
 
     # If transcode failed, raise an exception
     if (result.returncode != 0) or (not os.path.isfile(tmp)):
