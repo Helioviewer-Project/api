@@ -546,10 +546,10 @@ class ImageRetrievalDaemon:
             # Therefore, any problem with the transcoding process must raise
             # an error.
             try:
+                cprecincts = None
                 if image_params['instrument'] == "AIA":
-                    transcoded = transcode(self.kdu_transcode, filepath, cprecincts=[128, 128])
-                else:
-                    transcoded = transcode(self.kdu_transcode, filepath)
+                    cprecincts = [128,128]
+                transcoded = transcode(self.kdu_transcode, filepath, cprecincts=cprecincts)
                 # Remove old version and replace with transcoded one
                 # OSError
                 os.remove(filepath)
