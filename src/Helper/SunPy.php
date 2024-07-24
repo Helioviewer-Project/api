@@ -558,7 +558,7 @@ EOD;
     }
 
     private function _getHEKSnippet() {
-        if ( count($this->_eventLayers) == 0 ||
+        if ( empty($this->_eventLayers) || count($this->_eventLayers) == 0 ||
             (count($this->_eventLayers) == 1 && $this->_eventLayers[0]['frms'] == null) ) {
 
             return '';
