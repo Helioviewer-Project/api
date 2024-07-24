@@ -1339,7 +1339,7 @@ class Module_WebClient implements Module {
         // We are keeping them to support old takeScreenshot , queueMovie requests
 
         // Create empty events object required for screenshots.
-        $events_manager = EventStateManager::buildFromLegacyEventStrings('', false);
+        $events_manager = EventsStateManager::buildFromLegacyEventStrings('', false);
 
         // Create empty celestial bodies list
         $celestialBodies = array( "labels" => "",
