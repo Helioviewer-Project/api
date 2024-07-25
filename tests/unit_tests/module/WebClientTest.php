@@ -90,4 +90,25 @@ final class WebClientTest extends TestCase
         $client->execute();
     }
 
+    /**
+     * Verifying eclipse image is created correctly with png image output
+     * @runInSeparateProcess
+     */
+    public function test_getEclipseImageExpectedAsPNG() {
+        $params = array(
+          'action' => 'getEclipseImage',
+        );
+        // Set up the client
+        $client = new Module_WebClient($params);
+
+        // Save 
+        ob_start();
+        $client->execute();
+        $image_string = ob_get_contents();
+        ob_end_clean();
+
+        $finfo = new \finfo(FILEINFO_MIME);
+        $this->assertEquals($finfo->buffer($image_string), 'image/png; charset=binary');
+    }
+
 }
