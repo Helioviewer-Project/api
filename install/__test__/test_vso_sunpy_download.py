@@ -9,8 +9,10 @@ import mimetypes
 class TestVsoDownload(unittest.TestCase):
 
     def test_getImageGroup(self):
-        url = "http://localhost:8081/?action=getSciDataScript&imageScale=4.84088176&sourceIds=[13,10]&startDate=2021-06-01T00:01:00Z&endDate=2021-06-01T00:02:00Z&lang=sunpy&provider=vso"
-        response = requests.get(url)
+
+        URL = "http://%s/?action=getSciDataScript&imageScale=4.84088176&sourceIds=[13,10]&startDate=2021-06-01T00:01:00Z&endDate=2021-06-01T00:02:00Z&lang=sunpy&provider=vso" % os.environ['HV_WEB_ROOT_URL'];
+
+        response = requests.get(URL)
 
         self.assertEqual(200, response.status_code)
         self.assertEqual("OK", response.reason)
