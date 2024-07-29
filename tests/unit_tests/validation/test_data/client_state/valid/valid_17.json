@@ -1,0 +1,259 @@
+{
+  "date": 1410269529000,
+  "imageScale": 4.84088176,
+  "centerX": -2894.0322215830834,
+  "centerY": 101.72638697583727,
+  "imageLayers": [
+    {
+      "end": "2024-07-29 17:33:45",
+      "start": "2010-06-02 00:05:36",
+      "opacity": 100,
+      "visible": true,
+      "diffTime": 1,
+      "nickname": "AIA 171",
+      "sourceId": 10,
+      "uiLabels": [
+        {
+          "label": "Observatory",
+          "name": "SDO"
+        },
+        {
+          "label": "Instrument",
+          "name": "AIA"
+        },
+        {
+          "label": "Measurement",
+          "name": "171"
+        }
+      ],
+      "diffCount": 60,
+      "Instrument": "AIA",
+      "difference": 0,
+      "Measurement": "171",
+      "Observatory": "SDO",
+      "baseDiffTime": "2024-07-19T13:28:50.000Z",
+      "layeringOrder": 1
+    }
+  ],
+  "eventLayers": {
+    "tree_HEK": {
+      "id": "HEK",
+      "layers": [
+        {
+          "event_type": "AR",
+          "frms": [
+            "HMI_SHARP",
+            "NOAA_SWPC_Observer",
+            "SPoCA"
+          ],
+          "event_instances": [],
+          "open": 1
+        },
+        {
+          "event_type": "CC",
+          "frms": [
+            "all"
+          ],
+          "event_instances": [],
+          "open": 1
+        },
+        {
+          "event_type": "CD",
+          "frms": [
+            "all"
+          ],
+          "event_instances": [],
+          "open": 1
+        },
+        {
+          "event_type": "CH",
+          "frms": [
+            "SPoCA"
+          ],
+          "event_instances": [],
+          "open": 1
+        },
+        {
+          "event_type": "CJ",
+          "frms": [
+            "all"
+          ],
+          "event_instances": [],
+          "open": 1
+        },
+        {
+          "event_type": "CE",
+          "frms": [
+            "all"
+          ],
+          "event_instances": [],
+          "open": 1
+        },
+        {
+          "event_type": "CR",
+          "frms": [
+            "all"
+          ],
+          "event_instances": [],
+          "open": 1
+        },
+        {
+          "event_type": "CW",
+          "frms": [
+            "all"
+          ],
+          "event_instances": [],
+          "open": 1
+        },
+        {
+          "event_type": "EF",
+          "frms": [
+            "Emerging_flux_region_module"
+          ],
+          "event_instances": [],
+          "open": 1
+        },
+        {
+          "event_type": "ER",
+          "frms": [
+            "all"
+          ],
+          "event_instances": [],
+          "open": 1
+        },
+        {
+          "event_type": "FI",
+          "frms": [
+            "all"
+          ],
+          "event_instances": [],
+          "open": 1
+        },
+        {
+          "event_type": "FA",
+          "frms": [
+            "all"
+          ],
+          "event_instances": [],
+          "open": 1
+        },
+        {
+          "event_type": "FE",
+          "frms": [
+            "all"
+          ],
+          "event_instances": [],
+          "open": 1
+        },
+        {
+          "event_type": "FL",
+          "frms": [
+            "all"
+          ],
+          "event_instances": [],
+          "open": 1
+        },
+        {
+          "event_type": "LP",
+          "frms": [
+            "all"
+          ],
+          "event_instances": [],
+          "open": 1
+        },
+        {
+          "event_type": "OS",
+          "frms": [
+            "all"
+          ],
+          "event_instances": [],
+          "open": 1
+        },
+        {
+          "event_type": "PG",
+          "frms": [
+            "all"
+          ],
+          "event_instances": [],
+          "open": 1
+        },
+        {
+          "event_type": "SG",
+          "frms": [
+            "Sigmoid_Sniffer"
+          ],
+          "event_instances": [],
+          "open": 1
+        },
+        {
+          "event_type": "SP",
+          "frms": [
+            "all"
+          ],
+          "event_instances": [],
+          "open": 1
+        },
+        {
+          "event_type": "SS",
+          "frms": [
+            "EGSO_SFC"
+          ],
+          "event_instances": [],
+          "open": 1
+        },
+        {
+          "event_type": "TO",
+          "frms": [
+            "SSW_PFSS_v2_\\+_null_point_finder_v20180808"
+          ],
+          "event_instances": [],
+          "open": 1
+        }
+      ],
+      "visible": true,
+      "labels_visible": true,
+      "markers_visible": true,
+      "layer_available_visible": true
+    },
+    "tree_CCMC": {
+      "id": "CCMC",
+      "layers": [
+        {
+          "event_type": "C3",
+          "frms": [
+            "CME"
+          ],
+          "event_instances": [],
+          "open": 1
+        },
+        {
+          "event_type": "FP",
+          "frms": [
+            "MAG4_LoS_FEr"
+          ],
+          "event_instances": [],
+          "open": 1
+        }
+      ],
+      "visible": true,
+      "labels_visible": true,
+      "markers_visible": true,
+      "layer_available_visible": true
+    },
+    "tree_RHESSI": {
+      "id": "RHESSI",
+      "layers": [],
+      "visible": true,
+      "labels_visible": true,
+      "markers_visible": true,
+      "layer_available_visible": true
+    }
+  },
+  "celestialBodies": {
+    "soho": [],
+    "stereo_a": [
+      "stereo_a-mercury-tree-label"
+    ],
+    "stereo_b": []
+  }
+}

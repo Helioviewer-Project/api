@@ -448,6 +448,10 @@ class Validation_InputValidator
 
             if (!$result->isValid()) {
                 $error = (new ErrorFormatter())->format($result->error());
+                $exc = new InvalidArgumentException("Invalid JSON: " . print_r($error, true) . "\n\n" . print_r($data, true));
+                // Log the error to disk so we can debug later
+                include_once HV_ROOT_DIR.'/../src/Helper/ErrorHandler.php';
+                logException($exc, "SchemaValidation_");
                 throw new InvalidArgumentException("Invalid JSON: " . print_r($error, true));
             }
         }
