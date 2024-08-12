@@ -28,8 +28,17 @@ require_once '../src/Helper/ErrorHandler.php';
 
 use Helioviewer\Api\Request\RequestParams;
 use Helioviewer\Api\Request\RequestException;
+use Helioviewer\Api\Sentry\Sentry;
 
 $config = new Config('../settings/Config.ini');
+
+$sentry = Sentry::get([
+    'environment' => HV_APP_ENV ?? 'dev',
+    'sample_rate' => HV_SENTRY_SAMPLE_RATE ?? 0.1,
+    'enabled' => HV_SENTRY_ENABLED ?? false,
+    'dsn' => HV_SENTRY_DSN,
+]);
+
 date_default_timezone_set('UTC');
 register_shutdown_function('shutdownFunction');
 
@@ -41,8 +50,10 @@ if ( array_key_exists('REQUEST_METHOD', $_SERVER) && $_SERVER['REQUEST_METHOD'] 
 }
 
 try {
+
     // Parse request and its variables
     $params = RequestParams::collect();
+
 } catch (RequestException $re) {
 
     // Set the content type to JSON
@@ -56,10 +67,17 @@ try {
         'message' => $re->getMessage(),
         'data' => [],
     ]);
+
+    // Track exception
+    $sentry->capture($re);
+
     exit;
 }
 
-
+$sentry->setContext('Helioviewer Request Vars', [
+    'params' => $params,
+    'is_json' => false,
+]);
 
 // Redirect to API Documentation if no API request is being made.
 if ( !isset($params) || !loadModule($params) ) {
@@ -79,6 +97,7 @@ function loadModule($params) {
 
     $valid_actions = array(
         'downloadScreenshot'             => 'WebClient',
+        'testSentry'                     => 'WebClient',
         'getClosestImage'                => 'WebClient',
         'getDataSources'                 => 'WebClient',
         'getJP2Header'                   => 'WebClient',
@@ -130,6 +149,8 @@ function loadModule($params) {
         'getClosestImageDatesForSources' => 'WebClient',
     );
 
+    $sentry = Sentry::get();
+
     include_once HV_ROOT_DIR.'/../src/Validation/InputValidator.php';
 
     try {
@@ -162,6 +183,11 @@ function loadModule($params) {
                 // Execute action
                 $moduleName = $valid_actions[$params['action']];
                 $className  = 'Module_'.$moduleName;
+
+                // Track module name 
+                $sentry->setContext('Helioviewer Request Vars', [ 
+                    'module' => $moduleName 
+                ]);
 
                 include_once HV_ROOT_DIR.'/../src/Module/'.$moduleName.'.php';
 
@@ -201,7 +227,7 @@ function loadModule($params) {
                 }
 
             } catch (LimitExceeded $exception) {
-                //limit exceeded
+                $sentry->capture($exception);
             }
         }
     } catch (\InvalidArgumentException $e) {
@@ -211,6 +237,7 @@ function loadModule($params) {
 
         // Determine the content type of the request
         $content_type = $_SERVER['CONTENT_TYPE'] ?? '';
+
 
         // If the request is posting JSON
         if('application/json' === $content_type) {
@@ -223,16 +250,23 @@ function loadModule($params) {
                 'message' => $e->getMessage(),
                 'data' => [],
             ]);
+
+            $sentry->setContext('Helioviewer Request Vars', [
+                'is_json' => true,
+            ]);
+
             exit;
+
+        } else {
+            printHTMLErrorMsg($e->getMessage());
         }
 
-        printHTMLErrorMsg($e->getMessage());
-
+        $sentry->capture($e);
     } catch (Exception $e) {
-        
         printHTMLErrorMsg($e->getMessage());
-        
+        $sentry->capture($e);
     }
+
 
     return true;
 }

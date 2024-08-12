@@ -15,7 +15,11 @@
 require_once 'interface.Module.php';
 require_once HV_ROOT_DIR . "/../src/Helper/EventInterface.php";
 
+use Helioviewer\Api\Sentry\SentryTrait;
+
 class Module_SolarEvents implements Module {
+
+    use SentryTrait;
 
     private $_params;
     private $_options;
@@ -43,6 +47,7 @@ class Module_SolarEvents implements Module {
                 $this->{$this->_params['action']}();
             }
             catch (Exception $e) {
+                $this->sentryCapture($e);
                 handleError($e->getMessage(), $e->getCode());
             }
         }
@@ -173,6 +178,7 @@ class Module_SolarEvents implements Module {
 
         $hek = new Event_HEKAdapter();
 
+
         // Query the HEK
         $events = $hek->getEvents($this->_params['startTime'],$this->_options);
 
@@ -258,6 +264,7 @@ class Module_SolarEvents implements Module {
         }
 
         header("Content-Type: application/json");
+
         echo json_encode($data);
     }
 
