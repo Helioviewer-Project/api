@@ -22,6 +22,7 @@
  *    web-client install to connect with)
  *  = Add getPlugins method to JHelioviewer module (empty function for now)
  */
+require_once __DIR__.'/../pre.php';
 require_once __DIR__.'/../vendor/autoload.php';
 require_once '../src/Config.php';
 require_once '../src/Helper/ErrorHandler.php';
@@ -97,7 +98,6 @@ function loadModule($params) {
 
     $valid_actions = array(
         'downloadScreenshot'             => 'WebClient',
-        'testSentry'                     => 'WebClient',
         'getClosestImage'                => 'WebClient',
         'getDataSources'                 => 'WebClient',
         'getJP2Header'                   => 'WebClient',
