@@ -21,6 +21,8 @@ use Helioviewer\Api\Event\EventsStateManager;
 
 class Module_WebClient implements Module {
 
+    use Helioviewer\Api\Sentry\SentryTrait;
+
     private $_params;
     private $_options;
 
@@ -47,6 +49,7 @@ class Module_WebClient implements Module {
                 $this->{$this->_params['action']}();
             }
             catch (Exception $e) {
+                $this->sentryCapture($e);
                 logException($e, "WebClient_");
                 handleError($e->getMessage(), $e->getCode());
             }
