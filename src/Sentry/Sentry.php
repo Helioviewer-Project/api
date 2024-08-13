@@ -36,6 +36,12 @@ class Sentry
     {
         if (is_null(self::$instance)) {
 
+            // if client try to load class with empty config , 
+            // use a sample config with dispabled
+            if(is_null($config)) {
+                $config = ['enabled' => false];
+            }
+
             // if sentry not enabled, use a void client
             $client = $config['enabled'] ? new Client($config) : new VoidClient($config);
 
