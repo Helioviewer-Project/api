@@ -16,7 +16,11 @@ require_once 'interface.Module.php';
 
 use Helioviewer\Api\Event\EventsStateManager;
 
+use Helioviewer\Api\Sentry\SentryTrait;
+
 class Module_Movies implements Module {
+
+    use SentryTrait;
 
     const YOUTUBE_THUMBNAIL_FORMAT = "https://i.ytimg.com/vi/{VideoID}/{Quality}default.jpg";
     private $_params;
@@ -42,6 +46,7 @@ class Module_Movies implements Module {
             try {
                 $this->{$this->_params['action']}();
             } catch (Exception $e) {
+                $this->sentryCapture($e);
                 handleError($e->getMessage(), $e->getCode());
             }
         }

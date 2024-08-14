@@ -18,10 +18,11 @@ require_once HV_ROOT_DIR.'/../src/Validation/InputValidator.php';
 require_once HV_ROOT_DIR.'/../src/Helper/ErrorHandler.php';
 
 use Helioviewer\Api\Event\EventsStateManager;
+use Helioviewer\Api\Sentry\SentryTrait;
 
 class Module_WebClient implements Module {
 
-    use Helioviewer\Api\Sentry\SentryTrait;
+    use SentryTrait;
 
     private $_params;
     private $_options;

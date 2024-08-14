@@ -1,6 +1,9 @@
 <?php
 
 require_once 'interface.Module.php';
+
+use Helioviewer\Api\Sentry\SentryTrait;
+
 /**
  * Solar Bodies Module
  * 
@@ -8,6 +11,8 @@ require_once 'interface.Module.php';
  * Retrieves data stored in JSON file format on the disk based on request time as a unix timestamp.
  */
 class Module_SolarBodies implements Module {
+
+    use SentryTrait;
 
     private $_params;
     private $_options;
@@ -54,6 +59,7 @@ class Module_SolarBodies implements Module {
                 $this->{$this->_params['action']}();
             }
             catch (Exception $e) {
+                $this->sentryCapture($e);
                 handleError($e->getMessage(), $e->getCode());
             }
         }
