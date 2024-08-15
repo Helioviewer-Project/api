@@ -14,8 +14,11 @@ include_once HV_ROOT_DIR.'/../src/Movie/HelioviewerMovie.php';
 include_once HV_ROOT_DIR.'/../src/Helper/ErrorHandler.php';
 include_once HV_ROOT_DIR.'/../lib/Redisent/Redisent.php';
 
+use \Helioviewer\Api\Sentry\SentryTrait;
+
 class Job_MovieBuilder
 {
+    use SentryTrait;
     /**
      * Args passed in from resque
      */
@@ -40,6 +43,8 @@ class Job_MovieBuilder
             $movie = new Movie_HelioviewerMovie($this->args['movieId']);
             $movie->build();
         } catch (Exception $e) {
+
+            $this->sentryCapture($e);
             // Handle any errors encountered
             printf("Error processing movie %s\n", $this->args['movieId']);
             logException($e, "Resque_");
