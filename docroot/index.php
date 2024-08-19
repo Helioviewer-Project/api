@@ -74,7 +74,7 @@ try {
     exit;
 }
 
-Sentry::setContext('Helioviewer Request Vars', [
+Sentry::setContext('Helioviewer', [
     'params' => $params,
     'is_json' => false,
 ]);
@@ -182,9 +182,8 @@ function loadModule($params) {
                 $className  = 'Module_'.$moduleName;
 
                 // Track module name 
-                Sentry::setContext('Helioviewer Request Vars', [ 
-                    'module' => $moduleName 
-                ]);
+                Sentry::setTag('Module', $moduleName);
+                Sentry::setTag('Module.Function', $params['action']);
 
                 include_once HV_ROOT_DIR.'/../src/Module/'.$moduleName.'.php';
 
@@ -248,7 +247,7 @@ function loadModule($params) {
                 'data' => [],
             ]);
 
-            Sentry::setContext('Helioviewer Request Vars', [
+            Sentry::setContext('Helioviewer', [
                 'is_json' => true,
             ]);
 

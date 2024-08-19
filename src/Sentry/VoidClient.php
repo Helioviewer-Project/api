@@ -28,5 +28,9 @@ class VoidClient implements ClientInterface
     {
     }
 
+    public function setTag(string $tag, string $value): void
+    {
+    }
+
 }
 

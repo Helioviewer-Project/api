@@ -62,5 +62,20 @@ class Client implements ClientInterface
         });
     }
 
+
+    /**
+    * Sets the tag value for the Sentry client.
+    * Those variables will be sent to Sentry 
+    *
+    * @param string  $tag   The name of the tag.
+    * @param string  $value The value of the tag.
+    * @return @void
+    */
+    public function setTag(string $tag, string $value): void
+    {
+        \Sentry\configureScope(function (\Sentry\State\Scope $scope) use ($tag, $value): void {
+            $scope->setTag($tag, $value);
+        });
+    }
 }
 

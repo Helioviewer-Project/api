@@ -33,4 +33,14 @@ interface ClientInterface
     * @return @void
     */
     public function setContext(string $name, array $params): void;
+
+    /**
+    * Sets the tag value for the Sentry client.
+    * Those variables will be sent to Sentry 
+    *
+    * @param string  $tag   The name of the tag.
+    * @param string  $value The value of the tag.
+    * @return @void
+    */
+    public function setTag(string $tag, string $value): void;
 }

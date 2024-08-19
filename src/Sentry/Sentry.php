@@ -88,6 +88,10 @@ class Sentry
      */
     public static function setContext(string $name, array $params): void 
     {
+        if (null === self::$client) {
+            throw new \RuntimeException("Sentry client should be initialized like; Sentry::init(\$config)");
+        }
+
         if(!self::validateContextParams($params)) {
             throw new \InvalidArgumentException(sprintf("Context:%s should be array<string, mixed>",$name));
         }
@@ -99,6 +103,27 @@ class Sentry
         }
 
         self::$client->setContext($name, self::$contexts[$name]);
+    }
+
+    /*
+     * This function sets tag to be sent to Sentry
+     *
+     * @param string $tag   The name of the tag. | ex : "module"
+     * @param string $value The value of the tag.| ex : "Webclient"
+     * @throws \InvalidArgumentException  if all tag name or its value is empty.
+     * @return @void
+     */
+    public static function setTag(string $tag, string $value): void 
+    {
+        if (null === self::$client) {
+            throw new \RuntimeException("Sentry client should be initialized like; Sentry::init(\$config)");
+        }
+
+        if(empty($tag) || empty($value)) {
+            throw new \InvalidArgumentException(sprintf("Can't use empty fields for tagging name:%s value:%s", $tag, $value));
+        }
+
+        self::$client->setTag($tag, $value);
     }
 
     /**

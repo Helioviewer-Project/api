@@ -102,7 +102,17 @@ final class SentryTest extends TestCase
         Sentry::message("foo-message");
     }
 
+    public function testItShouldThrowExceptionWhenNotInitalizedForContexts()
+    {
+        $this->expectException(\RuntimeException::class);
+        Sentry::setContext("foo-context",['a'=>'b']);
+    }
 
+    public function testItShouldThrowExceptionWhenNotInitalizedForTags()
+    {
+        $this->expectException(\RuntimeException::class);
+        Sentry::setTag("foo","baz");
+    }
 
     public function testItShouldSendGivenContextToSentry()
     {
@@ -152,6 +162,31 @@ final class SentryTest extends TestCase
         ]);
 
         Sentry::setContext('foo_context', $invalid_params);
+    }
+
+
+    public static function GetInvalidTags(): array 
+    {
+        return [
+            ["foo",""],
+            ["", ""],
+            ["", "foo"],
+        ];
+    }
+    /**
+     * @dataProvider GetInvalidTags
+     */
+    public function testItShouldRefuseInvalidTags(string $invalid_tag, string $invalid_tag_value)
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        $mock_client = $this->createMock(ClientInterface::class);
+
+        Sentry::init([
+            'client' => $mock_client,
+        ]);
+
+        Sentry::setTag($invalid_tag, $invalid_tag_value);
     }
 
     /**

@@ -232,6 +232,7 @@ class Module_SolarEvents implements Module {
         $observationTime = new DateTimeImmutable($this->_params['startTime']);
         // The query start time is 12 hours earlier.
         $start = $observationTime->sub(new DateInterval("PT12H"));
+
         // The query duration will be 24 hours.
         // This results in a query of events over 24 hours with the given time
         // at the center.
@@ -333,8 +334,12 @@ class Module_SolarEvents implements Module {
 
         // Check input
         if ( isset($expected) ) {
-            Validation_InputValidator::checkInput($expected, $this->_params,
-                $this->_options);
+
+            Sentry::setContext('Helioviewer', [ 
+                'validation_rules' => $expected 
+            ]);
+
+            Validation_InputValidator::checkInput($expected, $this->_params, $this->_options);
         }
 
         return true;
