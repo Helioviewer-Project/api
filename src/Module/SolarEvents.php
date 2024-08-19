@@ -15,11 +15,9 @@
 require_once 'interface.Module.php';
 require_once HV_ROOT_DIR . "/../src/Helper/EventInterface.php";
 
-use Helioviewer\Api\Sentry\SentryTrait;
+use Helioviewer\Api\Sentry\Sentry;
 
 class Module_SolarEvents implements Module {
-
-    use SentryTrait;
 
     private $_params;
     private $_options;
@@ -47,7 +45,7 @@ class Module_SolarEvents implements Module {
                 $this->{$this->_params['action']}();
             }
             catch (Exception $e) {
-                $this->sentryCapture($e);
+                Sentry::capture($e);
                 handleError($e->getMessage(), $e->getCode());
             }
         }

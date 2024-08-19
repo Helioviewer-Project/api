@@ -18,11 +18,9 @@ require_once HV_ROOT_DIR.'/../src/Validation/InputValidator.php';
 require_once HV_ROOT_DIR.'/../src/Helper/ErrorHandler.php';
 
 use Helioviewer\Api\Event\EventsStateManager;
-use Helioviewer\Api\Sentry\SentryTrait;
+use Helioviewer\Api\Sentry\Sentry;
 
 class Module_WebClient implements Module {
-
-    use SentryTrait;
 
     private $_params;
     private $_options;
@@ -50,7 +48,7 @@ class Module_WebClient implements Module {
                 $this->{$this->_params['action']}();
             }
             catch (Exception $e) {
-                $this->sentryCapture($e);
+                Sentry::capture($e);
                 logException($e, "WebClient_");
                 handleError($e->getMessage(), $e->getCode());
             }

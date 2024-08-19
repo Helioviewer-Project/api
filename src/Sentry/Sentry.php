@@ -11,45 +11,43 @@ namespace Helioviewer\Api\Sentry;
 class Sentry
 {
     // This is a private singleton static variable that holds an instance of this class. 
-    private static ?Sentry $instance = null;
+    public static ?ClientInterface $client = null;
 
     // This is a private array that stores the contexts to be sent to Sentry.
-    private array $contexts = [];
+    public static array $contexts = [];
 
     /*
-     * This constructor initialized Sentry functionality with using given client     
-     * 
-     * @param \ClientInterface $client Client tobe used to talk with Sentry.
+     * This constructor initialized Sentry functionality with using given configuration.
+     *
+     * @param array $config Configuration params to talk with Sentry.
+     * ex: [ 
+     *      'environment' => HV_APP_ENV ?? 'dev',
+     *      'sample_rate' => HV_SENTRY_SAMPLE_RATE ?? 0.1,
+     *      'enabled' => HV_SENTRY_ENABLED ?? false,
+     *      'dsn' => HV_SENTRY_DSN,
+     *      'client' => new VoidClient(),
+     *   
      */
-    public function __construct(
-        private ClientInterface $client,
-    ) {}
-
-    /*
-     * This constructor initialized Sentry functionality with using given client.
-     * It always return the first initialized instance, 
-     * 
-     * @param array $config Client tobe used to talk with Sentry.
-     * @return Sentry, singleton instance of this class 
-     */
-    public static function get($config = null): Sentry 
+    public static function init(array $config): void 
     {
-        if (is_null(self::$instance)) {
-
-            // if client try to load class with empty config , 
-            // use a sample config with dispabled
-            if(is_null($config)) {
-                $config = ['enabled' => false];
-            }
-
-            // if sentry not enabled, use a void client
-            $client = $config['enabled'] ? new Client($config) : new VoidClient($config);
-
-            self::$instance = new Sentry($client);
-
+        // if client try to load class with empty config , 
+        // use a sample config with dispabled
+        if(!array_key_exists('enabled', $config) || !is_bool($config['enabled'])) {
+            $config = ['enabled' => false];
         }
 
-        return self::$instance;
+
+        // if sentry not enabled, use a void client
+        self::$client = $config['enabled'] ? new Client($config) : new VoidClient($config);
+
+        // if there is an already given client , use that one; 
+        if(array_key_exists('client', $config) && $config['client'] instanceOf ClientInterface) {
+            self::$client = $config['client'];
+        }
+
+        // context refreshed
+        self:;$contexts = [];
+
     }
 
     /*
@@ -58,9 +56,13 @@ class Sentry
      * @param \Throwable $exception Exception tobe captured
      * @return @void
      */
-    public function capture(\Throwable $exception): void 
+    public static function capture(\Throwable $exception): void 
     {
-        $this->client->capture($exception);
+        if (null === self::$client) {
+            throw new \RuntimeException("Sentry client should be initialized like; Sentry::init(\$config)");
+        }
+
+        self::$client->capture($exception);
     }
 
     /*
@@ -69,9 +71,13 @@ class Sentry
      * @param string $message any given message we want to track in Sentry
      * @return @void
      */
-    public function message(string $message): void 
+    public static function message(string $message): void 
     {
-        $this->client->message($message);
+        if (null === self::$client) {
+            throw new \RuntimeException("Sentry client should be initialized like; Sentry::init(\$config)");
+        }
+
+        self::$client->message($message);
     }
 
     /*
@@ -82,19 +88,19 @@ class Sentry
      * @throws \InvalidArgumentException  if all the keys of $params are not string.
      * @return @void
      */
-    public function setContext(string $name, array $params): void 
+    public static function setContext(string $name, array $params): void 
     {
         if(!self::validateContextParams($params)) {
             throw new \InvalidArgumentException(sprintf("Context:%s should be array<string, mixed>",$name));
         }
 
-        if(!array_key_exists($name, $this->contexts)) {
-            $this->contexts[$name] = $params;
+        if(!array_key_exists($name, self::$contexts)) {
+            self::$contexts[$name] = $params;
         } else {
-            $this->contexts[$name] = array_merge($this->contexts[$name], $params);
+            self::$contexts[$name] = array_merge(self::$contexts[$name], $params);
         }
 
-        $this->client->setContext($name, $this->contexts[$name]);
+        self::$client->setContext($name, self::$contexts[$name]);
     }
 
     /**
@@ -103,7 +109,7 @@ class Sentry
      * @param array $params The parameters of the context.
      * @return bool True if all the keys of $params , is string, false otherwise.
      **/
-    private static function validateContextParams(array $params): bool 
+    public static function validateContextParams(array $params): bool 
     {
         $keys = array_keys($params);
         $all_string = array_reduce($keys, function($cur, $key) {
@@ -113,13 +119,4 @@ class Sentry
         return $all_string;
     }
 
-    /*
-     * This function returns the current context and is primarly implemented for testing purposes
-     *
-     * @return array<array>  
-     */
-    public function getContexts(): array 
-    {
-        return $this->contexts;
-    }
 }

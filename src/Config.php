@@ -16,7 +16,7 @@
 
 class Config {
 
-    private $_bools  = array('disable_cache', 'enable_statistics_collection', 'db_events');
+    private $_bools  = array('disable_cache', 'enable_statistics_collection', 'db_events','sentry_enabled');
     private $_ints   = array('build_num', 'ffmpeg_max_threads',
                              'max_jpx_frames', 'max_movie_frames');
     private $_floats = array();
@@ -45,7 +45,6 @@ class Config {
             }
 
         }
-
 
         $this->_fixTypes();
 

@@ -32,7 +32,7 @@ use Helioviewer\Api\Sentry\Sentry;
 
 $config = new Config('../settings/Config.ini');
 
-$sentry = Sentry::get([
+Sentry::init([
     'environment' => HV_APP_ENV ?? 'dev',
     'sample_rate' => HV_SENTRY_SAMPLE_RATE ?? 0.1,
     'enabled' => HV_SENTRY_ENABLED ?? false,
@@ -69,12 +69,12 @@ try {
     ]);
 
     // Track exception
-    $sentry->capture($re);
+    Sentry::capture($re);
 
     exit;
 }
 
-$sentry->setContext('Helioviewer Request Vars', [
+Sentry::setContext('Helioviewer Request Vars', [
     'params' => $params,
     'is_json' => false,
 ]);
@@ -148,8 +148,6 @@ function loadModule($params) {
         'getClosestImageDatesForSources' => 'WebClient',
     );
 
-    $sentry = Sentry::get();
-
     include_once HV_ROOT_DIR.'/../src/Validation/InputValidator.php';
 
     try {
@@ -184,7 +182,7 @@ function loadModule($params) {
                 $className  = 'Module_'.$moduleName;
 
                 // Track module name 
-                $sentry->setContext('Helioviewer Request Vars', [ 
+                Sentry::setContext('Helioviewer Request Vars', [ 
                     'module' => $moduleName 
                 ]);
 
@@ -226,7 +224,7 @@ function loadModule($params) {
                 }
 
             } catch (LimitExceeded $exception) {
-                $sentry->capture($exception);
+                Sentry::capture($e);
             }
         }
     } catch (\InvalidArgumentException $e) {
@@ -250,7 +248,7 @@ function loadModule($params) {
                 'data' => [],
             ]);
 
-            $sentry->setContext('Helioviewer Request Vars', [
+            Sentry::setContext('Helioviewer Request Vars', [
                 'is_json' => true,
             ]);
 
@@ -260,10 +258,10 @@ function loadModule($params) {
             printHTMLErrorMsg($e->getMessage());
         }
 
-        $sentry->capture($e);
+        Sentry::capture($e);
     } catch (Exception $e) {
         printHTMLErrorMsg($e->getMessage());
-        $sentry->capture($e);
+        Sentry::capture($e);
     }
 
 
