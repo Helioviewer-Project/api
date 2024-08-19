@@ -33,21 +33,19 @@ class Sentry
         // if client try to load class with empty config , 
         // use a sample config with dispabled
         if(!array_key_exists('enabled', $config) || !is_bool($config['enabled'])) {
-            $config = ['enabled' => false];
+            $config = array_merge($config, ['enabled' => false]);
         }
-
-
-        // if sentry not enabled, use a void client
-        self::$client = $config['enabled'] ? new Client($config) : new VoidClient($config);
 
         // if there is an already given client , use that one; 
         if(array_key_exists('client', $config) && $config['client'] instanceOf ClientInterface) {
             self::$client = $config['client'];
+        } else {
+            // if sentry not enabled, use a void client
+            self::$client = $config['enabled'] ? new Client($config) : new VoidClient($config);
         }
 
         // context refreshed
         self:;$contexts = [];
-
     }
 
     /*

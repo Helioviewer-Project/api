@@ -8,37 +8,73 @@ use PHPUnit\Framework\TestCase;
 
 use Helioviewer\Api\Sentry\Sentry;
 use Helioviewer\Api\Sentry\VoidClient;
+use Helioviewer\Api\Sentry\Client;
 use Helioviewer\Api\Sentry\ClientInterface;
 
 final class SentryTest extends TestCase
 {
-    public function testItShouldMaintainOnlyOneInstanceOfSentry()
+    protected function setUp(): void
     {
-        $sentry_1 = Sentry::get(['enabled' => false]);
-        $sentry_2 = Sentry::get(['enabled' => false]);
-        $sentry_3 = Sentry::get(['enabled' => false]);
-
-        $this->assertEquals($sentry_1, $sentry_2);
-        $this->assertEquals($sentry_2, $sentry_3);
-        $this->assertEquals($sentry_1, $sentry_3);
+        Sentry::$client = null;
+        Sentry::$contexts = [];
     }
 
-    public function testItShouldCaptureExceptionForSentry()
+    public static function GetDisabledConfigs(): array 
+    {
+        return [
+            [["enabled"=>false]],
+            [["enabled"=>'false']],
+            [["enabled"=>'true']],
+            [["foo"=>'true']],
+            [["bar"=>'true']],
+        ];
+    }
+    /**
+     * @dataProvider GetDisabledConfigs
+     */
+    public function testItShouldUseVoidClientWhenNotEnabled($config)
+    {
+        Sentry::init($config);
+        $this->assertInstanceOf(VoidClient::class, Sentry::$client);
+    }
+
+
+    public function testItShouldUseSentryClientWhenEnabled()
+    {
+        Sentry::init([
+            'enabled' => true,
+            'sample_rate' => '1',
+            'environment' => 'env',
+            'dsn' => 'http://boo@foo-sentry/1220',
+        ]);
+        $this->assertInstanceOf(Client::class, Sentry::$client);
+    }
+
+    public function testItShouldUseGivenClientWhenGivenFromConfig()
+    {
+        $mock_client = $this->createMock(ClientInterface::class);
+        Sentry::init([
+            'client' => $mock_client,
+        ]);
+        $this->assertEquals(Sentry::$client, $mock_client);
+    }
+
+    public function testItShouldCaptureExceptionWithSentryClient()
     {
         $random_exception = new \Exception(sprintf("Rand%d Exception", rand()));
-
         $mock_client = $this->createMock(ClientInterface::class);
 
         $mock_client->expects($this->once())
             ->method('capture')
             ->with($this->identicalTo($random_exception));
 
-        $sentry = new Sentry($mock_client);
-        $sentry->capture($random_exception);
-
+        Sentry::init([
+            'client' => $mock_client,
+        ]);
+        Sentry::capture($random_exception);
     }
 
-    public function testItShouldCaptureMessageForSentry()
+    public function testItShouldCaptureMessageWithSentryClient()
     {
         $random_message = sprintf("Rand%d message", rand());
 
@@ -48,9 +84,25 @@ final class SentryTest extends TestCase
             ->method('message')
             ->with($this->identicalTo($random_message));
 
-        $sentry = new Sentry($mock_client);
-        $sentry->message($random_message);
+        Sentry::init([
+            'client' => $mock_client,
+        ]);
+        Sentry::message($random_message);
     }
+
+    public function testItShouldThrowExceptionWhenNotInitalizedForExceptions()
+    {
+        $this->expectException(\RuntimeException::class);
+        Sentry::capture(new \Exception("exception"));
+    }
+
+    public function testItShouldThrowExceptionWhenNotInitalizedForMessages()
+    {
+        $this->expectException(\RuntimeException::class);
+        Sentry::message("foo-message");
+    }
+
+
 
     public function testItShouldSendGivenContextToSentry()
     {
@@ -71,10 +123,12 @@ final class SentryTest extends TestCase
             ->method('setContext')
             ->with($this->identicalTo($random_context), $this->identicalTo($random_params));
 
-        $sentry = new Sentry($mock_client);
-        $sentry->setContext($random_context, $random_params);
+        Sentry::init([
+            'client' => $mock_client,
+        ]);
+        Sentry::setContext($random_context, $random_params);
     }
-    
+
 
     public static function GetInvalidParams(): array 
     {
@@ -87,15 +141,17 @@ final class SentryTest extends TestCase
     /**
      * @dataProvider GetInvalidParams
      */
-    public function testItShouldRefuseInvalidParams(array $params)
+    public function testItShouldRefuseInvalidParams(array $invalid_params)
     {
         $this->expectException(\InvalidArgumentException::class);
 
-        $context = sprintf("invalid%d", rand());
-        $invalid_params = ["foo"];
+        $mock_client = $this->createMock(ClientInterface::class);
 
-        $sentry = new Sentry(new VoidClient([]));
-        $sentry->setContext($context, $invalid_params);
+        Sentry::init([
+            'client' => $mock_client,
+        ]);
+
+        Sentry::setContext('foo_context', $invalid_params);
     }
 
     /**
@@ -105,13 +161,15 @@ final class SentryTest extends TestCase
     {
         $mock_client = $this->createMock(ClientInterface::class);
 
-        $sentry = new Sentry($mock_client);
+        Sentry::init([
+            'client' => $mock_client,
+        ]);
 
         foreach($params as $p) {
-            $sentry->setContext("foo-context", $p);
+            Sentry::setContext("foo-context", $p);
         }
 
-        $this->assertEquals($sentry->getContexts(), [
+        $this->assertEquals(Sentry::$contexts, [
             'foo-context' => $result
         ]);
     }
