@@ -15,6 +15,8 @@
  */
 require_once 'interface.Module.php';
 
+use Helioviewer\Api\Sentry\Sentry;
+
 class Module_JHelioviewer implements Module {
 
     private $_params;
@@ -45,6 +47,7 @@ class Module_JHelioviewer implements Module {
                 $this->{$this->_params['action']}();
             }
             catch (Exception $e) {
+                Sentry::capture($e);
                 handleError($e->getMessage(), $e->getCode());
             }
         }
@@ -493,8 +496,11 @@ class Module_JHelioviewer implements Module {
         } // end switch block
 
         if ( isset($expected) ) {
-            Validation_InputValidator::checkInput($expected, $this->_params,
-                $this->_options);
+            Sentry::setContext('Helioviewer', [ 
+                'validation_rules' => $expected 
+            ]);
+
+            Validation_InputValidator::checkInput($expected, $this->_params,$this->_options);
         }
 
         return true;

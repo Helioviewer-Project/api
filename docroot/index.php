@@ -181,9 +181,10 @@ function loadModule($params) {
                 $moduleName = $valid_actions[$params['action']];
                 $className  = 'Module_'.$moduleName;
 
-                // Track module name 
+                // Track this request 
                 Sentry::setTag('Module', $moduleName);
                 Sentry::setTag('Module.Function', $params['action']);
+                Sentry::setTag('Type', 'web');
 
                 include_once HV_ROOT_DIR.'/../src/Module/'.$moduleName.'.php';
 
@@ -250,6 +251,8 @@ function loadModule($params) {
             Sentry::setContext('Helioviewer', [
                 'is_json' => true,
             ]);
+
+            Sentry::capture($e);
 
             exit;
 

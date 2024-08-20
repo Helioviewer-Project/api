@@ -1602,8 +1602,11 @@ class Module_Movies implements Module {
 
         // Check input
         if ( isset($expected) ) {
-            Validation_InputValidator::checkInput($expected, $this->_params,
-                $this->_options);
+            Sentry::setContext('Helioviewer', [ 
+                'validation_rules' => $expected 
+            ]);
+
+            Validation_InputValidator::checkInput($expected, $this->_params,$this->_options);
         }
 
         return true;

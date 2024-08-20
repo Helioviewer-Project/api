@@ -474,6 +474,19 @@ class Module_WebClient implements Module {
 
         $events_manager = EventsStateManager::buildFromEventsState($json_params['eventsState']);
 
+        Sentry::setContext('Screenshot Request Variables',[
+            'layers' => $layers,
+            'events_manager' => $events_manager,
+            'movieIcons' => $movieIcons,
+            'celestialBodies' => $celestialBodies,
+            'scale' => $scale,
+            'scaleType' => $scaleType,
+            'scaleX' => $scaleX,
+            'scaleY' => $scaleY,
+            'roi' => $roi,
+            'json_params' => $json_params,
+        ]);
+
         // Create the screenshot
         $screenshot = new Image_Composite_HelioviewerScreenshot(
             $layers,
@@ -1818,8 +1831,11 @@ class Module_WebClient implements Module {
         }
 
         if ( isset($expected) ) {
-            Validation_InputValidator::checkInput($expected, $this->_params,
-                $this->_options);
+            Sentry::setContext('Helioviewer', [ 
+                'validation_rules' => $expected 
+            ]);
+
+            Validation_InputValidator::checkInput($expected, $this->_params,$this->_options);
         }
 
         return true;
