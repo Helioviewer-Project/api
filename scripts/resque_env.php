@@ -20,5 +20,7 @@ Sentry::init([
     'dsn' => HV_SENTRY_DSN,
 ]);
 
+Sentry::setTag('Type', 'queue');
+
 require_once HV_ROOT_DIR.'/../src/Job/MovieBuilder.php';
 ?>

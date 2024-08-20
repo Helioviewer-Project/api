@@ -36,6 +36,7 @@ require_once HV_ROOT_DIR . '/../src/Helper/RegionOfInterest.php';
 require_once HV_ROOT_DIR . '/../src/Helper/Serialize.php';
 
 use Helioviewer\Api\Event\EventsStateManager;
+use Helioviewer\Api\Sentry\Sentry;
 
 /**
  * Exception to throw when performing an operation on a movie instance
@@ -228,6 +229,38 @@ class Movie_HelioviewerMovie {
                 // movie length, numFrames and dimensions
                 $this->_setMovieProperties();
 
+                Sentry::setContext('Queued Movie', [
+                    'id' => $this->id,
+                    'frameRate' => $this->frameRate,
+                    'movieLength' => $this->movieLength,
+                    'maxFrames' => $this->maxFrames,
+                    'numFrames' => $this->numFrames,
+                    'reqStartDate' => $this->reqStartDate,
+                    'reqEndDate' => $this->reqEndDate,
+                    'reqObservationDate' => $this->reqObservationDate,
+                    'startDate' => $this->startDate,
+                    'endDate' => $this->endDate,
+                    'width' => $this->width,
+                    'height' => $this->height,
+                    'directory' => $this->directory,
+                    'filename' => $this->filename,
+                    'format' => $this->format,
+                    'status' => $this->status,
+                    'timestamp' => $this->timestamp,
+                    'modified' => $this->modified,
+                    'watermark' => $this->watermark,
+                    'movieIcons' => $this->movieIcons,
+                    'celestialBodies' => $this->celestialBodies,
+                    'followViewport' => $this->followViewport,
+                    'scale' => $this->scale,
+                    'scaleType' => $this->scaleType,
+                    'scaleX' => $this->scaleX,
+                    'scaleY' => $this->scaleY,
+                    'size' => $this->size,
+                    'switchSources' => $this->switchSources,
+                    'publicId' => $this->publicId,
+                    'imageScale' => $this->imageScale,
+                ]);
                 // Build movie frames
                 $this->_buildMovieFrames($this->watermark);
 
@@ -241,6 +274,7 @@ class Movie_HelioviewerMovie {
             }
         }
         catch (Exception $e) {
+            Sentry::capture($e);
             $this->_abort('Error encountered during movie frame compilation: ' . $e->getFile() . ":" . $e->getLine() . " - " . $e->getMessage() );
         }
 
@@ -251,6 +285,7 @@ class Movie_HelioviewerMovie {
             $this->_encodeMovie();
         }
         catch (Exception $e) {
+            Sentry::capture($e);
             $t4 = time();
             $this->_abort('Error encountered during video encoding. ' .
                 'This may be caused by an FFmpeg configuration issue, ' .
@@ -461,6 +496,7 @@ class Movie_HelioviewerMovie {
      * @return $images an array of built movie frames
      */
     private function _buildMovieFrames($watermark) {
+
         $this->_dbSetup();
 
         $frameNum = 0;
@@ -508,6 +544,7 @@ class Movie_HelioviewerMovie {
                 array_push($this->_frames, $filepath);
             }
             catch (Exception $e) {
+                Sentry::capture($e);
                 $numFailures += 1;
 
                 if ($numFailures <= 3) {
