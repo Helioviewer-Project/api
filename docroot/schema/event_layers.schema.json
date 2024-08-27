@@ -53,12 +53,12 @@
                             },
                             "event_instances": {
                                 "type": "array",
-                                "maxItems": 20,
+                                "maxItems": 30,
                                 "items": {
                                     "type": "string",
                                     "pattern": "^[a-zA-Z0-9]{2}--[a-zA-Z0-9_]{1,30}--[a-zA-Z0-9_.\\()+]+$",
                                     "minLength": 1,
-                                    "maxLength": 150
+                                    "maxLength": 300
                                 }
                             }
                         }
