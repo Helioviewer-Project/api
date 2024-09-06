@@ -6,8 +6,21 @@
 $dir = dirname(dirname(realpath($argv[0])));
 chdir($dir);
 
+require_once __DIR__.'/../vendor/autoload.php'; 
 require_once __DIR__."/../src/Config.php";
+
 $config = new Config(__DIR__."/../settings/Config.ini");
+
+use Helioviewer\Api\Sentry\Sentry;
+
+Sentry::init([
+    'environment' => HV_APP_ENV ?? 'dev',
+    'sample_rate' => HV_SENTRY_SAMPLE_RATE ?? 0.1,
+    'enabled' => HV_SENTRY_ENABLED ?? false,
+    'dsn' => HV_SENTRY_DSN,
+]);
+
+Sentry::setTag('Type', 'queue');
 
 require_once HV_ROOT_DIR.'/../src/Job/MovieBuilder.php';
 ?>

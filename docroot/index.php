@@ -28,8 +28,17 @@ require_once '../src/Helper/ErrorHandler.php';
 
 use Helioviewer\Api\Request\RequestParams;
 use Helioviewer\Api\Request\RequestException;
+use Helioviewer\Api\Sentry\Sentry;
 
 $config = new Config('../settings/Config.ini');
+
+Sentry::init([
+    'environment' => HV_APP_ENV ?? 'dev',
+    'sample_rate' => HV_SENTRY_SAMPLE_RATE ?? 0.1,
+    'enabled' => HV_SENTRY_ENABLED ?? false,
+    'dsn' => HV_SENTRY_DSN,
+]);
+
 date_default_timezone_set('UTC');
 register_shutdown_function('shutdownFunction');
 
@@ -41,8 +50,10 @@ if ( array_key_exists('REQUEST_METHOD', $_SERVER) && $_SERVER['REQUEST_METHOD'] 
 }
 
 try {
+
     // Parse request and its variables
     $params = RequestParams::collect();
+
 } catch (RequestException $re) {
 
     // Set the content type to JSON
@@ -56,10 +67,17 @@ try {
         'message' => $re->getMessage(),
         'data' => [],
     ]);
+
+    // Track exception
+    Sentry::capture($re);
+
     exit;
 }
 
-
+Sentry::setContext('Helioviewer', [
+    'params' => $params,
+    'is_json' => false,
+]);
 
 // Redirect to API Documentation if no API request is being made.
 if ( !isset($params) || !loadModule($params) ) {
@@ -163,6 +181,11 @@ function loadModule($params) {
                 $moduleName = $valid_actions[$params['action']];
                 $className  = 'Module_'.$moduleName;
 
+                // Track this request 
+                Sentry::setTag('Module', $moduleName);
+                Sentry::setTag('Module.Function', $params['action']);
+                Sentry::setTag('Type', 'web');
+
                 include_once HV_ROOT_DIR.'/../src/Module/'.$moduleName.'.php';
 
                 $module = new $className($params);
@@ -201,7 +224,7 @@ function loadModule($params) {
                 }
 
             } catch (LimitExceeded $exception) {
-                //limit exceeded
+                Sentry::capture($e);
             }
         }
     } catch (\InvalidArgumentException $e) {
@@ -211,6 +234,7 @@ function loadModule($params) {
 
         // Determine the content type of the request
         $content_type = $_SERVER['CONTENT_TYPE'] ?? '';
+
 
         // If the request is posting JSON
         if('application/json' === $content_type) {
@@ -223,16 +247,25 @@ function loadModule($params) {
                 'message' => $e->getMessage(),
                 'data' => [],
             ]);
+
+            Sentry::setContext('Helioviewer', [
+                'is_json' => true,
+            ]);
+
+            Sentry::capture($e);
+
             exit;
+
+        } else {
+            printHTMLErrorMsg($e->getMessage());
         }
 
-        printHTMLErrorMsg($e->getMessage());
-
+        Sentry::capture($e);
     } catch (Exception $e) {
-        
         printHTMLErrorMsg($e->getMessage());
-        
+        Sentry::capture($e);
     }
+
 
     return true;
 }

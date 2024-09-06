@@ -15,6 +15,8 @@
 require_once 'interface.Module.php';
 require_once HV_ROOT_DIR . "/../src/Helper/EventInterface.php";
 
+use Helioviewer\Api\Sentry\Sentry;
+
 class Module_SolarEvents implements Module {
 
     private $_params;
@@ -43,6 +45,7 @@ class Module_SolarEvents implements Module {
                 $this->{$this->_params['action']}();
             }
             catch (Exception $e) {
+                Sentry::capture($e);
                 handleError($e->getMessage(), $e->getCode());
             }
         }
@@ -173,6 +176,7 @@ class Module_SolarEvents implements Module {
 
         $hek = new Event_HEKAdapter();
 
+
         // Query the HEK
         $events = $hek->getEvents($this->_params['startTime'],$this->_options);
 
@@ -228,6 +232,7 @@ class Module_SolarEvents implements Module {
         $observationTime = new DateTimeImmutable($this->_params['startTime']);
         // The query start time is 12 hours earlier.
         $start = $observationTime->sub(new DateInterval("PT12H"));
+
         // The query duration will be 24 hours.
         // This results in a query of events over 24 hours with the given time
         // at the center.
@@ -258,6 +263,7 @@ class Module_SolarEvents implements Module {
         }
 
         header("Content-Type: application/json");
+
         echo json_encode($data);
     }
 
@@ -328,8 +334,12 @@ class Module_SolarEvents implements Module {
 
         // Check input
         if ( isset($expected) ) {
-            Validation_InputValidator::checkInput($expected, $this->_params,
-                $this->_options);
+
+            Sentry::setContext('Helioviewer', [ 
+                'validation_rules' => $expected 
+            ]);
+
+            Validation_InputValidator::checkInput($expected, $this->_params, $this->_options);
         }
 
         return true;

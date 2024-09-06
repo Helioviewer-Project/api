@@ -18,6 +18,7 @@ require_once HV_ROOT_DIR.'/../src/Validation/InputValidator.php';
 require_once HV_ROOT_DIR.'/../src/Helper/ErrorHandler.php';
 
 use Helioviewer\Api\Event\EventsStateManager;
+use Helioviewer\Api\Sentry\Sentry;
 
 class Module_WebClient implements Module {
 
@@ -47,6 +48,7 @@ class Module_WebClient implements Module {
                 $this->{$this->_params['action']}();
             }
             catch (Exception $e) {
+                Sentry::capture($e);
                 logException($e, "WebClient_");
                 handleError($e->getMessage(), $e->getCode());
             }
@@ -471,6 +473,19 @@ class Module_WebClient implements Module {
         }
 
         $events_manager = EventsStateManager::buildFromEventsState($json_params['eventsState']);
+
+        Sentry::setContext('Screenshot Request Variables',[
+            'layers' => $layers,
+            'events_manager' => $events_manager,
+            'movieIcons' => $movieIcons,
+            'celestialBodies' => $celestialBodies,
+            'scale' => $scale,
+            'scaleType' => $scaleType,
+            'scaleX' => $scaleX,
+            'scaleY' => $scaleY,
+            'roi' => $roi,
+            'json_params' => $json_params,
+        ]);
 
         // Create the screenshot
         $screenshot = new Image_Composite_HelioviewerScreenshot(
@@ -1816,8 +1831,11 @@ class Module_WebClient implements Module {
         }
 
         if ( isset($expected) ) {
-            Validation_InputValidator::checkInput($expected, $this->_params,
-                $this->_options);
+            Sentry::setContext('Helioviewer', [ 
+                'validation_rules' => $expected 
+            ]);
+
+            Validation_InputValidator::checkInput($expected, $this->_params,$this->_options);
         }
 
         return true;

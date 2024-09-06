@@ -16,6 +16,8 @@ require_once 'interface.Module.php';
 
 use Helioviewer\Api\Event\EventsStateManager;
 
+use Helioviewer\Api\Sentry\Sentry;
+
 class Module_Movies implements Module {
 
     const YOUTUBE_THUMBNAIL_FORMAT = "https://i.ytimg.com/vi/{VideoID}/{Quality}default.jpg";
@@ -42,6 +44,7 @@ class Module_Movies implements Module {
             try {
                 $this->{$this->_params['action']}();
             } catch (Exception $e) {
+                Sentry::capture($e);
                 handleError($e->getMessage(), $e->getCode());
             }
         }
@@ -1599,8 +1602,11 @@ class Module_Movies implements Module {
 
         // Check input
         if ( isset($expected) ) {
-            Validation_InputValidator::checkInput($expected, $this->_params,
-                $this->_options);
+            Sentry::setContext('Helioviewer', [ 
+                'validation_rules' => $expected 
+            ]);
+
+            Validation_InputValidator::checkInput($expected, $this->_params,$this->_options);
         }
 
         return true;

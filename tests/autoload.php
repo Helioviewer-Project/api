@@ -14,3 +14,5 @@
 require_once __DIR__ . '/../src/Config.php';
 $config = new Config(__DIR__ . '/../settings/Config.ini');
 
+// Disable Sentry during testing
+Helioviewer\Api\Sentry\Sentry::init(['enabled' => false]);
