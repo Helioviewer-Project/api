@@ -829,7 +829,7 @@ class Module_Movies implements Module {
 
 
         if ( $this->_verifyMediaExists($movie, $allowRegeneration=true) ) {
-            ini_set('memory_limit', '1024M');
+
             // Default options
             $defaults = array(
                 "hq" => false
@@ -839,27 +839,38 @@ class Module_Movies implements Module {
             // Get filepath
             $filepath = $movie->getFilepath($options['hq']);
             $filename = basename($filepath);
+            $filesize = filesize($filepath);
+
+            if (FALSE === $filesize) {
+                http_response_code(500);
+	            header('Content-type: text/html');
+                echo "Server Error";
+                Sentry::message("Error Download Movie: we couldn't serve file due to filesize error:".$filepath);
+                exit;
+            }
 
             // Set HTTP headers
             header('Pragma: public');
             header('Expires: 0');
-            header(
-                'Cache-Control: must-revalidate, post-check=0, pre-check=0');
+            header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
             header('Cache-Control: private', false);
-            header('Content-Disposition: attachment; filename="' .
-                $filename . '"');
+            header('Content-Disposition: attachment; filename="' .$filename . '"');
             header('Content-Transfer-Encoding: binary');
-            header('Content-Length: ' . @filesize($filepath));
-            if($params['format'] == 'gif'){
+            header('Content-Length: ' . $filesize);
+
+            if($params['format'] === 'gif'){
 	            header('Content-type: image/gif');
-            }else{
-	            header('Content-type: video/'.$params['format']);
+            } else{
+ 	            header('Content-type: video/'.$params['format']);
             }
 
-            // Return movie data
-            echo @file_get_contents($filepath);
-        }
-        else {
+            // Serve movie data
+            if (FALSE === readfile($filepath)) {
+                Sentry::message("Error Download Movie: we couldn't serve file due to readfile error:".$filepath);
+                exit;
+            }
+
+        } else {
             // Reload movie, since it may have been requeued and the status may
             // have changed.
             $movie = new Movie_HelioviewerMovie($params['id'],
