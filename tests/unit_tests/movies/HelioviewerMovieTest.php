@@ -11,6 +11,9 @@ include_once HV_ROOT_DIR.'/../src/Helper/RegionOfInterest.php';
 include_once HV_ROOT_DIR.'/../src/Database/MovieDatabase.php';
 include_once HV_ROOT_DIR.'/../src/Movie/HelioviewerMovie.php';
 
+// Include to test
+include_once HV_ROOT_DIR.'/../src/Module/Movies.php';
+
 final class HelioviewerMovieTest extends TestCase
 {
     const TEST_LAYER = "[SOHO,LASCO,C2,white-light,2,100,0,60,1,2024-07-11T09:03:05.000Z]";
@@ -185,4 +188,33 @@ final class HelioviewerMovieTest extends TestCase
         $this->expectExceptionMessage($movie_id);
         $new_movie->getTitle();
     }
+
+    /**
+     * Test for downloading files in stream fashion
+     * Sentry Error 138
+     * @runInSeparateProcess
+     * @depends testBuildMovie
+     */
+    public function testItShouldDownloadMovies(string $movie_id) {
+
+        // Check the duration of the processed movie.
+        $result = new Movie_HelioviewerMovie($movie_id);
+
+        $params = [
+            "id"     => $result->publicId, 
+            "format" => "mp4",
+            "hq"     => "true",
+        ];
+
+        $api = new Module_Movies($params);
+        ob_start();
+        $api->downloadMovie();
+        $movie_string = ob_get_contents();
+        ob_end_clean();
+
+        $finfo = new \finfo(FILEINFO_MIME);
+        $this->assertEquals($finfo->buffer($movie_string), 'video/mp4; charset=binary');
+    }
+
+
 }
