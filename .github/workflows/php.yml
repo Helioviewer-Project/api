@@ -21,17 +21,6 @@ jobs:
         wget https://raw.githubusercontent.com/Helioviewer-Project/helioviewer.org-docker/main/compose.yaml
         wget https://raw.githubusercontent.com/Helioviewer-Project/helioviewer.org-docker/main/.env.example
         mv .env.example .env
-
-    # The containers need to be able update config files
-    - name: Make writeable config files
-      run: |
-        touch install/settings/settings.cfg
-        chmod o+rw install/settings/settings.cfg
-        touch settings/Config.ini
-        chmod o+rw settings/Config.ini
-        touch settings/Config.php
-        chmod o+rw settings/Config.php
-
     # Start up api service (test environment)
     - name: Start services
       # --no-build to force it to use whatever is published in the registry
