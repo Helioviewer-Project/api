@@ -14,10 +14,7 @@
 require_once HV_ROOT_DIR.'/../src/Helper/SciScript.php';
 
 class Helper_SunPy extends Helper_SciScript {
-
     function __construct($params, $roi=null) {
-        $this->_localPath = '~/';
-
         parent::__construct($params, $roi);
     }
 
