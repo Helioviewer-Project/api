@@ -190,12 +190,12 @@ final class HelioviewerMovieTest extends TestCase
     }
 
     /**
-     * Sentry Error 138 - https://sentry.helioviewer.org/organizations/helioviewer/issues/138
-     * Test for downloading files in stream fashion , instead of read them as a whole
+     * Test for downloading files in stream fashion
+     * Sentry Error 138
      * @runInSeparateProcess
      * @depends testBuildMovie
      */
-    public function testItShouldDownloadMovieWithStreamingEvenWithLessMemoryConditions(string $movie_id) {
+    public function testItShouldDownloadMovies(string $movie_id) {
 
         // Check the duration of the processed movie.
         $result = new Movie_HelioviewerMovie($movie_id);
