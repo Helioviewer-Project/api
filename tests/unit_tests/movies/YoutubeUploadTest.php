@@ -3,6 +3,8 @@
  * @author Daniel Garcia-Briseno <daniel.garciabriseno@nasa.gov>
  */
 
+require_once HV_ROOT_DIR.'/../src/Module/Movies.php';
+
 use PHPUnit\Framework\TestCase;
 
 final class YoutubeUploadTest extends TestCase
