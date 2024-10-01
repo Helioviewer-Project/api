@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "fd39fcb7315f85bd76340fdaa7ba5d04",
+    "content-hash": "89405e27f5e23dbe74b30f10c4eb757e",
     "packages": [
         {
             "name": "firebase/php-jwt",
@@ -569,16 +569,16 @@
         },
         {
             "name": "helioviewer/event-interface",
-            "version": "v0.2.3",
+            "version": "v0.2.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/dgarciabriseno/helioviewer-event-interface.git",
-                "reference": "e77472a409efe1b856f50882da597fe05ec711fb"
+                "reference": "c59b0ef96f1284bf7b880c899696928111b2d0fd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dgarciabriseno/helioviewer-event-interface/zipball/e77472a409efe1b856f50882da597fe05ec711fb",
-                "reference": "e77472a409efe1b856f50882da597fe05ec711fb",
+                "url": "https://api.github.com/repos/dgarciabriseno/helioviewer-event-interface/zipball/c59b0ef96f1284bf7b880c899696928111b2d0fd",
+                "reference": "c59b0ef96f1284bf7b880c899696928111b2d0fd",
                 "shasum": ""
             },
             "require": {
@@ -614,10 +614,10 @@
             ],
             "description": "Interface for querying external data sources for Helioviewer",
             "support": {
-                "source": "https://github.com/dgarciabriseno/helioviewer-event-interface/tree/v0.2.3",
+                "source": "https://github.com/dgarciabriseno/helioviewer-event-interface/tree/v0.2.4",
                 "issues": "https://github.com/dgarciabriseno/helioviewer-event-interface/issues"
             },
-            "time": "2024-07-17T20:37:44+00:00"
+            "time": "2024-09-30T17:58:15+00:00"
         },
         {
             "name": "jean85/pretty-package-versions",

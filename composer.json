@@ -23,13 +23,13 @@
         }
     },
     "require": {
-        "helioviewer/event-interface": "v0.2.4",
+        "helioviewer/event-interface": "^0.2.4",
         "matomo/device-detector": "dev-master",
         "opis/json-schema": "^2.3",
         "google/apiclient": "^2.16",
         "sentry/sentry": "^4.8"
     },
     "require-dev": {
-        "phpunit/phpunit": "^11.3"
+        "phpunit/phpunit": "^9.6"
     }
 }
