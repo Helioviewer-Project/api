@@ -317,11 +317,11 @@
     function footer($api_version, $api_xml_path) {
 ?>
         <div class="container">
-
             <hr>
-
             <footer>
-                <p><b>Last Updated:</b> <?php echo date('j F Y', filemtime($api_xml_path)); ?></p>
+                <?php if(($doc_m_time = @filemtime($api_xml_path)) !== FALSE): ?> 
+                <p><b>Last Updated:</b> <?php echo date('j F Y', $doc_m_time); ?></p>
+                <?php endif; ?>
             </footer>
         </div>
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
