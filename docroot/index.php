@@ -285,9 +285,13 @@ function printHTMLErrorMsg($msg) {
 <html lang="en">
 <head>
     <?php
-        $meta = "<!-- DATE: %s URL: http://%s%s -->\n";
-        printf($meta, strftime('%Y-%m-%d %H:%m:%S'), $_SERVER['HTTP_HOST'],
-            $_SERVER['REQUEST_URI']);
+        // Find out http or https
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') ? 'https' : 'http';
+
+        // Debug information
+        $meta = "<!-- DATE: %s URL: $protocol://%s%s -->\n";
+        printf($meta, date('Y-m-d H:m:s'), $_SERVER['HTTP_HOST'], $_SERVER['REQUEST_URI']);
+
     ?>
     <title>Helioviewer.org API - Error</title>
     <link rel="stylesheet" type="text/css" href="<?php echo HV_WEB_ROOT_URL; ?>/docs/css/bootstrap-theme.min.css">
