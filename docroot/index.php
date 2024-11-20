@@ -50,7 +50,6 @@ if ( array_key_exists('REQUEST_METHOD', $_SERVER) && $_SERVER['REQUEST_METHOD'] 
 }
 
 try {
-
     // Parse request and its variables
     $params = RequestParams::collect();
 
@@ -150,8 +149,10 @@ function loadModule($params) {
 
     include_once HV_ROOT_DIR.'/../src/Validation/InputValidator.php';
 
+
     try {
-        if ( !array_key_exists($params['action'], $valid_actions) ) {
+        // If there is no action specified OR if the given action is not VALID; then ERROR
+        if ( !array_key_exists('action', $params) || !array_key_exists($params['action'], $valid_actions) ) {
             throw new \InvalidArgumentException('Invalid action specified.<br />Consult the <a href="https://api.helioviewer.org/docs/v2/">API Documentation</a> for a list of valid actions.');
         } else {
 
@@ -284,9 +285,13 @@ function printHTMLErrorMsg($msg) {
 <html lang="en">
 <head>
     <?php
-        $meta = "<!-- DATE: %s URL: http://%s%s -->\n";
-        printf($meta, strftime('%Y-%m-%d %H:%m:%S'), $_SERVER['HTTP_HOST'],
-            $_SERVER['REQUEST_URI']);
+        // Find out http or https
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') ? 'https' : 'http';
+
+        // Debug information
+        $meta = "<!-- DATE: %s URL: $protocol://%s%s -->\n";
+        printf($meta, date('Y-m-d H:m:s'), $_SERVER['HTTP_HOST'], $_SERVER['REQUEST_URI']);
+
     ?>
     <title>Helioviewer.org API - Error</title>
     <link rel="stylesheet" type="text/css" href="<?php echo HV_WEB_ROOT_URL; ?>/docs/css/bootstrap-theme.min.css">
@@ -308,7 +313,8 @@ function printHTMLErrorMsg($msg) {
 
     import_xml($api_version, $api_xml_path, $xml);
     foreach ( $xml->endpoint as $endpoint ) {
-        if ( $endpoint['name'] == $_GET['action'] ) {
+        // Action has to be defined for documentation to work
+        if (array_key_exists('action', $_GET) && $endpoint['name'] == $_GET['action']) {
             renderEndpoint($endpoint, $xml);
             break;
         }

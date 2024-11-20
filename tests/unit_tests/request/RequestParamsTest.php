@@ -13,15 +13,14 @@ final class RequestParamsTest extends TestCase
 {
     public function testItShouldCollectParamsEmptyArrIfThereIsNoRequestVariables()
     {
-		$params = RequestParams::collect();
-
+        $params = RequestParams::collect();
         $this->assertEmpty($params);
     }
 
     public function testItShouldCollectParamsIfGetRequest()
     {
         $_GET = ['get_param' => 'value1'];
-		$params = RequestParams::collect();
+        $params = RequestParams::collect();
 
         $this->assertArrayHasKey('get_param', $params);
         $this->assertEquals('value1', $params['get_param']);
@@ -104,6 +103,7 @@ final class RequestParamsTest extends TestCase
     {
         stream_wrapper_restore('php');
     }
+
     protected function setUp(): void
     {
         $_GET = [];
