@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 /**
  * @author Kasim Necdet Percinel <kasim.n.percinel@nasa.gov>
  */
@@ -8,7 +9,11 @@ use GuzzleHttp\Client;
 
 final class SentryIssue1Test extends TestCase
 {
-    public function testItShouldDumpProperResponseCodeAndPhaseIfThereIsNoAction(): void 
+    /**
+    * @group regression
+    * @group integration
+    **/
+    public function testItShouldDumpProperResponseCodeAndReasonPhraseIfThereIsNoActionGiven(): void
     {
         //Create a Guzzle client
         $client = new Client();
