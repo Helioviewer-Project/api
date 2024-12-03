@@ -1196,19 +1196,11 @@ class Image_Composite_HelioviewerCompositeImage {
 
         // Convert x,y position of top left of EarthScale rectangle
         // from arcseconds to pixels
-        if ( $this->scaleX != 0 && $this->scaleY != 0 && $this->size == 0) {
-            $topLeftX = (( $this->scaleX - $this->roi->left())
-                / $this->roi->imageScale());
-            $topLeftY = ((-$this->scaleY - $this->roi->top() )
-                / $this->roi->imageScale());
-        }
-        else {
-            $topLeftX = $imagickImage->getImageWidth() - $rect_width - 20;
-            $topLeftY = 20;
-        }
+        $topLeftX = (( $this->scaleX - $this->roi->left()) / $this->roi->imageScale());
+        $topLeftY = ((-$this->scaleY - $this->roi->top() ) / $this->roi->imageScale());
 
-        $rect_width  = 95;
         // Calculate height of the box based on the earth scale
+        $rect_width  = 95;
         $rect_height = $earthScaleInPixels + 22;
         if ($rect_height < 82) {
             $rect_height = 82;
