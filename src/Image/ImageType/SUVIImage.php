@@ -16,6 +16,7 @@
 require_once HV_ROOT_DIR.'/../src/Image/HelioviewerImage.php';
 
 class Image_ImageType_SUVIImage extends Image_HelioviewerImage {
+
     /**
      * Creates a new SUVIImage
      *
@@ -43,18 +44,6 @@ class Image_ImageType_SUVIImage extends Image_HelioviewerImage {
         $this->setColorTable($colorTable);
 
         parent::__construct($jp2, $filepath, $roi, $uiLabels, $offsetX, $offsetY, $options);
-    }
-
-    /**
-     * Gets a string that will be displayed in the image's watermark
-     *
-     * @return string watermark name
-     */
-    public function getWaterMarkName() {
-        $type = $this->uiLabels[2]['name'];
-        $measurement = $this->uiLabels[3]['name'];
-        $watermark = 'SUVI '.$type.' '.$measurement."\n";
-        return $watermark;
     }
 }
 ?>

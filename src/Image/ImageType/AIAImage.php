@@ -51,18 +51,5 @@ class Image_ImageType_AIAImage extends Image_HelioviewerImage {
 
         parent::__construct($jp2, $filepath, $roi, $uiLabels, $offsetX, $offsetY, $options);
     }
-
-    /**
-     * Gets a string that will be displayed in the image's watermark
-     *
-     * @return string watermark name
-     */
-    public function getWaterMarkName() {
-        $name = $this->uiLabels[2]['name'];
-		if($this->uiLabels[2]['name'] == 'AIA'){
-			$name = $this->uiLabels[3]['name'];
-		}
-        return 'AIA '.$name."\n";
-    }
 }
 ?>

@@ -49,15 +49,6 @@ class Image_ImageType_LASCOImage extends Image_HelioviewerImage {
     }
 
     /**
-     * Gets a string that will be displayed in the image's watermark
-     *
-     * @return string Watermark name
-     */
-    public function getWaterMarkName() {
-        return 'LASCO '.$this->uiLabels[2]['name']."\n";
-    }
-
-    /**
      * Generates a portion of an ImageMagick convert command to apply an alpha mask
      *
      * Note: More accurate values for radii used to generate the LASCO C2 & C3 alpha masks:

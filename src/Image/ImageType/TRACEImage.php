@@ -39,15 +39,5 @@ class Image_ImageType_TRACEImage extends Image_HelioviewerImage {
 
         parent::__construct($jp2, $filepath, $roi, $uiLabels, $offsetX, $offsetY, $options);
     }
-
-    /**
-     * Gets a string that will be displayed in the image's watermark
-     *
-     * @return string watermark name
-     */
-    public function getWaterMarkName() {
-        return 'TRACE '.$this->uiLabels[1]['name']."\n";
-    }
-
 }
 ?>

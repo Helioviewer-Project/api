@@ -44,17 +44,5 @@ class Image_ImageType_EUIImage extends Image_HelioviewerImage {
         
         parent::__construct($jp2, $filepath, $roi, $uiLabels, $offsetX, $offsetY, $options);
     }
-
-    /**
-     * Gets a string that will be displayed in the image's watermark
-     *
-     * @return string watermark name
-     */
-    public function getWaterMarkName() {
-        $type = $this->uiLabels[2]['name'];
-        $measurement = $this->uiLabels[3]['name'];
-        $watermark = 'EUI '.$type.' '.$measurement." Å\n";
-        return $watermark;
-    }
 }
 ?>
