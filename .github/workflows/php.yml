@@ -54,13 +54,11 @@ jobs:
       with:
         submodules: true
         path: 'api'
-        ref: '${{ github.head_ref }}'
     - name: Checkout the latest Helioviewer Front End
       uses: actions/checkout@v4
       with:
         repository: 'Helioviewer-Project/helioviewer.org'
         path: 'helioviewer.org'
-        ref: '${{ github.head_ref }}'
     # See https://github.com/actions/checkout?tab=readme-ov-file#fetch-only-a-single-file
     - name: Checkout the Dockerfile for local Helioviewer
       uses: actions/checkout@v4
