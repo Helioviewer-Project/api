@@ -53,16 +53,6 @@ class Image_ImageType_CORImage extends Image_HelioviewerImage {
     }
 
     /**
-     * Gets a string that will be displayed in the image's watermark
-     *
-     * @return string Watermark name
-     */
-    public function getWaterMarkName() {
-        $which = substr($this->uiLabels[0]['name'], -1);
-        return $this->uiLabels[2]['name'].'-'.$which."\n";
-    }
-
-    /**
      * Generates a portion of an ImageMagick convert command to apply
      * an alpha mask
      *

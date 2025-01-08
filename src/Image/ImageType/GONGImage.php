@@ -44,15 +44,5 @@ class Image_ImageType_GONGImage extends Image_HelioviewerImage {
         return false;
     }
 
-    /**
-     * Gets a string that will be displayed in the image's watermark
-     *
-     * @return string watermark name
-     */
-    public function getWaterMarkName() {
-	    $labelName = $this->uiLabels[2]['name'];
-        return 'GONG '.$labelName."\n";
-    }
-
 }
 ?>

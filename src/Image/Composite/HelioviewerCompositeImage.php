@@ -1374,23 +1374,24 @@ class Image_Composite_HelioviewerCompositeImage {
      * @return void
      */
     private function _addWatermark($imagickImage) {
+
+        // paths of the different logos to choose from
+        $hv_logo = sprintf('%s/resources/images/watermark_circle_small_black_border.png', HV_ROOT_DIR);
+        $hv_with_url_logo = sprintf("%s/resources/images/watermark_small_black_border.png", HV_ROOT_DIR);
+
         if ( $this->width < 200 || $this->height < 200 ) {
             return;
         }
 
-        $watermark = new IMagick(  HV_ROOT_DIR
-                                 . '/resources/images/'
-                                 . 'watermark_small_black_border.png');
+        // Default text + URL
+        $watermark = new IMagick($hv_with_url_logo);
 
-        // If the image is too small, use only the circle, not the url, and
-        // scale it so it fits the image.
-        if ( $this->width / 300 < 2 ) {
-            $watermark->readImage(  HV_ROOT_DIR
-                                  . '/resources/images/'
-                                  . 'watermark_circle_small_black_border.png');
-            $scale = ($this->width / 2) / 300;
-            $width = $watermark->getImageWidth();
-            $watermark->scaleImage(intval($width * $scale), intval($width * $scale));
+        // If the image is too small, use only the circle, not the url, and scale it so it fits the image.
+        if ( $this->width < 600 ) {
+            $watermark->readImage($hv_logo);
+            $scale = $this->width / 600;
+            $scaled_watermark_width = intval($watermark->getImageWidth() * $scale);
+            $watermark->scaleImage($scaled_watermark_width, $scaled_watermark_width);
         }
 
         // For whatever reason, compositeImage() doesn't carry over gravity
@@ -1398,8 +1399,8 @@ class Image_Composite_HelioviewerCompositeImage {
         // the image rather than the desired gravity.
         $x = $this->width  - $watermark->getImageWidth()  - 10;
         $y = $this->height - $watermark->getImageHeight() - 10;
-        $imagickImage->compositeImage(
-            $watermark, IMagick::COMPOSITE_DISSOLVE, intval($x), intval($y) );
+
+        $imagickImage->compositeImage($watermark, IMagick::COMPOSITE_DISSOLVE, intval($x), intval($y) );
 
         // If the image is too small, text won't fit. Don't put a date string
         // on it.
@@ -1452,10 +1453,20 @@ class Image_Composite_HelioviewerCompositeImage {
         $underText->setStrokeColor($black);
         $underText->setStrokeAntialias(true);
         $underText->setStrokeWidth(2);
-        $imagickImage->annotateImage($underText,     $leftPad, $lowerPad, 0, $nameCmd);
-        $imagickImage->annotateImage($underText, 120+$leftPad, $lowerPad, 0, $timeCmd);
+        $imagickImage->annotateImage($underText, $leftPad, $lowerPad, 0, $nameCmd);
 
-        // Write words in white over outline
+        // Query font metrics to find out area width of the satellite image sources text (ex: SDO AIA 404)
+        // Then we use this width to calculate where to put timestamps outline in image
+        // last parameter true means multiline text
+        $underTextQueryMetrics = $imagickImage->queryFontMetrics($underText, $nameCmd, true);
+
+        // 10 is the default padding between source outline and timestamp outline
+        $underTextRightPad = $underTextQueryMetrics['textWidth'] ? ($underTextQueryMetrics['textWidth'] + 10) : 120; 
+
+        // Place timestamp outline 
+        $imagickImage->annotateImage($underText, $underTextRightPad + $leftPad, $lowerPad, 0, $timeCmd);
+
+        // Write text in white over the outline
         $text = new IMagickDraw();
         $text->setTextEncoding('utf-8');
         $text->setFont(HV_ROOT_DIR.'/../resources/fonts/DejaVuSans.ttf');
@@ -1463,8 +1474,18 @@ class Image_Composite_HelioviewerCompositeImage {
         $text->setFillColor($white);
         $text->setTextAntialias(true);
         $text->setStrokeWidth(0);
-        $imagickImage->annotateImage($text,     $leftPad, $lowerPad, 0, $nameCmd);
-        $imagickImage->annotateImage($text, 120+$leftPad, $lowerPad, 0, $timeCmd);
+        $imagickImage->annotateImage($text, $leftPad, $lowerPad, 0, $nameCmd);
+
+        // Query font metrics to find out area width of the satellite image sources text (ex: SDO AIA 404)
+        // Then we use this width to calculate where to put timestamps texts in image.
+        // last parameter true means multiline text
+        $textQueryMetrics = $imagickImage->queryFontMetrics($text , $nameCmd, true);
+
+        // 10 is the default padding between source text and timestamp text
+        $textRightPad = $textQueryMetrics['textWidth'] ? ($textQueryMetrics['textWidth'] + 10) : 120; 
+
+        // Place timestamp text 
+        $imagickImage->annotateImage($text, $textRightPad + $leftPad, $lowerPad, 0, $timeCmd);
 
         // Cleanup
         $black->destroy();

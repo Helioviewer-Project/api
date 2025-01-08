@@ -96,7 +96,7 @@ class Image_HelioviewerImage extends Image_SubFieldImage {
      * @return string watermark name
      */
     public function getWaterMarkName() {
-        return $this->getWaterMarkName();
+        return trim(join(' ', array_column($this->uiLabels, 'name'))) . "\n";
     }
 
     /**

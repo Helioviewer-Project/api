@@ -31,17 +31,5 @@ class Image_ImageType_RHESSIImage extends Image_HelioviewerImage {
         $this->setColorTable($color_table);
         parent::__construct($jp2, $filepath, $roi, $uiLabels, $offsetX, $offsetY, $options);
     }
-
-    /**
-     * Gets a string that will be displayed in the image's watermark
-     *
-     * @return string watermark name
-     */
-    public function getWaterMarkName() {
-        $observatory = $this->uiLabels[0]['name'];
-        $energy = $this->uiLabels[1]['name'];
-        $reconstruction = $this->uiLabels[2]['name'];
-        return $observatory . " " . $energy . " " . $reconstruction;
-    }
 }
 ?>

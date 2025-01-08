@@ -34,16 +34,5 @@ class Image_ImageType_SJIImage extends Image_HelioviewerImage {
 
         parent::__construct($jp2, $filepath, $roi, $uiLabels, $offsetX, $offsetY, $options);
     }
-
-    /**
-     * Gets a string that will be displayed in the image's watermark
-     *
-     * @return string watermark name
-     */
-    public function getWaterMarkName() {
-        $measurement = $this->uiLabels[2]['name'];
-        $watermark = 'IRIS SJI '.$measurement." Å\n";
-        return $watermark;
-    }
 }
 ?>
