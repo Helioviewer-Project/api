@@ -9,7 +9,7 @@ import numpy as np
 from astropy.time import Time
 from sunpy.map import Map, GenericMap
 from sunpy.util.xml import xml_to_dict
-from sunpy.io.header import FileHeader
+from sunpy.io._header import FileHeader
 from sunpy.map.mapbase import MapMetaValidationError
 from glymur import Jp2k
 from sunpy.util.xml import xml_to_dict
@@ -92,6 +92,9 @@ class JP2parser:
         # As an example, "LASCO-C2 Orange" -> "LASCO-C2" which is
         # consistent with our current naming.
         image['nickname'] = imageData.nickname.split(" ")[0]
+        # Patch for GONG H-alpha which has a nickname of "NSO-GONG,"
+        # Remove the trailing comma
+        if image['nickname'].endswith(","): image['nickname'] = image['nickname'][:-1]
         image['observatory'] = imageData.observatory.replace(" ","_")
         image['instrument'] = imageData.instrument.split(" ")[0]
         image['detector'] = imageData.detector
