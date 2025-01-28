@@ -13,6 +13,8 @@
  * @link     https://github.com/Helioviewer-Project/
  */
 
+use Helioviewer\Api\Sentry\Sentry;
+
 class Database_ImgIndex {
 
     private $_dbConnection;
@@ -139,6 +141,7 @@ class Database_ImgIndex {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            Sentry::capture($e);
             return false;
         }
 
@@ -183,6 +186,7 @@ class Database_ImgIndex {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            Sentry::capture($e);
             return false;
         }
 
@@ -220,6 +224,7 @@ class Database_ImgIndex {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            Sentry::capture($e);
             return false;
         }
 
@@ -252,6 +257,7 @@ class Database_ImgIndex {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            Sentry::capture($e);
             return false;
         }
 
@@ -288,6 +294,7 @@ class Database_ImgIndex {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            Sentry::capture($e);
             return false;
         }
 
@@ -317,6 +324,7 @@ class Database_ImgIndex {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            Sentry::capture($e);
             return false;
         }
 
@@ -344,6 +352,7 @@ class Database_ImgIndex {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            Sentry::capture($e);
             return false;
         }
 
@@ -370,6 +379,7 @@ class Database_ImgIndex {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            Sentry::capture($e);
             return false;
         }
 
@@ -430,16 +440,14 @@ class Database_ImgIndex {
                             FROM data
                             WHERE ".$this->getDatasourceIDsString($sourceId)."
                             AND date = (SELECT date
-                                        FROM data " . $this->_forceIndex($sourceId) . "
-                                        WHERE ".$this->getDatasourceIDsString($sourceId)."
+                                        FROM data WHERE ".$this->getDatasourceIDsString($sourceId)."
                                         AND date < '%s' ORDER BY date DESC LIMIT 1))
                         UNION ALL
                          (SELECT id, sourceId, filepath, filename, date
                           FROM data
                           WHERE ".$this->getDatasourceIDsString($sourceId)."
                           AND date = (SELECT date
-                                      FROM data " . $this->_forceIndex($sourceId) . "
-                                      WHERE ".$this->getDatasourceIDsString($sourceId)."
+                                      FROM data WHERE ".$this->getDatasourceIDsString($sourceId)."
                                       AND date >= '%s' ORDER BY date ASC LIMIT 1))
                         ) t
                  ORDER BY
@@ -449,10 +457,12 @@ class Database_ImgIndex {
                  $this->_dbConnection->link->real_escape_string($datestr),
                  $this->_dbConnection->link->real_escape_string($datestr)
                );
+
         try {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            Sentry::capture($e);
             return false;
         }
 
@@ -608,6 +618,7 @@ class Database_ImgIndex {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            Sentry::capture($e);
             error_log("Failed to get closest image before date: " . $e->getMessage());
             return false;
         }
@@ -654,6 +665,7 @@ class Database_ImgIndex {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            Sentry::capture($e);
             return false;
         }
 
@@ -685,6 +697,7 @@ class Database_ImgIndex {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            Sentry::capture($e);
             return false;
         }
 
@@ -783,6 +796,7 @@ class Database_ImgIndex {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            Sentry::capture($e);
             return false;
         }
 
@@ -948,6 +962,7 @@ class Database_ImgIndex {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            Sentry::capture($e);
             return false;
         }
 
@@ -1037,6 +1052,7 @@ class Database_ImgIndex {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            Sentry::capture($e);
             return false;
         }
 
@@ -1106,6 +1122,7 @@ class Database_ImgIndex {
         catch (Exception $e) {
             error_log(print_r($property_array, true));
             error_log($e->getMessage());
+            Sentry::capture($e);
             return false;
         }
 
@@ -1168,6 +1185,7 @@ class Database_ImgIndex {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            Sentry::capture($e);
             return false;
         }
 
@@ -1214,10 +1232,12 @@ class Database_ImgIndex {
         try {
             $result = $this->_dbConnection->query($sql);
             if ( $result->num_rows != 1 ) {
+                Sentry::capture($e);
                 return false;
             }
         }
         catch (Exception $e) {
+            Sentry::capture($e);
             return false;
         }
 
@@ -1242,6 +1262,7 @@ class Database_ImgIndex {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            Sentry::capture($e);
             return false;
         }
 
@@ -1274,6 +1295,7 @@ class Database_ImgIndex {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            Sentry::capture($e);
             return false;
         }
 
@@ -1304,6 +1326,7 @@ class Database_ImgIndex {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            Sentry::capture($e);
             return false;
         }
 
@@ -1339,6 +1362,7 @@ class Database_ImgIndex {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            Sentry::capture($e);
             return false;
         }
 
@@ -1579,6 +1603,7 @@ class Database_ImgIndex {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            Sentry::capture($e);
             return false;
         }
 
@@ -1605,6 +1630,7 @@ class Database_ImgIndex {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            Sentry::capture($e);
             return false;
         }
 
