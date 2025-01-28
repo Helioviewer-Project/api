@@ -59,6 +59,11 @@ jobs:
       with:
         repository: 'Helioviewer-Project/helioviewer.org'
         path: 'helioviewer.org'
+    - name: Checkout test code
+      uses: actions/checkout@v4
+      with:
+        repository: 'Helioviewer-Project/helioviewer.org-tests'
+        path: 'tests'
     # See https://github.com/actions/checkout?tab=readme-ov-file#fetch-only-a-single-file
     - name: Checkout the Dockerfile for local Helioviewer
       uses: actions/checkout@v4
@@ -90,11 +95,11 @@ jobs:
         node-version: lts/*
     - name: Install Playwright Browsers
       run: |
-        cd helioviewer.org
+        cd tests
         npx playwright install --with-deps
     - name: Run Playwright tests
       run: |
-        cd helioviewer.org
+        cd tests
         npx playwright test --shard=${{matrix.shardIndex}}/${{matrix.shardTotal}}
     - uses: actions/upload-artifact@v4
       if: always()
