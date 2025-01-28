@@ -9,7 +9,7 @@ import numpy as np
 from astropy.time import Time
 from sunpy.map import Map, GenericMap
 from sunpy.util.xml import xml_to_dict
-from sunpy.io._header import FileHeader
+from sunpy.io.header import FileHeader
 from sunpy.map.mapbase import MapMetaValidationError
 from glymur import Jp2k
 from sunpy.util.xml import xml_to_dict
