@@ -49,4 +49,4 @@ class IRISDataServer(DataServer):
 
     def get_starttime(self):
         """Default start time to use when retrieving data"""
-        return datetime.datetime.utcnow() - datetime.timedelta(days=3)
+        return datetime.now(datetime.timezone.utc) - timedelta(days=3)
