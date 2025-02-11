@@ -1232,7 +1232,7 @@ class Database_ImgIndex {
         try {
             $result = $this->_dbConnection->query($sql);
             if ( $result->num_rows != 1 ) {
-                Sentry::capture($e);
+                Sentry::message(sprintf("This sql:%s producing:%d many result, where it shouldn't.", $sql, $result->num_rows));
                 return false;
             }
         }
