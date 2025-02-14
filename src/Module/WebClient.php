@@ -266,16 +266,13 @@ class Module_WebClient implements Module {
         $filepath =  $this->_getImageCacheFilename($image['filepath'], $image['filename'], $this->_params['scale']);
         // Set the extension to the type passed in or default to png.
         $filepath .= '.' . ($this->_options['type'] ?? 'png');
-        // Reference pixel offset at the original image scale
-        $offsetX =   $image['refPixelX'] - ($image['width']  / 2);
-        $offsetY = -($image['refPixelY'] - ($image['height'] / 2));
         // Create the tile
         require_once HV_ROOT_DIR.'/../src/Image/Factory.php';
         $classname = Image_Factory::getImageClass($image);
                $this->_options['date'] = $image['date'];
         $tile = new $classname(
             $jp2, $filepath, $region, $image['uiLabels'],
-            $offsetX, $offsetY, $this->_options,
+            0, 0, $this->_options,
             $image['sunCenterOffsetParams']
         );
 
@@ -1831,8 +1828,8 @@ class Module_WebClient implements Module {
         }
 
         if ( isset($expected) ) {
-            Sentry::setContext('Helioviewer', [ 
-                'validation_rules' => $expected 
+            Sentry::setContext('Helioviewer', [
+                'validation_rules' => $expected
             ]);
 
             Validation_InputValidator::checkInput($expected, $this->_params,$this->_options);
