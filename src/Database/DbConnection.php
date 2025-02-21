@@ -61,7 +61,7 @@ class Database_DbConnection {
             $this->_password);
 
         if ( !$this->link ) {
-            throw new Exception("Failed to connect to database. Please " +
+            throw new Exception("Failed to connect to database. Please " .
             "verify the contents of the database configuration file.", 1);
         }
         mysqli_select_db($this->link, $this->_dbname);

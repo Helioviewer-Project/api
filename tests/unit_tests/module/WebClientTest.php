@@ -123,10 +123,10 @@ final class WebClientTest extends TestCase
     public function generateImageTestCaseProvider() {
       return [
         // These are all sample cases that exercise our *Image classes.
-        // At this time SXT, TRACE, EIT, MDI, and SJI classes are untested due
+        // At this time HMI, SXT, TRACE, EIT, MDI, and SJI classes are untested due
         // to a lack of sample data in the test environment.
-        [ 4096, array(['label' => 'Observatory', 'name' => 'SDO'], ['label' => 'Instrument', 'name' => 'HMI']), "/HMI/2024/12/30/continuum", "2024_12_30__20_03_22_100__SDO_HMI_HMI_continuum.jp2", "2024-12-30 20:03:22", "png", 4096, 4096],
         [ 2048, array(['label' => 'Observatory', 'name' => 'SDO'], ['label' => 'Instrument', 'name' => 'AIA'], ['label' => 'Measurement', 'name' => '94']), "/AIA/2024/12/31/94", "2024_12_31__00_04_47_122__SDO_AIA_AIA_94.jp2", "2024-12-31 00:04:47", "png", 4096, 4096],
+        // TODO: Test what happens if I make width 512
         [ 101, array(['label' => 'Observatory', 'name' => 'RHESSI']), "/RHESSI/2018/02/11/VIS_CS", "2018_02_11__01_08_40_800__RHESSI_RHESSI_VIS_CS_25-50keV.jp2", "2018-02-11 01:08:40", "png", 101, 101],
         // Test several times with different scales to verify the scale parameter is working properly.
         [ 1280, array(['label' => 'Observatory', 'name' => 'GOES-R'], ['label' => 'Instrument', 'name' => 'SUVI'], ['label' => 'Measurement', 'name' => '131']), "/SUVI/2024/12/31/131", "2024_12_31__00_02_11__GOES-R_SUVI_SUVI_131.jp2", "2024-12-31 00:02:11", "png", 1280, 1280],
