@@ -4,6 +4,11 @@ GET /v2/downloadImage/
 
 Download a specific jp2 img colorized and converted to a png, jpg, or webp image.
 
+If the requested image size is larger than the underlying source image, then the
+image returned will only be as large as the source image. No upscaling is performed.
+For example, if you ask for width of 4k, and our source image is 1k, the result
+will be a 1k image.
+
 .. note::
     If you're looking for original jp2 images, see https://helioviewer.org/jp2/
 
