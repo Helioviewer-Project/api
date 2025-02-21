@@ -173,4 +173,65 @@ final class WebClientTest extends TestCase
         $this->assertNotFalse($dimensions);
         $this->assertEquals($expectedWidth, $dimensions[0], 'generateImage did not produce the correct image dimensions');
     }
+    /**
+     * Test cases for downloadImage function
+     * @runInSeparateProcess
+     * @return void
+     */
+    public function test_downloadImage(): void {
+        // Case 1: Neither width nor scale are set
+        $params = ['action' => 'downloadImage', 'id' => '1'];
+        $client = new Module_WebClient($params);
+        ob_start();
+        $client->execute();
+        $output = ob_get_clean();
+        $tempFile = tempnam(sys_get_temp_dir(), 'test_image');
+        file_put_contents($tempFile, $output);
+        $this->assertStringStartsWith('image/png', mime_content_type($tempFile));
+        $dimensions = getimagesize($tempFile);
+        $this->assertEquals(4096, $dimensions[0], 'Image width should be 4096');
+        $this->assertEquals(4096, $dimensions[1], 'Image height should be 4096');
+        unlink($tempFile);
+
+        $params = ['action' => 'downloadImage', 'id' => '1', 'width' => 256];
+        $client = new Module_WebClient($params);
+        ob_start();
+        $client->execute();
+        $output = ob_get_clean();
+        $tempFile = tempnam(sys_get_temp_dir(), 'test_image');
+        file_put_contents($tempFile, $output);
+        $this->assertStringStartsWith('image/png', mime_content_type($tempFile));
+        $dimensions = getimagesize($tempFile);
+        $this->assertEquals(256, $dimensions[0], 'Image width should be 256');
+        $this->assertEquals(256, $dimensions[1], 'Image height should be 256');
+        unlink($tempFile);
+
+        // Case 3: Scale is set
+        $params = ['action' => 'downloadImage', 'id' => '1', 'scale' => 2];
+        $client = new Module_WebClient($params);
+        ob_start();
+        $client->execute();
+        $output = ob_get_clean();
+        $tempFile = tempnam(sys_get_temp_dir(), 'test_image');
+        file_put_contents($tempFile, $output);
+        $this->assertStringStartsWith('image/png', mime_content_type($tempFile));
+        $dimensions = getimagesize($tempFile);
+        $this->assertEquals(2048, $dimensions[0], 'Image width should be 2048');
+        $this->assertEquals(2048, $dimensions[1], 'Image height should be 2048');
+        unlink($tempFile);
+
+        // Case 4: Scale is smaller than 1
+        $params = ['action' => 'downloadImage', 'id' => '1', 'scale' => 0.5];
+        $client = new Module_WebClient($params);
+        ob_start();
+        $client->execute();
+        $output = ob_get_clean();
+        $tempFile = tempnam(sys_get_temp_dir(), 'test_image');
+        file_put_contents($tempFile, $output);
+        $this->assertStringStartsWith('image/png', mime_content_type($tempFile));
+        $dimensions = getimagesize($tempFile);
+        $this->assertEquals(4096, $dimensions[0], 'Image width should be 4096');
+        $this->assertEquals(4096, $dimensions[1], 'Image height should be 4096');
+        unlink($tempFile);
+    }
 }

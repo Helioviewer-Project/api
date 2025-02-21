@@ -295,7 +295,32 @@ class Module_WebClient implements Module {
 
         $imgIndex = new Database_ImgIndex();
         $image = $imgIndex->getImageInformation($this->_params['id']);
-        $tile = $this->generateImage($image['uiLabels'], $image['filepath'], $image['filename'], $image['date'], $this->_options['type'] ?? 'png', $this->_params['width'], $image['width'], $image['height']);
+
+        // Default to original image width
+        $desiredWidth = $image['width'];
+
+        // If the width option is set, then use that as the output width.
+        // width option takes precedent over scale option.
+        if (isset($this->_options['width'])) {
+            $desiredWidth = $this->_options['width'];
+        }
+        // If scale is set, compute the desired with based on the given scale.
+        elseif (isset($this->_options['scale'])) {
+            // Don't allow scale to be smaller than 1.
+            $scale = max([$this->_options['scale'], 1]);
+            $desiredWidth = $image['width'] / $scale;
+        }
+
+        $tile = $this->generateImage(
+            $image['uiLabels'],
+            $image['filepath'],
+            $image['filename'],
+            $image['date'],
+            $this->_options['type'] ?? 'png',
+            $desiredWidth,
+            $image['width'],
+            $image['height']
+        );
 
         // downloadImage requests are very deterministic, so make sure the client knows these are safe to cache.
         // 30days (60sec * 60min * 24hours * 30days)
@@ -1827,8 +1852,8 @@ class Module_WebClient implements Module {
             break;
         case 'downloadImage':
             $expected = array(
-                'required' => array('id', 'width'),
-                'optional' => array('type'),
+                'required' => array('id'),
+                'optional' => array('type', 'width', 'scale'),
                 'choices'  => array('type' => ['png', 'jpg', 'webp'])
             );
             break;
