@@ -133,6 +133,10 @@ class Image_JPEG2000_JP2Image {
      * @return String - outputFile of the expanded region
      */
     public function extractRegion($outputFile, $roi, $scaleFactor=0) {
+        $dirname = dirname($outputFile);
+        if (!file_exists($dirname)) {
+            mkdir($dirname, 0755, true);
+        }
 
         $cmd = HV_KDU_EXPAND . ' -i '.$this->_file.' -o '.$outputFile.' ';
 

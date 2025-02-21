@@ -236,6 +236,55 @@ class Module_WebClient implements Module {
     }
 
     /**
+     * Generates an image with the given extension using the specified parameters.
+     * This is used to create full colored pngs or jpegs of our image database.
+     *
+     * @param array $uiLabels Labels used to identify the type of jp2 image (TODO: Add more details)
+     * @param string $jp2Path The path to the JP2 file
+     * @param string $jp2Name The name of the JP2 file
+     * @param string $jp2Date The date of the JP2 file
+     * @param string $extension The desired image extension
+     * @param int $desiredWidth The desired width of the resulting image in pixels
+     * @param int $width The width of input jp2 image
+     * @param int $height The height of input jp2 image
+     *
+     * @return Image_HelioviewerImage The generated image object
+     */
+    public function generateImage(array $uiLabels, string $jp2Path, string $jp2Name, string $jp2Date, string $extension, int $desiredWidth, int $width, int $height): Image_HelioviewerImage {
+        $jp2Filepath = HV_JP2_DIR.$jp2Path.'/'.$jp2Name;
+        $jp2 = new Image_JPEG2000_JP2Image(
+            $jp2Filepath, $width, $height, 1
+        );
+
+        // Create a scale which maps 1 -> 4096 pixels.
+        $scale = 4096 / $desiredWidth;
+        // This modifies the scale to adjust it for the source image's dimensions.
+        $scale *= $width / 4096;
+        // This modifies the scale once more, so that we don't attempt to "upscale" images
+        // which would consume more data/bandwidth to just make a larger, blurry image.
+        $scale = max([$scale, 1]);
+        // This "scale" is not exactly arcseconds per pixels, it is really a
+        // scale value where 1 = original image size, 2 = half the image size
+        // 4 = a quarter of the image size and so on. So the above scaling
+        // math determines the appropriate image scale for the requested width.
+        $region = new Helper_RegionOfInterest(
+            -$width / 2, -$height / 2, $width / 2, $height / 2, $scale);
+
+        $filepath =  $this->_getImageCacheFilename($jp2Path, $jp2Name, $scale);
+        // Set the extension to the type passed in or default to png.
+        $filepath .= '.' . $extension;
+        // Create the tile
+        require_once HV_ROOT_DIR.'/../src/Image/Factory.php';
+        $classname = Image_Factory::getImageClass(['uiLabels' => $uiLabels]);
+        $options = ['date' => $jp2Date];
+        return new $classname(
+            $jp2, $filepath, $region, $uiLabels,
+            0, 0, $options,
+           []
+        );
+    }
+
+    /**
      * Returns a full jpeg2000 image converted to the designated image type (png/jpg/webp)
      * extension is validated via the input validator.
      */
@@ -246,37 +295,31 @@ class Module_WebClient implements Module {
 
         $imgIndex = new Database_ImgIndex();
         $image = $imgIndex->getImageInformation($this->_params['id']);
-        $jp2Filepath = HV_JP2_DIR.$image['filepath'].'/'.$image['filename'];
-        $jp2 = new Image_JPEG2000_JP2Image(
-            $jp2Filepath, $image['width'], $image['height'], 1
-        );
 
-        // 2 = 4k
-        // 4 = 2k
-        // 8 = 1024
-        // 16 = 512
-        // 32 = 256
-        $scale = intval($this->_params['scale']);
-        if ($scale < 2) {
-            $scale = 2;
+        // Default to original image width
+        $desiredWidth = $image['width'];
+
+        // If the width option is set, then use that as the output width.
+        // width option takes precedent over scale option.
+        if (isset($this->_options['width'])) {
+            $desiredWidth = $this->_options['width'];
         }
-        $region = new Helper_RegionOfInterest(
-            -$image['width'] / 2, -$image['height'] / 2, $image['width'] / 2, $image['height'] / 2, $this->_params['scale']);
+        // If scale is set, compute the desired with based on the given scale.
+        elseif (isset($this->_options['scale'])) {
+            // Don't allow scale to be smaller than 1.
+            $scale = max([$this->_options['scale'], 1]);
+            $desiredWidth = $image['width'] / $scale;
+        }
 
-        $filepath =  $this->_getImageCacheFilename($image['filepath'], $image['filename'], $this->_params['scale']);
-        // Set the extension to the type passed in or default to png.
-        $filepath .= '.' . ($this->_options['type'] ?? 'png');
-        // Reference pixel offset at the original image scale
-        $offsetX =   $image['refPixelX'] - ($image['width']  / 2);
-        $offsetY = -($image['refPixelY'] - ($image['height'] / 2));
-        // Create the tile
-        require_once HV_ROOT_DIR.'/../src/Image/Factory.php';
-        $classname = Image_Factory::getImageClass($image);
-               $this->_options['date'] = $image['date'];
-        $tile = new $classname(
-            $jp2, $filepath, $region, $image['uiLabels'],
-            $offsetX, $offsetY, $this->_options,
-            $image['sunCenterOffsetParams']
+        $tile = $this->generateImage(
+            $image['uiLabels'],
+            $image['filepath'],
+            $image['filename'],
+            $image['date'],
+            $this->_options['type'] ?? 'png',
+            $desiredWidth,
+            $image['width'],
+            $image['height']
         );
 
         // downloadImage requests are very deterministic, so make sure the client knows these are safe to cache.
@@ -1809,11 +1852,12 @@ class Module_WebClient implements Module {
             break;
         case 'downloadImage':
             $expected = array(
-                'required' => array('id', 'scale'),
-                'optional' => array('type'),
+                'required' => array('id'),
+                'optional' => array('type', 'width', 'scale'),
                 'choices'  => array('type' => ['png', 'jpg', 'webp'])
             );
             break;
+
         case 'goto':
             $expected = array(
                 'required' => array('id'),
@@ -1831,8 +1875,8 @@ class Module_WebClient implements Module {
         }
 
         if ( isset($expected) ) {
-            Sentry::setContext('Helioviewer', [ 
-                'validation_rules' => $expected 
+            Sentry::setContext('Helioviewer', [
+                'validation_rules' => $expected
             ]);
 
             Validation_InputValidator::checkInput($expected, $this->_params,$this->_options);

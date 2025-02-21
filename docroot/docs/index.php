@@ -319,7 +319,7 @@
         <div class="container">
             <hr>
             <footer>
-                <?php if(($doc_m_time = @filemtime($api_xml_path)) !== FALSE): ?> 
+                <?php if(($doc_m_time = @filemtime($api_xml_path)) !== FALSE): ?>
                 <p><b>Last Updated:</b> <?php echo date('j F Y', $doc_m_time); ?></p>
                 <?php endif; ?>
             </footer>
@@ -330,13 +330,6 @@
         <script src="<?php echo HV_WEB_ROOT_URL; ?>/docs/js/vendor/bootstrap.min.js"></script>
 
         <script src="<?php echo HV_WEB_ROOT_URL.'/docs/'.$api_version.'/version_specific.js'; ?>"></script>
-
-        <script>
-            var _gaq=[['_setAccount','<?php echo HV_GOOGLE_ANALYTICS_ID; ?>'],['_trackPageview']];
-            (function(d,t){var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
-            g.src='//www.google-analytics.com/ga.js';
-            s.parentNode.insertBefore(g,s)}(document,'script'));
-        </script>
 <?php
     }
 ?>
