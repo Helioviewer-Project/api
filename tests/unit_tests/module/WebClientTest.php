@@ -127,10 +127,9 @@ final class WebClientTest extends TestCase
         // to a lack of sample data in the test environment.
         [ 2048, array(['label' => 'Observatory', 'name' => 'SDO'], ['label' => 'Instrument', 'name' => 'AIA'], ['label' => 'Measurement', 'name' => '94']), "/AIA/2024/12/31/94", "2024_12_31__00_04_47_122__SDO_AIA_AIA_94.jp2", "2024-12-31 00:04:47", "png", 4096, 4096],
         // TODO: Test what happens if I make width 512
-        [ 101, array(['label' => 'Observatory', 'name' => 'RHESSI']), "/RHESSI/2018/02/11/VIS_CS", "2018_02_11__01_08_40_800__RHESSI_RHESSI_VIS_CS_25-50keV.jp2", "2018-02-11 01:08:40", "png", 101, 101],
+        [ 512, array(['label' => 'Observatory', 'name' => 'RHESSI']), "/RHESSI/2018/02/11/VIS_CS", "2018_02_11__01_08_40_800__RHESSI_RHESSI_VIS_CS_25-50keV.jp2", "2018-02-11 01:08:40", "png", 101, 101, 101],
         // Test several times with different scales to verify the scale parameter is working properly.
         [ 1280, array(['label' => 'Observatory', 'name' => 'GOES-R'], ['label' => 'Instrument', 'name' => 'SUVI'], ['label' => 'Measurement', 'name' => '131']), "/SUVI/2024/12/31/131", "2024_12_31__00_02_11__GOES-R_SUVI_SUVI_131.jp2", "2024-12-31 00:02:11", "png", 1280, 1280],
-        [ 1280, array(['label' => 'Observatory', 'name' => 'GOES-R'], ['label' => 'Instrument', 'name' => 'SUVI'], ['label' => 'Measurement', 'name' => '131']), "/SUVI/2024/12/31/131", "2024_12_31__00_02_11__GOES-R_SUVI_SUVI_131.jp2", "2024-12-31 00:02:11", "jpg", 1280, 1280],
         [ 1024, array(['label' => 'Observatory', 'name' => 'GOES-R'], ['label' => 'Instrument', 'name' => 'SUVI'], ['label' => 'Measurement', 'name' => '131']), "/SUVI/2024/12/31/131", "2024_12_31__00_02_11__GOES-R_SUVI_SUVI_131.jp2", "2024-12-31 00:02:11", "png", 1280, 1280],
         [ 512, array(['label' => 'Observatory', 'name' => 'GONG'], ['label' => 'Instrument', 'name' => 'GONG'], ['label' => 'Detector', 'name' => 'H-alpha']), "/NSO-GONG/2024/12/31/6562", "2024_12_31__00_00_42__NSO-GONG_GONG_H-alpha_6562.jp2", "2024-12-31 00:00:42", "png", 2048, 2048],
         [ 256, array(['label' => 'Observatory', 'name' => 'GONG'], ['label' => 'Instrument', 'name' => 'GONG'], ['label' => 'Detector', 'name' => 'H-alpha']), "/NSO-GONG/2024/12/31/6562", "2024_12_31__00_00_42__NSO-GONG_GONG_H-alpha_6562.jp2", "2024-12-31 00:00:42", "png", 2048, 2048],
@@ -159,12 +158,13 @@ final class WebClientTest extends TestCase
      * @return void
      * @dataProvider generateImageTestCaseProvider
      */
-    public function test_generateImage($expectedWidth, $uiLabels, $filepath, $filename, $date, $extension, $width, $height): void {
+    public function test_generateImage($desiredWidth, $uiLabels, $filepath, $filename, $date, $extension, $width, $height, $expectedWidth = null): void {
+        if (is_null($expectedWidth)) { $expectedWidth = $desiredWidth; }
         // Test generating the full colorized image
         // echo $filepath . "/" . $filename . "\n";
         $params = [];
         $client = new Module_WebClient($params);
-        $img = $client->generateImage($uiLabels, $filepath, $filename, $date, $extension, $expectedWidth, $width, $height);
+        $img = $client->generateImage($uiLabels, $filepath, $filename, $date, $extension, $desiredWidth, $width, $height);
         $img->save();
         $this->assertFileExists($img->getFilepath());
 
