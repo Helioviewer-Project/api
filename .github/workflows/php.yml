@@ -36,7 +36,7 @@ jobs:
         # It is healthy. The next step 'Print container logs' says it is healthy
         # Just ignore. docker compose up is already tested that it goes "up"
         # in order to be on the main branch.
-        docker compose up -d api || true
+        docker compose up --wait api || true
 
     - name: Print container logs
       if: always()
