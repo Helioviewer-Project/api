@@ -25,13 +25,14 @@ jobs:
           .env.example
         sparse-checkout-cone-mode: false
     - name: Setup environment file
-      run: mv compose/.env.example .env
+      run: mv compose/.env.example ../.env
 
     - name: Start local Helioviewer environment
       id: docker
       run: |
-        mv compose/compose.yaml .
-        docker compose up -d --wait
+        mv compose/compose.yaml ..
+        cd ..
+        docker compose up -d --wait api
 
     - name: Print container logs logs
       if: always()
