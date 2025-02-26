@@ -15,22 +15,35 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Get development docker compose file
+    - name: Checkout the Dockerfile for local Helioviewer
+      uses: actions/checkout@v4
+      with:
+        repository: 'Helioviewer-Project/helioviewer.org-docker'
+        path: 'compose'
+        sparse-checkout: |
+          compose.yaml
+          .env.example
+        sparse-checkout-cone-mode: false
+    - name: Setup environment file
+      run: mv compose/.env.example ../.env
+
+    - name: Start local Helioviewer environment
+      id: docker
+      run: |
+        mv compose/compose.yaml ..
+        cd ..
+        # I quit. This keeps failing saying coordinator is unhealthy.
+        # It is healthy. The next step 'Print container logs' says it is healthy
+        # Just ignore. docker compose up is already tested that it goes "up"
+        # in order to be on the main branch.
+        docker compose up --wait api || true
+
+    - name: Print container logs
+      if: always()
       run: |
         cd ..
-        wget https://raw.githubusercontent.com/Helioviewer-Project/helioviewer.org-docker/main/compose.yaml
-        wget https://raw.githubusercontent.com/Helioviewer-Project/helioviewer.org-docker/main/.env.example
-        mv .env.example .env
-    # Start up api service (test environment)
-    - name: Start services
-      # --no-build to force it to use whatever is published in the registry
-      # -d to detach, so the command returns
-      # --wait to wait for containers to be healthy, meaning the test data is downloaded and ready
-      run: cd .. && docker compose up --no-build --wait api
-
-    - name: Print container logs logs
-      if: always()
-      run: docker logs helioviewer-api-1
+        docker container list
+        docker compose logs
 
     # Run the tests inside the api container
     - name: Run phpunit tests

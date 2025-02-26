@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "89405e27f5e23dbe74b30f10c4eb757e",
+    "content-hash": "22958a84a66d0136fd697b7dadc102f0",
     "packages": [
         {
             "name": "firebase/php-jwt",
@@ -569,16 +569,16 @@
         },
         {
             "name": "helioviewer/event-interface",
-            "version": "v0.2.4",
+            "version": "v0.3.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/dgarciabriseno/helioviewer-event-interface.git",
-                "reference": "c59b0ef96f1284bf7b880c899696928111b2d0fd"
+                "reference": "7f73bbccbef07acee40348bae377a6bada06f63e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dgarciabriseno/helioviewer-event-interface/zipball/c59b0ef96f1284bf7b880c899696928111b2d0fd",
-                "reference": "c59b0ef96f1284bf7b880c899696928111b2d0fd",
+                "url": "https://api.github.com/repos/dgarciabriseno/helioviewer-event-interface/zipball/7f73bbccbef07acee40348bae377a6bada06f63e",
+                "reference": "7f73bbccbef07acee40348bae377a6bada06f63e",
                 "shasum": ""
             },
             "require": {
@@ -614,10 +614,10 @@
             ],
             "description": "Interface for querying external data sources for Helioviewer",
             "support": {
-                "source": "https://github.com/dgarciabriseno/helioviewer-event-interface/tree/v0.2.4",
+                "source": "https://github.com/dgarciabriseno/helioviewer-event-interface/tree/v0.3.1",
                 "issues": "https://github.com/dgarciabriseno/helioviewer-event-interface/issues"
             },
-            "time": "2024-09-30T17:58:15+00:00"
+            "time": "2025-02-25T22:28:25+00:00"
         },
         {
             "name": "jean85/pretty-package-versions",
@@ -3986,7 +3986,7 @@
     },
     "prefer-stable": false,
     "prefer-lowest": false,
-    "platform": [],
-    "platform-dev": [],
+    "platform": {},
+    "platform-dev": {},
     "plugin-api-version": "2.6.0"
 }
