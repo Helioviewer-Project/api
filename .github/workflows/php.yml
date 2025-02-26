@@ -15,24 +15,23 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Get development docker compose file
+    - name: Checkout the Dockerfile for local Helioviewer
+      uses: actions/checkout@v4
+      with:
+        repository: 'Helioviewer-Project/helioviewer.org-docker'
+        path: 'compose'
+        sparse-checkout: |
+          compose.yaml
+          .env.example
+        sparse-checkout-cone-mode: false
+    - name: Setup environment file
+      run: mv compose/.env.example .env
+
+    - name: Start local Helioviewer environment
+      id: docker
       run: |
-        cd ..
-        wget https://raw.githubusercontent.com/Helioviewer-Project/helioviewer.org-docker/main/compose.yaml
-        wget https://raw.githubusercontent.com/Helioviewer-Project/helioviewer.org-docker/main/.env.example
-        mv .env.example .env
-    # Start up api service (test environment)
-    - name: Start services
-      # --no-build to force it to use whatever is published in the registry
-      # -d to detach, so the command returns
-      # --wait to wait for containers to be healthy, meaning the test data is downloaded and ready
-      run: |
-        cd ..
-        echo "compose.yaml:"
-        cat compose.yaml
-        echo ".env:"
-        cat .env
-        docker compose up --no-build --wait api
+        mv compose/compose.yaml .
+        docker compose up -d --wait
 
     - name: Print container logs logs
       if: always()
