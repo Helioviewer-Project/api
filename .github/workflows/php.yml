@@ -30,7 +30,7 @@ jobs:
 
     - name: Print container logs logs
       if: always()
-      run: docker logs helioviewer-api-1
+      run: cd .. && docker compose logs
 
     # Run the tests inside the api container
     - name: Run phpunit tests
