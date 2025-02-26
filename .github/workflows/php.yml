@@ -26,7 +26,7 @@ jobs:
       # --no-build to force it to use whatever is published in the registry
       # -d to detach, so the command returns
       # --wait to wait for containers to be healthy, meaning the test data is downloaded and ready
-      run:
+      run: |
         cd ..
         echo "compose.yaml:"
         cat compose.yaml
@@ -36,7 +36,7 @@ jobs:
 
     - name: Print container logs logs
       if: always()
-      run:
+      run: |
         cd ..
         docker container list
         docker compose logs
