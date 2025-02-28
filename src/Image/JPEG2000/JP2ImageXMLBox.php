@@ -253,6 +253,21 @@ class Image_JPEG2000_JP2ImageXMLBox {
     }
 
     /**
+     * Returns the CRVAL values from the jp2 metadata.
+     * This is the coordinate of the reference pixel on the sun.
+     */
+    public function getCRValOffsets() {
+        try {
+            $crval1 = $this->_getElementValue('CRVAL1');
+            $crval2 = $this->_getElementValue('CRVAL2');
+        } catch (Exception) {
+            $crval1 = 0;
+            $crval2 = 0;
+        }
+        return array($crval1, $crval2);
+    }
+
+    /**
      * Returns the coordinates for the image's reference pixel.
      *
      * NOTE: The values for CRPIX1 and CRPIX2 reflect the x and y coordinates

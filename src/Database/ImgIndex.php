@@ -993,6 +993,7 @@ class Database_ImgIndex {
             $sunCenterOffsetParams   = $xmlBox->getSunCenterOffsetParams();
             $layeringOrder           = $xmlBox->getLayeringOrder();
             $rotation                = $xmlBox->getRotation();
+            $offsets                 = $xmlBox->getCRValOffsets();
 
             // Normalize image scale
             $normalizedScale = $imageScale * ($dsun / HV_CONSTANT_AU);
@@ -1004,6 +1005,8 @@ class Database_ImgIndex {
                 "height"     => (int) $dimensions[1],
                 "refPixelX"  => (float) $refPixel[0],
                 "refPixelY"  => (float) $refPixel[1],
+                "offsetX"    => (float) $offsets[0],
+                "offsetY"    => (float) $offsets[1],
                 "rotation"   => $rotation,
                 "rsun"       => (float) $rsun,
                 "dsun"       => $dsun,
