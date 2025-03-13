@@ -260,11 +260,11 @@ class Image_JPEG2000_JP2ImageXMLBox {
         try {
             $crval1 = $this->_getElementValue('CRVAL1');
             $crval2 = $this->_getElementValue('CRVAL2');
-        } catch (Exception) {
+        } catch (Exception $e) {
             $crval1 = 0;
             $crval2 = 0;
         }
-        return array($crval1, $crval2);
+        return array(floatval($crval1), floatval($crval2));
     }
 
     /**
@@ -281,7 +281,7 @@ class Image_JPEG2000_JP2ImageXMLBox {
             try {
                 $crval1 = $this->_getElementValue('CRVAL1');
                 $crval2 = $this->_getElementValue('CRVAL2');
-            } catch (Exception) {
+            } catch (Exception $e) {
                 $crval1 = 0;
                 $crval2 = 0;
             }

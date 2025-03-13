@@ -52,4 +52,25 @@ final class JP2ImageXMLBoxTest extends TestCase
             $this->assertEquals($expected, $dsun);
         }
     }
+
+    public function test_getCRVal(): void {
+        $test_file = __DIR__ . "/test_data/test.jp2";
+        $xmlBox = new Image_JPEG2000_JP2ImageXMLBox($test_file);
+
+        // Test success case
+        $crval = $xmlBox->getCRValOffsets();
+        $this->assertIsArray($crval);
+        $this->assertCount(2, $crval);
+        $this->assertIsFloat($crval[0]);
+        $this->assertIsFloat($crval[1]);
+
+        // Test exception case
+        $test_file_no_crval = __DIR__ . "/test_data/no_crval.jp2";
+        $xmlBox_no_crval = new Image_JPEG2000_JP2ImageXMLBox($test_file_no_crval);
+        $crval = $xmlBox_no_crval->getCRValOffsets();
+        $this->assertIsArray($crval);
+        $this->assertCount(2, $crval);
+        $this->assertEquals(0.0, $crval[0]);
+        $this->assertEquals(0.0, $crval[1]);
+    }
 }
