@@ -49,6 +49,17 @@ class Image_ImageType_LASCOImage extends Image_HelioviewerImage {
     }
 
     /**
+     * Apply opacity or the occulter depending on options.
+     */
+    protected function setAlphaChannel(&$imagickImage) {
+        if ($this->options['clipocculter']) {
+            $this->clipOcculter($imagickImage);
+        } else {
+            $this->applyOpacity($imagickImage);
+        }
+    }
+
+    /**
      * Generates a portion of an ImageMagick convert command to apply an alpha mask
      *
      * Note: More accurate values for radii used to generate the LASCO C2 & C3 alpha masks:
@@ -93,7 +104,7 @@ class Image_ImageType_LASCOImage extends Image_HelioviewerImage {
      *
      * @return void
      */
-    protected function setAlphaChannel(&$imagickImage) {
+    protected function clipOcculter(&$imagickImage) {
         $maskWidth  = 1040;
         $maskHeight = 1040;
         $mask       = HV_ROOT_DIR
@@ -153,8 +164,15 @@ class Image_ImageType_LASCOImage extends Image_HelioviewerImage {
 
         if ($this->options['opacity'] < 100) {
             $mask->negateImage(true);
-
             @$imagickImage->setImageClipMask($mask);
+            $this->applyOpacity($imagickImage);
+        }
+
+        $mask->destroy();
+    }
+
+    protected function applyOpacity(IMagick &$imagickImage) {
+        if ($this->options['opacity'] < 100) {
             $opacity = $this->imageOptions['opacity'] / 100;
             try {
                 @$imagickImage->setImageOpacity($opacity);
@@ -162,8 +180,6 @@ class Image_ImageType_LASCOImage extends Image_HelioviewerImage {
                 $imagickImage->setImageAlpha($opacity);
             }
         }
-
-        $mask->destroy();
     }
 }
 ?>

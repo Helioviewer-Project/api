@@ -276,7 +276,7 @@ class Module_WebClient implements Module {
         // Create the tile
         require_once HV_ROOT_DIR.'/../src/Image/Factory.php';
         $classname = Image_Factory::getImageClass(['uiLabels' => $uiLabels]);
-        $options = ['date' => $jp2Date];
+        $options = ['date' => $jp2Date, 'clipocculter' => false];
         return new $classname(
             $jp2, $filepath, $region, $uiLabels,
             0, 0, $options,
@@ -317,7 +317,7 @@ class Module_WebClient implements Module {
             $image['filename'],
             $image['date'],
             $this->_options['type'] ?? 'png',
-            $desiredWidth,
+            intval($desiredWidth),
             $image['width'],
             $image['height']
         );
