@@ -154,7 +154,7 @@ class Image_ImageType_LASCOImage extends Image_HelioviewerImage {
         if ($this->options['opacity'] < 100) {
             $mask->negateImage(true);
 
-            $imagickImage->setImageClipMask($mask);
+            @$imagickImage->setImageClipMask($mask);
             $opacity = $this->imageOptions['opacity'] / 100;
             try {
                 @$imagickImage->setImageOpacity($opacity);
