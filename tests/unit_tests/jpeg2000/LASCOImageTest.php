@@ -23,6 +23,11 @@ final class LASCOImageTest extends TestCase
 			'actual'   => __DIR__ . "/test_data/test_constructImage_translucent_out.png",
 			'options'  => ['date' => "2023-12-01 00:06:07", 'opacity' => 50]
 		],
+		[
+			'expected' => __DIR__ . "/test_data/expected_no_clip_occulter.png",
+			'actual'   => __DIR__ . "/test_data/test_constructImage_no_clip_occulter_out.png",
+			'options'  => ['date' => "2023-12-01 00:06:07", 'clipocculter' => false]
+		],
 
 	];
 
