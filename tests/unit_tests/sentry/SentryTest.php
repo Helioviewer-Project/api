@@ -145,7 +145,7 @@ final class SentryTest extends TestCase
         return [
             [["foo"]],
             [["foo" => "bar", 12 => "baz"]],
-            [["foo" => "bar", intval(M_PI) => "baz"]],
+            [["foo" => "bar", strval(M_PI) => "baz"]],
         ];
     }
     /**
