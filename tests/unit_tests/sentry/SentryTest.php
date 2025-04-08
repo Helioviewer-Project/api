@@ -19,7 +19,7 @@ final class SentryTest extends TestCase
         Sentry::$contexts = [];
     }
 
-    public static function GetDisabledConfigs(): array 
+    public static function GetDisabledConfigs(): array
     {
         return [
             [["enabled"=>false]],
@@ -140,12 +140,12 @@ final class SentryTest extends TestCase
     }
 
 
-    public static function GetInvalidParams(): array 
+    public static function GetInvalidParams(): array
     {
         return [
             [["foo"]],
             [["foo" => "bar", 12 => "baz"]],
-            [["foo" => "bar", M_PI => "baz"]],
+            [["foo" => "bar", intval(M_PI) => "baz"]],
         ];
     }
     /**
@@ -165,7 +165,7 @@ final class SentryTest extends TestCase
     }
 
 
-    public static function GetInvalidTags(): array 
+    public static function GetInvalidTags(): array
     {
         return [
             ["foo",""],
@@ -192,7 +192,7 @@ final class SentryTest extends TestCase
     /**
      * @dataProvider GetContextParams
      */
-    public function testItShouldMergeGivenContextParams($params, $result) 
+    public function testItShouldMergeGivenContextParams($params, $result)
     {
         $mock_client = $this->createMock(ClientInterface::class);
 
@@ -209,7 +209,7 @@ final class SentryTest extends TestCase
         ]);
     }
 
-    public static function GetContextParams(): array 
+    public static function GetContextParams(): array
     {
         return [
             [
