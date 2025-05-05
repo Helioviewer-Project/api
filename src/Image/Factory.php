@@ -37,6 +37,9 @@ class Image_Factory {
         else if ($image['uiLabels'][0]['name'] == 'RHESSI') {
             $type = 'RHESSIImage';
         }
+        else if ($image['uiLabels'][0]['name'] == 'PUNCH') {
+            $type = 'PUNCHImage';
+        }
         else if (count($image['uiLabels']) >=2) {
             $type = strtoupper($image['uiLabels'][1]['name']).'Image';
         }
