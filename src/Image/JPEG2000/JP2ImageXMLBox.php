@@ -137,7 +137,9 @@ class Image_JPEG2000_JP2ImageXMLBox {
         } catch (Exception $e) {
             try {
                 // PUNCH
-                return $this->_getElementValue('RSUN_ARC');
+                $rsun_arcsec = $this->_getElementValue('RSUN_ARC'); // arcsec
+                $scale = $this->getImagePlateScale(); // arcsec / pixel
+                return $rsun_arcsec / $scale; // arcsec * (pixel / arcsec)
             } catch (Exception $e) {
                 // If R_SUN is not in the header, then try to compute the R_SUN based on DSUN.
                 // Get DSUN first since it contains logic for correcting FITS data for different sources.
