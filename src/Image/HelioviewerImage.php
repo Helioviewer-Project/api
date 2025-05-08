@@ -45,7 +45,9 @@ class Image_HelioviewerImage extends Image_SubFieldImage {
             'jp2DiffPath'   => '',
             'jp2DifferenceLabel'   => '',
             'followViewport' => false,
-            'grayscale'     => false
+            'grayscale'     => false,
+            // If the image should be clipped for the occulter.
+            'clipocculter'      => true
         );
         $this->options = array_replace($defaults, $options);
 
