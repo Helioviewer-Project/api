@@ -135,15 +135,22 @@ class Image_JPEG2000_JP2ImageXMLBox {
             // First, try to return the R_SUN value from FITS
             return $this->_getElementValue('R_SUN');
         } catch (Exception $e) {
-            // If R_SUN is not in the header, then try to compute the R_SUN based on DSUN.
-            // Get DSUN first since it contains logic for correcting FITS data for different sources.
-            $dsun = $this->getDSun();
-            // Safe to get CDELT1 here. If CDELT1 doesn't exist, then getDSun will return an error.
-            $scale = $this->_getElementValue('CDELT1');
-            // Unroll the DSUN formula to solve for RSUN
-            // $dsun = (HV_CONSTANT_RSUN / ($rsun * $scale)) * HV_CONSTANT_AU;
-            $rsun = (HV_CONSTANT_AU * HV_CONSTANT_RSUN) / ($dsun * $scale);
-            return $rsun;
+            try {
+                // PUNCH
+                $rsun_arcsec = $this->_getElementValue('RSUN_ARC'); // arcsec
+                $scale = $this->getImagePlateScale(); // arcsec / pixel
+                return $rsun_arcsec / $scale; // arcsec * (pixel / arcsec)
+            } catch (Exception $e) {
+                // If R_SUN is not in the header, then try to compute the R_SUN based on DSUN.
+                // Get DSUN first since it contains logic for correcting FITS data for different sources.
+                $dsun = $this->getDSun();
+                // Safe to get CDELT1 here. If CDELT1 doesn't exist, then getDSun will return an error.
+                $scale = $this->_getElementValue('CDELT1');
+                // Unroll the DSUN formula to solve for RSUN
+                // $dsun = (HV_CONSTANT_RSUN / ($rsun * $scale)) * HV_CONSTANT_AU;
+                $rsun = (HV_CONSTANT_AU * HV_CONSTANT_RSUN) / ($dsun * $scale);
+                return $rsun;
+            }
         }
     }
 
@@ -229,6 +236,22 @@ class Image_JPEG2000_JP2ImageXMLBox {
     }
 
     /**
+     * Checks if the CUNIT1 is degrees.
+     */
+    public function _usesWholeDegrees(): bool {
+        try {
+            $unit = $this->_getElementValue('CUNIT1');
+            if (trim($unit) === "deg") {
+                return true;
+            }
+        } catch (Exception $e) {}
+
+        // If unit is not deg or CUNIT1 doesn't exist, then return false.
+        // In this case we assume it's arcseconds.
+        return false;
+    }
+
+    /**
      * Returns the plate scale for a given image
      *
      * @return string JP2 image scale
@@ -236,6 +259,9 @@ class Image_JPEG2000_JP2ImageXMLBox {
     public function getImagePlateScale() {
         try {
             $scale = $this->_getElementValue('CDELT1');
+            if ($this->_usesWholeDegrees()) {
+                $scale = floatval($scale) * 3600;
+            }
         }
         catch (Exception $e) {
             throw new Exception(

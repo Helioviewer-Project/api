@@ -882,7 +882,8 @@ class ImageRetrievalDaemon:
             "iris": "IRISDataServer",
             "hv_iris": "HvIRISDataServer",
             "halpha": "GongDataServer",
-            "rhessi": "RHESSIDataServer"
+            "rhessi": "RHESSIDataServer",
+            "punch": "PUNCHDataServer",
         }
 
     @classmethod
