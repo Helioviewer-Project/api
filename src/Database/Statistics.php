@@ -443,6 +443,7 @@ class Database_Statistics {
             "getJP2Image-web"                  => array(),
             "getJP2Image-jpip"                 => array(),
             "getRandomSeed"                    => array(),
+            "enable3D"                         => array(),
             "totalRequests"                    => array()
         );
 
@@ -468,6 +469,7 @@ class Database_Statistics {
             "getJP2Image-web"                  => 0,
             "getJP2Image-jpip"                 => 0,
             "getRandomSeed"                    => 0,
+            "enable3D"                         => 0,
             "totalRequests"                    => 0
         );
 
@@ -838,6 +840,7 @@ class Database_Statistics {
             'takeScreenshot'              => array(),
             'postScreenshot'              => array(),
             'getRandomSeed'               => array(),
+            'enable3D'                    => array(),
             'getJP2Image'                 => array(),
             'getJPX'                      => array(),
             'getJPXClosestToMidPoint'     => array(),
@@ -908,6 +911,7 @@ class Database_Statistics {
             'takeScreenshot'              => 0,
             'postScreenshot'              => 0,
             'getRandomSeed'               => 0,
+            'enable3D'                    => 0,
             'getJP2Image'                 => 0,
             'getJPX'                      => 0,
             'getJPXClosestToMidPoint'     => 0,

@@ -1324,6 +1324,15 @@ class Module_WebClient implements Module {
         echo $this->_printJSON(json_encode($notification_status));
      }
 
+
+     /**
+      * A function to track 3D is enabled on the HelioViewer FrontEnd
+      */
+     public function enable3D() 
+     {
+        return $this->_sendResponse(200, "OK", "");
+     }
+
      /**
       * Creates a random seed for pseudorandom number generators
       * based on a hash of AIA image data combined with the current time in microseconds
