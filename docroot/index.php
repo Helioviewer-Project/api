@@ -145,6 +145,7 @@ function loadModule($params) {
         'logNotificationStatistics'      => 'WebClient',
         'getEclipseImage'                => 'WebClient', 
         'getClosestImageDatesForSources' => 'WebClient',
+        'enable3D'                       => 'WebClient',
     );
 
     include_once HV_ROOT_DIR.'/../src/Validation/InputValidator.php';
@@ -202,6 +203,7 @@ function loadModule($params) {
                     'getJPXClosestToMidPoint', 
                     'uploadMovieToYouTube', 
                     'getRandomSeed',
+                    'enable3D',
                 ];
 
                 // Note that in addition to the above, buildMovie requests and

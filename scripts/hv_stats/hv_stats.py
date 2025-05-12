@@ -2274,8 +2274,8 @@ heirarchy = {
     "Images":["takeScreenshot","postScreenshot","getTile","getClosestImage","getJP2Image-web","getJP2Image-jpip","getJP2Image","downloadScreenshot","getJPX","getJPXClosestToMidPoint"],
     "Movies":["buildMovie","postMovie","getMovieStatus","queueMovie","postMovie","reQueueMovie","playMovie","downloadMovie","getUserVideos","getObservationDateVideos","uploadMovieToYouTube","checkYouTubeAuth","getYouTubeAuth"],
     "Events":["getEventGlossary","getEvents","getFRMs","getEvent","getEventFRMs","getDefaultEventTypes","getEventsByEventLayers","importEvents"],
-    "Data":["getRandomSeed","getDataSources","getJP2Header","getDataCoverage","getStatus","getNewsFeed","getDataCoverageTimeline","getClosestData","getSolarBodiesGlossary","getSolarBodies","getTrajectoryTime","sciScript-SSWIDL","sciScript-SunPy","getSciDataScript","updateDataCoverage","getEclipseImage", "getClosestImageDatesForSources"],
-    "Other":["shortenURL","getUsageStatistics","movie-notifications-granted","movie-notifications-denied","logNotificationStatistics","launchJHelioviewer", "saveWebClientState", "getWebClientState"],
+    "Data"  :["getRandomSeed","getDataSources","getJP2Header","getDataCoverage","getStatus","getNewsFeed","getDataCoverageTimeline","getClosestData","getSolarBodiesGlossary","getSolarBodies","getTrajectoryTime","sciScript-SSWIDL","sciScript-SunPy","getSciDataScript","updateDataCoverage","getEclipseImage", "getClosestImageDatesForSources"],
+    "Other":["enable3D", "shortenURL","getUsageStatistics","movie-notifications-granted","movie-notifications-denied","logNotificationStatistics","launchJHelioviewer", "saveWebClientState", "getWebClientState"],
     "WebGL":["getTexture","getGeometryServiceData"]
 };
 
