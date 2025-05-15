@@ -21,7 +21,8 @@
         },
         "celestialBodies": {
             "$ref": "https://api.helioviewer.org/schema/celestial_bodies.schema.json"
-        }
+        },
+        "enable3d": { "type": "boolean" }
     },
     "required": [
         "date",
