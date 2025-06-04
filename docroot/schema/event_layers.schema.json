@@ -63,6 +63,15 @@
                             }
                         }
                     }
+                },
+                "layers_v2": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "pattern": "^[\\\\()a-zA-Z0-9_+\\- >]+$",
+                        "minLength": 1,
+                        "maxLength": 600
+                    }
                 }
             }
         }
