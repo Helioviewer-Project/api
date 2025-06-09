@@ -31,7 +31,7 @@ class JP2parser:
     def _loadSunpyMap(self) -> GenericMap:
         try:
             return Map(self.read_header_only_but_still_use_sunpy_map())
-        except MapMetaValidationError:
+        except (MapMetaValidationError, ValueError): # ValueError catches a CUNIT with type 'degrees'
             return Map(self.read_header_only_but_still_use_sunpy_map(patch_cunit=True))
 
     def getImageMap(self) -> GenericMap:
@@ -85,6 +85,13 @@ class JP2parser:
                 if value.lower() == 'nan' or value.lower() == '-nan':
                     image[key] = 'NULL'
 
+        image['observatory'] = self.get_observatory(imageData)
+        image['instrument'] = self.get_instrument(imageData)
+        image['detector'] = imageData.detector
+        if image['instrument'] == "CCOR1":  # BIG ugly hack because a MAP for CCOR-1 does not exist in map_factory
+            imageData.nickname = 'CCOR-1'
+        elif image['instrument'] == "CCOR2":
+            imageData.nickname = 'CCOR-2'
         # In sunpy V3, the nickname changed to include the filter.
         # Having the space in it breaks how helioviewer loads images due to
         # the space in the file name. To prevent this problem we're selecting
@@ -95,9 +102,6 @@ class JP2parser:
         # Patch for GONG H-alpha which has a nickname of "NSO-GONG,"
         # Remove the trailing comma
         if image['nickname'].endswith(","): image['nickname'] = image['nickname'][:-1]
-        image['observatory'] = imageData.observatory.replace(" ","_")
-        image['instrument'] = imageData.instrument.split(" ")[0]
-        image['detector'] = imageData.detector
         # Remove explicit units from the measurement
         measurement = str(imageData.measurement).replace(".0 Angstrom", "").replace(".0 nm","").replace(".0", "")
         # Convert Yohkoh measurements to be helioviewer compatible
@@ -111,6 +115,10 @@ class JP2parser:
         elif image['observatory'] == "Hinode":
             image['filter1'] = measurement.split("-")[0].replace(" ", "_")
             image['filter2'] = measurement.split("-")[1].replace(" ", "_")
+        elif image['instrument'] == "CCOR1":  # BIG ugly hack because a MAP for CCOR-1 does not exist in map_factory
+            image['measurement'] = 'white-light'
+        elif image['instrument'] == "CCOR2":
+            image['measurement'] = 'white-light'
         else:
             image['measurement'] = measurement
         image['date'] = self._get_date(imageData)
@@ -121,6 +129,27 @@ class JP2parser:
             image = self._process_rhessi_extras(image, imageData)
 
         return image
+
+
+    def get_observatory(self, imageData):
+        """
+        Gets the name of the observatory.
+        This either returns the observatory that exists in the imageData or
+        any overrides we need to apply.
+        """
+        observatory = imageData.observatory.strip().replace(" ","_")
+        if observatory == "CCOR-2":
+            return "SWFO-L1"
+        if observatory == "CCOR-1":
+            return "GOES-19"
+        else:
+            return observatory
+
+
+    def get_instrument(self, imageData):
+        instrument = imageData.instrument.strip().split(" ")[0]
+        return instrument
+
 
     def _get_date(self, img: GenericMap) -> Time:
         try:
@@ -169,6 +198,10 @@ class JP2parser:
         """
         header = self.get_header()
         if (patch_cunit):
+            if (header[0]['CUNIT1'] == 'degrees'):
+                header[0]['CUNIT1'] = 'degree'
+            if (header[0]['CUNIT2'] == 'degrees'):
+                header[0]['CUNIT2'] = 'degree'
             # Try fixing the header
             header = self.get_header()
             header[0]['cunit1'] = 'arcsec'
