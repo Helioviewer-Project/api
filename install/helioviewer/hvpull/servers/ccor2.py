@@ -4,7 +4,7 @@ import datetime
 
 class CCOR2DataServer(DataServer):
     def __init__(self):
-        DataServer.__init__(self, "https://services.swpc.noaa.gov/experimental/products/swfol1/", "CCOR")
+        DataServer.__init__(self, "TBD", "CCOR")
         self.pause = datetime.timedelta(minutes=15)
 
     def compute_directories(self, start_date, end_date):
