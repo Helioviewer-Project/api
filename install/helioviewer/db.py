@@ -361,7 +361,7 @@ def create_datasource_table(cursor):
 (128, 'RHESSI', 'RHESSI 25-50keV VIS FWDFIT',    NULL, 1, 0, '', 0, 0, 0, 0),
 (129, 'RHESSI', 'RHESSI 50-100keV VIS FWDFIT',   NULL, 1, 0, '', 0, 0, 0, 0),
 (130, 'RHESSI', 'RHESSI 100-300keV VIS FWDFIT',  NULL, 1, 0, '', 0, 0, 0, 0),
-(131,  'PUNCH', 'PUNCH WFI+NFI', NULL, 1, 0, '', 0),
+(131,  'PUNCH', 'PUNCH WFI+NFI', NULL, 1, 0, '', 0, 0, 0, 0),
 (2000, 'GOES-R SUVI 94', 'GOES-R SUVI 94',  NULL, 1, 0, '', 0, 0, 0, 0),
 (2001, 'GOES-R SUVI 131', 'GOES-R SUVI 131',  NULL, 1, 0, '', 0, 0, 0, 0),
 (2002, 'GOES-R SUVI 171', 'GOES-R SUVI 171',  NULL, 1, 0, '', 0, 0, 0, 0),
