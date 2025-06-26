@@ -1,8 +1,5 @@
 import unittest
-import helioviewer.jp2 as jp2
 import requests
-import tempfile
-import json
 import os
 import mimetypes
 
@@ -24,7 +21,6 @@ class TestVsoDownload(unittest.TestCase):
             self.fail("Test Fail: Could not compile downloaded sunpy vso script , possible error in script")
 
         locals = {};
-        import sys; sys.exit()
         exec(script_for_compile,globals(), locals)
 
         self.assertGreater(len(locals['data_aia_304']), 0)
