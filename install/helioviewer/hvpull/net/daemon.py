@@ -864,6 +864,8 @@ class ImageRetrievalDaemon:
     def get_servers(cls):
         """Returns a list of valid servers to interact with"""
         return {
+            "ccor2": "CCOR2DataServer",
+            "ccor1": "CCOR1DataServer",
             "lmsal2": "LMSALDataServer2",
             "lmsal": "LMSALDataServer",
             "soho": "SOHODataServer",

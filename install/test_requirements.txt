@@ -53,6 +53,7 @@ reproject==0.14.1
 requests==2.32.4
 requests-file==2.1.0
 requests-toolbelt==1.0.0
+responses==0.25.7
 scipy==1.16.0
 six==1.17.0
 soupsieve==2.7

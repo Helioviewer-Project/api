@@ -362,6 +362,8 @@ def create_datasource_table(cursor):
 (129, 'RHESSI', 'RHESSI 50-100keV VIS FWDFIT',   NULL, 1, 0, '', 0, 0, 0, 0),
 (130, 'RHESSI', 'RHESSI 100-300keV VIS FWDFIT',  NULL, 1, 0, '', 0, 0, 0, 0),
 (131,  'PUNCH', 'PUNCH WFI+NFI', NULL, 1, 0, '', 0, 0, 0, 0),
+(132, 'GOES-19', 'CCOR-1', NULL, 1, 0, '', 0, 0, 0, 0),
+(133, 'SWFO-L1', 'CCOR-2',  NULL, 1, 0, '', 0, 0, 0, 0),
 (2000, 'GOES-R SUVI 94', 'GOES-R SUVI 94',  NULL, 1, 0, '', 0, 0, 0, 0),
 (2001, 'GOES-R SUVI 131', 'GOES-R SUVI 131',  NULL, 1, 0, '', 0, 0, 0, 0),
 (2002, 'GOES-R SUVI 171', 'GOES-R SUVI 171',  NULL, 1, 0, '', 0, 0, 0, 0),
@@ -381,8 +383,6 @@ def create_datasource_table(cursor):
 (10011, 'XRT Be_thin/Any', NULL, NULL, 1, 0, '56,57,58,59,60,61', 10, 0, 0, 1),
 (10012, 'XRT C_poly/Any', NULL, NULL, 1, 0, '62,63,64,65,66,67', 11, 0, 0, 1),
 (10013, 'XRT Open/Any', NULL, NULL, 1, 0, '69,70,71,72,73,74', 12, 0, 0, 1);""")
-
-
 
 def create_datasource_property_table(cursor):
     """Creates a table with the known datasource properties"""
@@ -495,12 +495,12 @@ INSERT INTO `datasource_property` (`sourceId`, `label`, `name`, `fitsName`, `des
 (129, 'Observatory',    'RHESSI',           'RHESSI',          'RHESSI',          1),
 (130, 'Observatory',    'RHESSI',           'RHESSI',          'RHESSI',          1),
 (131, 'Observatory', 'PUNCH', 'PUNCH', 'PUNCH', 1),
-(2000, 'Observatory', 'GOES-R', 'GOES-R', 'GOES-R', 1),
-(2001, 'Observatory', 'GOES-R', 'GOES-R', 'GOES-R', 1),
-(2002, 'Observatory', 'GOES-R', 'GOES-R', 'GOES-R', 1),
-(2003, 'Observatory', 'GOES-R', 'GOES-R', 'GOES-R', 1),
-(2004, 'Observatory', 'GOES-R', 'GOES-R', 'GOES-R', 1),
-(2005, 'Observatory', 'GOES-R', 'GOES-R', 'GOES-R', 1),
+(2000, 'Observatory', 'GOES', 'GOES-R', 'GOES-R', 1),
+(2001, 'Observatory', 'GOES', 'GOES-R', 'GOES-R', 1),
+(2002, 'Observatory', 'GOES', 'GOES-R', 'GOES-R', 1),
+(2003, 'Observatory', 'GOES', 'GOES-R', 'GOES-R', 1),
+(2004, 'Observatory', 'GOES', 'GOES-R', 'GOES-R', 1),
+(2005, 'Observatory', 'GOES', 'GOES-R', 'GOES-R', 1),
 (0, 'Instrument', 'EIT', 'EIT', 'Extreme ultraviolet Imaging Telescope', 2),
 (1, 'Instrument', 'EIT', 'EIT', 'Extreme ultraviolet Imaging Telescope', 2),
 (2, 'Instrument', 'EIT', 'EIT', 'Extreme ultraviolet Imaging Telescope', 2),
@@ -919,7 +919,15 @@ INSERT INTO `datasource_property` (`sourceId`, `label`, `name`, `fitsName`, `des
 (127, 'Reconstruction', 'VIS FWDFIT',       'VIS_FWDFIT',      'VIS FWDFIT',      3),
 (128, 'Reconstruction', 'VIS FWDFIT',       'VIS_FWDFIT',      'VIS FWDFIT',      3),
 (129, 'Reconstruction', 'VIS FWDFIT',       'VIS_FWDFIT',      'VIS FWDFIT',      3),
-(130, 'Reconstruction', 'VIS FWDFIT',       'VIS_FWDFIT',      'VIS FWDFIT',      3);""")
+(130, 'Reconstruction', 'VIS FWDFIT',       'VIS_FWDFIT',      'VIS FWDFIT',      3),
+(132, 'Observatory', 'GOES' ,'GOES-19', 'GOES Observatory',1),
+(132, 'Instrument', 'CCOR-1', 'CCOR1', 'CCOR-1',2),
+(132, 'Detector', 'CCOR-1', '1', 'CCOR-1',3),
+(132, 'Measurement', 'white-light', 'white-light', 'White Light',4),
+(133, 'Observatory', 'SWFO-L1', 'SWFO-L1', 'SWFO-L1 Observatory',1),
+(133, 'Instrument', 'CCOR-2', 'CCOR2', 'CCOR-2',2),
+(133, 'Detector', 'CCOR-2', '1', 'CCOR-2',2),
+(133, 'Measurement', 'white-light', 'white-light', 'White Light',3);""")
 
 def create_movies_table(cursor):
     """Creates movie table
