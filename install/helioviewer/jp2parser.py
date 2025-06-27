@@ -198,10 +198,10 @@ class JP2parser:
         """
         header = self.get_header()
         if (patch_cunit):
-            # Patch for GOES CCOR1
+            # Patch for SWFO-L1 CCOR-2, CUNIT1 and 2 contain 'degrees'
             if (header[0]['CUNIT1'] == 'degrees' and header[0]['CUNIT2'] == 'degrees'):
-                header[0]['CUNIT1'] = 'degree'
-                header[0]['CUNIT2'] = 'degree'
+                header[0]['CUNIT1'] = 'deg'
+                header[0]['CUNIT2'] = 'deg'
             # General patch to get file to be parsed by sunpy
             else:
                 # Try fixing the header
