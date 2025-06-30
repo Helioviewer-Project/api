@@ -1,7 +1,6 @@
 <?php
 require_once sprintf('%s/../../vendor/autoload.php', __DIR__);
 require_once sprintf('%s/../config.php', __DIR__);
-require_once sprintf('%s/../../pre.php', __DIR__);
 require_once sprintf('%s/../../src/Database/ClientState.php', __DIR__);
 
 use Helioviewer\Api\Event\EventsStateManager;
