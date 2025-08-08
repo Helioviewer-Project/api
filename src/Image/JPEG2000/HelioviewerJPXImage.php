@@ -52,9 +52,11 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
         $directory = HV_JP2_DIR.'/movies/';
         // Add suffix to file name for middle frames request to differentiate them
         // from normal requests for caching or parallel-requests purposes.
-        $suffix         = $middleFrames ? 'mid' : '';
+        $suffix         = '';
         $filepath       = $directory.$filename.$suffix;
+
         $this->_jpxFile = $filepath;
+
 
         $this->_url = HV_JP2_ROOT_URL.'/movies/'.$filename;
 
@@ -133,6 +135,7 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
      * JPX movie will be regenerated with all the new frames.
      */
     private function _shouldGenerateNewJpx($db_frame_timestamps) {
+
         // Check if the file already exists
         $jpx_exists = file_exists($this->_jpxFile);
         $summary_exists = file_exists($this->_summaryFile);

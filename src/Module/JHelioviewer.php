@@ -150,7 +150,7 @@ class Module_JHelioviewer implements Module {
                 $this->_params['endTime'], $options['cadence'],
                 $options['linked'], $filename
             );
-            
+
             //Build Statistic
             include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
             $statistics = new Database_Statistics();
@@ -218,6 +218,7 @@ class Module_JHelioviewer implements Module {
                 $this->_params['endTimes'], $options['cadence'],
                 $options['linked'], $filename, true
             );
+
             //Build Statistic
             include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
             $statistics = new Database_Statistics();
@@ -348,7 +349,12 @@ class Module_JHelioviewer implements Module {
             $filename .= 'L';
         }
 
-        return str_replace(' ', '-', $filename).'CMP.jpx';
+        $hash_of_midpoints = md5($this->_params['startTimes'].">>".$this->_params['endTimes']);
+
+        $result_filename = str_replace(' ', '-', $filename);
+
+        return sprintf('%s.CMP%s.jpx', $result_filename, $hash_of_midpoints);
+
     }
 
     /**
