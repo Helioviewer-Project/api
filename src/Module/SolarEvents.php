@@ -16,6 +16,8 @@ require_once 'interface.Module.php';
 require_once HV_ROOT_DIR . "/../src/Helper/EventInterface.php";
 
 use Helioviewer\Api\Sentry\Sentry;
+use Helioviewer\Api\Event\EventsApi;
+use Helioviewer\Api\Event\EventsApiException;
 
 class Module_SolarEvents implements Module {
 
@@ -216,6 +218,7 @@ class Module_SolarEvents implements Module {
     public function events() {
         // The given time is the observation time.
         $observationTime = new DateTimeImmutable($this->_params['startTime']);
+
         // The query start time is 12 hours earlier.
         $start = $observationTime->sub(new DateInterval("PT12H"));
 
@@ -223,6 +226,22 @@ class Module_SolarEvents implements Module {
         // This results in a query of events over 24 hours with the given time
         // at the center.
         $length = new DateInterval('P1D');
+
+        // Handle CCMC source using new Events API
+        // This provides direct access to CCMC event data without going through the standard EventInterface
+        if (array_key_exists('sources', $this->_options) && $this->_options['sources'] === 'CCMC') {
+
+            try {
+                $eventsApi = new EventsApi();
+                $data = $eventsApi->getEventsForSource($observationTime, "CCMC");
+                
+                header("Content-Type: application/json");
+                echo json_encode($data);
+                return;
+            } catch (EventsApiException $e) {
+                Sentry::capture($e);
+            }
+        }
 
         // Check if any specific datasources were requested
         if (array_key_exists('sources', $this->_options)) {
