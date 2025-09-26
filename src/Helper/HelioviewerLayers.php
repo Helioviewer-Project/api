@@ -37,12 +37,6 @@ class Helper_HelioviewerLayers {
     public function __construct($layerString) {
 
         $this->_layerString = $layerString;
-        // validate layer string
-        if (!preg_match('/^[_\w\[\],\-:\.]+$/', $layerString)) {
-            throw new Exception('Invalid layer string', 255);
-        }
-
-
         $this->_db = new Database_ImgIndex();
 
 		//Fix Apache double encoding
@@ -50,6 +44,11 @@ class Helper_HelioviewerLayers {
 			array('%255B', '%255D', '%255b', '%255d', '%5b', '%5d', '%5B', '%5D', '%25255b', '%25255d', '%25255B', '%25255D'),
 			array('[', ']', '[', ']', '[', ']', '[', ']', '[', ']', '[', ']'),
 			$layerString);
+
+        // validate layer string
+        if (!preg_match('/^[_\w\[\],\-:\.]+$/', $layerString)) {
+            throw new Exception('Invalid layer string', 255);
+        }
 
         $layerStringArray = explode('],[', substr($layerString, 1, -1));
 
