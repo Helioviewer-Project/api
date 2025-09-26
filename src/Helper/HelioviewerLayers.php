@@ -37,6 +37,11 @@ class Helper_HelioviewerLayers {
     public function __construct($layerString) {
 
         $this->_layerString = $layerString;
+        // validate layer string
+        if (!preg_match('/^[_\w\[\],\-:\.]+$/', $layerString)) {
+            throw new Exception('Invalid layer string', 255);
+        }
+
 
         $this->_db = new Database_ImgIndex();
 
