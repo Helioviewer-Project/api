@@ -62,6 +62,21 @@ final class ValidatorTest extends TestCase
         $this->assertTrue(true);
     }
 
+    public function test_ValidateLayerArray_bad(): void
+    {
+        // The expected layer string to be given
+        $badLayerData = array(
+            'layerstring' => '[SDO,./something,304,1,100,0,60,1,2022-05-19T18:24:31.000Z],[STEREO_A,SECCHI,EUVI,171,2,100,0,60,1,2022-04-11T11:24:40.000Z]'
+        );
+
+        $expected = array(
+            'layer' => array('layerstring')
+        );
+
+        $this->expectException(\InvalidArgumentException::class);
+        Validation_InputValidator::checkInput($expected, $badLayerData, $badLayerData);
+    }
+
     public function test_ValidateArrayIntegersProblem1(): void
     {
         // The expected layer string to be given
