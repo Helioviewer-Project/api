@@ -144,7 +144,7 @@ class Validation_InputValidator
     {
         foreach ($strings as $str) {
             if (isset($params[$str])) {
-                if (!preg_match('/^([\[\]\,0-9]+)$/', $params[$str])) {
+                if (!preg_match('/^([ \[\]\,0-9]+)$/', $params[$str])) {
                     throw new InvalidArgumentException(
                         "Invalid value for $str. Value must be a list of numeric values", 25
                     );
@@ -166,7 +166,7 @@ class Validation_InputValidator
     {
         foreach ($strings as $str) {
             if (isset($params[$str])) {
-                if (!preg_match('/^[a-zA-Z0-9_,\-]*$/', $params[$str])) {
+                if (!preg_match('/^[\[\]a-zA-Z0-9_,\-]*$/', $params[$str])) {
                     throw new InvalidArgumentException(
                         "Invalid value for $str. Valid strings must consist of only letters, numbers, underscores, and commas", 25
                     );
