@@ -117,4 +117,46 @@ final class ValidatorTest extends TestCase
         // checkInput will raise an exception if it fails, so assertTrue means
         // that no exception was raised.
     }
+
+    public function test_ValidateAlphanumList(): void {
+        // The expected layer string to be given
+        $input = array(
+            'data' => 'this,should,work-'
+        );
+
+        $rules = array(
+            'alphanumlist' => array('data')
+        );
+
+        Validation_InputValidator::checkInput($rules, $input, $input) ;
+
+        $this->assertEquals($input, [
+            'data' => 'this,should,work-'
+        ]);
+    }
+
+    public function test_ValidateAlphanumList_fail(): void {
+        // The expected layer string to be given
+        $input = array(
+            'data' => '/'
+        );
+
+        $rules = array(
+            'alphanumlist' => array('data')
+        );
+
+        $this->expectException(\InvalidArgumentException::class);
+        Validation_InputValidator::checkInput($rules, $input, $input) ;
+    }
+
+    public function test_CheckNumberList(): void {
+        $input = array('data' => "1,2,3,4,5");
+        $rules = array('numberlist' => array('data'));
+        Validation_InputValidator::checkInput($rules, $input, $input);
+        $this->assertEquals($input, ['data' => '1,2,3,4,5']);
+
+        $input = array('data' => "1,2,3,4,5,abc");
+        $this->expectException(\InvalidArgumentException::class);
+        Validation_InputValidator::checkInput($rules, $input, $input);
+    }
 }
