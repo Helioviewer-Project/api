@@ -42,20 +42,22 @@ class Validation_InputValidator
     {
         // Validation checks
         $checks = array(
-            "required"   => "checkForMissingParams",
-            "alphanum"   => "checkAlphaNumericStrings",
-            "ints"       => "checkInts",
-            "array_ints" => "checkOfArrayInts",
-            "floats"     => "checkFloats",
-            "bools"      => "checkBools",
-            "dates"      => "checkDates",
-            "encoded"    => "checkURLEncodedStrings",
-            "urls"       => "checkURLs",
-            "files"      => "checkFilePaths",
-            "uuids"      => "checkUUIDs",
-            "layer"      => "checkLayerValidity",
-            "choices"    => "checkChoices",
-            "schema"     => "checkJsonSchema"
+            "required"     => "checkForMissingParams",
+            "alphanum"     => "checkAlphaNumericStrings",
+            "alphanumlist" => "checkAlphaNumericLists",
+            "ints"         => "checkInts",
+            "array_ints"   => "checkOfArrayInts",
+            "floats"       => "checkFloats",
+            "bools"        => "checkBools",
+            "dates"        => "checkDates",
+            "encoded"      => "checkURLEncodedStrings",
+            "urls"         => "checkURLs",
+            "files"        => "checkFilePaths",
+            "uuids"        => "checkUUIDs",
+            "layer"        => "checkLayerValidity",
+            "choices"      => "checkChoices",
+            "schema"       => "checkJsonSchema",
+            "numberlist"   => "checkNumberList"
         );
 
         // Run validation checks
@@ -83,13 +85,11 @@ class Validation_InputValidator
         // Unset any unexpected request parameters
         foreach(array_keys($_REQUEST) as $param) {
             if (!in_array($param, $allowed)) {
-                /*
-                throw new InvalidArgumentException(
-                    'Unrecognized parameter <b>'.$param.'</b>.', 27);
-                */
                 unset($_REQUEST[$param]);
                 unset($_GET[$param]);
                 unset($_POST[$param]);
+                unset($input[$param]);
+                unset($optional[$param]);
             }
         }
     }
@@ -140,6 +140,49 @@ class Validation_InputValidator
      *
      * @return void
      */
+    public static function checkNumberList($strings, &$params)
+    {
+        foreach ($strings as $str) {
+            if (isset($params[$str])) {
+                if (!preg_match('/^([\[\]\,0-9]+)$/', $params[$str])) {
+                    throw new InvalidArgumentException(
+                        "Invalid value for $str. Value must be a list of numeric values", 25
+                    );
+                }
+            }
+        }
+    }
+
+    /**
+     * Checks alphanumeric entries to make sure they do not include invalid characters
+     * Allows commas
+     *
+     * @param array $strings A list of alphanumeric parameters which are used by an action.
+     * @param array &$params The parameters that were passed in
+     *
+     * @return void
+     */
+    public static function checkAlphaNumericLists($strings, &$params)
+    {
+        foreach ($strings as $str) {
+            if (isset($params[$str])) {
+                if (!preg_match('/^[a-zA-Z0-9_,\-]*$/', $params[$str])) {
+                    throw new InvalidArgumentException(
+                        "Invalid value for $str. Valid strings must consist of only letters, numbers, underscores, and commas", 25
+                    );
+                }
+            }
+        }
+    }
+
+    /**
+     * Checks alphanumeric entries to make sure they do not include invalid characters
+     *
+     * @param array $strings A list of alphanumeric parameters which are used by an action.
+     * @param array &$params The parameters that were passed in
+     *
+     * @return void
+     */
     public static function checkAlphaNumericStrings($strings, &$params)
     {
         foreach ($strings as $str) {
@@ -152,6 +195,7 @@ class Validation_InputValidator
             }
         }
     }
+
 
     /**
      * Typecasts boolean strings or unset optional params to booleans
