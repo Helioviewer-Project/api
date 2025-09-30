@@ -51,20 +51,6 @@ class Module_SolarEvents implements Module {
         }
     }
 
-    /**
-     * Gets a JSON-formatted list of the Feature Recognition Methods which have
-     * associated event by event Unique ID or Archive ID
-     *
-     * @return void
-     */
-    public function getEvent() {
-        include_once HV_ROOT_DIR.'/../src/Event/HEKAdapter.php';
-
-        $hek = new Event_HEKAdapter();
-
-        header('Content-type: application/json');
-        echo $hek->getEvent((isset($this->_params['id']) ? intval($this->_params['id']) : 0), $this->_params['kb_archivid']);
-    }
 
     /**
      * Gets a JSON-formatted list of the Feature Recognition Methods which have
@@ -282,11 +268,6 @@ class Module_SolarEvents implements Module {
             );
             break;
 
-        case 'getEvent':
-            $expected = array(
-                'optional' => array('id', 'kb_archivid')
-            );
-            break;
 
         case 'getEvents':
             $expected = array(
@@ -325,18 +306,20 @@ class Module_SolarEvents implements Module {
                 'optional' => array('eventType', 'cacheOnly', 'force',
                                     'ar_filter', 'sources'),
                 'bools'    => array('cacheOnly','force','ar_filter'),
-                'dates'    => array('startTime')
+                'dates'    => array('startTime'),
+                'alphanumlist' => array('eventType', 'sources')
             );
             break;
         default:
+            $expected = array();
             break;
         }
 
         // Check input
         if ( isset($expected) ) {
 
-            Sentry::setContext('Helioviewer', [ 
-                'validation_rules' => $expected 
+            Sentry::setContext('Helioviewer', [
+                'validation_rules' => $expected
             ]);
 
             Validation_InputValidator::checkInput($expected, $this->_params, $this->_options);
