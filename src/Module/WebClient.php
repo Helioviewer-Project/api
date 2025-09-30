@@ -1847,6 +1847,7 @@ class Module_WebClient implements Module {
             );
             break;
         default:
+            $expected = array();
             break;
         }
 
