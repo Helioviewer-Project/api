@@ -1544,14 +1544,16 @@ class Module_Movies implements Module {
                                     'scale', 'scaleType', 'scaleX', 'scaleY',
                                     'movieLength', 'watermark', 'width',
                                     'height', 'x0', 'y0', 'x1', 'x2',
-                                    'y1', 'y2', 'callback', 'size', 'movieIcons', 'followViewport', 'reqObservationDate', 'switchSources'),
+                                    'y1', 'y2', 'callback', 'size', 'movieIcons', 'followViewport', 'reqObservationDate', 'switchSources',
+                                    'celestialBodiesLabels', 'celestialBodiesTrajectories'),
                 'alphanum' => array('format', 'scaleType', 'callback'),
                 'bools'    => array('watermark', 'eventsLabels', 'scale', 'movieIcons', 'followViewport', 'switchSources'),
                 'dates'    => array('startTime', 'endTime', 'reqObservationDate'),
                 'floats'   => array('imageScale', 'frameRate', 'movieLength',
                                     'x0', 'y0', 'x1', 'x2', 'y1', 'y2',
                                     'scaleX', 'scaleY'),
-                'ints'     => array('maxFrames', 'width', 'height', 'size')
+                'ints'     => array('maxFrames', 'width', 'height', 'size'),
+                "layer"    => array('layers')
             );
             break;
         case 'postMovie':
@@ -1563,8 +1565,8 @@ class Module_Movies implements Module {
         case 'reQueueMovie':
             $expected = array(
                 'required' => array('id'),
-                'optional' => array('force', 'callback'),
-                'alphanum' => array('id', 'callback'),
+                'optional' => array('force', 'callback', 'format'),
+                'alphanum' => array('id', 'callback', 'format'),
                 'bools'    => array('force')
             );
             break;
@@ -1607,14 +1609,16 @@ class Module_Movies implements Module {
                 'alphanum' => array('id'),
                 'bools'    => array('share')
             );
+            break;
         default:
+            $expected = array();
             break;
         }
 
         // Check input
         if ( isset($expected) ) {
-            Sentry::setContext('Helioviewer', [ 
-                'validation_rules' => $expected 
+            Sentry::setContext('Helioviewer', [
+                'validation_rules' => $expected
             ]);
 
             Validation_InputValidator::checkInput($expected, $this->_params,$this->_options);
