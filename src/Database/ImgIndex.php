@@ -93,8 +93,8 @@ class Database_ImgIndex {
                 (bool)$watermark,
                 $this->_dbConnection->link->real_escape_string($layers),
                 bindec($this->_dbConnection->link->real_escape_string((binary)$bitmask)),
-                $old_events_layer_string, //  eventsSourceString is always empty not used any more
-                $old_events_labels_bool, // eventLabels is not used anymore
+                $this->_dbConnection->link->real_escape_string($old_events_layer_string), //  eventsSourceString is always empty not used any more
+                $this->_dbConnection->link->real_escape_string($old_events_labels_bool), // eventLabels is not used anymore
                 $this->_dbConnection->link->real_escape_string($eventsStateString),
                 (bool)$movieIcons,
                 (bool)$scale,
@@ -103,8 +103,8 @@ class Database_ImgIndex {
                 (float)$scaleY,
                 (int)$numLayers,
                 (bool)$switchSources,
-                $celestialLabels,
-                $celestialTrajectories
+                $this->_dbConnection->link->real_escape_string($celestialLabels),
+                $this->_dbConnection->link->real_escape_string($celestialTrajectories)
                );
 
         try {
@@ -250,8 +250,7 @@ class Database_ImgIndex {
                  .     "format "  . " ='%s' "
                  . "LIMIT 1;",
                  (int)$movieId,
-                 $this->_dbConnection->link->real_escape_string(
-                    $format)
+                 $this->_dbConnection->link->real_escape_string($format)
                );
         try {
             $result = $this->_dbConnection->query($sql);
@@ -287,8 +286,7 @@ class Database_ImgIndex {
                  . "LIMIT 1;",
                  (int)$procTime,
                  (int)$movieId,
-                 $this->_dbConnection->link->real_escape_string(
-                    $format)
+                 $this->_dbConnection->link->real_escape_string($format)
                );
         try {
             $result = $this->_dbConnection->query($sql);
@@ -611,8 +609,7 @@ class Database_ImgIndex {
                  . "ORDER BY date DESC "
                  . "LIMIT 1;",
                  (int)$sourceId,
-                 $this->_dbConnection->link->real_escape_string(
-                    $datestr)
+                 $this->_dbConnection->link->real_escape_string($datestr)
                );
         try {
             $result = $this->_dbConnection->query($sql);
@@ -658,8 +655,7 @@ class Database_ImgIndex {
                  . "ORDER BY date ASC "
                  . "LIMIT 1;",
                  (int)$sourceId,
-                 $this->_dbConnection->link->real_escape_string(
-                    $datestr)
+                 $this->_dbConnection->link->real_escape_string($datestr)
                );
         try {
             $result = $this->_dbConnection->query($sql);
