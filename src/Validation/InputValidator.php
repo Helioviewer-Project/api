@@ -42,23 +42,21 @@ class Validation_InputValidator
     {
         // Validation checks
         $checks = array(
-            "required"     => "checkForMissingParams",
-            "alphanum"     => "checkAlphaNumericStrings",
-            "alphanumlist" => "checkAlphaNumericLists",
-            "event_type"   => "checkEventType",
-            "ints"         => "checkInts",
-            "array_ints"   => "checkOfArrayInts",
-            "floats"       => "checkFloats",
-            "bools"        => "checkBools",
-            "dates"        => "checkDates",
-            "encoded"      => "checkURLEncodedStrings",
-            "urls"         => "checkURLs",
-            "files"        => "checkFilePaths",
-            "uuids"        => "checkUUIDs",
-            "layer"        => "checkLayerValidity",
-            "choices"      => "checkChoices",
-            "schema"       => "checkJsonSchema",
-            "numberlist"   => "checkNumberList"
+            "required"      => "checkForMissingParams",
+            "alphanum"      => "checkAlphaNumericStrings",
+            "alphanumlist"  => "checkAlphaNumericLists",
+            "event_type"    => "checkEventType",
+            "ints"          => "checkInts",
+            "array_ints"    => "checkOfArrayInts",
+            "floats"        => "checkFloats",
+            "bools"         => "checkBools",
+            "dates"         => "checkDates",
+            "encoded"       => "checkURLEncodedStrings",
+            "urls"          => "checkURLs",
+            "uuids"         => "checkUUIDs",
+            "layer"         => "checkLayerValidity",
+            "choices"       => "checkChoices",
+            "schema"        => "checkJsonSchema"
         );
 
         // Run validation checks
@@ -135,27 +133,6 @@ class Validation_InputValidator
 
     /**
      * Checks alphanumeric entries to make sure they do not include invalid characters
-     *
-     * @param array $strings A list of alphanumeric parameters which are used by an action.
-     * @param array &$params The parameters that were passed in
-     *
-     * @return void
-     */
-    public static function checkNumberList($strings, &$params)
-    {
-        foreach ($strings as $str) {
-            if (isset($params[$str])) {
-                if (!preg_match('/^([ \[\]\,0-9]+)$/', $params[$str])) {
-                    throw new InvalidArgumentException(
-                        "Invalid value for $str. Value must be a list of numeric values", 25
-                    );
-                }
-            }
-        }
-    }
-
-    /**
-     * Checks alphanumeric entries to make sure they do not include invalid characters
      * Allows commas
      *
      * @param array $strings A list of alphanumeric parameters which are used by an action.
@@ -221,29 +198,6 @@ class Validation_InputValidator
         }
     }
 
-    /**
-     * Checks filepaths to check for attempts to access parent directories
-     *
-     * @param array $files   Filepaths that should be validated
-     * @param array &$params The parameters that were passed in
-     *
-     * @return void
-     */
-    public static function checkFilePaths($files, &$params)
-    {
-        foreach ($files as $file) {
-            if (isset($params[$file])) {
-                if (strpos($params[$file], '..')) {
-                    throw new InvalidArgumentException("Invalid file requested: .. not allowed in filenames.", 25);
-                } elseif (preg_match('/[^\/.-\w]/', $params[$file])) {
-                    throw new InvalidArgumentException(
-                        "Invalid file requested. Valid characters for filenames include letters, " .
-                        "digits, underscores, hyphens and periods.", 25
-                    );
-                }
-            }
-        }
-    }
 
     /**
      * Typecasts validates and fixes types for integer parameters
@@ -503,9 +457,9 @@ class Validation_InputValidator
     }
 
     /**
-     * Checks to make sure all required parameters were passed in.
+     * Checks to make sure given input is a list of event types
      *
-     * @param array $required A list of the required parameters for a given action
+     * @param array $required List of parameters to check.
      * @param array &$params  The parameters that were passed in
      *
      * @return void
