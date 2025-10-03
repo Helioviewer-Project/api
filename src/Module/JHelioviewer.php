@@ -477,7 +477,7 @@ class Module_JHelioviewer implements Module {
                 'optional'   => array('jpip', 'linked', 'verbose', 'cadence'),
                 'bools'      => array('jpip', 'verbose', 'linked'),
                 'ints'       => array('sourceId', 'cadence'),
-                'numberlist' => array('startTimes', 'endTimes')
+                'array_ints' => array('startTimes', 'endTimes')
             );
             break;
 
