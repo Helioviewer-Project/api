@@ -44,12 +44,12 @@
         "celestialBodiesLabels": {
             "type": "string",
             "maxLength": 1000,
-            "pattern": "^[a-zA-Z_\\-,]+$"
+            "pattern": "^[a-zA-Z_\\-,]*$"
         },
         "celestialBodiesTrajectories": {
             "type": "string",
             "maxLength": 1000,
-            "pattern": "^[a-zA-Z_\\-,]+$"
+            "pattern": "^[a-zA-Z_\\-,]*$"
         },
         "callback": {
             "type": "string",

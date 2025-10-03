@@ -468,7 +468,7 @@ class Validation_InputValidator
     {
         foreach ($required as $req) {
             if (isset($params[$req])) {
-                if (!preg_match('/^[*\[\];,a-zA-Z0-9_.\\\()+]+$/', $params[$req])) {
+                if (!preg_match('/^[*\[\];,a-zA-Z0-9_.\\\()+]*$/', $params[$req])) {
                     throw new InvalidArgumentException(
                         "Invalid value for $req. Value must be a list of event types [AR,FL,etc]", 25
                     );
