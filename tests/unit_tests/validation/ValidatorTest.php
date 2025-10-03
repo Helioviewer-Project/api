@@ -166,9 +166,9 @@ final class ValidatorTest extends TestCase
 
     public function test_CheckNumberList(): void {
         $input = array('data' => "1,2,3,4,5");
-        $rules = array('numberlist' => array('data'));
+        $rules = array('array_ints' => array('data'));
         Validation_InputValidator::checkInput($rules, $input, $input);
-        $this->assertEquals($input, ['data' => '1,2,3,4,5']);
+        $this->assertEquals($input, ['data' => [1,2,3,4,5]]);
 
         $input = array('data' => "1,2,3,4,5,abc");
         $this->expectException(\InvalidArgumentException::class);
