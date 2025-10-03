@@ -1796,7 +1796,8 @@ class Module_WebClient implements Module {
                 'dates'    => array('date'),
                 'bools'    => array('display', 'watermark', 'eventLabels',
                                     'scale', 'movieIcons', 'switchSources'),
-                'alphanum' => array('scaleType', 'callback'),
+                'alphanum' => array('scaleType', 'callback', 'celestialBodiesLabels', 'celestialBodiesTrajectories'),
+                'event_type' => array('events'),
                 'choices'  => array('scaleType' => ['earth', 'scalebar']),
                 'layer'    => array('layers')
             );
@@ -1821,7 +1822,7 @@ class Module_WebClient implements Module {
                 "ints"     => array('width', 'height'),
                 "dates"    => array('startDate', 'endDate'),
                 "alphanum" => array('callback', 'movieId'),
-                "numberlist" => array('sourceIds'),
+                "array_ints" => array('sourceIds'),
                 'choices'  => array('lang' => ['sswidl', 'sunpy'])
             );
             break;

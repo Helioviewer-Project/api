@@ -1546,14 +1546,15 @@ class Module_Movies implements Module {
                                     'height', 'x0', 'y0', 'x1', 'x2',
                                     'y1', 'y2', 'callback', 'size', 'movieIcons', 'followViewport', 'reqObservationDate', 'switchSources',
                                     'celestialBodiesLabels', 'celestialBodiesTrajectories'),
-                'alphanum' => array('format', 'scaleType', 'callback'),
+                'alphanum' => array('format', 'scaleType', 'callback', 'celestialBodiesLabels', 'celestialBodiesTrajectories'),
                 'bools'    => array('watermark', 'eventsLabels', 'scale', 'movieIcons', 'followViewport', 'switchSources'),
                 'dates'    => array('startTime', 'endTime', 'reqObservationDate'),
                 'floats'   => array('imageScale', 'frameRate', 'movieLength',
                                     'x0', 'y0', 'x1', 'x2', 'y1', 'y2',
                                     'scaleX', 'scaleY'),
                 'ints'     => array('maxFrames', 'width', 'height', 'size'),
-                "layer"    => array('layers')
+                "layer"    => array('layers'),
+                'event_type' => array('events')
             );
             break;
         case 'postMovie':
@@ -1572,9 +1573,7 @@ class Module_Movies implements Module {
             break;
         case 'uploadMovieToYouTube':
             $expected = array(
-                //'required' => array('id'),
-                'optional' => array('id', 'title', 'description', 'tags', 'share',
-                                    'token', 'code', 'html'),
+                'optional' => array('id', 'title', 'description', 'tags', 'share', 'html'),
                 'alphanum' => array('id'),
                 'bools'    => array('share', 'html')
             );

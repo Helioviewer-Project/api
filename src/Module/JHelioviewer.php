@@ -487,6 +487,7 @@ class Module_JHelioviewer implements Module {
                                     'layers'),
                 'floats'   => array('imageScale'),
                 'dates'    => array('startTime', 'endTime'),
+                'layer'    => array('layers')
             );
             break;
 
