@@ -1758,7 +1758,8 @@ class Module_WebClient implements Module {
                 'optional' => array('resolution','currentDate','startDate','endDate','callback','imageLayers','eventLayers'),
                 'alphanum' => array('resolution', 'callback'),
                 'ints'     => array('startDate', 'endDate', 'currentDate'),
-                'layer'    => array('imageLayers')
+                'layer'    => array('imageLayers'),
+                'event_type' => array('eventLayers')
             );
             break;
         case 'getDataCoverageTimeline':

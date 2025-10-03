@@ -45,6 +45,7 @@ class Validation_InputValidator
             "required"     => "checkForMissingParams",
             "alphanum"     => "checkAlphaNumericStrings",
             "alphanumlist" => "checkAlphaNumericLists",
+            "event_type"   => "checkEventType",
             "ints"         => "checkInts",
             "array_ints"   => "checkOfArrayInts",
             "floats"       => "checkFloats",
@@ -497,6 +498,27 @@ class Validation_InputValidator
                 include_once HV_ROOT_DIR.'/../src/Helper/ErrorHandler.php';
                 logException($exc, "SchemaValidation_");
                 throw new InvalidArgumentException("Invalid JSON: " . print_r($error, true));
+            }
+        }
+    }
+
+    /**
+     * Checks to make sure all required parameters were passed in.
+     *
+     * @param array $required A list of the required parameters for a given action
+     * @param array &$params  The parameters that were passed in
+     *
+     * @return void
+     */
+    public static function checkEventType($required, &$params)
+    {
+        foreach ($required as $req) {
+            if (isset($params[$req])) {
+                if (!preg_match('/^[*\[\];,a-zA-Z0-9_.\\\()+]+$/', $params[$req])) {
+                    throw new InvalidArgumentException(
+                        "Invalid value for $req. Value must be a list of event types [AR,FL,etc]", 25
+                    );
+                }
             }
         }
     }

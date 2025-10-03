@@ -174,4 +174,21 @@ final class ValidatorTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         Validation_InputValidator::checkInput($rules, $input, $input);
     }
+
+    public function test_CheckEventType(): void {
+        $input = array('data' => "**");
+        $rules = array('event_type' => array('data'));
+        Validation_InputValidator::checkInput($rules, $input, $input);
+        $this->assertEquals($input, ['data' => '**']);
+
+        $input = array('data' => "[AR,FL;ER]");
+        $rules = array('event_type' => array('data'));
+        Validation_InputValidator::checkInput($rules, $input, $input);
+        $this->assertEquals($input, ['data' => '[AR,FL;ER]']);
+
+        $input = array('data' => "--");
+        $rules = array('event_type' => array('data'));
+        $this->expectException(\InvalidArgumentException::class);
+        Validation_InputValidator::checkInput($rules, $input, $input);
+    }
 }

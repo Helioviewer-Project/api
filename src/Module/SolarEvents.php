@@ -275,7 +275,8 @@ class Module_SolarEvents implements Module {
                 'optional' => array('eventType', 'cacheOnly', 'force',
                                     'ar_filter'),
                 'bools'    => array('cacheOnly','force','ar_filter'),
-                'dates'    => array('startTime')
+                'dates'    => array('startTime'),
+                'alphanum' => array('eventType')
             );
             break;
         case 'getEventsByEventLayers':
@@ -283,7 +284,8 @@ class Module_SolarEvents implements Module {
                 'required' => array('startTime','eventLayers'),
                 'optional' => array('ar_filter'),
                 'bools'    => array('ar_filter'),
-                'dates'    => array('startTime')
+                'dates'    => array('startTime'),
+                'event_type' => array('eventLayers')
             );
             break;
         case 'getEventFRMs':
