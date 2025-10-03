@@ -434,13 +434,8 @@ class Module_JHelioviewer implements Module {
 <?php
     }
 
-    /**
-     * Validate the requested action and associated input parameters.
-     *
-     * @return void
-     */
-    public function validate() {
 
+    public function getValidationRules(): array {
         switch($this->_params['action']) {
 
         case 'getJP2Image':
@@ -495,6 +490,16 @@ class Module_JHelioviewer implements Module {
             $expected = array();
             break;
         } // end switch block
+        return $expected;
+    }
+
+    /**
+     * Validate the requested action and associated input parameters.
+     *
+     * @return void
+     */
+    public function validate() {
+        $expected = $this->getValidationRules();
 
         Sentry::setContext('Helioviewer', [
             'validation_rules' => $expected

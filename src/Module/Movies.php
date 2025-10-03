@@ -1501,13 +1501,7 @@ class Module_Movies implements Module {
         return $quality;
     }
 
-    /**
-     * validate
-     *
-     * @return bool Returns true if input parameters are valid
-     */
-    public function validate() {
-
+    public function getValidationRules(): array {
         switch( $this->_params['action'] ) {
 
         case 'downloadMovie':
@@ -1575,7 +1569,8 @@ class Module_Movies implements Module {
             $expected = array(
                 'optional' => array('id', 'title', 'description', 'tags', 'share', 'html'),
                 'alphanum' => array('id'),
-                'bools'    => array('share', 'html')
+                'bools'    => array('share', 'html'),
+                'any' => array('title', 'description', 'tags')
             );
             break;
         case 'getUserVideos':
@@ -1606,7 +1601,8 @@ class Module_Movies implements Module {
                 'required' => array('id', 'title', 'description', 'tags'),
                 'optional' => array('share'),
                 'alphanum' => array('id'),
-                'bools'    => array('share')
+                'bools'    => array('share'),
+                'any' => array('title', 'description', 'tags')
             );
             break;
         default:
@@ -1614,6 +1610,16 @@ class Module_Movies implements Module {
             break;
         }
 
+        return $expected;
+    }
+
+    /**
+     * validate
+     *
+     * @return bool Returns true if input parameters are valid
+     */
+    public function validate() {
+        $expected = $this->getValidationRules();
         // Check input
         if ( isset($expected) ) {
             Sentry::setContext('Helioviewer', [

@@ -25,6 +25,25 @@ use Opis\JsonSchema\{
 class Validation_InputValidator
 {
     const DATE_MESSAGE = "Please enter a date of the form 2003-10-06T00:00:00.000Z";
+    const AVAILABLE_RULES = array(
+            "required"      => "checkForMissingParams",
+            "alphanum"      => "checkAlphaNumericStrings",
+            "alphanumlist"  => "checkAlphaNumericLists",
+            "event_type"    => "checkEventType",
+            "ints"          => "checkInts",
+            "array_ints"    => "checkOfArrayInts",
+            "floats"        => "checkFloats",
+            "bools"         => "checkBools",
+            "dates"         => "checkDates",
+            "encoded"       => "checkURLEncodedStrings",
+            "urls"          => "checkURLs",
+            "uuids"         => "checkUUIDs",
+            "layer"         => "checkLayerValidity",
+            "choices"       => "checkChoices",
+            "schema"        => "checkJsonSchema",
+            "any"           => "ignore"
+        );
+
 
     /**
      * Validates and type-casts API Request parameters
@@ -40,27 +59,8 @@ class Validation_InputValidator
      */
     public static function checkInput(&$expected, &$input, &$optional)
     {
-        // Validation checks
-        $checks = array(
-            "required"      => "checkForMissingParams",
-            "alphanum"      => "checkAlphaNumericStrings",
-            "alphanumlist"  => "checkAlphaNumericLists",
-            "event_type"    => "checkEventType",
-            "ints"          => "checkInts",
-            "array_ints"    => "checkOfArrayInts",
-            "floats"        => "checkFloats",
-            "bools"         => "checkBools",
-            "dates"         => "checkDates",
-            "encoded"       => "checkURLEncodedStrings",
-            "urls"          => "checkURLs",
-            "uuids"         => "checkUUIDs",
-            "layer"         => "checkLayerValidity",
-            "choices"       => "checkChoices",
-            "schema"        => "checkJsonSchema"
-        );
-
         // Run validation checks
-        foreach ($checks as $name => $method) {
+        foreach (Validation_InputValidator::AVAILABLE_RULES as $name => $method) {
             if (isset($expected[$name])) {
                 Validation_InputValidator::$method($expected[$name], $input);
             }
@@ -478,5 +478,11 @@ class Validation_InputValidator
             }
         }
     }
+
+    /**
+     * Unchecked input.
+     * Use sparingly and bravely.
+     */
+    public static function ignore($_, $__) {}
 }
 ?>

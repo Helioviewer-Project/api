@@ -253,12 +253,7 @@ class Module_SolarEvents implements Module {
         echo json_encode($data);
     }
 
-    /**
-     * validate
-     *
-     * @return bool Returns true if input parameters are valid
-     */
-    public function validate() {
+    public function getValidationRules(): array {
         switch( $this->_params['action'] ) {
 
         case 'importEvents':
@@ -316,7 +311,16 @@ class Module_SolarEvents implements Module {
             $expected = array();
             break;
         }
+        return $expected;
+    }
 
+    /**
+     * validate
+     *
+     * @return bool Returns true if input parameters are valid
+     */
+    public function validate() {
+        $expected = $this->getValidationRules();
         // Check input
         if ( isset($expected) ) {
 

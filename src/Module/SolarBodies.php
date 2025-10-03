@@ -440,13 +440,7 @@ class Module_SolarBodies implements Module {
         echo $json;
     }
 
-    /**
-     * validate
-     *
-     * @return bool Returns true if input parameters are valid
-     */
-    public function validate() {
-
+    public function getValidationRules(): array {
         switch( $this->_params['action'] ) {
             case 'getSolarBodies':
                 $expected = array(
@@ -466,6 +460,17 @@ class Module_SolarBodies implements Module {
                 $expected = array();
                 break;
         }
+        return $expected;
+    }
+
+    /**
+     * validate
+     *
+     * @return bool Returns true if input parameters are valid
+     */
+    public function validate() {
+        $expected = $this->getValidationRules();
+
         // Check input
         if ( isset($expected) ) {
 

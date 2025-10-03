@@ -1659,13 +1659,7 @@ class Module_WebClient implements Module {
         return $date;
     }
 
-    /**
-     * Handles input validation
-     *
-     * @return bool Returns true if the input is valid with respect to the
-     *              requested action.
-     */
-    public function validate() {
+    public function getValidationRules(): array {
         $expected = array();
         switch( $this->_params['action'] ) {
 
@@ -1852,7 +1846,17 @@ class Module_WebClient implements Module {
             $expected = array();
             break;
         }
+        return $expected;
+    }
 
+    /**
+     * Handles input validation
+     *
+     * @return bool Returns true if the input is valid with respect to the
+     *              requested action.
+     */
+    public function validate() {
+        $expected = $this->getValidationRules();
         Sentry::setContext('Helioviewer', [
             'validation_rules' => $expected
         ]);
