@@ -233,7 +233,9 @@ class Validation_InputValidator
     {
         foreach ($ints as $int) {
             if (isset($params[$int])) {
-
+                if (substr($params[$int], 0, 1) === '[' && substr($params[$int], -1) === ']') {
+                    $params[$int] = substr($params[$int], 1, -1);
+                }
 
                 $integers_to_check = explode(',',$params[$int]);
                 $validated_ints = [];
