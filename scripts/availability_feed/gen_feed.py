@@ -20,7 +20,6 @@ HV_FEED_HOST="https://api.helioviewer.org"
 import argparse
 import pickle
 import os
-import sys
 
 from feedgen.feed import FeedGenerator
 from feedgen.util import formatRFC2822
