@@ -8,8 +8,7 @@ use GuzzleHttp\ClientInterface;
 use Helioviewer\Api\Sentry\Sentry;
 
 class EventsApi {
-    
-    private string $baseUrl = "http://ec2-44-219-199-246.compute-1.amazonaws.com:8082";
+
     private ClientInterface $client;
 
     /**
@@ -19,7 +18,13 @@ class EventsApi {
      */
     public function __construct(ClientInterface $client = null)
     {
-        $this->client = $client ?? new Client();
+        $this->client = $client ?? new Client([
+            'timeout' => 4,
+            'headers' => [
+                'Accept' => 'application/json',
+                'User-Agent' => 'Helioviewer-API/2.0'
+            ]
+        ]);
     }
     
     /**
@@ -30,12 +35,14 @@ class EventsApi {
      * @return array Array of event data
      * @throws EventsApiException on API errors or unexpected responses
      */
-    public function getEventsForSource(DateTimeInterface $observationTime, string $source): array {
+    public function getEventsForSource(DateTimeInterface $observationTime, string $source): array 
+    {
         // Build the API URL: /api/v1/events/{source}/observation/{datetime}
         $formattedTime = $observationTime->format('Y-m-d H:i:s');
         $encodedTime = urlencode($formattedTime);
-        
-        $url = $this->baseUrl . "/api/v1/events/{$source}/observation/{$encodedTime}";
+
+        $baseUrl = defined('HV_EVENTS_API_URL') ? HV_EVENTS_API_URL : 'https://events.helioviewer.org';
+        $url = $baseUrl . "/api/v1/events/{$source}/observation/{$encodedTime}";
         
         Sentry::setContext('EventsApi', [
             'url' => $url,
@@ -43,13 +50,7 @@ class EventsApi {
             'observation_time' => $observationTime->format('Y-m-d\TH:i:s\Z')
         ]);
 
-        $response = $this->client->request('GET', $url, [
-            'timeout' => 30,
-            'headers' => [
-                'Accept' => 'application/json',
-                'User-Agent' => 'Helioviewer-API/2.0'
-            ]
-        ]);
+        $response = $this->client->request('GET', $url);
         
         return $this->parseResponse($response);
     }
