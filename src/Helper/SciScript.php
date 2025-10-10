@@ -23,9 +23,6 @@ class Helper_SciScript {
         $this->_params  = $params;
 
         // Parse datasource string into arrays
-        if ( preg_match('/^([\[\]\,0-9]+)$/', $this->_params['sourceIds']) !== 1 ) {
-            throw new Exception("Invalid value for 'sourceIds'.", 23);
-        }
         $this->_imageLayers = $this->_parseSourceIds($this->_params['sourceIds']);
 
         // Handle date format
@@ -33,11 +30,7 @@ class Helper_SciScript {
         $this->_end = str_replace(Array('T','Z'), Array(' ',''), $this->_params['endDate']);
     }
 
-    protected function _parseSourceIds($sourceIds) {
-        $sourceIds = trim($sourceIds, ' []');
-
-        $sourceIdArray = explode(',', $sourceIds);
-
+    protected function _parseSourceIds($sourceIdArray) {
         if ( count($sourceIdArray) > 0 && $sourceIdArray[0] != '' ) {
             include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
             $imgIndex = new Database_ImgIndex();

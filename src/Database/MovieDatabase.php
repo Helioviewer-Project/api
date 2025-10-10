@@ -65,14 +65,14 @@ class Database_MovieDatabase {
 
         // ATTENTION! These two fields eventsLabels and eventSourceString needs to be kept in DB schema
         // We are keeping them to support old takeScreenshot , queueMovie requests
-        
+
         // old implementation removed for events strings
         // used to be $this->events->serialize();
-        $old_events_layer_string = ""; 
+        $old_events_layer_string = "";
 
         // old if events labels are shown switch , removed for new implementation
         // used to be $this->eventsLabels;
-        $old_events_labels_bool = false; 
+        $old_events_labels_bool = false;
 
         $sql = sprintf(
                    'INSERT INTO movies '
@@ -119,9 +119,9 @@ class Database_MovieDatabase {
                  (int)$maxFrames,
                  (bool)$watermark,
                  $this->_dbConnection->link->real_escape_string($layerString),
-                 $layerBitMask,
-                 $old_events_layer_string, //  eventsSourceString is always empty not used any more
-                 $old_events_labels_bool, // eventLabels is not used anymore
+                 (int)$layerBitMask,
+                 $this->_dbConnection->link->real_escape_string($old_events_layer_string), //  eventsSourceString is always empty not used any more
+                 $this->_dbConnection->link->real_escape_string($old_events_labels_bool), // eventLabels is not used anymore
                  $this->_dbConnection->link->real_escape_string($eventsStateString),
                  (bool)$movieIcons,
                  (bool)$followViewport,
@@ -144,7 +144,7 @@ class Database_MovieDatabase {
         }
         catch (Exception $e) {
             error_log("Failed to insert movie: " . $e->getMessage());
-            throw new \Exception("Could create movie in our database", 2, $e); 
+            throw new \Exception("Could create movie in our database", 2, $e);
         }
 
         return $this->_dbConnection->getInsertId();

@@ -66,6 +66,7 @@ class Database_DbConnection {
         }
         mysqli_select_db($this->link, $this->_dbname);
         mysqli_query($this->link, "SET @@session.time_zone = '+00:00'");
+        mysqli_set_charset($this->link, "utf8");
     }
 
     /**

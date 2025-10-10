@@ -6,7 +6,7 @@ use Helioviewer\Api\Sentry\Sentry;
 
 /**
  * Solar Bodies Module
- * 
+ *
  * Used for getting data on a set of planets and satellites as seen from a set of observers.
  * Retrieves data stored in JSON file format on the disk based on request time as a unix timestamp.
  */
@@ -23,7 +23,7 @@ class Module_SolarBodies implements Module {
 
     /**
      * Solar Bodies Module constructor
-     * 
+     *
      * @param mixed &$params API request parameters
      */
     public function __construct(&$params) {
@@ -35,7 +35,7 @@ class Module_SolarBodies implements Module {
         $this->_observers = array("soho","stereo_a","stereo_b");
         // list of bodies to track - add new celestial bodies or satellites here
         $this->_bodies = array("mercury","venus","earth","mars","jupiter","saturn","uranus","neptune","psp");
-        
+
         // custom parameters and names - add any custom parameters that fall outside the normal dataset for planets
         // normal dataset: x, y, distance_observer_to_body_au, distance_sun_to_observer_au, distance_sun_to_body_au, behind_plane_of_sun
         $this->_mods = array("psp" => array( "name" => "Parker Solar Probe", //Name as displayed in the viewport overlay
@@ -117,7 +117,7 @@ class Module_SolarBodies implements Module {
 
     /**
      * Retrieves positions for trajectories of all available bodies around request time
-     * 
+     *
      * Input:   Time as a unix time stamp in milliseconds
      * Output:  {   labels : Array of bodies with position/distance data from perspective of observer for given input time,
      *              trajectories : Array of positions as trajectories for all bodies around a given input time }
@@ -140,19 +140,19 @@ class Module_SolarBodies implements Module {
                         $bodyData = $this->_searchNearestTime($requestTimeInteger, $file, $observer, $body);
                     }catch (Exception $e){
                         //file does not exit
-                    }    
+                    }
                 }
                 $newBody = array(//set up a key value pair
                     $body => $bodyData
                 );
                 $solarBodies = array_merge($solarBodies, $newBody);//add new body coordinates to the existing array
             }//end foreach bodies
-            $newObserver = array($observer => $solarBodies);//create a key-value pair of observer-bodies 
+            $newObserver = array($observer => $solarBodies);//create a key-value pair of observer-bodies
             $solarObserversLabels = array_merge($solarObserversLabels,$newObserver);//add to list of all observers
         }//end foreach observers
         // --- end generating labels ---
 
-        
+
         // --- start generating trajectories ---
         $solarObserversTrajectories = array();//initialize observers array
         foreach($observers as $observer ){//cycle through each observer in the list
@@ -164,27 +164,27 @@ class Module_SolarBodies implements Module {
                     $newTimes = array();//initialize array for times
                     $filePath = $this->_findFile($requestTimeInteger, $observer, $body);
                     $bodyData = array();
-                    
+
                     if($filePath != null){
                         try{
                             $file = json_decode(file_get_contents($filePath));//open, read, and parse the file as an object
                             $bodyData = $file->{$observer}->{$body};
                         }catch (Exception $e){
                             //file does not exit
-                        }    
+                        }
                     }
-                    
+
                     $newBody = array(
                         $body => $bodyData
                     );
                     $solarBodies = array_merge($solarBodies, $newBody);//add new body coordinates to the existing array
                 }//end if body trajectory enabled
             }//end foreach bodies
-            $newObserver = array($observer => $solarBodies);//create a key-value pair of observer-bodies 
+            $newObserver = array($observer => $solarBodies);//create a key-value pair of observer-bodies
             $solarObserversTrajectories = array_merge($solarObserversTrajectories,$newObserver);//add to list of all observers
         }//end foreach observers
         // --- end generating trajectories ---
-        
+
         $solarObservers = array(
             "labels"        => $solarObserversLabels,
             "trajectories"  => $solarObserversTrajectories
@@ -209,14 +209,14 @@ class Module_SolarBodies implements Module {
                         $bodyData = $this->_searchNearestTime($requestTimeInteger, $file, $observer, $body);
                     }catch (Exception $e){
                         //file does not exit
-                    }    
+                    }
                 }
                 $newBody = array(//set up a key value pair
                     $body => $bodyData
                 );
                 $solarBodies = array_merge($solarBodies, $newBody);//add new body coordinates to the existing array
             }//end foreach bodies
-            $newObserver = array($observer => $solarBodies);//create a key-value pair of observer-bodies 
+            $newObserver = array($observer => $solarBodies);//create a key-value pair of observer-bodies
             $solarObserversLabels = array_merge($solarObserversLabels,$newObserver);//add to list of all observers
         }//end foreach observers
         // --- end generating labels ---
@@ -228,7 +228,7 @@ class Module_SolarBodies implements Module {
 
     public function getSolarBodiesTrajectoriesForScreenshot($requestUnixTime,$selectedObserverBodies){
         $requestTimeInteger = $requestUnixTime;
-        
+
         // --- start generating trajectories ---
         $solarObserversTrajectories = array();//initialize observers array
         foreach(array_keys($selectedObserverBodies) as $observer ){//cycle through each observer in the list
@@ -238,26 +238,26 @@ class Module_SolarBodies implements Module {
                 $newTimes = array();//initialize array for times
                 $filePath = $this->_findFile($requestTimeInteger, $observer, $body);
                 $bodyData = array();
-                
+
                 if($filePath != null){
                     try{
                         $file = json_decode(file_get_contents($filePath));//open, read, and parse the file as an object
                         $bodyData = $file->{$observer}->{$body};
                     }catch (Exception $e){
                         //file does not exit
-                    }    
+                    }
                 }
-                
+
                 $newBody = array(
                     $body => $bodyData
                 );
                 $solarBodies = array_merge($solarBodies, $newBody);//add new body coordinates to the existing array
             }//end foreach bodies
-            $newObserver = array($observer => $solarBodies);//create a key-value pair of observer-bodies 
+            $newObserver = array($observer => $solarBodies);//create a key-value pair of observer-bodies
             $solarObserversTrajectories = array_merge($solarObserversTrajectories,$newObserver);//add to list of all observers
         }//end foreach observers
         // --- end generating trajectories ---
-        
+
         $solarObservers = array(
             "trajectories"  => $solarObserversTrajectories
         );
@@ -373,7 +373,7 @@ class Module_SolarBodies implements Module {
     /**
      * Helper function for getting the nearest Day and 30 minute interval
      * to the requested time as unix epoch timestamps
-     * 
+     *
      * Input: request as unix epoch timestamp in milliseconds
      * Output: Array of nearest times as unix epoch timestamps in milliseconds
      */
@@ -440,22 +440,42 @@ class Module_SolarBodies implements Module {
         echo $json;
     }
 
+    public function getValidationRules(): array {
+        switch( $this->_params['action'] ) {
+            case 'getSolarBodies':
+                $expected = array(
+                    'required' => array('time'),
+                    'ints' => array('time')
+                );
+                break;
+            case 'getTrajectoryTime':
+                $expected = array(
+                    'required' => array('time', 'observer', 'body', 'direction'),
+                    'ints' => array('time'),
+                    'alphanum' => array('observer', 'body'),
+                    'choices' => array('direction' => ['next', 'last'])
+                );
+                break;
+            default:
+                $expected = array();
+                break;
+        }
+        return $expected;
+    }
+
     /**
      * validate
      *
      * @return bool Returns true if input parameters are valid
      */
     public function validate() {
+        $expected = $this->getValidationRules();
 
-        switch( $this->_params['action'] ) {
-            default:
-                break;
-        }
         // Check input
         if ( isset($expected) ) {
 
-            Sentry::setContext('Helioviewer', [ 
-                'validation_rules' => $expected 
+            Sentry::setContext('Helioviewer', [
+                'validation_rules' => $expected
             ]);
 
             Validation_InputValidator::checkInput($expected, $this->_params,$this->_options);

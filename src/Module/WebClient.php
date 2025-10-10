@@ -912,19 +912,7 @@ class Module_WebClient implements Module {
                 'for this site.', 26);
         }
 
-        // Determine resolution to use
-        $validResolutions = array('hourly', 'daily', 'weekly', 'monthly',
-            'yearly','custom');
-        if ( isset($this->_options['resolution']) ) {
-
-            // Make sure a valid resolution was specified
-            if ( !in_array($this->_options['resolution'], $validResolutions) ) {
-                $msg = 'Invalid resolution specified. Valid options include '
-                     . 'hourly, daily, weekly, monthly, and yearly';
-                throw new Exception($msg, 25);
-            }
-        }
-        else {
+        if (!isset($this->_options['resolution'])) {
             // Default to daily
             $this->_options['resolution'] = 'daily';
         }
@@ -972,7 +960,7 @@ class Module_WebClient implements Module {
 
         // Events Layers
         if(!empty($this->_options['eventLayers'])){
-            $events = new Helper_HelioviewerEvents($this->_params['eventLayers']);
+            $events = new Helper_HelioviewerEvents($this->_options['eventLayers']);
         }else{
             $events = null;
         }
@@ -1084,25 +1072,7 @@ class Module_WebClient implements Module {
      * Retrieves the latest usage statistics from the database
      */
     public function getDataCoverageTimeline() {
-
-        // Define allowed date/time resolutions
-        $validRes = array('30m',
-                          '1h',
-                          '1D',
-                          '1W',
-                          '1M', '3M',
-                          '1Y');
-        if ( isset($this->_options['resolution']) && $this->_options['resolution']!='') {
-
-            // Make sure a valid resolution was specified
-            if ( !in_array($this->_options['resolution'], $validRes) ) {
-                $msg = 'Invalid resolution specified. Valid options include: '
-                     . implode(', ', $validRes);
-                throw new Exception($msg, 25);
-            }
-            $resolution = $this->_options['resolution'];
-        }
-        else {
+        if (!isset($this->options['resolution'])) {
             $resolution = '1h';
         }
 
@@ -1239,18 +1209,12 @@ class Module_WebClient implements Module {
      */
      public function getStatus() {
 
-         // Connect to database
-         include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
-         include_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
+        // Connect to database
+        include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
+        include_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
 
-         $imgIndex = new Database_ImgIndex();
-
-         // Default to instrument-level status information
-         if ( !isset($this->_options['key']) ) {
-             $this->_options['key'] = 'instrument';
-         }
-
-         $statuses = array();
+        $imgIndex = new Database_ImgIndex();
+        $statuses = array();
 
          // Case 1: instrument
         $instruments = $imgIndex->getDataSourcesByInstrument();
@@ -1328,7 +1292,7 @@ class Module_WebClient implements Module {
      /**
       * A function to track 3D is enabled on the HelioViewer FrontEnd
       */
-     public function enable3D() 
+     public function enable3D()
      {
         return $this->_sendResponse(200, "OK", "");
      }
@@ -1695,14 +1659,8 @@ class Module_WebClient implements Module {
         return $date;
     }
 
-    /**
-     * Handles input validation
-     *
-     * @return bool Returns true if the input is valid with respect to the
-     *              requested action.
-     */
-    public function validate() {
-
+    public function getValidationRules(): array {
+        $expected = array();
         switch( $this->_params['action'] ) {
 
         case 'saveWebClientState':
@@ -1715,6 +1673,7 @@ class Module_WebClient implements Module {
         case 'getWebClientState':
             $expected = array(
                'required' => array('state_id'),
+               'alphanum' => array('state_id')
             );
             break;
 
@@ -1746,9 +1705,10 @@ class Module_WebClient implements Module {
             break;
         case 'getDataSources':
             $expected = array(
-               'optional' => array('verbose', 'callback', 'enable'),
-               'bools'    => array('verbose'),
-               'alphanum' => array('callback')
+               'optional'     => array('verbose', 'callback', 'enable'),
+               'bools'        => array('verbose'),
+               'alphanum'     => array('callback'),
+               'alphanumlist' => array('enable')
             );
             break;
         case 'getTile':
@@ -1783,21 +1743,24 @@ class Module_WebClient implements Module {
             $expected = array(
                 'optional' => array('resolution', 'callback','dateStart','dateEnd'),
                 'dates' => array('dateStart','dateEnd'),
-                'alphanum' => array('resolution', 'callback')
+                'alphanum' => array('resolution', 'callback'),
+                'choices' => array('resolution' => ['hourly', 'daily', 'weekly', 'monthly', 'yearly','custom'])
             );
             break;
         case 'getDataCoverage':
             $expected = array(
-                'optional' => array('resolution','currentDate','startDate','endDate','callback','imageLayers','startDate','endDate','eventLayers'),
+                'optional' => array('resolution','currentDate','startDate','endDate','callback','imageLayers','eventLayers'),
                 'alphanum' => array('resolution', 'callback'),
-                'dates'    => array()
+                'ints'     => array('startDate', 'endDate', 'currentDate'),
+                'layer'    => array('imageLayers'),
+                'event_type' => array('eventLayers')
             );
             break;
         case 'getDataCoverageTimeline':
             $expected = array(
                 'optional' => array('resolution', 'endDate'),
-                'alphanum' => array(),
-                'dates'    => array('endDate')
+                'dates'    => array('endDate'),
+                'choices'  => array('resolution' => ['30m', '1h', '1D', '1W', '1M', '3M', '1Y'])
             );
             break;
         case 'updateDataCoverage':
@@ -1820,14 +1783,16 @@ class Module_WebClient implements Module {
                                     'y1', 'y2', 'x0', 'y0', 'width', 'height',
                                     'events', 'eventLabels', 'movieIcons', 'scale',
                                     'scaleType', 'scaleX', 'scaleY',
-                                    'callback', 'switchSources'),
+                                    'callback', 'switchSources', 'celestialBodiesLabels', 'celestialBodiesTrajectories'),
                 'floats'   => array('imageScale', 'x1', 'x2', 'y1', 'y2',
                                     'x0', 'y0', 'scaleX', 'scaleY'),
                 'ints'     => array('width', 'height'),
                 'dates'    => array('date'),
                 'bools'    => array('display', 'watermark', 'eventLabels',
                                     'scale', 'movieIcons', 'switchSources'),
-                'alphanum' => array('scaleType', 'callback'),
+                'alphanum' => array('scaleType', 'callback', 'celestialBodiesLabels', 'celestialBodiesTrajectories'),
+                'event_type' => array('events'),
+                'choices'  => array('scaleType' => ['earth', 'scalebar']),
                 'layer'    => array('layers')
             );
             break;
@@ -1838,31 +1803,29 @@ class Module_WebClient implements Module {
                 'schema' => ['json' => 'https://api.helioviewer.org/schema/post_screenshot.schema.json']
             ];
             break;
-        case 'getStatus':
-            $expected = array(
-                'optional' => array('key'),
-                'alphanum' => array('key')
-            );
-            break;
         case "getSciDataScript":
             $expected = array(
                 "required" => array('imageScale', 'sourceIds',
                                     'startDate', 'endDate',
                                     'lang'),
                 "optional" => array('x0','y0', 'width', 'height',
-                                    'x1','y1', 'x2','y2',
+                                    'x1','y1', 'x2','y2', 'movieId',
                                     'callback'),
                 "floats"   => array('imageScale','x0','y0',
                                     'x1','y1','x2','y2'),
                 "ints"     => array('width', 'height'),
                 "dates"    => array('startDate', 'endDate'),
-                "alphanum" => array('callback')
+                "alphanum" => array('callback', 'movieId'),
+                "array_ints" => array('sourceIds'),
+                'choices'  => array('lang' => ['sswidl', 'sunpy'])
             );
             break;
         case 'downloadImage':
             $expected = array(
                 'required' => array('id'),
                 'optional' => array('type', 'width', 'scale'),
+                'ints'     => array('id', 'width'),
+                'floats'   => array('scale'),
                 'choices'  => array('type' => ['png', 'jpg', 'webp'])
             );
             break;
@@ -1880,17 +1843,25 @@ class Module_WebClient implements Module {
             );
             break;
         default:
+            $expected = array();
             break;
         }
+        return $expected;
+    }
 
-        if ( isset($expected) ) {
-            Sentry::setContext('Helioviewer', [
-                'validation_rules' => $expected
-            ]);
+    /**
+     * Handles input validation
+     *
+     * @return bool Returns true if the input is valid with respect to the
+     *              requested action.
+     */
+    public function validate() {
+        $expected = $this->getValidationRules();
+        Sentry::setContext('Helioviewer', [
+            'validation_rules' => $expected
+        ]);
 
-            Validation_InputValidator::checkInput($expected, $this->_params,$this->_options);
-        }
-
+        Validation_InputValidator::checkInput($expected, $this->_params,$this->_options);
         return true;
     }
 }

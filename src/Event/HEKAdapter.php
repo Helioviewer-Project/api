@@ -80,44 +80,6 @@ class Event_HEKAdapter {
         $this->_proxy = new Net_Proxy($this->_baseURL);
     }
 
-    /**
-     * Return an JSON object of the Event
-     *
-     * @param string $id ID
-     * @param string $kb_archivid   Unique ArchiveId
-     *
-     * @return JSON object of event
-     */
-    public function getEvent($id = 0, $kb_archivid = '') {
-	    $event = array();
-
-	    include_once HV_ROOT_DIR.'/../src/Database/DbConnection.php';
-        $dbConnection = new Database_DbConnection();
-	    $sql = '';
-
-	    if(!empty($kb_archivid)){
-	        $sql = sprintf( "SELECT *  FROM events WHERE kb_archivid LIKE '%s' LIMIT 1;", (string)$kb_archivid );
-        }else if($id > 0){
-	        $sql = sprintf( "SELECT *  FROM events WHERE id = '%d' LIMIT 1;", (int)$id );
-        }
-
-        if(!empty($sql)){
-	        try {
-	            $result = $dbConnection->query($sql);
-	        }
-	        catch (Exception $e) {
-	            return false;
-	        }
-
-	        $event =  $result->fetch_array(MYSQLI_ASSOC);
-        }
-
-        if(isset($event['event_json']) && !empty($event['event_json'])){
-	        $event = json_decode($event['event_json']);
-        }
-
-        return json_encode($event);
-    }
 
     /**
      * Return a list of event FRMs sorted by event type

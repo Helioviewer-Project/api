@@ -226,9 +226,9 @@ class Module_JHelioviewer implements Module {
 			$endArray = explode(",", $this->_params['endTimes']);
 			$startTime = $startArray[0];
 			$endTime = array_pop($endArray);
-            
+
             $statistics->logJPX(date('Y-m-d H:i:s', $startTime), date('Y-m-d H:i:s', $endTime), $this->_params['sourceId']);
-            
+
         }
         catch (Exception $e) {
             // If a problem is encountered, return an error message as JSON
@@ -434,13 +434,8 @@ class Module_JHelioviewer implements Module {
 <?php
     }
 
-    /**
-     * Validate the requested action and associated input parameters.
-     *
-     * @return void
-     */
-    public function validate() {
 
+    public function getValidationRules(): array {
         switch($this->_params['action']) {
 
         case 'getJP2Image':
@@ -463,29 +458,22 @@ class Module_JHelioviewer implements Module {
 
         case 'getJPX':
             $expected = array(
-                'required' => array('startTime', 'endTime'),
+                'required' => array('startTime', 'endTime', 'sourceId'),
                 'optional' => array('cadence', 'jpip', 'linked', 'verbose'),
                 'bools'    => array('jpip', 'verbose', 'linked'),
                 'dates'    => array('startTime', 'endTime'),
-                'ints'     => array('cadence')
+                'ints'     => array('cadence', 'sourceId')
             );
-
-
-            $expected['required'] = array('startTime', 'endTime',
-                                          'sourceId');
-            $expected['ints']     = array('sourceId');
-
             break;
 
         case 'getJPXClosestToMidPoint':
             $expected = array(
-                'required' => array('sourceId','startTimes', 'endTimes'),
-                'optional' => array('jpip', 'linked', 'verbose'),
-                'bools'    => array('jpip', 'verbose', 'linked'),
-                'dates'    => array(),
-                'ints'     => array('sourceId')
+                'required'   => array('sourceId','startTimes', 'endTimes'),
+                'optional'   => array('jpip', 'linked', 'verbose', 'cadence'),
+                'bools'      => array('jpip', 'verbose', 'linked'),
+                'ints'       => array('sourceId', 'cadence'),
+                'array_ints' => array('startTimes', 'endTimes')
             );
-
             break;
 
         case 'launchJHelioviewer':
@@ -494,20 +482,30 @@ class Module_JHelioviewer implements Module {
                                     'layers'),
                 'floats'   => array('imageScale'),
                 'dates'    => array('startTime', 'endTime'),
+                'layer'    => array('layers')
             );
             break;
 
         default:
+            $expected = array();
             break;
         } // end switch block
+        return $expected;
+    }
 
-        if ( isset($expected) ) {
-            Sentry::setContext('Helioviewer', [ 
-                'validation_rules' => $expected 
-            ]);
+    /**
+     * Validate the requested action and associated input parameters.
+     *
+     * @return void
+     */
+    public function validate() {
+        $expected = $this->getValidationRules();
 
-            Validation_InputValidator::checkInput($expected, $this->_params,$this->_options);
-        }
+        Sentry::setContext('Helioviewer', [
+            'validation_rules' => $expected
+        ]);
+
+        Validation_InputValidator::checkInput($expected, $this->_params,$this->_options);
 
         return true;
     }

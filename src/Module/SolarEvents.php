@@ -51,20 +51,6 @@ class Module_SolarEvents implements Module {
         }
     }
 
-    /**
-     * Gets a JSON-formatted list of the Feature Recognition Methods which have
-     * associated event by event Unique ID or Archive ID
-     *
-     * @return void
-     */
-    public function getEvent() {
-        include_once HV_ROOT_DIR.'/../src/Event/HEKAdapter.php';
-
-        $hek = new Event_HEKAdapter();
-
-        header('Content-type: application/json');
-        echo $hek->getEvent((isset($this->_params['id']) ? intval($this->_params['id']) : 0), $this->_params['kb_archivid']);
-    }
 
     /**
      * Gets a JSON-formatted list of the Feature Recognition Methods which have
@@ -267,12 +253,7 @@ class Module_SolarEvents implements Module {
         echo json_encode($data);
     }
 
-    /**
-     * validate
-     *
-     * @return bool Returns true if input parameters are valid
-     */
-    public function validate() {
+    public function getValidationRules(): array {
         switch( $this->_params['action'] ) {
 
         case 'importEvents':
@@ -282,11 +263,6 @@ class Module_SolarEvents implements Module {
             );
             break;
 
-        case 'getEvent':
-            $expected = array(
-                'optional' => array('id', 'kb_archivid')
-            );
-            break;
 
         case 'getEvents':
             $expected = array(
@@ -294,7 +270,8 @@ class Module_SolarEvents implements Module {
                 'optional' => array('eventType', 'cacheOnly', 'force',
                                     'ar_filter'),
                 'bools'    => array('cacheOnly','force','ar_filter'),
-                'dates'    => array('startTime')
+                'dates'    => array('startTime'),
+                'alphanum' => array('eventType')
             );
             break;
         case 'getEventsByEventLayers':
@@ -302,7 +279,8 @@ class Module_SolarEvents implements Module {
                 'required' => array('startTime','eventLayers'),
                 'optional' => array('ar_filter'),
                 'bools'    => array('ar_filter'),
-                'dates'    => array('startTime')
+                'dates'    => array('startTime'),
+                'event_type' => array('eventLayers')
             );
             break;
         case 'getEventFRMs':
@@ -325,18 +303,29 @@ class Module_SolarEvents implements Module {
                 'optional' => array('eventType', 'cacheOnly', 'force',
                                     'ar_filter', 'sources'),
                 'bools'    => array('cacheOnly','force','ar_filter'),
-                'dates'    => array('startTime')
+                'dates'    => array('startTime'),
+                'alphanumlist' => array('eventType', 'sources')
             );
             break;
         default:
+            $expected = array();
             break;
         }
+        return $expected;
+    }
 
+    /**
+     * validate
+     *
+     * @return bool Returns true if input parameters are valid
+     */
+    public function validate() {
+        $expected = $this->getValidationRules();
         // Check input
         if ( isset($expected) ) {
 
-            Sentry::setContext('Helioviewer', [ 
-                'validation_rules' => $expected 
+            Sentry::setContext('Helioviewer', [
+                'validation_rules' => $expected
             ]);
 
             Validation_InputValidator::checkInput($expected, $this->_params, $this->_options);

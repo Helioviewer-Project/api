@@ -25,6 +25,7 @@
 require_once __DIR__.'/../vendor/autoload.php';
 require_once '../src/Config.php';
 require_once '../src/Helper/ErrorHandler.php';
+require_once '../src/Actions.php';
 
 use Helioviewer\Api\Request\RequestParams;
 use Helioviewer\Api\Request\RequestException;
@@ -42,10 +43,10 @@ Sentry::init([
 date_default_timezone_set('UTC');
 register_shutdown_function('shutdownFunction');
 
-// Options requests are just for validating CORS 
+// Options requests are just for validating CORS
 // Lets just pass them through
 if ( array_key_exists('REQUEST_METHOD', $_SERVER) && $_SERVER['REQUEST_METHOD'] == 'OPTIONS' ) {
-    echo 'OK';  
+    echo 'OK';
     exit;
 }
 
@@ -93,61 +94,7 @@ if ( !isset($params) || !loadModule($params) ) {
  *              successfully run.
  */
 function loadModule($params) {
-
-    $valid_actions = array(
-        'downloadScreenshot'             => 'WebClient',
-        'getClosestImage'                => 'WebClient',
-        'getDataSources'                 => 'WebClient',
-        'getJP2Header'                   => 'WebClient',
-        'getNewsFeed'                    => 'WebClient',
-        'getStatus'                      => 'WebClient',
-        'getSciDataScript'               => 'WebClient',
-        'getTile'                        => 'WebClient',
-        'downloadImage'                  => 'WebClient',
-        'getUsageStatistics'             => 'WebClient',
-        'getDataCoverageTimeline'        => 'WebClient',
-        'getDataCoverage'                => 'WebClient',
-        'updateDataCoverage'             => 'WebClient', // Deprecated, remove in V3, replaced by management scripts
-        'shortenURL'                     => 'WebClient',
-        'goto'                           => 'WebClient',
-        'saveWebClientState'             => 'WebClient',
-        'getWebClientState'              => 'WebClient',
-        'takeScreenshot'                 => 'WebClient',
-        'postScreenshot'                 => 'WebClient',
-        'getRandomSeed'                  => 'WebClient',
-        'getJP2Image'                    => 'JHelioviewer',
-        'getJPX'                         => 'JHelioviewer',
-        'getJPXClosestToMidPoint'        => 'JHelioviewer',
-        'launchJHelioviewer'             => 'JHelioviewer',
-        'downloadMovie'                  => 'Movies',
-        'getMovieStatus'                 => 'Movies',
-        'playMovie'                      => 'Movies',
-        'queueMovie'                     => 'Movies',
-        'postMovie'                      => 'Movies',
-        'reQueueMovie'                   => 'Movies',
-        'uploadMovieToYouTube'           => 'Movies',
-        'checkYouTubeAuth'               => 'Movies',
-        'getYouTubeAuth'                 => 'Movies',
-        'getUserVideos'                  => 'Movies',
-        'getObservationDateVideos'       => 'Movies',
-        'events'                         => 'SolarEvents',
-        'getEventFRMs'                   => 'SolarEvents',
-        'getEvent'                       => 'SolarEvents',
-        'getFRMs'                        => 'SolarEvents',
-        'getDefaultEventTypes'           => 'SolarEvents',
-        'getEvents'                      => 'SolarEvents',
-        'importEvents'                   => 'SolarEvents', // Deprecated, remove in V3, replaced by management scripts
-        'getEventsByEventLayers'         => 'SolarEvents',
-        'getEventGlossary'               => 'SolarEvents',
-        'getSolarBodiesGlossary'         => 'SolarBodies',
-        'getSolarBodies'                 => 'SolarBodies',
-        'getTrajectoryTime'              => 'SolarBodies',
-        'logNotificationStatistics'      => 'WebClient',
-        'getEclipseImage'                => 'WebClient', 
-        'getClosestImageDatesForSources' => 'WebClient',
-        'enable3D'                       => 'WebClient',
-    );
-
+    $valid_actions = VALID_ACTIONS;
     include_once HV_ROOT_DIR.'/../src/Validation/InputValidator.php';
 
 
@@ -183,7 +130,7 @@ function loadModule($params) {
                 $moduleName = $valid_actions[$params['action']];
                 $className  = 'Module_'.$moduleName;
 
-                // Track this request 
+                // Track this request
                 Sentry::setTag('Module', $moduleName);
                 Sentry::setTag('Module.Function', $params['action']);
                 Sentry::setTag('Type', 'web');
@@ -196,12 +143,12 @@ function loadModule($params) {
 
                 // Update usage stats
                 $actions_to_keep_stats_for = [
-                    'getClosestImage', 
-                    'takeScreenshot', 
-                    'postScreenshot', 
-                    'getJPX', 
-                    'getJPXClosestToMidPoint', 
-                    'uploadMovieToYouTube', 
+                    'getClosestImage',
+                    'takeScreenshot',
+                    'postScreenshot',
+                    'getJPX',
+                    'getJPXClosestToMidPoint',
+                    'uploadMovieToYouTube',
                     'getRandomSeed',
                     'enable3D',
                 ];
@@ -231,7 +178,7 @@ function loadModule($params) {
             }
         }
     } catch (\InvalidArgumentException $e) {
-            
+
         // Proper response code
         http_response_code(400);
 
