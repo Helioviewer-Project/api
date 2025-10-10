@@ -5,6 +5,7 @@
     "description": "Information used to generate a screenshot via helioviewer.org",
     "type": "object",
     "required": ["date", "imageScale", "layers"],
+    "additionalProperties": false,
     "properties": {
         "date": {
             "type": "string",
@@ -14,7 +15,7 @@
         "layers": {
             "type": "string",
             "maxLength": 1000,
-            "$comment": "Validated internally"
+            "pattern": "^[\\_\\w\\]\\[,\\-:\\.]+$"
         },
         "eventsState": {
             "$ref": "https://api.helioviewer.org/schema/event_layers.schema.json"
@@ -38,6 +39,18 @@
         "y2": { "type": "number" },
         "display": { "type": "boolean" },
         "watermark": { "type": "boolean" },
+        "switchSources": { "type": "boolean" },
+        "movieIcons": { "type": "boolean" },
+        "celestialBodiesLabels": {
+            "type": "string",
+            "maxLength": 1000,
+            "pattern": "^[a-zA-Z_\\-,]*$"
+        },
+        "celestialBodiesTrajectories": {
+            "type": "string",
+            "maxLength": 1000,
+            "pattern": "^[a-zA-Z_\\-,]*$"
+        },
         "callback": {
             "type": "string",
             "maxLength": 1000

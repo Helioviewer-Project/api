@@ -62,6 +62,21 @@ final class ValidatorTest extends TestCase
         $this->assertTrue(true);
     }
 
+    public function test_ValidateLayerArray_bad(): void
+    {
+        // The expected layer string to be given
+        $badLayerData = array(
+            'layerstring' => '[SDO,./something,304,1,100,0,60,1,2022-05-19T18:24:31.000Z],[STEREO_A,SECCHI,EUVI,171,2,100,0,60,1,2022-04-11T11:24:40.000Z]'
+        );
+
+        $expected = array(
+            'layer' => array('layerstring')
+        );
+
+        $this->expectException(\InvalidArgumentException::class);
+        Validation_InputValidator::checkInput($expected, $badLayerData, $badLayerData);
+    }
+
     public function test_ValidateArrayIntegersProblem1(): void
     {
         // The expected layer string to be given
@@ -116,5 +131,64 @@ final class ValidatorTest extends TestCase
         ]);
         // checkInput will raise an exception if it fails, so assertTrue means
         // that no exception was raised.
+    }
+
+    public function test_ValidateAlphanumList(): void {
+        // The expected layer string to be given
+        $input = array(
+            'data' => 'this,should,work-'
+        );
+
+        $rules = array(
+            'alphanumlist' => array('data')
+        );
+
+        Validation_InputValidator::checkInput($rules, $input, $input) ;
+
+        $this->assertEquals($input, [
+            'data' => 'this,should,work-'
+        ]);
+    }
+
+    public function test_ValidateAlphanumList_fail(): void {
+        // The expected layer string to be given
+        $input = array(
+            'data' => '/'
+        );
+
+        $rules = array(
+            'alphanumlist' => array('data')
+        );
+
+        $this->expectException(\InvalidArgumentException::class);
+        Validation_InputValidator::checkInput($rules, $input, $input) ;
+    }
+
+    public function test_CheckNumberList(): void {
+        $input = array('data' => "1,2,3,4,5");
+        $rules = array('array_ints' => array('data'));
+        Validation_InputValidator::checkInput($rules, $input, $input);
+        $this->assertEquals($input, ['data' => [1,2,3,4,5]]);
+
+        $input = array('data' => "1,2,3,4,5,abc");
+        $this->expectException(\InvalidArgumentException::class);
+        Validation_InputValidator::checkInput($rules, $input, $input);
+    }
+
+    public function test_CheckEventType(): void {
+        $input = array('data' => "**");
+        $rules = array('event_type' => array('data'));
+        Validation_InputValidator::checkInput($rules, $input, $input);
+        $this->assertEquals($input, ['data' => '**']);
+
+        $input = array('data' => "[AR,FL;ER]");
+        $rules = array('event_type' => array('data'));
+        Validation_InputValidator::checkInput($rules, $input, $input);
+        $this->assertEquals($input, ['data' => '[AR,FL;ER]']);
+
+        $input = array('data' => "--");
+        $rules = array('event_type' => array('data'));
+        $this->expectException(\InvalidArgumentException::class);
+        Validation_InputValidator::checkInput($rules, $input, $input);
     }
 }

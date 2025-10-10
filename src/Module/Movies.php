@@ -1501,13 +1501,7 @@ class Module_Movies implements Module {
         return $quality;
     }
 
-    /**
-     * validate
-     *
-     * @return bool Returns true if input parameters are valid
-     */
-    public function validate() {
-
+    public function getValidationRules(): array {
         switch( $this->_params['action'] ) {
 
         case 'downloadMovie':
@@ -1544,14 +1538,17 @@ class Module_Movies implements Module {
                                     'scale', 'scaleType', 'scaleX', 'scaleY',
                                     'movieLength', 'watermark', 'width',
                                     'height', 'x0', 'y0', 'x1', 'x2',
-                                    'y1', 'y2', 'callback', 'size', 'movieIcons', 'followViewport', 'reqObservationDate', 'switchSources'),
-                'alphanum' => array('format', 'scaleType', 'callback'),
+                                    'y1', 'y2', 'callback', 'size', 'movieIcons', 'followViewport', 'reqObservationDate', 'switchSources',
+                                    'celestialBodiesLabels', 'celestialBodiesTrajectories'),
+                'alphanum' => array('format', 'scaleType', 'callback', 'celestialBodiesLabels', 'celestialBodiesTrajectories'),
                 'bools'    => array('watermark', 'eventsLabels', 'scale', 'movieIcons', 'followViewport', 'switchSources'),
                 'dates'    => array('startTime', 'endTime', 'reqObservationDate'),
                 'floats'   => array('imageScale', 'frameRate', 'movieLength',
                                     'x0', 'y0', 'x1', 'x2', 'y1', 'y2',
                                     'scaleX', 'scaleY'),
-                'ints'     => array('maxFrames', 'width', 'height', 'size')
+                'ints'     => array('maxFrames', 'width', 'height', 'size'),
+                "layer"    => array('layers'),
+                'event_type' => array('events')
             );
             break;
         case 'postMovie':
@@ -1563,18 +1560,17 @@ class Module_Movies implements Module {
         case 'reQueueMovie':
             $expected = array(
                 'required' => array('id'),
-                'optional' => array('force', 'callback'),
-                'alphanum' => array('id', 'callback'),
+                'optional' => array('force', 'callback', 'format'),
+                'alphanum' => array('id', 'callback', 'format'),
                 'bools'    => array('force')
             );
             break;
         case 'uploadMovieToYouTube':
             $expected = array(
-                //'required' => array('id'),
-                'optional' => array('id', 'title', 'description', 'tags', 'share',
-                                    'token', 'code', 'html'),
+                'optional' => array('id', 'title', 'description', 'tags', 'share', 'html'),
                 'alphanum' => array('id'),
-                'bools'    => array('share', 'html')
+                'bools'    => array('share', 'html'),
+                'any' => array('title', 'description', 'tags')
             );
             break;
         case 'getUserVideos':
@@ -1605,16 +1601,29 @@ class Module_Movies implements Module {
                 'required' => array('id', 'title', 'description', 'tags'),
                 'optional' => array('share'),
                 'alphanum' => array('id'),
-                'bools'    => array('share')
+                'bools'    => array('share'),
+                'any' => array('title', 'description', 'tags')
             );
+            break;
         default:
+            $expected = array();
             break;
         }
 
+        return $expected;
+    }
+
+    /**
+     * validate
+     *
+     * @return bool Returns true if input parameters are valid
+     */
+    public function validate() {
+        $expected = $this->getValidationRules();
         // Check input
         if ( isset($expected) ) {
-            Sentry::setContext('Helioviewer', [ 
-                'validation_rules' => $expected 
+            Sentry::setContext('Helioviewer', [
+                'validation_rules' => $expected
             ]);
 
             Validation_InputValidator::checkInput($expected, $this->_params,$this->_options);

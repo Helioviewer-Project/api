@@ -25,6 +25,25 @@ use Opis\JsonSchema\{
 class Validation_InputValidator
 {
     const DATE_MESSAGE = "Please enter a date of the form 2003-10-06T00:00:00.000Z";
+    const AVAILABLE_RULES = array(
+            "required"      => "checkForMissingParams",
+            "alphanum"      => "checkAlphaNumericStrings",
+            "alphanumlist"  => "checkAlphaNumericLists",
+            "event_type"    => "checkEventType",
+            "ints"          => "checkInts",
+            "array_ints"    => "checkOfArrayInts",
+            "floats"        => "checkFloats",
+            "bools"         => "checkBools",
+            "dates"         => "checkDates",
+            "encoded"       => "checkURLEncodedStrings",
+            "urls"          => "checkURLs",
+            "uuids"         => "checkUUIDs",
+            "layer"         => "checkLayerValidity",
+            "choices"       => "checkChoices",
+            "schema"        => "checkJsonSchema",
+            "any"           => "ignore"
+        );
+
 
     /**
      * Validates and type-casts API Request parameters
@@ -40,26 +59,8 @@ class Validation_InputValidator
      */
     public static function checkInput(&$expected, &$input, &$optional)
     {
-        // Validation checks
-        $checks = array(
-            "required"   => "checkForMissingParams",
-            "alphanum"   => "checkAlphaNumericStrings",
-            "ints"       => "checkInts",
-            "array_ints" => "checkOfArrayInts",
-            "floats"     => "checkFloats",
-            "bools"      => "checkBools",
-            "dates"      => "checkDates",
-            "encoded"    => "checkURLEncodedStrings",
-            "urls"       => "checkURLs",
-            "files"      => "checkFilePaths",
-            "uuids"      => "checkUUIDs",
-            "layer"      => "checkLayerValidity",
-            "choices"    => "checkChoices",
-            "schema"     => "checkJsonSchema"
-        );
-
         // Run validation checks
-        foreach ($checks as $name => $method) {
+        foreach (Validation_InputValidator::AVAILABLE_RULES as $name => $method) {
             if (isset($expected[$name])) {
                 Validation_InputValidator::$method($expected[$name], $input);
             }
@@ -83,13 +84,11 @@ class Validation_InputValidator
         // Unset any unexpected request parameters
         foreach(array_keys($_REQUEST) as $param) {
             if (!in_array($param, $allowed)) {
-                /*
-                throw new InvalidArgumentException(
-                    'Unrecognized parameter <b>'.$param.'</b>.', 27);
-                */
                 unset($_REQUEST[$param]);
                 unset($_GET[$param]);
                 unset($_POST[$param]);
+                unset($input[$param]);
+                unset($optional[$param]);
             }
         }
     }
@@ -134,6 +133,28 @@ class Validation_InputValidator
 
     /**
      * Checks alphanumeric entries to make sure they do not include invalid characters
+     * Allows commas
+     *
+     * @param array $strings A list of alphanumeric parameters which are used by an action.
+     * @param array &$params The parameters that were passed in
+     *
+     * @return void
+     */
+    public static function checkAlphaNumericLists($strings, &$params)
+    {
+        foreach ($strings as $str) {
+            if (isset($params[$str])) {
+                if (!preg_match('/^[\[\]a-zA-Z0-9_,\-]*$/', $params[$str])) {
+                    throw new InvalidArgumentException(
+                        "Invalid value for $str. Valid strings must consist of only letters, numbers, underscores, and commas", 25
+                    );
+                }
+            }
+        }
+    }
+
+    /**
+     * Checks alphanumeric entries to make sure they do not include invalid characters
      *
      * @param array $strings A list of alphanumeric parameters which are used by an action.
      * @param array &$params The parameters that were passed in
@@ -152,6 +173,7 @@ class Validation_InputValidator
             }
         }
     }
+
 
     /**
      * Typecasts boolean strings or unset optional params to booleans
@@ -176,29 +198,6 @@ class Validation_InputValidator
         }
     }
 
-    /**
-     * Checks filepaths to check for attempts to access parent directories
-     *
-     * @param array $files   Filepaths that should be validated
-     * @param array &$params The parameters that were passed in
-     *
-     * @return void
-     */
-    public static function checkFilePaths($files, &$params)
-    {
-        foreach ($files as $file) {
-            if (isset($params[$file])) {
-                if (strpos($params[$file], '..')) {
-                    throw new InvalidArgumentException("Invalid file requested: .. not allowed in filenames.", 25);
-                } elseif (preg_match('/[^\/.-\w]/', $params[$file])) {
-                    throw new InvalidArgumentException(
-                        "Invalid file requested. Valid characters for filenames include letters, " .
-                        "digits, underscores, hyphens and periods.", 25
-                    );
-                }
-            }
-        }
-    }
 
     /**
      * Typecasts validates and fixes types for integer parameters
@@ -234,7 +233,9 @@ class Validation_InputValidator
     {
         foreach ($ints as $int) {
             if (isset($params[$int])) {
-
+                if (substr($params[$int], 0, 1) === '[' && substr($params[$int], -1) === ']') {
+                    $params[$int] = substr($params[$int], 1, -1);
+                }
 
                 $integers_to_check = explode(',',$params[$int]);
                 $validated_ints = [];
@@ -456,5 +457,32 @@ class Validation_InputValidator
             }
         }
     }
+
+    /**
+     * Checks to make sure given input is a list of event types
+     *
+     * @param array $required List of parameters to check.
+     * @param array &$params  The parameters that were passed in
+     *
+     * @return void
+     */
+    public static function checkEventType($required, &$params)
+    {
+        foreach ($required as $req) {
+            if (isset($params[$req])) {
+                if (!preg_match('/^[*\[\];,a-zA-Z0-9_.\\\()+]*$/', $params[$req])) {
+                    throw new InvalidArgumentException(
+                        "Invalid value for $req. Value must be a list of event types [AR,FL,etc]", 25
+                    );
+                }
+            }
+        }
+    }
+
+    /**
+     * Unchecked input.
+     * Use sparingly and bravely.
+     */
+    public static function ignore($_, $__) {}
 }
 ?>
