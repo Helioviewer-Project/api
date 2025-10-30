@@ -490,9 +490,9 @@ class Validation_InputValidator
      * Validates legacy event string format
      * Format: [AR,SPoCA,1],[CH,all,1],[SS,EGSO_SFC,1],[FP,AMOS;ASAP,1]
      * Each bracket group must have 3 comma-separated parts:
-     * - Part 1: Two uppercase letters (event type)
+     * - Part 1: 2-3 uppercase letters or digits (event type)
      * - Part 2: Non-empty string or semicolon-separated list (source)
-     * - Part 3: 1, 0, "0", or "1" (visibility)
+     * - Part 3: 0, 1, "0", "1", true, or false (visibility)
      *
      * @param array $required List of parameter names to validate
      * @param array &$params  The parameters that were passed in
@@ -534,10 +534,10 @@ class Validation_InputValidator
 
                     list($eventType, $source, $visibility) = $parts;
 
-                    // Part 1: Must be exactly 2 uppercase letters
-                    if (!preg_match('/^[A-Z]{2}$/', $eventType)) {
+                    // Part 1: Must be 2-3 uppercase letters or digits
+                    if (!preg_match('/^[A-Z0-9]{2,3}$/', $eventType)) {
                         throw new InvalidArgumentException(
-                            "Invalid event type in $req: '$eventType'. Must be exactly 2 uppercase letters (e.g., AR, CH, FL)", 25
+                            "Invalid event type in $req: '$eventType'. Must be 2-3 uppercase letters or digits (e.g., AR, CH, FL, C3)", 25
                         );
                     }
 
@@ -549,7 +549,7 @@ class Validation_InputValidator
                         );
                     }
 
-                    // If contains semicolons, validate that no part is empty
+                    // If contains semicolons, validate each part separately
                     if (strpos($source, ';') !== false) {
                         $sourceParts = explode(';', $source);
                         foreach ($sourceParts as $sourcePart) {
@@ -558,20 +558,26 @@ class Validation_InputValidator
                                     "Invalid source in $req: '$source'. Semicolon-separated parts cannot be empty", 25
                                 );
                             }
+                            // Validate each part with the pattern
+                            if (!preg_match('/^[\\\\()a-zA-Z0-9_+\\- ]+$/', $sourcePart)) {
+                                throw new InvalidArgumentException(
+                                    "Invalid source part in $req: '$sourcePart'. Must match pattern [\\()a-zA-Z0-9_+- ] and spaces", 25
+                                );
+                            }
+                        }
+                    } else {
+                        // Single source, validate with pattern
+                        if (!preg_match('/^[\\\\()a-zA-Z0-9_+\\- ]+$/', $source)) {
+                            throw new InvalidArgumentException(
+                                "Invalid source in $req: '$source'. Must match pattern [\\()a-zA-Z0-9_+- ] and spaces", 25
+                            );
                         }
                     }
 
-                    // Source must only contain alphanumeric, underscore, semicolon, and spaces
-                    if (!preg_match('/^[a-zA-Z0-9_; ]+$/', $source)) {
+                    // Part 3: Must be 0, 1, "0", "1", true, or false
+                    if (!in_array($visibility, ['0', '1', '"0"', '"1"', 'true', 'false'], true)) {
                         throw new InvalidArgumentException(
-                            "Invalid source in $req: '$source'. Must contain only alphanumeric characters, underscores, semicolons, and spaces", 25
-                        );
-                    }
-
-                    // Part 3: Must be 0, 1, "0", or "1"
-                    if (!in_array($visibility, ['0', '1', '"0"', '"1"'], true)) {
-                        throw new InvalidArgumentException(
-                            "Invalid visibility in $req: '$visibility'. Must be 0, 1, \"0\", or \"1\"", 25
+                            "Invalid visibility in $req: '$visibility'. Must be 0, 1, \"0\", \"1\", true, or false", 25
                         );
                     }
                 }
