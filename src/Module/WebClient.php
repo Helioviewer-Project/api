@@ -965,7 +965,6 @@ class Module_WebClient implements Module {
             $events = null;
         }
 
-
         $start = @$this->_options['startDate'];
         if ($start && !preg_match('/^[0-9]+$/', $start)) {
             die("Invalid start parameter: $start");
@@ -1063,6 +1062,8 @@ class Module_WebClient implements Module {
                     $dateCurrent
                 )
             );
+        } else {
+            return $this->_sendResponse(400, 'eventLayers or imageLayers needs to be set for this endpoint to work in API', '');
         }
 
 
@@ -1753,7 +1754,7 @@ class Module_WebClient implements Module {
                 'alphanum' => array('resolution', 'callback'),
                 'ints'     => array('startDate', 'endDate', 'currentDate'),
                 'layer'    => array('imageLayers'),
-                'event_type' => array('eventLayers')
+                'legacy_event_string' => array('eventLayers')
             );
             break;
         case 'getDataCoverageTimeline':
