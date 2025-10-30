@@ -19,6 +19,10 @@ require_once HV_ROOT_DIR.'/../src/Image/JPEG2000/JP2Image.php';
 require_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
 require_once HV_ROOT_DIR.'/../src/Module/SolarBodies.php';
 
+use Helioviewer\Api\Sentry\Sentry;
+use Helioviewer\Api\Event\EventsApi;
+use Helioviewer\Api\Event\EventsApiException;
+
 class Image_Composite_HelioviewerCompositeImage {
 
     private   $_composite;
@@ -587,16 +591,32 @@ class Image_Composite_HelioviewerCompositeImage {
         require_once HV_ROOT_DIR . "/../src/Helper/EventInterface.php";
 
         // Collect events from all data sources.
+        // Collect all HEK events
         $hek = new Event_HEKAdapter();
         $event_categories = $hek->getNormalizedEvents($this->date, Array());
+
+        $events_api_sources = ["CCMC", "RHESSI"];
 
         $observationTime = new DateTimeImmutable($this->date);
         $startDate = $observationTime->sub(new DateInterval("PT12H"));
         $length = new DateInterval("P1D");
-        $event_categories = array_merge($event_categories, Helper_EventInterface::GetEvents($startDate, $length, $observationTime));
+
+        // Collect CCMC events if any
+        try {
+
+            $eventsApi = new EventsApi();
+            $event_categories = array_merge($event_categories, $eventsApi->getEventsForSource($observationTime, "CCMC"));
+            // if there is no error only left is RHESSI to collect
+            $events_api_sources = ["RHESSI"];
+
+        } catch (EventsApiException $e) {
+            Sentry::capture($e);
+        }
+
+        // Collect RHESSI events
+        $event_categories = array_merge($event_categories, Helper_EventInterface::GetEvents($startDate, $length, $observationTime, $events_api_sources));
 
         // Lay down all relevant event REGIONS first
-
         $events_to_render = [];
         $events_manager = $this->eventsManager;
         $add_label_visibility_and_concept = function($events_data, $event_cat_pin, $event_group_name) use ($events_manager) {
