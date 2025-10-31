@@ -624,7 +624,6 @@ class Module_WebClient implements Module {
 
         // ATTENTION! These two fields eventsLabels and eventSourceString needs to be kept in DB schema
         // We are keeping them to support old takeScreenshot , queueMovie requests
-
         // Events manager built from old logic
         $events_manager = EventsStateManager::buildFromLegacyEventStrings($events_legacy_string, $event_labels);
 
@@ -1792,7 +1791,7 @@ class Module_WebClient implements Module {
                 'bools'    => array('display', 'watermark', 'eventLabels',
                                     'scale', 'movieIcons', 'switchSources'),
                 'alphanum' => array('scaleType', 'callback', 'celestialBodiesLabels', 'celestialBodiesTrajectories'),
-                'event_type' => array('events'),
+                'legacy_event_string' => array('events'),
                 'choices'  => array('scaleType' => ['earth', 'scalebar']),
                 'layer'    => array('layers')
             );
