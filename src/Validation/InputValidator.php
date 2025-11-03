@@ -26,23 +26,24 @@ class Validation_InputValidator
 {
     const DATE_MESSAGE = "Please enter a date of the form 2003-10-06T00:00:00.000Z";
     const AVAILABLE_RULES = array(
-            "required"      => "checkForMissingParams",
-            "alphanum"      => "checkAlphaNumericStrings",
-            "alphanumlist"  => "checkAlphaNumericLists",
-            "event_type"    => "checkEventType",
-            "ints"          => "checkInts",
-            "array_ints"    => "checkOfArrayInts",
-            "floats"        => "checkFloats",
-            "bools"         => "checkBools",
-            "dates"         => "checkDates",
-            "encoded"       => "checkURLEncodedStrings",
-            "urls"          => "checkURLs",
-            "uuids"         => "checkUUIDs",
-            "layer"         => "checkLayerValidity",
-            "choices"       => "checkChoices",
-            "schema"        => "checkJsonSchema",
-            "any"           => "ignore"
-        );
+        "required"      => "checkForMissingParams",
+        "alphanum"      => "checkAlphaNumericStrings",
+        "alphanumlist"  => "checkAlphaNumericLists",
+        "event_type"    => "checkEventType",
+        "legacy_event_string" => "checkLegacyEventString",
+        "ints"          => "checkInts",
+        "array_ints"    => "checkOfArrayInts",
+        "floats"        => "checkFloats",
+        "bools"         => "checkBools",
+        "dates"         => "checkDates",
+        "encoded"       => "checkURLEncodedStrings",
+        "urls"          => "checkURLs",
+        "uuids"         => "checkUUIDs",
+        "layer"         => "checkLayerValidity",
+        "choices"       => "checkChoices",
+        "schema"        => "checkJsonSchema",
+        "any"           => "ignore"
+    );
 
 
     /**
@@ -307,6 +308,12 @@ class Validation_InputValidator
     {
         include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerLayers.php';
         foreach($fields as $field) {
+
+            // if parameter not send , probably optional
+            if(!isset($params[$field])) {
+                continue;
+            }
+
             $layerString = $params[$field];
             // Attempt to parse the layer string
             try {
@@ -474,6 +481,105 @@ class Validation_InputValidator
                     throw new InvalidArgumentException(
                         "Invalid value for $req. Value must be a list of event types [AR,FL,etc]", 25
                     );
+                }
+            }
+        }
+    }
+
+    /**
+     * Validates legacy event string format
+     * Format: [AR,SPoCA,1],[CH,all,1],[SS,EGSO_SFC,1],[FP,AMOS;ASAP,1]
+     * Each bracket group must have 3 comma-separated parts:
+     * - Part 1: 2-3 uppercase letters or digits (event type)
+     * - Part 2: Non-empty string or semicolon-separated list (source)
+     * - Part 3: 0, 1, "0", "1", true, or false (visibility)
+     *
+     * @param array $required List of parameter names to validate
+     * @param array &$params  The parameters that were passed in
+     *
+     * @return void
+     * @throws InvalidArgumentException if validation fails
+     */
+    public static function checkLegacyEventString($required, &$params)
+    {
+        foreach ($required as $req) {
+            if (isset($params[$req])) {
+                $value = $params[$req];
+
+                // Empty string is valid (no events selected)
+                if ($value === '') {
+                    continue;
+                }
+
+                // Pattern: one or more groups of [XX,source,visibility]
+                // Must start with [ and end with ]
+                if (!preg_match('/^\[.+\]$/', $value)) {
+                    throw new InvalidArgumentException(
+                        "Invalid legacy event string format for $req. Must be in format [AR,SPoCA,1],[CH,all,1]", 25
+                    );
+                }
+
+                // Split by ],[ to get individual groups
+                $groups = explode('],[', substr($value, 1, -1));
+
+                foreach ($groups as $group) {
+                    // Each group must have exactly 3 parts separated by commas
+                    $parts = explode(',', $group);
+
+                    if (count($parts) !== 3) {
+                        throw new InvalidArgumentException(
+                            "Invalid legacy event string for $req. Each group must have exactly 3 parts: [event_type,source,visibility]. Got: [$group]", 25
+                        );
+                    }
+
+                    list($eventType, $source, $visibility) = $parts;
+
+                    // Part 1: Must be 2-3 uppercase letters or digits
+                    if (!preg_match('/^[A-Z0-9]{2,3}$/', $eventType)) {
+                        throw new InvalidArgumentException(
+                            "Invalid event type in $req: '$eventType'. Must be 2-3 uppercase letters or digits (e.g., AR, CH, FL, C3)", 25
+                        );
+                    }
+
+                    // Part 2: Non-empty string, can contain semicolon-separated values
+                    // Must not be empty
+                    if ($source === '') {
+                        throw new InvalidArgumentException(
+                            "Invalid source in $req: source cannot be empty", 25
+                        );
+                    }
+
+                    // If contains semicolons, validate each part separately
+                    if (strpos($source, ';') !== false) {
+                        $sourceParts = explode(';', $source);
+                        foreach ($sourceParts as $sourcePart) {
+                            if (trim($sourcePart) === '') {
+                                throw new InvalidArgumentException(
+                                    "Invalid source in $req: '$source'. Semicolon-separated parts cannot be empty", 25
+                                );
+                            }
+                            // Validate each part with the pattern
+                            if (!preg_match('/^[\\\\()a-zA-Z0-9_+\\- ]+$/', $sourcePart)) {
+                                throw new InvalidArgumentException(
+                                    "Invalid source part in $req: '$sourcePart'. Must match pattern [\\()a-zA-Z0-9_+- ] and spaces", 25
+                                );
+                            }
+                        }
+                    } else {
+                        // Single source, validate with pattern
+                        if (!preg_match('/^[\\\\()a-zA-Z0-9_+\\- ]+$/', $source)) {
+                            throw new InvalidArgumentException(
+                                "Invalid source in $req: '$source'. Must match pattern [\\()a-zA-Z0-9_+- ] and spaces", 25
+                            );
+                        }
+                    }
+
+                    // Part 3: Must be 0, 1, "0", "1", true, or false
+                    if (!in_array($visibility, ['0', '1', '"0"', '"1"', 'true', 'false'], true)) {
+                        throw new InvalidArgumentException(
+                            "Invalid visibility in $req: '$visibility'. Must be 0, 1, \"0\", \"1\", true, or false", 25
+                        );
+                    }
                 }
             }
         }
