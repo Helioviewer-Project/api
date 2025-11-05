@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Superset Embedded Dashboard</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        #superset-container {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background-color: #20a7c9;
+            color: white;
+            padding: 15px 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 500;
+        }
+
+        #my-superset-container {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            min-height: 800px;
+            overflow: hidden;
+        }
+
+        /* Make the iframe inside fill the container */
+        #my-superset-container iframe {
+            width: 100% !important;
+            height: 100% !important;
+            border: none;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            font-size: 18px;
+            color: #666;
+        }
+
+        .error {
+            padding: 20px;
+            margin: 20px;
+            background-color: #fee;
+            border: 1px solid #fcc;
+            border-radius: 4px;
+            color: #c33;
+        }
+    </style>
+</head>
+<body>
+    <div id="superset-container">
+        <div class="header">
+            <h1>Superset Dashboard</h1>
+        </div>
+        <div id="my-superset-container">
+            <div class="loading">Loading dashboard...</div>
+        </div>
+    </div>
+
+    <!-- Load Superset Embedded SDK from CDN -->
+    <script src="https://unpkg.com/@superset-ui/embedded-sdk@0.2.0"></script>
+
+    <script>
+        // Configuration
+        const config = {
+            // Dashboard ID from Superset (replace with your actual dashboard ID)
+            dashboardId: "d682ae6a-62b3-4372-a8e6-a367aec3bad0",
+
+            // Superset domain (replace with your Superset instance URL)
+            supersetDomain: "https://ec2-54-234-42-121.compute-1.amazonaws.com",
+
+            // Dashboard UI configuration (optional)
+            dashboardUiConfig: {
+                hideTitle: false,
+                hideTab: false,
+                hideChartControls: false,
+                filters: {
+                    visible: true,
+                    expanded: false
+                },
+                urlParams: {
+                    // Add any URL parameters here
+                    // foo: 'value1',
+                    // bar: 'value2'
+                }
+            },
+
+            // Optional iframe sandbox attributes
+            iframeSandboxExtras: ['allow-top-navigation', 'allow-popups-to-escape-sandbox'],
+
+            // Optional referrer policy
+            referrerPolicy: "origin"
+        };
+
+        /**
+         * Fetch guest token from your backend
+         * This function should make a request to your backend API
+         * which in turn calls Superset's /security/guest_token endpoint
+         */
+        async function fetchGuestToken() {
+            try {
+                // Call guestok.php in the same directory
+                const response = await fetch('guestok.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    // Include any authentication headers your backend requires
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch guest token: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                return data.token;
+            } catch (error) {
+                console.error('Error fetching guest token:', error);
+                showError('Failed to authenticate with Superset. Please check your configuration.');
+                throw error;
+            }
+        }
+
+        /**
+         * Display error message
+         */
+        function showError(message) {
+            const container = document.getElementById('my-superset-container');
+            container.innerHTML = `<div class="error">${message}</div>`;
+        }
+
+        /**
+         * Initialize and embed the Superset dashboard
+         */
+        function initializeDashboard() {
+            try {
+                // Check if SDK is loaded
+                if (typeof supersetEmbeddedSdk === 'undefined') {
+                    showError('Superset Embedded SDK failed to load from CDN.');
+                    return;
+                }
+
+                // Embed the dashboard
+                supersetEmbeddedSdk.embedDashboard({
+                    id: config.dashboardId,
+                    supersetDomain: config.supersetDomain,
+                    mountPoint: document.getElementById("my-superset-container"),
+                    fetchGuestToken: fetchGuestToken,
+                    dashboardUiConfig: config.dashboardUiConfig,
+                    iframeSandboxExtras: config.iframeSandboxExtras,
+                    referrerPolicy: config.referrerPolicy
+                });
+            } catch (error) {
+                console.error('Error initializing dashboard:', error);
+                showError('Failed to initialize dashboard: ' + error.message);
+            }
+        }
+
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeDashboard);
+        } else {
+            initializeDashboard();
+        }
+    </script>
+</body>
+</html>
