@@ -57,7 +57,7 @@ class EventsStateManager
                 } else {
 
                     foreach($eventHelioGroupLayer['frms'] as $eventLayerFrm) {
-                        $event_layer_frm = str_replace('\\', '', $eventLayerFrmt stat);
+                        $event_layer_frm = str_replace('\\', '', $eventLayerFrm);
                         if (!array_key_exists($event_layer_frm, $this->events_tree[$layer_event_type])) {
                             $this->events_tree[$layer_event_type][$event_layer_frm] = 'all_event_instances';
                         }
