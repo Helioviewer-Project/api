@@ -57,8 +57,9 @@ class EventsStateManager
                 } else {
 
                     foreach($eventHelioGroupLayer['frms'] as $eventLayerFrm) {
-                        if (!array_key_exists($eventLayerFrm, $this->events_tree[$layer_event_type])) {
-                            $this->events_tree[$layer_event_type][$eventLayerFrm] = 'all_event_instances';
+                        $event_layer_frm = str_replace('\\', '', $eventLayerFrm);
+                        if (!array_key_exists($event_layer_frm, $this->events_tree[$layer_event_type])) {
+                            $this->events_tree[$layer_event_type][$event_layer_frm] = 'all_event_instances';
                         }
                     }
 
@@ -66,6 +67,8 @@ class EventsStateManager
 
                         $event_instance_frm_pieces = explode('--',$eventLayerEventInstance);
                         $event_instance_frm = $event_instance_frm_pieces[1];
+
+                        $event_instance_frm = str_replace('\\', '', $event_instance_frm);
 
                         // if we have frms all included like "frm1" and in event instance "flare--frm1--event1" 
                         // we just ignore those since they are all included into the tree with frm1 anyways
