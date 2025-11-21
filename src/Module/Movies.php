@@ -1567,10 +1567,10 @@ class Module_Movies implements Module {
             break;
         case 'uploadMovieToYouTube':
             $expected = array(
-                'optional' => array('id', 'title', 'description', 'tags', 'share', 'html'),
+                'optional' => array('id', 'title', 'description', 'tags', 'share', 'html', 'code', 'token'),
                 'alphanum' => array('id'),
                 'bools'    => array('share', 'html'),
-                'any' => array('title', 'description', 'tags')
+                'any' => array('title', 'description', 'tags', 'code', 'token')
             );
             break;
         case 'getUserVideos':
