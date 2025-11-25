@@ -18,11 +18,6 @@ class HelioviewerConsoleInstaller:
         # Locate jp2 images in specified filepath
         filepaths = find_images(path)
 
-        # Check to make sure some images were found
-        if len(filepaths) is 0:
-            print("No JPEG 2000 images found. Exiting installation.")
-            sys.exit(2)
-
         # Setup database schema if needed
         db, cursor, mysql = self.get_db_cursor()
 
