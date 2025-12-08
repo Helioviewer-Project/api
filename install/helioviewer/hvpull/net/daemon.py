@@ -670,9 +670,9 @@ class ImageRetrievalDaemon:
 
         # import email modules
         import smtplib
-        from email.MIMEMultipart import MIMEMultipart
-        from email.MIMEText import MIMEText
-        from email.Utils import formatdate
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+        from email.utils import formatdate
 
         msg = MIMEMultipart()
         msg['From'] = self.email_from
@@ -886,6 +886,7 @@ class ImageRetrievalDaemon:
             "halpha": "GongDataServer",
             "hv_rhessi": "HVRHESSIDataServer",
             "punch": "PUNCHDataServer",
+            "local": "LocalDataServer",
         }
 
     @classmethod
