@@ -16,7 +16,7 @@ jobs:
     - name: Setup Helioviewer Docker environment
       uses: Helioviewer-Project/helioviewer.org-docker/.github/actions/helioviewer-docker@main
       with:
-        api-ref: ${{ github.sha }}
+        api-ref: ${{ github.ref }}
 
     - name: Print container logs
       if: always()
