@@ -887,6 +887,7 @@ class ImageRetrievalDaemon:
             "hv_rhessi": "HVRHESSIDataServer",
             "punch": "PUNCHDataServer",
             "local": "LocalDataServer",
+            "hv": "HvDataServer",
         }
 
     @classmethod
