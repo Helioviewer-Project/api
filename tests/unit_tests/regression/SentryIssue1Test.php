@@ -19,7 +19,7 @@ final class SentryIssue1Test extends TestCase
         $client = new Client();
 
         // Send a GET request to the specified URL
-        $response = $client->get(HV_WEB_ROOT_URL, [
+        $response = $client->get(HV_LOCAL_TEST_URL, [
             'http_errors' => false
         ]);
 
