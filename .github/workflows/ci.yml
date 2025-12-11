@@ -37,7 +37,6 @@ jobs:
       if: always()
       working-directory: helioviewer.org-docker
       run: |
-        docker compose exec -T api whoami
         docker compose exec -T api ls -lh docroot/cache
         ls -lh data/cache
         cat data/log/*
