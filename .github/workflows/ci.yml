@@ -38,7 +38,7 @@ jobs:
       working-directory: helioviewer.org-docker
       run: |
         ls -lh data/cache/movies/2025/12/11/V666n
-        cat data/cache/movies/2025/12/11/V666n/ffmpeg.log
+        ls -lh data/cache/movies/2025/12/11/1666n
         cat data/log/*
 
 #  playwright-e2e-tests:
