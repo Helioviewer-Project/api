@@ -37,8 +37,8 @@ jobs:
       if: always()
       working-directory: helioviewer.org-docker
       run: |
-        docker compose exec -T api ls -lh docroot/cache
-        ls -lh data/cache
+        ls -lh data/cache/movies/2025/12/11/V666n
+        cat data/cache/movies/2025/12/11/V666n/ffmpeg.log
         cat data/log/*
 
 #  playwright-e2e-tests:
