@@ -35,8 +35,12 @@ jobs:
 
     - name: Print API error logs
       if: always()
-      working-directory: helioviewer.org-docker/data/log
-      run: cat *
+      working-directory: helioviewer.org-docker
+      run: |
+        docker compose exec -T api whoami
+        docker compose exec -T api ls -lh docroot/cache
+        ls -lh data/cache
+        cat data/log/*
 
 #  playwright-e2e-tests:
 #    strategy:
