@@ -35,7 +35,7 @@ jobs:
 
     - name: Print API error logs
       if: always()
-      working-directory: helioviewer.org-docker/api
+      working-directory: helioviewer.org-docker/data/log
       run: cat *
 
 #  playwright-e2e-tests:
