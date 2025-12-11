@@ -33,6 +33,11 @@ jobs:
       run: |
         docker compose logs
 
+    - name: Print API error logs
+      if: always()
+      working-directory: helioviewer.org-docker/api
+      run: cat *
+
 #  playwright-e2e-tests:
 #    strategy:
 #      matrix:
