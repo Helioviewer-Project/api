@@ -62,7 +62,7 @@ class Movie_FFMPEGEncoder
             // Idk, this kept failing on github actions, but the file exists and
             // all other logs indicated making the movie was successful, and yet this exception
             // got thrown repeatedly.
-            sleep(1)
+            sleep(1);
             // If it's still not there, then fine, throw the error.
             if (!file_exists($outputFile)) {
                 throw new Exception("FFMpeg error encountered - movie file $outputFile does not exist");
