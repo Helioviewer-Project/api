@@ -24,8 +24,9 @@ jobs:
       run: docker compose exec -T api composer run-script test
 
     - name: Run python tests
-      working-directory: helioviewer.org-docker
-      run: docker compose exec -T api composer run-script test-python
+      uses: Helioviewer-Project/helioviewer.org-docker/.github/actions/pytest-api@main
+      with:
+        working-directory: helioviewer.org-docker
 
     - name: Print container logs
       if: always()
@@ -36,10 +37,7 @@ jobs:
     - name: Print API error logs
       if: always()
       working-directory: helioviewer.org-docker
-      run: |
-        ls -lh data/cache/movies/2025/12/11/V666n
-        ls -lh data/cache/movies/2025/12/11/1666n
-        cat data/log/*
+      run: cat data/log/*
 
 #  playwright-e2e-tests:
 #    strategy:
