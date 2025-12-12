@@ -55,6 +55,17 @@ class Movie_FFMPEGEncoder
         $this->_log = fopen($directory . 'ffmpeg.log', 'a');
     }
 
+    private function checkVideoOutput($outputFile) {
+        // If FFmpeg segfaults, an empty movie container may still be produced,
+        if (!file_exists($outputFile)) {
+            throw new Exception("FFMpeg error encountered - movie file $outputFile does not exist");
+        }
+        $fsize = filesize($outputFile);
+        if ($fsize < 1000) {
+            throw new Exception("FFmpeg error encountered - Expected movie to be at least 1000 bytes, got $fsize ($outputFile)", 43);
+        }
+    }
+
     /**
      * Creates a medium quality video
      */
@@ -72,9 +83,7 @@ class Movie_FFMPEGEncoder
             $this->_createWebMVideo($outputFile);
         }
 
-        // If FFmpeg segfaults, an empty movie container may still be produced,
-        if (!file_exists($outputFile) || filesize($outputFile) < 1000)
-            throw new Exception("FFmpeg error encountered.", 43);
+        $this->checkVideoOutput($outputFile);
 
         return $outputFile;
     }
@@ -93,9 +102,8 @@ class Movie_FFMPEGEncoder
             $this->_createWebMVideo($outputFile, 1);
         }
 
-        // If FFmpeg segfaults, an empty movie container may still be produced
-        if (!file_exists($outputFile) || filesize($outputFile) < 1000)
-            throw new Exception("FFmpeg error encountered.", 43);
+        // If FFmpeg segfaults, an empty movie container may still be produced,
+        $this->checkVideoOutput($outputFile);
 
         return $outputFile;
     }

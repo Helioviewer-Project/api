@@ -9,9 +9,11 @@ class TestVsoDownload(unittest.TestCase):
     @patch("sunpy.net.Fido.fetch")
     @responses.activate
     def test_getImageGroup(self, fido_fetch_response):
-        # Allow requests to localhost to go through.
-        responses.add_passthru("http://localhost")
-        URL = "http://localhost/?action=getSciDataScript&imageScale=4.84088176&sourceIds=[13,10]&startDate=2021-06-01T00:01:00Z&endDate=2021-06-01T00:01:15Z&lang=sunpy&provider=vso";
+        # Get API host from environment variable, default to localhost
+        host = os.environ.get('PYTEST_API_HOST', 'localhost')
+        # Allow requests to the configured host to go through.
+        responses.add_passthru(f"http://{host}")
+        URL = f"http://{host}/?action=getSciDataScript&imageScale=4.84088176&sourceIds=[13,10]&startDate=2021-06-01T00:01:00Z&endDate=2021-06-01T00:01:15Z&lang=sunpy&provider=vso"
 
         response = requests.get(URL)
 

@@ -1,0 +1,79 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  php-integration-tests:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Setup Helioviewer Docker environment
+      uses: Helioviewer-Project/helioviewer.org-docker/.github/actions/helioviewer-docker@main
+      with:
+        api-ref: ${{ github.ref }}
+
+    - name: Disable movie builder (required for tests)
+      working-directory: helioviewer.org-docker
+      run: docker compose down movies
+
+    # Run tests inside the api container
+    - name: Run phpunit tests
+      working-directory: helioviewer.org-docker
+      run: docker compose exec -T api composer run-script test
+
+    - name: Run python tests
+      uses: Helioviewer-Project/helioviewer.org-docker/.github/actions/pytest-api@main
+      with:
+        working-directory: helioviewer.org-docker
+
+    - name: Print container logs
+      if: always()
+      working-directory: helioviewer.org-docker
+      run: |
+        docker compose logs
+
+    - name: Print API error logs
+      if: always()
+      working-directory: helioviewer.org-docker
+      run: cat data/log/*
+
+  playwright-e2e-tests:
+    strategy:
+      matrix:
+        shardIndex: [1, 2, 3, 4, 5]
+        shardTotal: [5]
+      # If one of the shards fails, continue running the remaining tests
+      fail-fast: false
+
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+    - name: Run Playwright tests
+      uses: Helioviewer-Project/helioviewer.org-tests/.github/actions/playwright-test@main
+      with:
+        api-ref: ${{ github.sha }}
+        shard-index: ${{ matrix.shardIndex }}
+        shard-total: ${{ matrix.shardTotal }}
+  merge-reports:
+    # Merge reports after playwright-tests, even if some shards have failed
+    if: ${{ !cancelled() }}
+    needs: [playwright-e2e-tests]
+
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout test code
+      uses: actions/checkout@v4
+      with:
+        repository: 'Helioviewer-Project/helioviewer.org-tests'
+        path: 'helioviewer.org-tests'
+
+    - name: Merge Playwright reports
+      uses: Helioviewer-Project/helioviewer.org-tests/.github/actions/playwright-merge-reports@main
+      with:
+        test-repo-path: 'helioviewer.org-tests'
