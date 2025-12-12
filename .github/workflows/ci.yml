@@ -18,6 +18,10 @@ jobs:
       with:
         api-ref: ${{ github.ref }}
 
+    - name: Disable movie builder (required for tests)
+      working-directory: helioviewer.org-docker
+      run: docker compose down movies
+
     # Run tests inside the api container
     - name: Run phpunit tests
       working-directory: helioviewer.org-docker
