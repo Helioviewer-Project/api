@@ -275,7 +275,7 @@ class Movie_HelioviewerMovie {
         }
         catch (Exception $e) {
             Sentry::capture($e);
-            $this->_abort('Error encountered during movie frame compilation: ' . $e->getFile() . ":" . $e->getLine() . " - " . $e->getMessage() );
+            $this->_abort('Error encountered during movie frame compilation: ' . $e->getFile() . ":" . $e->getLine() . " - " . $e->getMessage() . "\n" . $e->getTraceAsString());
         }
 
         $t3 = time();
@@ -289,7 +289,8 @@ class Movie_HelioviewerMovie {
             $t4 = time();
             $this->_abort('Error encountered during video encoding. ' .
                 'This may be caused by an FFmpeg configuration issue, ' .
-                'or by insufficient permissions in the cache.', $t4 - $t3);
+                'or by insufficient permissions in the cache.' . "\n" .
+                $e->getFile() . ":" . $e->getLine() . " - " . $e->getMessage() . "\n" . $e->getTraceAsString(), $t4 - $t3);
         }
 
         // Log buildMovie in statistics table
