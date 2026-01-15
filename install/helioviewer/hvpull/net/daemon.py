@@ -143,7 +143,6 @@ class ImageRetrievalDaemon:
             if endtime is not None:
                 endtime = datetime.datetime.strptime(endtime, date_fmt)
                 self.query(starttime, endtime)
-                self.sleep()
 
                 return None
             else:
