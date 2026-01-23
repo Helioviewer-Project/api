@@ -582,48 +582,56 @@ var createScreenshotSourcesChart = function (id, totals, size) {
 };
 
 var createScreenshotLayerCountChart = function (id, totals, size) {
-    var chart, width, data = new google.visualization.DataTable();
+    var chart, data = new google.visualization.DataTable();
     var num = 0, maxNum = 5;
     var otherCount = 0;
 
     data.addColumn('string', 'Layers');
     data.addColumn('number', 'Number');
 
-    //sort the keys by value
-    var keysSorted = Object.keys(totals).sort(function(a,b){return totals[b]-totals[a]})
-    //add appropirate number of rows
-    data.addRows(Math.min(maxNum,keysSorted.length));
+    var keysSorted = Object.keys(totals).sort(function(a,b){return totals[b]-totals[a]});
+    data.addRows(Math.min(maxNum + 1, keysSorted.length));
 
-    //populate the chart
     for(var name of keysSorted){
-        data.setValue(num, 0, name);
-        data.setValue(num, 1, totals[name]);
-        //increment counter
-        num++;
+        if(num < maxNum){
+            data.setValue(num, 0, name);
+            data.setValue(num, 1, totals[name]);
+            num++;
+        } else {
+            otherCount += totals[name];
+        }
+    }
+    if(otherCount > 0){
+        data.setValue(num, 0, 'Other');
+        data.setValue(num, 1, otherCount);
     }
     chart = new google.visualization.PieChart(document.getElementById(id));
     chart.draw(data, {width: size, height: size*pieHeightScale, colors: colors, title: "Screenshot Layer Count"});
 };
 
 var createMovieLayerCountChart = function (id, totals, size) {
-    var chart, width, data = new google.visualization.DataTable();
+    var chart, data = new google.visualization.DataTable();
     var num = 0, maxNum = 5;
     var otherCount = 0;
 
     data.addColumn('string', 'Layers');
     data.addColumn('number', 'Number');
 
-    //sort the keys by value
-    var keysSorted = Object.keys(totals).sort(function(a,b){return totals[b]-totals[a]})
-    //add appropirate number of rows
-    data.addRows(Math.min(maxNum,keysSorted.length));
+    var keysSorted = Object.keys(totals).sort(function(a,b){return totals[b]-totals[a]});
+    data.addRows(Math.min(maxNum + 1, keysSorted.length));
 
-    //populate the chart
     for(var name of keysSorted){
-        data.setValue(num, 0, name);
-        data.setValue(num, 1, totals[name]);
-        //increment counter
-        num++;
+        if(num < maxNum){
+            data.setValue(num, 0, name);
+            data.setValue(num, 1, totals[name]);
+            num++;
+        } else {
+            otherCount += totals[name];
+        }
+    }
+    if(otherCount > 0){
+        data.setValue(num, 0, 'Other');
+        data.setValue(num, 1, otherCount);
     }
     chart = new google.visualization.PieChart(document.getElementById(id));
     chart.draw(data, {width: size, height: size*pieHeightScale, colors: colors, title: "Movie Layer Count"});

@@ -11,7 +11,7 @@
     <head>
     <meta charset="utf-8" />
     <script type="text/javascript" src="https://www.google.com/jsapi"></script>
-    <script type="text/javascript" src="statistics.js"></script>
+    <script type="text/javascript" src="statistics.js?v=<?php echo md5_file(__DIR__ . '/statistics.js'); ?>"></script>
     <title>Helioviewer.org - Usage Statistics</title>
     <link rel='stylesheet' href='statistics.css' />
     <script type="text/javascript">
