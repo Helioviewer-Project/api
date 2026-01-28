@@ -31,6 +31,6 @@
         "sentry/sentry": "^4.8"
     },
     "require-dev": {
-        "phpunit/phpunit": "^9.6"
+        "phpunit/phpunit": "^9.6.33"
     }
 }
