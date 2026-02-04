@@ -35,7 +35,15 @@ class Config {
 
         if ( in_array('acao_url', array_keys($this->config)) ) {
 
-            if ( in_array('HTTP_ORIGIN', array_keys($_SERVER))
+            // In dev environments, allow CORS from all origins
+            if ( in_array('app_env', array_keys($this->config)) 
+              && str_starts_with($this->config['app_env'], 'dev') ) {
+
+                header("Access-Control-Allow-Origin: *");
+                header("Access-Control-Allow-Methods: ".$this->config['acam']);
+                header("Access-Control-Allow-Headers: Content-Type");
+
+            } elseif ( in_array('HTTP_ORIGIN', array_keys($_SERVER))
               && in_array($_SERVER['HTTP_ORIGIN'], $this->config['acao_url']) ) {
 
                 header("Access-Control-Allow-Origin: ".$_SERVER['HTTP_ORIGIN']);
