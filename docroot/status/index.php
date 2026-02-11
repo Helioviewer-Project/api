@@ -33,26 +33,6 @@
         "RHESSI" => $PROVIDERS['RHESSI']
     );
 
-    const COVERAGE = array (
-        "AIA"    => "SDO_coverage.html",
-        "HMI"    => "SDO_coverage.html",
-        "EIT"    => "SOHO_coverage.html",
-        "LASCO"  => "SOHO_coverage.html",
-        "COSMO"  => "MLSO_coverage.html",
-        "EUI"    => "SOLO_coverage.html",
-        "COR1-A" => "STEREO_A_coverage.html",
-        "COR2-A" => "STEREO_A_coverage.html",
-        "EUVI-A" => "STEREO_A_coverage.html",
-        "COR1-B" => "STEREO_B_coverage.html",
-        "COR2-B" => "STEREO_B_coverage.html",
-        "EUVI-B" => "STEREO_B_coverage.html",
-        "IRIS"   => "IRIS_coverage.html",
-        "SWAP"   => "PROBA2_coverage.html",
-        "SXT"    => "Yohkoh_coverage.html",
-        "XRT"    => "Hinode_coverage.html",
-        "RHESSI" => "RHESSI_coverage.html"
-    );
-
     const TABLE_ROW_TEMPLATE = "<tr class='%s'><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td align='center'>%s</td></tr>";
 
     function formatDate(?DateTime $date) {
@@ -102,12 +82,7 @@
     }
 
     function genCoverageLink($source) {
-        $instrument = explode(" ", $source)[0];
-        if (array_key_exists($instrument, COVERAGE)) {
-            $coverage_page = "/statistics/bokeh/coverages/" . COVERAGE[$instrument];
-        } else {
-            $coverage_page = "#";
-        }
+        $coverage_page = "/statistics/coverage.php";
         return "<a href=".$coverage_page.">$source</a>";
     }
 
