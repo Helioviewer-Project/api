@@ -83,7 +83,7 @@ $config = new Config('../../settings/Config.ini');
 
     <script src="https://unpkg.com/@superset-ui/embedded-sdk"></script>
     <script type="text/javascript">
-        const DASHBOARD_ID = '76086857-32bf-4d6c-bffc-7e5689c19e93';
+        const DASHBOARD_ID = '<?= HV_SUPERSET_COVERAGE_DASHBOARD_ID ?>';
         const GUEST_TOKEN_URL = '<?= HV_SUPERSET_SIDECAR_URL ?>/guest_token.php';
         const SUPERSET_URL = '<?= HV_SUPERSET_URL ?>';
 
