@@ -18,8 +18,9 @@ class EventsApi {
      */
     public function __construct(ClientInterface $client = null)
     {
+        $timeout = defined('HV_EVENTS_API_TIMEOUT') ? HV_EVENTS_API_TIMEOUT : 10;
         $this->client = $client ?? new Client([
-            'timeout' => 4,
+            'timeout' => $timeout,
             'headers' => [
                 'Accept' => 'application/json',
                 'User-Agent' => 'Helioviewer-API/2.0'
