@@ -13,11 +13,11 @@
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     https://github.com/Helioviewer-Project
  */
-require_once 'interface.Module.php';
-
+use Helioviewer\Api\Module\AbstractModule;
+use Helioviewer\Api\Module\Module as ModuleInterface;
 use Helioviewer\Api\Sentry\Sentry;
 
-class Module_JHelioviewer implements Module {
+class Module_JHelioviewer extends AbstractModule implements ModuleInterface {
 
     private $_params;
     private $_options;

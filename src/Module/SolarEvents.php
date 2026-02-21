@@ -12,14 +12,13 @@
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     https://github.com/Helioviewer-Project
  */
-require_once 'interface.Module.php';
-require_once HV_ROOT_DIR . "/../src/Helper/EventInterface.php";
-
+use Helioviewer\Api\Module\AbstractModule;
+use Helioviewer\Api\Module\Module as ModuleInterface;
 use Helioviewer\Api\Sentry\Sentry;
 use Helioviewer\Api\Event\EventsApi;
 use Helioviewer\Api\Event\EventsApiException;
 
-class Module_SolarEvents implements Module {
+class Module_SolarEvents extends AbstractModule implements ModuleInterface {
 
     private $_params;
     private $_options;
@@ -216,59 +215,33 @@ class Module_SolarEvents implements Module {
     }
 
     public function events() {
-        // The given time is the observation time.
         $observationTime = new DateTimeImmutable($this->_params['startTime']);
 
-        // The query start time is 12 hours earlier.
-        $start = $observationTime->sub(new DateInterval("PT12H"));
+        // All event sources supported by the Events API
+        $allSources = ['CCMC', 'HEK', 'RHESSI'];
 
-        // The query duration will be 24 hours.
-        // This results in a query of events over 24 hours with the given time
-        // at the center.
-        $length = new DateInterval('P1D');
-
-        // Handle CCMC source using new Events API
-        // This provides direct access to CCMC event data without going through the standard EventInterface
-        if (array_key_exists('sources', $this->_options) && $this->_options['sources'] === 'CCMC') {
-
-            try {
-                $eventsApi = new EventsApi();
-                $data = $eventsApi->getEventsForSource($observationTime, "CCMC");
-                
-                header("Content-Type: application/json");
-                echo json_encode($data);
-                return;
-            } catch (EventsApiException $e) {
-                Sentry::capture($e);
-            }
-        }
-
-        // Check if any specific datasources were requested
+        // Determine which sources to query
         if (array_key_exists('sources', $this->_options)) {
             $sources = explode(',', $this->_options['sources']);
-            // Special case for HEK since it doesn't go through the event interface
-            $hekData = [];
-            if (in_array("HEK", $sources)) {
-                // Remove HEK from the array
-                $sources = array_filter($sources, function ($source) {return $source != "HEK";});
-                // Get the HEK data
-                $hekData = $this->getHekEvents();
-            }
-
-            // Query the rest of the data
-            $data = Helper_EventInterface::GetEvents($start, $length, $observationTime, $sources);
-
-            // Merge with the HEK data
-            $data = array_merge($hekData, $data);
         } else {
-            $hekData = $this->getHekEvents();
-            // Simple case where there's no sources specified, just return everything
-            $data = Helper_EventInterface::GetEvents($start, $length, $observationTime);
-            $data = array_merge($hekData, $data);
+            $sources = $allSources;
+        }
+
+        // Fetch events from each source via EventsApi
+        $eventsApi = new EventsApi();
+        $data = [];
+
+        foreach ($sources as $source) {
+            try {
+                $sourceData = $eventsApi->getEventsForSource($observationTime, $source);
+                $data = array_merge($data, $sourceData);
+            } catch (EventsApiException $e) {
+                Sentry::capture($e);
+                return $this->_sendResponse(500, 'Internal Server Error', 'Failed to fetch events from ' . $source);
+            }
         }
 
         header("Content-Type: application/json");
-
         echo json_encode($data);
     }
 
