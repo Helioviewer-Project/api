@@ -13,7 +13,7 @@
  * @link     https://github.com/Helioviewer-Project
  */
 use Helioviewer\Api\Module\AbstractModule;
-use Helioviewer\Api\Module\Module as ModuleInterface;
+use Helioviewer\Api\Module\ModuleInterface;
 use Helioviewer\Api\Event\EventsStateManager;
 use Helioviewer\Api\Sentry\Sentry;
 

@@ -17,7 +17,7 @@ require_once HV_ROOT_DIR.'/../src/Validation/InputValidator.php';
 require_once HV_ROOT_DIR.'/../src/Helper/ErrorHandler.php';
 
 use Helioviewer\Api\Module\AbstractModule;
-use Helioviewer\Api\Module\Module as ModuleInterface;
+use Helioviewer\Api\Module\ModuleInterface;
 use Helioviewer\Api\Event\EventsStateManager;
 use Helioviewer\Api\Sentry\Sentry;
 

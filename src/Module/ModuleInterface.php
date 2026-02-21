@@ -14,7 +14,7 @@
 
 namespace Helioviewer\Api\Module;
 
-interface Module {
+interface ModuleInterface {
     /**
      * Executes the requested action
      *
