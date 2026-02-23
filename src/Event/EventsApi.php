@@ -36,7 +36,7 @@ class EventsApi {
      * @return array Array of event data
      * @throws EventsApiException on API errors or unexpected responses
      */
-    public function getEventsForSource(DateTimeInterface $observationTime, string $source): array 
+    public function getEventsForSourceLegacy(DateTimeInterface $observationTime, string $source): array 
     {
         // Build the API URL: /api/v1/events/{source}/observation/{datetime}
         $formattedTime = $observationTime->format('Y-m-d H:i:s');

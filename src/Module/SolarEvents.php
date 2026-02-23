@@ -204,16 +204,6 @@ class Module_SolarEvents extends AbstractModule implements ModuleInterface {
         }
     }
 
-    /**
-     * Retrieves HEK events in a normalized format
-     */
-    private function getHekEvents() {
-        include_once HV_ROOT_DIR.'/../src/Event/HEKAdapter.php';
-        $hek = new Event_HEKAdapter();
-        $data = $hek->getNormalizedEvents($this->_params['startTime'], $this->_options);
-        return $data;
-    }
-
     public function events() {
         $observationTime = new DateTimeImmutable($this->_params['startTime']);
 
@@ -233,7 +223,7 @@ class Module_SolarEvents extends AbstractModule implements ModuleInterface {
 
         foreach ($sources as $source) {
             try {
-                $sourceData = $eventsApi->getEventsForSource($observationTime, $source);
+                $sourceData = $eventsApi->getEventsForSourceLegacy($observationTime, $source);
                 $data = array_merge($data, $sourceData);
             } catch (EventsApiException $e) {
                 Sentry::capture($e);

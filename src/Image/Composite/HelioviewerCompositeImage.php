@@ -605,7 +605,7 @@ class Image_Composite_HelioviewerCompositeImage {
         try {
 
             $eventsApi = new EventsApi();
-            $event_categories = array_merge($event_categories, $eventsApi->getEventsForSource($observationTime, "CCMC"));
+            $event_categories = array_merge($event_categories, $eventsApi->getEventsForSourceLegacy($observationTime, "CCMC"));
             // if there is no error only left is RHESSI to collect
             $events_api_sources = ["RHESSI"];
 

@@ -33,7 +33,7 @@ final class EventsApiTest extends TestCase
             ->with('GET', $this->stringContains('/api/v1/events/CCMC/observation/'))
             ->willReturn(new Response(200, [], json_encode($responseData)));
 
-        $result = $this->eventsApi->getEventsForSource(
+        $result = $this->eventsApi->getEventsForSourceLegacy(
             new DateTimeImmutable('2024-01-15 12:00:00'),
             'CCMC'
         );
@@ -48,7 +48,7 @@ final class EventsApiTest extends TestCase
             ->with('GET', $this->stringContains('2024-01-15+12%3A30%3A45'))
             ->willReturn(new Response(200, [], json_encode([])));
 
-        $this->eventsApi->getEventsForSource(
+        $this->eventsApi->getEventsForSourceLegacy(
             new DateTimeImmutable('2024-01-15 12:30:45'),
             'CCMC'
         );
@@ -63,7 +63,7 @@ final class EventsApiTest extends TestCase
         $this->expectException(EventsApiException::class);
         $this->expectExceptionMessage('Failed to decode JSON response');
 
-        $this->eventsApi->getEventsForSource(
+        $this->eventsApi->getEventsForSourceLegacy(
             new DateTimeImmutable('2024-01-15 12:00:00'),
             'CCMC'
         );
@@ -78,7 +78,7 @@ final class EventsApiTest extends TestCase
         $this->expectException(EventsApiException::class);
         $this->expectExceptionMessage('Unexpected response format: expected array, got string');
 
-        $this->eventsApi->getEventsForSource(
+        $this->eventsApi->getEventsForSourceLegacy(
             new DateTimeImmutable('2024-01-15 12:00:00'),
             'CCMC'
         );
