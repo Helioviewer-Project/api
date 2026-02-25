@@ -1321,43 +1321,78 @@ class Database_Statistics {
 
     /**
      * Gets latest datasource coverage and return as JSON
+     *
+     * This function returns event coverage data for timeline/chart display.
+     * It supports multiple time resolutions and returns data formatted for visualization.
+     *
+     * @param EventLayers $events      - Collection of event layers to query (event_type + frm_name pairs)
+     * @param string      $resolution  - Time bucket size: 'm' (minute), '5m', '15m', '30m', 'h', 'D', 'W', 'M', 'Y'
+     * @param DateTime    $startDate   - Start of the visible time range
+     * @param DateTime    $endDate     - End of the visible time range
+     * @param DateTime    $currentDate - Current observation time (used for highlighting active events)
+     *
+     * @return string JSON encoded array of event series for chart display
      */
     public function getDataCoverageEvents($events, $resolution, $startDate, $endDate, $currentDate) {
+
         require_once HV_ROOT_DIR.'/../src/Helper/DateTimeConversions.php';
         $selectedEvents = $events;
-        // Proceed to query for HEK event coverage
 
+        // =======================================================================
+        // STEP 1: EXPAND TIME RANGE
+        // =======================================================================
+        // Calculate the distance between start and end, then expand the query range
+        // by that same distance on both sides. This provides buffer data for smooth
+        // scrolling/panning in the UI timeline.
+        // Example: If user views Jan 1-10, we query Dec 22 - Jan 20
         $distance = $endDate->getTimestamp() - $startDate->getTimestamp();
-        $interval = new DateInterval('PT'.$distance.'S');
 
+        // Store the ORIGINAL visible range (before expansion) for later filtering
         $visibleStartTimestamp = $startDate->getTimestamp();
         $visibleEndTimestamp = $endDate->getTimestamp();
 
+        // Expand the range: startDate goes back, endDate goes forward
         $startDate->modify('-'.$distance.' seconds');
         $endDate->modify('+'.$distance.' seconds');
 
+        // Convert expanded dates to MySQL format for SQL queries
         $dateStart = toMySQLDateString($startDate);
         $dateEnd = toMySQLDateString($endDate);
 
-        $startTimestamp = $startDate->getTimestamp();
-        $endTimestamp = $endDate->getTimestamp();
-        $currentTimestamp = $currentDate->getTimestamp();
+        // Store timestamps for comparisons
+        $startTimestamp = $startDate->getTimestamp();   // Expanded start
+        $endTimestamp = $endDate->getTimestamp();       // Expanded end
+        $currentTimestamp = $currentDate->getTimestamp(); // Current observation time
 
-        $sources = array();
+        // =======================================================================
+        // STEP 2: INITIALIZE OUTPUT STRUCTURE
+        // =======================================================================
+        $sources = array();  // Final output: array of event series
 
         if(!$events){
             return json_encode(array());
         }
 
+        // EVENT_KEYS maps event_type codes to numeric keys for chart series
+        // e.g., 'AR' => 1, 'CE' => 2, 'FL' => 3, etc.
         $eventsKeys = self::EVENT_KEYS;
 
+        // EVENT_COLORS maps event_type codes to hex colors for chart display
         $eventsColors = self::EVENT_COLORS;
 
-        $dbData = array();
-        $dbVisibleData = array();
-        $layersString = '';
+        // =======================================================================
+        // STEP 3: BUILD SQL WHERE CLAUSE FROM EVENT LAYERS
+        // =======================================================================
+        // Parse the requested event layers and build SQL filter conditions.
+        // Each layer has an event_type (e.g., 'AR', 'FL') and optional frm_name
+        // (Feature Recognition Method, e.g., 'NOAA_SWPC_Observer')
+        $dbData = array();           // Temporary storage for aggregated counts
+        $dbVisibleData = array();    // Tracks which series have visible data
+        $layersString = '';          // SQL WHERE clause fragment
+
         foreach($events->toArray() as $layer){
 
+            // If specific FRM(s) requested, filter by both event_type AND frm_name
             if(!empty($layer['frm_name']) && $layer['frm_name'] != 'all'){
                 $frms = explode(';', $layer['frm_name']);
                 foreach($frms as $frm_name){
@@ -1365,31 +1400,45 @@ class Database_Statistics {
                         $layersString .= ' OR ';
                     }
                     $frm_name = str_replace('_', ' ', $frm_name);
+                    // Builds: (event_type = "AR" AND frm_name = "NOAA SWPC Observer")
                     $layersString .= '(event_type = "'.$layer['event_type'].'" AND frm_name = "'.$frm_name.'")';
                 }
             }else{
+                // No specific FRM - get all events of this type
                 if(!empty($layersString)){
                     $layersString .= ' OR ';
                 }
+                // Builds: event_type = "AR"
                 $layersString .= 'event_type = "'.$layer['event_type'].'"';
             }
 
+            // Initialize the output structure for this event type
             if (isset($layer['event_type']) && isset($eventsKeys[$layer['event_type']])) {
                 $eventKey = $eventsKeys[ $layer['event_type'] ];
                 $dbData[$eventKey] = array();
-                $dbVisibleData[$eventKey] = false;
+                $dbVisibleData[$eventKey] = false;  // Will be set true if data falls in visible range
                 $sources[$eventKey] = array(
-                    'data' => array(),
-                    'event_type' => $layer['event_type'],
-                    'res' => $resolution,
-                    'showInLegend' => false
+                    'data' => array(),                    // Event data points
+                    'event_type' => $layer['event_type'], // e.g., 'AR', 'FL'
+                    'res' => $resolution,                 // Resolution used
+                    'showInLegend' => false               // Only show in legend if has visible data
                 );
             }
         }
 
-
+        // =======================================================================
+        // STEP 4: BUILD SQL QUERY BASED ON RESOLUTION
+        // =======================================================================
+        // For fine resolutions (m, 5m, 15m): Query raw 'events' table
+        // For coarse resolutions (30m+): Query pre-aggregated 'events_coverage' table
         switch ($resolution) {
+            // -----------------------------------------------------------------
+            // FINE RESOLUTIONS: Query raw 'events' table for individual events
+            // These show actual event bars on the timeline
+            // -----------------------------------------------------------------
             case 'm':
+                // Minute resolution: Show individual event bars
+                // Query: Get all events that overlap with the expanded time range
                 $sql = 'SELECT
                         *
                 FROM events
@@ -1403,6 +1452,8 @@ class Database_Statistics {
 
                 break;
             case '5m':
+                // 5-minute resolution: Still shows individual events
+                // Timestamps are aligned to 5-minute boundaries
                 $sql = 'SELECT
                         *
                 FROM events
@@ -1411,15 +1462,17 @@ class Database_Statistics {
 
                 $beginInterval = new DateTime();
                 $endInterval = new DateTime();
+                // Align to 5-minute boundaries (floor to nearest 300 seconds)
                 $beginInterval->setTimestamp(floor($startTimestamp / 300) * 300);
                 $endInterval->setTimestamp(floor($endTimestamp / 300) * 300);
 
+                // Create time period for generating empty data buckets
                 $interval = DateInterval::createFromDateString('5 minutes');
                 $period = new DatePeriod($beginInterval, $interval, $endInterval);
-                $periodSeconds = 300000;
 
                 break;
             case '15m':
+                // 15-minute resolution: Still shows individual events
                 $sql = 'SELECT
                         *
                 FROM events
@@ -1428,15 +1481,23 @@ class Database_Statistics {
 
                 $beginInterval = new DateTime();
                 $endInterval = new DateTime();
+                // Align to 15-minute boundaries (floor to nearest 900 seconds)
                 $beginInterval->setTimestamp(floor($startTimestamp / 900) * 900);
                 $endInterval->setTimestamp(floor($endTimestamp / 900) * 900);
 
                 $interval = DateInterval::createFromDateString('15 minutes');
                 $period = new DatePeriod($beginInterval, $interval, $endInterval);
-                $periodSeconds = 900000;
 
                 break;
+
+            // -----------------------------------------------------------------
+            // COARSE RESOLUTIONS: Query pre-aggregated 'events_coverage' table
+            // These show event COUNTS per time bucket (bar chart style)
+            // The 'events_coverage' table is populated by batch jobs
+            // -----------------------------------------------------------------
             case '30m':
+                // 30-minute resolution: Query aggregated counts from events_coverage
+                // Returns: date, event_type, count (number of events in that 30-min bucket)
                 $sql = 'SELECT
                     date,
                     event_type,
@@ -1448,12 +1509,12 @@ class Database_Statistics {
 
                 $beginInterval = new DateTime();
                 $endInterval = new DateTime();
+                // Align to 30-minute boundaries (floor to nearest 1800 seconds)
                 $beginInterval->setTimestamp(floor($startTimestamp / 1800) * 1800);
                 $endInterval->setTimestamp(floor($endTimestamp / 1800) * 1800);
 
                 $interval = DateInterval::createFromDateString('30 minutes');
                 $period = new DatePeriod($beginInterval, $interval, $endInterval);
-                $periodSeconds = 1800000;
 
                 break;
             case 'h':
@@ -1471,7 +1532,6 @@ class Database_Statistics {
 
                 $interval = DateInterval::createFromDateString('1 hour');
                 $period = new DatePeriod($beginInterval, $interval, $endInterval);
-                $periodSeconds = 3600000;
 
                 break;
             case 'D':
@@ -1547,30 +1607,41 @@ class Database_Statistics {
                 throw new Exception($msg, 25);
         }
 
-        //build 0 data array
+        // =======================================================================
+        // STEP 5: BUILD EMPTY DATA BUCKETS (for non-minute resolutions)
+        // =======================================================================
+        // For aggregated views (5m, 15m, 30m, etc.), create an array of time buckets
+        // initialized to 0. This ensures we have data points even for empty periods.
         if($resolution != 'm'){
             $emptyData = array();
             foreach ( $period as $dt ){
+                // Key is timestamp in milliseconds, value is 0 (no events yet)
                 $emptyData[ ($dt->getTimestamp() * 1000) ] = 0;
             }
         }
 
-        //Query SQL Data
+        // =======================================================================
+        // STEP 6: EXECUTE QUERY AND PROCESS RESULTS
+        // =======================================================================
         $result = $this->_dbConnection->query($sql);
-        $i = 1;
-        $uniqueIds = array();
-        $j = 0;
+        $j = 0;  // Event index counter
 
         while ($row = $result->fetch_array(MYSQLI_ASSOC)) {
-            //Event Name
+            // Get the event type (e.g., 'AR', 'FL', 'CE')
             $key = $row['event_type'];
-
+            // Map to numeric key for chart series
             $eventKey = $eventsKeys[$key];
 
-            //Build data array
+            // ---------------------------------------------------------------
+            // MINUTE RESOLUTION: Build individual event bars
+            // ---------------------------------------------------------------
             if($resolution == 'm'){
+                // Convert event times to milliseconds for JavaScript charts
                 $timeStart = (strtotime($row['event_starttime'])* 1000);
                 $timeEnd = (strtotime($row['event_endtime'])* 1000);
+
+                // Clamp event times to the query range
+                // (events may extend beyond the visible window)
                 if(($startTimestamp * 1000) > $timeStart){
                     $timeStart = ($beginInterval->getTimestamp() * 1000);
                 }
@@ -1578,8 +1649,11 @@ class Database_Statistics {
                     $timeEnd = ($endInterval->getTimestamp() * 1000);
                 }
 
+                // Handle instantaneous events (start == end)
+                // Give them a minimum visual width so they're visible
                 $modifier = 0;
                 if($timeStart == $timeEnd){
+                    // Calculate a small offset based on visible range
                     $modifier = round(($endTimestamp - $startTimestamp) / (3*60)) * 100;
                     $startTimeToDisplay = $timeStart - $modifier;
                     $timeEndToDisplay = $timeEnd + $modifier;
@@ -1588,11 +1662,14 @@ class Database_Statistics {
                     $timeEndToDisplay = $timeEnd;
                 }
 
+                // Build the event data point for the chart
+                // x/x2 = start/end time (for horizontal bar)
+                // y = vertical position (row number)
                 $sources[$eventKey]['data'][$j] = array(
-                    'x' => $startTimeToDisplay,
-                    'x2' => $timeEndToDisplay,
-                    'y' => $j,
-                    'kb_archivid' => $row['kb_archivid'],
+                    'x' => $startTimeToDisplay,           // Bar start position
+                    'x2' => $timeEndToDisplay,            // Bar end position
+                    'y' => $j,                            // Row (will be recalculated later)
+                    'kb_archivid' => $row['kb_archivid'], // Unique event ID from HEK
                     'hv_labels_formatted' => json_decode($row['hv_labels_formatted']),
                     'event_type' => $row['event_type'],
                     'frm_name' => $row['frm_name'],
@@ -1604,64 +1681,84 @@ class Database_Statistics {
                     'modifier' => $modifier
                 );
 
+                // Mark instantaneous events
                 if($timeStart == $timeEnd){
                     $sources[$eventKey]['data'][$j]['zeroSeconds'] = true;
                 }
 
+                // Highlight events that are "active" at the current observation time
+                // Active events get white border, inactive events get dimmed color
                 if($currentTimestamp >= $timeStart && $currentTimestamp <= $timeEnd){
                     $sources[$eventKey]['data'][$j]['borderColor'] = '#ffffff';
                 }else{
                     $sources[$eventKey]['data'][$j]['color'] = $this->colourBrightness($eventsColors[ $row['event_type'] ], -0.9);
                 }
 
+                // Track if this event falls within the ORIGINAL visible range
+                // (not the expanded range) for legend display
                 if($visibleEndTimestamp >= strtotime($row['event_starttime']) && $visibleStartTimestamp <= strtotime($row['event_endtime'])){
                     $dbVisibleData[$eventKey] = true;
                 }
 
-                $uniqueIds[$row['frm_specificid']] = $j;
                 $j++;
-            }else{
+            }
+            // ---------------------------------------------------------------
+            // AGGREGATED RESOLUTIONS: Build count data points
+            // ---------------------------------------------------------------
+            else{
+                // For aggregated views, we just store count per time bucket
                 $timestamp = (strtotime($row['date'])* 1000);
                 $dbData[$eventKey][$timestamp] = (int)$row['count'];
 
+                // Track if this bucket falls in visible range
                 if($visibleEndTimestamp >= strtotime($row['date']) && $visibleStartTimestamp <= strtotime($row['date'])){
                     $dbVisibleData[$eventKey] = true;
                 }
             }
-            $i++;
         }
 
-        //Fill 0 values rows
+        // =======================================================================
+        // STEP 7: POST-PROCESS THE DATA
+        // =======================================================================
         if($resolution != 'm'){
+            // ---------------------------------------------------------------
+            // AGGREGATED: Merge actual counts with empty buckets
+            // ---------------------------------------------------------------
+            // This ensures we have a data point for every time bucket,
+            // even if no events occurred (count = 0)
             foreach($dbData as $key=>$row){
                 foreach($emptyData as $timestamp=>$count){
+                    // If we have actual data for this bucket, use it
                     if(isset($dbData[$key]) && isset($dbData[$key][ $timestamp ])){
                         $count = $dbData[$key][ $timestamp ];
                     }
+                    // Add [timestamp, count] pair to the series
                     $sources[$key]['data'][] = array($timestamp, (int)$count);
                 }
             }
         }else{
+            // ---------------------------------------------------------------
+            // MINUTE: Stack overlapping events into rows (swim lanes)
+            // ---------------------------------------------------------------
+            // Events that overlap in time need to be placed on different rows
+            // This is a "greedy" algorithm that places each event on the first
+            // row where it doesn't overlap with existing events
             ksort($sources);
             $i = 1;
 
-            $levels = array();
+            $levels = array();  // Tracks events in each row
             foreach($sources as $k=>$series){
-                //loop over all the events
-                //$i = count($levels);
-                //$levels = array();
                 $data = array();
 
                 foreach($series['data'] as $dk => $event){
-                    //was this event placed in a level already?
                     $placed = false;
-                    //loop through each level checking only the last event
+
+                    // Try to place event in an existing row
                     foreach($levels as $row=>$events){
-                        //we only need to check the last event if they are already sorted
+                        // Check only the last event in this row (events are sorted)
                         $last = end($events);
-                        //does the current event start after the end time of the last event in this level
+                        // If current event starts after last event ends, it fits here
                         if($event['x'] >= $last['x2']){
-                            //add to this level and break out of the inner loop
                             $event['y'] = $row;
                             $levels[$row][] = $event;
                             $data[] = $event;
@@ -1669,7 +1766,8 @@ class Database_Statistics {
                             break;
                         }
                     }
-                    //if not placed in another level, add a new level
+
+                    // If no existing row works, create a new row
                     if(!$placed){
                         $levels[$i] = array($event);
                         $event['y'] = $i;
@@ -1682,18 +1780,25 @@ class Database_Statistics {
 
         }
 
-        //Remove not visible events
+        // =======================================================================
+        // STEP 8: SET LEGEND VISIBILITY
+        // =======================================================================
+        // Only show event types in legend if they have data in the visible range
         foreach($dbVisibleData as $k => $isVisible){
             if($isVisible){
                 $sources[$k]['showInLegend'] = true;
             }
         }
 
-        // Handle non HEK data
+        // =======================================================================
+        // STEP 9: HANDLE NON-HEK EVENT SOURCES (placeholder/stub)
+        // =======================================================================
+        // This loop was intended to add coverage data for non-HEK event sources
+        // (like CCMC, RHESSI, etc.) via GetDataCoverageForEvent().
+        // However, GetDataCoverageForEvent() currently returns empty arrays
+        // for all event types, so this effectively does nothing.
+        // TODO: If migrating to EventsApi, this could be replaced with API calls
         foreach($selectedEvents->toArray() as $layer) {
-            // Any NON-HEK events will have their coverage handler executed in GetDataCoverageForEvent.
-            // For HEK event types, this will return an empty array, so we can just drop them.
-            // For NON-HEK event types, this will return actual data which should be placed into the final data array.
             $data = self::GetDataCoverageForEvent($layer, $resolution, $startDate, $endDate, $currentDate);
             if (count($data) > 0) {
                 $eventKey = $eventsKeys[ $layer['event_type'] ];
@@ -1702,6 +1807,10 @@ class Database_Statistics {
             }
         }
 
+        // =======================================================================
+        // STEP 10: FINALIZE AND RETURN
+        // =======================================================================
+        // Sort by event key and convert to indexed array for JSON output
         ksort($sources);
         $sources = array_values($sources);
         return json_encode($sources);
