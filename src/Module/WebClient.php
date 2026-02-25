@@ -947,126 +947,169 @@ class Module_WebClient extends AbstractModule implements ModuleInterface {
     /**
      * Retrieves the latest usage statistics from the database
      */
+    /**
+     * API Endpoint: getDataCoverage
+     *
+     * Returns data coverage information for either IMAGE layers or EVENT layers.
+     * Used by the timeline/chart component in the Helioviewer web client.
+     *
+     * Request Parameters (all in milliseconds):
+     *   - imageLayers: String of image layer definitions (for image coverage)
+     *   - eventLayers: String of event layer definitions (for event coverage)
+     *   - startDate:   Start timestamp in milliseconds
+     *   - endDate:     End timestamp in milliseconds
+     *   - currentDate: Current observation timestamp (for highlighting active events)
+     *
+     * Response:
+     *   JSON array of data series for chart visualization
+     *
+     * Note: Either imageLayers OR eventLayers must be provided, not both.
+     */
     public function getDataCoverage() {
+        // Route to appropriate handler based on which layer type is provided
+        if (!empty($this->_options['imageLayers'])) {
+            return $this->getDataCoverageForLayers();
+        } else if (!empty($this->_options['eventLayers'])) {
+            return $this->getDataCoverageForEvents();
+        } else {
+            return $this->_sendResponse(400, 'eventLayers or imageLayers needs to be set for this endpoint to work in API', '');
+        }
+    }
+
+    /**
+     * Returns data coverage for IMAGE layers.
+     * Queries the data_coverage_30_min table for image availability data.
+     */
+    public function getDataCoverageForLayers() {
         include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerLayers.php';
+        include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
+
+        // Parse image layers (e.g., "[SDO,AIA,171,1,100]")
+        $layers = new Helper_HelioviewerLayers($this->_options['imageLayers']);
+
+        // Parse and validate time parameters
+        $timeParams = $this->_parseTimeParameters();
+        if ($timeParams === null) {
+            return $this->_sendResponse(400, 'Invalid time parameters', 'startDate, endDate, and currentDate must be numeric timestamps in milliseconds');
+        }
+
+        // Determine resolution based on time range
+        $resolution = $this->_calculateResolution($timeParams['range']);
+
+        // Fetch and return coverage data
+        $statistics = new Database_Statistics();
+        $this->_printJSON(
+            $statistics->getDataCoverage(
+                $layers,
+                $resolution,
+                $timeParams['dateStart'],
+                $timeParams['dateEnd']
+            )
+        );
+    }
+
+    /**
+     * Returns data coverage for EVENT layers.
+     * Queries the events/events_coverage tables for event availability data.
+     * TODO: Migrate to use EventsApi instead of local database tables
+     */
+    public function getDataCoverageForEvents() {
         include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerEvents.php';
+        include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
 
-        // Data Layers
-        if(!empty($this->_options['imageLayers'])){
-            $layers = new Helper_HelioviewerLayers($this->_options['imageLayers']);
-        }else{
-            $layers = null;
+        // Parse event layers (e.g., "[AR,all,1],[FL,all,1]")
+        $events = new Helper_HelioviewerEvents($this->_options['eventLayers']);
+
+        // Parse and validate time parameters
+        $timeParams = $this->_parseTimeParameters();
+        if ($timeParams === null) {
+            return $this->_sendResponse(400, 'Invalid time parameters', 'startDate, endDate, and currentDate must be numeric timestamps in milliseconds');
         }
 
-        // Events Layers
-        if(!empty($this->_options['eventLayers'])){
-            $events = new Helper_HelioviewerEvents($this->_options['eventLayers']);
-        }else{
-            $events = null;
+        // Determine resolution based on time range
+        $resolution = $this->_calculateResolution($timeParams['range']);
+
+        // For events, force minute resolution for ranges < 24 hours
+        if ($timeParams['range'] < 24 * 60 * 60 * 1000) {
+            $resolution = 'm';
         }
 
+        // Events don't support 5m/15m resolution - upgrade to 30m
+        // (events_coverage table only has 30m, 1H, 1D, 1W, 1M, 1Y buckets)
+        if ($resolution == '5m' || $resolution == '15m') {
+            $resolution = '30m';
+        }
+
+        // Fetch and return coverage data
+        $statistics = new Database_Statistics();
+        $this->_printJSON(
+            $statistics->getDataCoverageEvents(
+                $events,
+                $resolution,
+                $timeParams['dateStart'],
+                $timeParams['dateEnd'],
+                $timeParams['dateCurrent']
+            )
+        );
+    }
+
+    /**
+     * Parses and validates time parameters from request options.
+     * All timestamps are expected in MILLISECONDS (JavaScript convention).
+     *
+     * @return array|null Returns null if validation fails, otherwise returns:
+     *   array{
+     *     start: int,
+     *     end: int,
+     *     current: int,
+     *     range: int,
+     *     dateStart: DateTime,
+     *     dateEnd: DateTime,
+     *     dateCurrent: DateTime
+     *   }
+     */
+    private function _parseTimeParameters(): ?array {
+        // Validate numeric format
         $start = @$this->_options['startDate'];
         if ($start && !preg_match('/^[0-9]+$/', $start)) {
-            die("Invalid start parameter: $start");
+            return null;
         }
         $end = @$this->_options['endDate'];
         if ($end && !preg_match('/^[0-9]+$/', $end)) {
-            die("Invalid end parameter: $end");
+            return null;
         }
         $current = @$this->_options['currentDate'];
         if ($current && !preg_match('/^[0-9]+$/', $current)) {
-            die("Invalid end parameter: $current");
+            return null;
         }
+
+        // Defaults: start=0, end=now, current=0
         if (!$start) $start = 0;
         if (!$end) $end = time() * 1000;
         if (!$current) $current = 0;
 
-        // set some utility variables
+        // Calculate range
         $range = $end - $start;
 
-        // find the right range
-        if ($range < 105 * 60 * 1000) {
-            $resolution = 'm';
-
-        // 12 hours range loads hourly data
-        } elseif  ($range < 12 * 3600 * 1000) {
-            $resolution = '5m';
-
-        // one month range loads hourly data
-        } elseif  ($range < 2 * 24 * 3600 * 1000) {
-            $resolution = '15m';
-
-        // one month range loads hourly data
-        } elseif ($range < 10 * 24 * 3600 * 1000) {
-            $resolution = 'h';
-
-        // one year range loads daily data
-        } elseif ($range < 6 * 31 * 24 * 3600 * 1000) {
-            $resolution = 'D';
-
-        // half year range loads daily data
-        } elseif ($range < 15 * 31 * 24 * 3600 * 1000) {
-            $resolution = 'W';
-
-        // greater range loads monthly data
-        } else {
-            $resolution = 'M';
-        }
-        //$resolution = 'm';
-
+        // Convert to DateTime objects (from milliseconds to seconds)
         $dateEnd = new DateTime();
-        if ( isset($this->_options['endDate']) ) {
-            $dateEnd->setTimestamp(intval($this->_options['endDate']/1000));
-        }else{
-            $dateEnd->setTimestamp(intval($end/1000));
-        }
+        $dateEnd->setTimestamp(intval($end / 1000));
+
         $dateStart = new DateTime();
-        if ( isset($this->_options['startDate']) ) {
-            $dateStart->setTimestamp(intval($this->_options['startDate']/1000));
-        }else{
-            $dateStart->setTimestamp(intval($start/1000));
-        }
+        $dateStart->setTimestamp(intval($start / 1000));
+
         $dateCurrent = new DateTime();
-        if ( isset($this->_options['currentDate']) ) {
-            $dateCurrent->setTimestamp( $this->_options['currentDate']);
-        }else{
-            $dateCurrent->setTimestamp( $current);
-        }
+        $dateCurrent->setTimestamp(intval($current / 1000));
 
-        include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
-        $statistics = new Database_Statistics();
-
-        if($layers != null){
-            $this->_printJSON(
-                $statistics->getDataCoverage(
-                    $layers,
-                    $resolution,
-                    $dateStart,
-                    $dateEnd
-                )
-            );
-        }else if($events != null){
-            if ($range < 24 * 60 * 60 * 1000) {
-                $resolution = 'm';
-            }
-
-            if($resolution == '5m' || $resolution == '15m' ){
-                $resolution = '30m';
-            }
-            $this->_printJSON(
-                $statistics->getDataCoverageEvents(
-                    $events,
-                    $resolution,
-                    $dateStart,
-                    $dateEnd,
-                    $dateCurrent
-                )
-            );
-        } else {
-            return $this->_sendResponse(400, 'eventLayers or imageLayers needs to be set for this endpoint to work in API', '');
-        }
-
-
+        return [
+            'start' => $start,
+            'end' => $end,
+            'current' => $current,
+            'range' => $range,
+            'dateStart' => $dateStart,
+            'dateEnd' => $dateEnd,
+            'dateCurrent' => $dateCurrent
+        ];
     }
 
     /**
@@ -1594,6 +1637,47 @@ class Module_WebClient extends AbstractModule implements ModuleInterface {
      *
      * @return date The date given, or the helioviewer minimum date.
      */
+    /**
+     * Determines the appropriate data resolution based on the time range.
+     *
+     * This auto-scales the data granularity for performance and usability:
+     * - Smaller time ranges get finer resolution (individual data points)
+     * - Larger time ranges get coarser resolution (aggregated buckets)
+     *
+     * @param int $rangeMs Time range in milliseconds (end - start)
+     * @return string Resolution code: 'm', '5m', '15m', 'h', 'D', 'W', or 'M'
+     */
+    private function _calculateResolution(int $rangeMs): string {
+        if ($rangeMs < 105 * 60 * 1000) {
+            // < 1.75 hours: Show individual events/data points (minute-level)
+            return 'm';
+
+        } elseif ($rangeMs < 12 * 3600 * 1000) {
+            // < 12 hours: 5-minute buckets
+            return '5m';
+
+        } elseif ($rangeMs < 2 * 24 * 3600 * 1000) {
+            // < 2 days: 15-minute buckets
+            return '15m';
+
+        } elseif ($rangeMs < 10 * 24 * 3600 * 1000) {
+            // < 10 days: Hourly buckets
+            return 'h';
+
+        } elseif ($rangeMs < 6 * 31 * 24 * 3600 * 1000) {
+            // < 6 months: Daily buckets
+            return 'D';
+
+        } elseif ($rangeMs < 15 * 31 * 24 * 3600 * 1000) {
+            // < 15 months: Weekly buckets
+            return 'W';
+
+        } else {
+            // >= 15 months: Monthly buckets
+            return 'M';
+        }
+    }
+
     private function _clampDate($date) {
         $minDate = new DateTime(HV_MINIMUM_DATE);
         if ($date < $minDate) {
