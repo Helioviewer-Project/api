@@ -1,6 +1,6 @@
 <?php
 
-namespace Helioviewer\Api\Event;
+namespace Helioviewer\Api\Event\Api;
 
 class EventsApiException extends \Exception
 {
