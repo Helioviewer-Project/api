@@ -12,7 +12,7 @@
 
 namespace Helioviewer\Api\Event;
 
-class EventsStateManager 
+class EventsStateManager
 {
     // internal events state original
     public array $events_state; 
