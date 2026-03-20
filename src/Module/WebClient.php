@@ -23,21 +23,6 @@ use Helioviewer\Api\Sentry\Sentry;
 
 class Module_WebClient extends AbstractModule implements ModuleInterface {
 
-    private $_params;
-    private $_options;
-
-    /**
-     * Constructor
-     *
-     * @param mixed &$params API Request parameters, including the action name.
-     *
-     * @return void
-     */
-    public function __construct(&$params) {
-        $this->_params  = $params;
-        $this->_options = array();
-    }
-
     /**
      * execute
      *

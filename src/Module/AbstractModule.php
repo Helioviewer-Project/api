@@ -13,6 +13,14 @@ namespace Helioviewer\Api\Module;
 
 abstract class AbstractModule {
 
+    protected $_params;
+    protected $_options;
+
+    public function __construct($params) {
+        $this->_params  = $params;
+        $this->_options = array();
+    }
+
     /**
      * Send a JSON response with status code and message
      *

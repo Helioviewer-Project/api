@@ -12,8 +12,6 @@ use Helioviewer\Api\Sentry\Sentry;
  */
 class Module_SolarBodies extends AbstractModule implements ModuleInterface {
 
-    private $_params;
-    private $_options;
     private $_version;
     private $_observers;
     private $_bodies;
@@ -26,9 +24,8 @@ class Module_SolarBodies extends AbstractModule implements ModuleInterface {
      *
      * @param mixed &$params API request parameters
      */
-    public function __construct(&$params) {
-        $this->_params = $params;
-        $this->_options = array();
+    public function __construct($params) {
+        parent::__construct($params);
         // version number - used to reset all client cookies when this module changes significantly
         $this->_version = 3;
         // list of observers - add new observers here

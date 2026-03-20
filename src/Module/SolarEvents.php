@@ -20,21 +20,6 @@ use Helioviewer\Api\Event\EventsApiException;
 
 class Module_SolarEvents extends AbstractModule implements ModuleInterface {
 
-    private $_params;
-    private $_options;
-
-    /**
-     * Constructor
-     *
-     * @param mixed &$params API Request parameters, including the action name.
-     *
-     * @return void
-     */
-    public function __construct(&$params) {
-        $this->_params  = $params;
-        $this->_options = array();
-    }
-
     /**
      * execute
      *

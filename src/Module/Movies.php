@@ -20,18 +20,6 @@ use Helioviewer\Api\Sentry\Sentry;
 class Module_Movies extends AbstractModule implements ModuleInterface {
 
     const YOUTUBE_THUMBNAIL_FORMAT = "https://i.ytimg.com/vi/{VideoID}/{Quality}default.jpg";
-    private $_params;
-    private $_options;
-
-    /**
-     * Movie module constructor
-     *
-     * @param mixed &$params API request parameters
-     */
-    public function __construct(&$params) {
-        $this->_params  = $params;
-        $this->_options = array();
-    }
 
     /**
      * execute
