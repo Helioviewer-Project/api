@@ -22,7 +22,7 @@
 
 
     function import_xml($api_version, &$api_xml_path, &$xml) {
-        $api_xml_url = sprintf("%s/docs/%s/api_definitions.xml", "https://api.helioviewer.org", $api_version);
+        $api_xml_url = sprintf("%s/docs/%s/api_definitions.xml", HV_WEB_ROOT_URL, $api_version);
         $xml = simplexml_load_file($api_xml_url);
         $api_xml_path = dirname(realpath(__FILE__)) . '/' . $api_version. '/api_definitions.xml';
     }
