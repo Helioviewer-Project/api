@@ -100,7 +100,7 @@ class Image_Composite_HelioviewerCompositeImage {
             'eclipse' => false,
             'moon' => false
         );
-
+ 
         $options = array_replace($defaults, $options);
 
         $this->width  = $roi->getPixelWidth();
@@ -587,34 +587,22 @@ class Image_Composite_HelioviewerCompositeImage {
         $markerPinPixelOffsetX = 12;
         $markerPinPixelOffsetY = 38;
 
-        require_once HV_ROOT_DIR.'/../src/Event/HEKAdapter.php';
-        require_once HV_ROOT_DIR . "/../src/Helper/EventInterface.php";
-
-        // Collect events from all data sources.
-        // Collect all HEK events
-        $hek = new Event_HEKAdapter();
-        $event_categories = $hek->getNormalizedEvents($this->date, Array());
-
-        $events_api_sources = ["CCMC", "RHESSI"];
-
+        // Fetch events from all sources via EventsApi
         $observationTime = new DateTimeImmutable($this->date);
-        $startDate = $observationTime->sub(new DateInterval("PT12H"));
-        $length = new DateInterval("P1D");
+        $allSources = ['CCMC', 'HEK', 'RHESSI'];
+        $eventsApi = new EventsApi();
+        $event_categories = [];
 
-        // Collect CCMC events if any
-        try {
-
-            $eventsApi = new EventsApi();
-            $event_categories = array_merge($event_categories, $eventsApi->getEventsForSourceLegacy($observationTime, "CCMC"));
-            // if there is no error only left is RHESSI to collect
-            $events_api_sources = ["RHESSI"];
-
-        } catch (EventsApiException $e) {
-            Sentry::capture($e);
+        foreach ($allSources as $source) {
+            try {
+                $sourceData = $eventsApi->getEventsForSourceLegacy($observationTime, $source);
+                $event_categories = array_merge($event_categories, $sourceData);
+            } catch (EventsApiException $e) {
+                // Already captured to Sentry by EventsApi
+            } catch (\Exception $e) {
+                Sentry::capture($e);
+            }
         }
-
-        // Collect RHESSI events
-        $event_categories = array_merge($event_categories, Helper_EventInterface::GetEvents($startDate, $length, $observationTime, $events_api_sources));
 
         // Lay down all relevant event REGIONS first
         $events_to_render = [];
