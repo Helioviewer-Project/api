@@ -211,6 +211,8 @@ class Module_SolarEvents extends AbstractModule implements ModuleInterface {
                 $sourceData = $eventsApi->getEventsForSourceLegacy($observationTime, $source);
                 $data = array_merge($data, $sourceData);
             } catch (EventsApiException $e) {
+                return $this->_sendResponse(500, 'Internal Server Error', 'Failed to fetch events from ' . $source);
+            } catch (\Exception $e) {
                 Sentry::capture($e);
                 return $this->_sendResponse(500, 'Internal Server Error', 'Failed to fetch events from ' . $source);
             }
