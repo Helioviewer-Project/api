@@ -20,8 +20,8 @@ require_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
 require_once HV_ROOT_DIR.'/../src/Module/SolarBodies.php';
 
 use Helioviewer\Api\Sentry\Sentry;
-use Helioviewer\Api\Event\EventsApi;
-use Helioviewer\Api\Event\EventsApiException;
+use Helioviewer\Api\Event\Api\EventsApi;
+use Helioviewer\Api\Event\Api\EventsApiException;
 
 class Image_Composite_HelioviewerCompositeImage {
 

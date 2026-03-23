@@ -15,8 +15,8 @@
 use Helioviewer\Api\Module\AbstractModule;
 use Helioviewer\Api\Module\ModuleInterface;
 use Helioviewer\Api\Sentry\Sentry;
-use Helioviewer\Api\Event\EventsApi;
-use Helioviewer\Api\Event\EventsApiException;
+use Helioviewer\Api\Event\Api\EventsApi;
+use Helioviewer\Api\Event\Api\EventsApiException;
 
 class Module_SolarEvents extends AbstractModule implements ModuleInterface {
 
