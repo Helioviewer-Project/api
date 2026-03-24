@@ -11,14 +11,24 @@
 
 namespace Helioviewer\Api\Module;
 
+use Helioviewer\Api\Event\Api\EventsApi;
+
 abstract class AbstractModule {
 
     protected $_params;
     protected $_options;
+    private ?EventsApi $_eventsApi = null;
 
     public function __construct($params) {
         $this->_params  = $params;
         $this->_options = array();
+    }
+
+    protected function eventsApi(): EventsApi {
+        if ($this->_eventsApi === null) {
+            $this->_eventsApi = new EventsApi();
+        }
+        return $this->_eventsApi;
     }
 
     /**

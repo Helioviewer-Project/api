@@ -15,7 +15,6 @@
 use Helioviewer\Api\Module\AbstractModule;
 use Helioviewer\Api\Module\ModuleInterface;
 use Helioviewer\Api\Sentry\Sentry;
-use Helioviewer\Api\Event\Api\EventsApi;
 use Helioviewer\Api\Event\Api\EventsApiException;
 
 class Module_SolarEvents extends AbstractModule implements ModuleInterface {
@@ -203,12 +202,11 @@ class Module_SolarEvents extends AbstractModule implements ModuleInterface {
         }
 
         // Fetch events from each source via EventsApi
-        $eventsApi = new EventsApi();
         $data = [];
 
         foreach ($sources as $source) {
             try {
-                $sourceData = $eventsApi->getEventsForSourceLegacy($observationTime, $source);
+                $sourceData = $this->eventsApi()->getEventsForSourceLegacy($observationTime, $source);
                 $data = array_merge($data, $sourceData);
             } catch (EventsApiException $e) {
                 return $this->_sendResponse(500, 'Internal Server Error', 'Failed to fetch events from ' . $source);

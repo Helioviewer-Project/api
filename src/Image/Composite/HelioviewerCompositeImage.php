@@ -98,7 +98,8 @@ class Image_Composite_HelioviewerCompositeImage {
             'switchSources' => false,
             'grayscale' => false,
             'eclipse' => false,
-            'moon' => false
+            'moon' => false,
+            'eventsApi' => null
         );
  
         $options = array_replace($defaults, $options);
@@ -108,6 +109,7 @@ class Image_Composite_HelioviewerCompositeImage {
         $this->imageScale = $roi->imageScale();
 
         $this->db = $options['database'] ? $options['database'] : new Database_ImgIndex();
+        $this->eventsApi = $options['eventsApi'] ?? new EventsApi();
         $this->layers = $layers;
         $this->eventsManager = $eventsManager;
         $this->movieIcons = $movieIcons;
@@ -590,12 +592,11 @@ class Image_Composite_HelioviewerCompositeImage {
         // Fetch events from all sources via EventsApi
         $observationTime = new DateTimeImmutable($this->date);
         $allSources = ['CCMC', 'HEK', 'RHESSI'];
-        $eventsApi = new EventsApi();
         $event_categories = [];
 
         foreach ($allSources as $source) {
             try {
-                $sourceData = $eventsApi->getEventsForSourceLegacy($observationTime, $source);
+                $sourceData = $this->eventsApi->getEventsForSourceLegacy($observationTime, $source);
                 $event_categories = array_merge($event_categories, $sourceData);
             } catch (EventsApiException $e) {
                 // Already captured to Sentry by EventsApi

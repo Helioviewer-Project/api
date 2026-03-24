@@ -19,6 +19,8 @@ require_once HV_ROOT_DIR.'/../src/Helper/ErrorHandler.php';
 use Helioviewer\Api\Module\AbstractModule;
 use Helioviewer\Api\Module\ModuleInterface;
 use Helioviewer\Api\Event\EventsStateManager;
+use Helioviewer\Api\Event\EventsTimeline;
+use Helioviewer\Api\Event\Api\EventsApiException;
 use Helioviewer\Api\Sentry\Sentry;
 
 class Module_WebClient extends AbstractModule implements ModuleInterface {
@@ -955,9 +957,25 @@ class Module_WebClient extends AbstractModule implements ModuleInterface {
         if (!empty($this->_options['imageLayers'])) {
             return $this->getDataCoverageForLayers();
         } else if (!empty($this->_options['eventLayers'])) {
-            return $this->getDataCoverageForEvents();
-        } else {
-            return $this->_sendResponse(400, 'eventLayers or imageLayers needs to be set for this endpoint to work in API', '');
+            try {
+                $eventTimeline = new EventsTimeline(
+                    $this->_options['eventLayers'],
+                    $this->_options['startDate'] ?? null,
+                    $this->_options['endDate'] ?? null,
+                    $this->_options['currentDate'] ?? null,
+                    $this->eventsApi()
+                );
+
+                $this->_printJSON($eventTimeline->timeline());
+            } catch (InvalidArgumentException $e) {
+                return $this->_sendResponse(400, 'Invalid time parameters', $e->getMessage());
+            } catch (Exception $e) {
+                // EventsApiException already captured to Sentry by EventsApi
+                if (!($e instanceof EventsApiException)) {
+                    Sentry::capture($e);
+                }
+                return $this->_sendResponse(500, 'Internal server error', $e->getMessage());
+            }
         }
     }
 
@@ -972,14 +990,30 @@ class Module_WebClient extends AbstractModule implements ModuleInterface {
         // Parse image layers (e.g., "[SDO,AIA,171,1,100]")
         $layers = new Helper_HelioviewerLayers($this->_options['imageLayers']);
 
-        // Parse and validate time parameters
-        $timeParams = $this->_parseTimeParameters();
-        if ($timeParams === null) {
-            return $this->_sendResponse(400, 'Invalid time parameters', 'startDate, endDate, and currentDate must be numeric timestamps in milliseconds');
+        // Validate and parse time parameters (inline)
+        $start = $this->_options['startDate'] ?? null;
+        $end = $this->_options['endDate'] ?? null;
+
+        if ($start && !preg_match('/^[0-9]+$/', $start)) {
+            return $this->_sendResponse(400, 'Invalid time parameters', 'startDate must be numeric timestamp in milliseconds');
+        }
+        if ($end && !preg_match('/^[0-9]+$/', $end)) {
+            return $this->_sendResponse(400, 'Invalid time parameters', 'endDate must be numeric timestamp in milliseconds');
         }
 
-        // Determine resolution based on time range
-        $resolution = $this->_calculateResolution($timeParams['range']);
+        if (!$start) $start = 0;
+        if (!$end) $end = time() * 1000;
+
+        $range = $end - $start;
+
+        $dateEnd = new DateTime();
+        $dateEnd->setTimestamp(intval($end / 1000));
+
+        $dateStart = new DateTime();
+        $dateStart->setTimestamp(intval($start / 1000));
+
+        // Calculate resolution for images
+        $resolution = $this->_calculateResolution($range);
 
         // Fetch and return coverage data
         $statistics = new Database_Statistics();
@@ -987,115 +1021,12 @@ class Module_WebClient extends AbstractModule implements ModuleInterface {
             $statistics->getDataCoverage(
                 $layers,
                 $resolution,
-                $timeParams['dateStart'],
-                $timeParams['dateEnd']
+                $dateStart,
+                $dateEnd
             )
         );
     }
 
-    /**
-     * Returns data coverage for EVENT layers.
-     * Queries the events/events_coverage tables for event availability data.
-     * TODO: Migrate to use EventsApi instead of local database tables
-     */
-    public function getDataCoverageForEvents() {
-        include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerEvents.php';
-        include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
-
-        // Parse event layers (e.g., "[AR,all,1],[FL,all,1]")
-        $events = new Helper_HelioviewerEvents($this->_options['eventLayers']);
-
-        // Parse and validate time parameters
-        $timeParams = $this->_parseTimeParameters();
-        if ($timeParams === null) {
-            return $this->_sendResponse(400, 'Invalid time parameters', 'startDate, endDate, and currentDate must be numeric timestamps in milliseconds');
-        }
-
-        // Determine resolution based on time range
-        $resolution = $this->_calculateResolution($timeParams['range']);
-
-        // For events, force minute resolution for ranges < 24 hours
-        if ($timeParams['range'] < 24 * 60 * 60 * 1000) {
-            $resolution = 'm';
-        }
-
-        // Events don't support 5m/15m resolution - upgrade to 30m
-        // (events_coverage table only has 30m, 1H, 1D, 1W, 1M, 1Y buckets)
-        if ($resolution == '5m' || $resolution == '15m') {
-            $resolution = '30m';
-        }
-
-        // Fetch and return coverage data
-        $statistics = new Database_Statistics();
-        $this->_printJSON(
-            $statistics->getDataCoverageEvents(
-                $events,
-                $resolution,
-                $timeParams['dateStart'],
-                $timeParams['dateEnd'],
-                $timeParams['dateCurrent']
-            )
-        );
-    }
-
-    /**
-     * Parses and validates time parameters from request options.
-     * All timestamps are expected in MILLISECONDS (JavaScript convention).
-     *
-     * @return array|null Returns null if validation fails, otherwise returns:
-     *   array{
-     *     start: int,
-     *     end: int,
-     *     current: int,
-     *     range: int,
-     *     dateStart: DateTime,
-     *     dateEnd: DateTime,
-     *     dateCurrent: DateTime
-     *   }
-     */
-    private function _parseTimeParameters(): ?array {
-        // Validate numeric format
-        $start = @$this->_options['startDate'];
-        if ($start && !preg_match('/^[0-9]+$/', $start)) {
-            return null;
-        }
-        $end = @$this->_options['endDate'];
-        if ($end && !preg_match('/^[0-9]+$/', $end)) {
-            return null;
-        }
-        $current = @$this->_options['currentDate'];
-        if ($current && !preg_match('/^[0-9]+$/', $current)) {
-            return null;
-        }
-
-        // Defaults: start=0, end=now, current=0
-        if (!$start) $start = 0;
-        if (!$end) $end = time() * 1000;
-        if (!$current) $current = 0;
-
-        // Calculate range
-        $range = $end - $start;
-
-        // Convert to DateTime objects (from milliseconds to seconds)
-        $dateEnd = new DateTime();
-        $dateEnd->setTimestamp(intval($end / 1000));
-
-        $dateStart = new DateTime();
-        $dateStart->setTimestamp(intval($start / 1000));
-
-        $dateCurrent = new DateTime();
-        $dateCurrent->setTimestamp(intval($current / 1000));
-
-        return [
-            'start' => $start,
-            'end' => $end,
-            'current' => $current,
-            'range' => $range,
-            'dateStart' => $dateStart,
-            'dateEnd' => $dateEnd,
-            'dateCurrent' => $dateCurrent
-        ];
-    }
 
     /**
      * Retrieves the latest usage statistics from the database
