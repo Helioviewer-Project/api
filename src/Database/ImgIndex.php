@@ -210,8 +210,8 @@ class Database_ImgIndex {
         $sql = sprintf(
                    "UPDATE movies "
                  . "SET "
-                 .     "buildTimeStart " . " ='%s', "
-                 .     "buildTimeEnd= "  . " ='%s' "
+                 .     "buildTimeStart='%s', "
+                 .     "buildTimeEnd='%s' "
                  . "WHERE id "           . " = %d "
                  . "LIMIT 1;",
                  $this->_dbConnection->link->real_escape_string(
