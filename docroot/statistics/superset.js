@@ -27,7 +27,7 @@ async function fetchGuestToken(guest_token_url, dashboard_id) {
     }
 }
 
-async function embedDashboard(dashboard_container, loading_element, error_div, superset_url, getGuestToken) {
+async function embedDashboard(id, dashboard_container, loading_element, error_div, superset_url, getGuestToken) {
     try {
         const guestToken = await getGuestToken();
 
@@ -36,7 +36,7 @@ async function embedDashboard(dashboard_container, loading_element, error_div, s
 
         // Embed the dashboard
         supersetEmbeddedSdk.embedDashboard({
-            id: DASHBOARD_ID,
+            id: id,
             supersetDomain: superset_url,
             mountPoint: dashboard_container,
             fetchGuestToken: () => guestToken,
