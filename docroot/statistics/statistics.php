@@ -14,21 +14,33 @@ $config = new Config('../../settings/Config.ini');
     <div id="main">
         <div id="header">
             <img src="../resources/images/logos/hvlogo1s_transparent_logo.png" alt="Helioviewer logo" />
-            <div id='headerText'>The Helioviewer Project - Data Coverage</div>
+            <div id='headerText'>The Helioviewer Project - Statistics</div>
+        </div>
+
+        <div id="tab-bar">
+            <button class="tab active" data-tab="endpoints">API Usage</button>
+            <button class="tab" data-tab="movies">Movies</button>
+            <button class="tab" data-tab="movies-jpx">JHelioviewer Movies</button>
         </div>
 
         <div class="dashboard-box">
-            <div id="endpoints-loader" class="loader">Loading endpoints dashboard...</div>
-            <div id="endpoints-error" class="error"></div>
-            <div id="endpoints-container" class="dashboard"></div>
+            <div id="endpoints-tab" class="tab-panel active">
+                <div id="endpoints-loader" class="loader">Loading endpoints dashboard...</div>
+                <div id="endpoints-error" class="error"></div>
+                <div id="endpoints-container" class="dashboard"></div>
+            </div>
 
-            <div id="movies-loader" class="loader">Loading movies dashboard...</div>
-            <div id="movies-error" class="error"></div>
-            <div id="movies-container" class="dashboard"></div>
+            <div id="movies-tab" class="tab-panel">
+                <div id="movies-loader" class="loader">Loading movies dashboard...</div>
+                <div id="movies-error" class="error"></div>
+                <div id="movies-container" class="dashboard"></div>
+            </div>
 
-            <div id="movies-jpx-loader" class="loader">Loading jhelioviewer dashboard...</div>
-            <div id="movies-jpx-error" class="error"></div>
-            <div id="movies-jpx-container" class="dashboard"></div>
+            <div id="movies-jpx-tab" class="tab-panel">
+                <div id="movies-jpx-loader" class="loader">Loading jhelioviewer dashboard...</div>
+                <div id="movies-jpx-error" class="error"></div>
+                <div id="movies-jpx-container" class="dashboard"></div>
+            </div>
         </div>
     </div>
 
@@ -63,6 +75,15 @@ $config = new Config('../../settings/Config.ini');
                 SUPERSET_URL,
                 () => fetchGuestToken(GUEST_TOKEN_URL, dashboard.id)
             )
+        });
+
+        document.querySelectorAll('.tab').forEach((tab) => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab + '-tab').classList.add('active');
+            });
         });
     </script>
 </body>
