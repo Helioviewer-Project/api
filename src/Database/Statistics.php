@@ -33,6 +33,15 @@ class Database_Statistics {
     }
 
     /**
+     * Deconstructor should be executed when this class instance is not referenced
+     *
+     * @return void
+     */
+    public function __destruct() {
+        $this->_dbConnection = false;
+    }
+
+    /**
      * Gets device information from the user agent
      */
     protected function _GetDevice() {

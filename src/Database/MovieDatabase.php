@@ -40,6 +40,15 @@ class Database_MovieDatabase {
     }
 
     /**
+     * Deconstructor should be executed when this class instance is not referenced
+     *
+     * @return void
+     */
+    public function __destruct() {
+        $this->_dbConnection = false;
+    }
+
+    /**
      * Insert a new movie entry into the `movies` table and returns its
      * identifier.
      *
