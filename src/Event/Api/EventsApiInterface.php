@@ -38,4 +38,15 @@ interface EventsApiInterface {
      * @throws EventsApiException on API errors or unexpected responses
      */
     public function getDistributions(string $size, int $fromTimestamp, int $toTimestamp, array $paths): array;
+
+    /**
+     * Fetch events for multiple observation timestamps in batched requests.
+     * Returns legacy format keyed by timestamp.
+     *
+     * @param string[] $timestamps Array of observation datetime strings
+     * @param string[] $sources Array of source names (e.g. ['HEK', 'CCMC', 'RHESSI'])
+     * @return array Keyed by timestamp, each value is legacy-format event categories
+     * @throws EventsApiException on API errors or unexpected responses
+     */
+    public function getEventsBatch(array $timestamps, array $sources): array;
 }

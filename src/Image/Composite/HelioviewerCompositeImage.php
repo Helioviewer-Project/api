@@ -63,6 +63,8 @@ class Image_Composite_HelioviewerCompositeImage {
     protected $switchSources;
     protected $celestialBodiesLabels;
     protected $celestialBodiesTrajectories;
+    protected $eventsApi;
+    protected array $batchEventResponse;
 
     /**
      * Creates a new HelioviewerCompositeImage instance
@@ -99,7 +101,8 @@ class Image_Composite_HelioviewerCompositeImage {
             'grayscale' => false,
             'eclipse' => false,
             'moon' => false,
-            'eventsApi' => null
+            'eventsApi' => null,
+            'batchEventResponse' => []
         );
  
         $options = array_replace($defaults, $options);
@@ -110,6 +113,7 @@ class Image_Composite_HelioviewerCompositeImage {
 
         $this->db = $options['database'] ? $options['database'] : new Database_ImgIndex();
         $this->eventsApi = $options['eventsApi'] ?? new EventsApi();
+        $this->batchEventResponse = $options['batchEventResponse'];
         $this->layers = $layers;
         $this->eventsManager = $eventsManager;
         $this->movieIcons = $movieIcons;
@@ -589,21 +593,23 @@ class Image_Composite_HelioviewerCompositeImage {
         $markerPinPixelOffsetX = 12;
         $markerPinPixelOffsetY = 38;
 
-        // Fetch events from all sources via EventsApi
-        $observationTime = new DateTimeImmutable($this->date);
-        $allSources = ['CCMC', 'HEK', 'RHESSI'];
-        $event_categories = [];
-
-        foreach ($allSources as $source) {
+        // Fetch events via batch (movies have pre-fetched, screenshots fetch for single timestamp)
+        if (empty($this->batchEventResponse)) {
             try {
-                $sourceData = $this->eventsApi->getEventsForSourceLegacy($observationTime, $source);
-                $event_categories = array_merge($event_categories, $sourceData);
+                $this->batchEventResponse = $this->eventsApi->getEventsBatch(
+                    [$this->date],
+                    EventsApi::VALID_SOURCES
+                );
             } catch (EventsApiException $e) {
-                // Already captured to Sentry by EventsApi
+                error_log("[CompositeImage] Batch events failed for {$this->date}: " . $e->getMessage());
             } catch (\Exception $e) {
+                error_log("[CompositeImage] Unexpected error fetching events for {$this->date}: " . $e->getMessage());
                 Sentry::capture($e);
             }
         }
+
+        $event_categories = $this->batchEventResponse[$this->date] ?? [];
+        if (empty($event_categories)) return;
 
         // Lay down all relevant event REGIONS first
         $events_to_render = [];
