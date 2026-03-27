@@ -530,7 +530,7 @@ class Module_WebClient extends AbstractModule implements ModuleInterface {
             $scaleY,
             $json_params['date'],
             $roi,
-            $json_params
+            array_merge($json_params, ['eventsApi' => $this->eventsApi()])
         );
 
         // Display screenshot
@@ -627,7 +627,7 @@ class Module_WebClient extends AbstractModule implements ModuleInterface {
             $scaleY,
             $this->_params['date'],
             $roi,
-            $this->_options
+            array_merge($this->_options, ['eventsApi' => $this->eventsApi()])
         );
 
         // Display screenshot
@@ -738,7 +738,7 @@ class Module_WebClient extends AbstractModule implements ModuleInterface {
             $metaData['scaleY'],
             $metaData['observationDate'],
             $roi,
-            $options
+            array_merge($options, ['eventsApi' => $this->eventsApi()])
         );
     }
 
@@ -1352,7 +1352,8 @@ class Module_WebClient extends AbstractModule implements ModuleInterface {
             [
                 'grayscale' => true,
                 'eclipse' => true,
-                'moon' => $this->_options['moon']
+                'moon' => $this->_options['moon'],
+                'eventsApi' => $this->eventsApi()
             ]
         );
         $screenshot->display();
