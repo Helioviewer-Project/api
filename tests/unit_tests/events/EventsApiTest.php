@@ -212,4 +212,42 @@ final class EventsApiTest extends TestCase
 
         $this->eventsApi->getDistributions('h', 1000, 2000, ['CCMC>>DONKI>>CME']);
     }
+
+    public static function filterSourcesProvider(): array
+    {
+        return [
+            'all_valid' => [
+                ['HEK', 'CCMC', 'RHESSI'],
+                ['HEK', 'CCMC', 'RHESSI'],
+            ],
+            'mixed_valid_and_invalid' => [
+                ['HEK', 'FOO', 'BAR'],
+                ['HEK'],
+            ],
+            'tree_prefixed_rejected' => [
+                ['tree_HEK', 'tree_CCMC'],
+                [],
+            ],
+            'empty_input' => [
+                [],
+                [],
+            ],
+            'all_invalid' => [
+                ['FOO', 'BAR', 'BAZ'],
+                [],
+            ],
+            'single_valid' => [
+                ['CCMC'],
+                ['CCMC'],
+            ],
+        ];
+    }
+
+    /**
+     * @dataProvider filterSourcesProvider
+     */
+    public function testItShouldFilterSources(array $input, array $expected): void
+    {
+        $this->assertEquals($expected, EventsApi::filterSources($input));
+    }
 }
