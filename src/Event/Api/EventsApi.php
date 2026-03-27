@@ -25,6 +25,7 @@ class EventsApi implements EventsApiInterface {
 
     private ClientInterface $client;
     private SentryClientInterface $sentry;
+    private LegacyEventsInterface $legacyEvents;
 
     /**
      * Filter an array of source names to only valid ones.
@@ -44,8 +45,9 @@ class EventsApi implements EventsApiInterface {
      *
      * @param ClientInterface|null $client Optional Guzzle client for testing
      * @param SentryClientInterface|null $sentry Optional Sentry client for testing
+     * @param LegacyEventsInterface|null $legacyEvents Optional converter for testing
      */
-    public function __construct(ClientInterface $client = null, SentryClientInterface $sentry = null)
+    public function __construct(ClientInterface $client = null, SentryClientInterface $sentry = null, LegacyEventsInterface $legacyEvents = null)
     {
         $timeout = defined('HV_EVENTS_API_TIMEOUT') ? HV_EVENTS_API_TIMEOUT : 10;
         $connectTimeout = 2;
@@ -60,6 +62,7 @@ class EventsApi implements EventsApiInterface {
             ]
         ]);
         $this->sentry = $sentry ?? Sentry::$client;
+        $this->legacyEvents = $legacyEvents ?? new LegacyEvents();
 
         $this->sentry->setContext('EventsApi', [
             'api_url' => $baseUrl,
@@ -193,83 +196,7 @@ class EventsApi implements EventsApiInterface {
         }
 
         // Convert deduplicated response to legacy format per timestamp
-        $result = [];
-        foreach ($merged['observations'] as $timestamp => $obs) {
-            $result[$timestamp] = $this->batchToLegacy(
-                $merged['event_types'],
-                $merged['events'],
-                $obs
-            );
-        }
-
-        return $result;
-    }
-
-    /**
-     * Convert one timestamp's batch data to legacy event_categories format.
-     * Merges static event data with per-timestamp rotated coordinates,
-     * shifts footprint polygons by the rotation delta,
-     * and rebuilds the category/group/data hierarchy.
-     *
-     * @param array $eventTypes Category/group structure with event_ids references
-     * @param array $events     Static event data keyed by event ID
-     * @param array $obs        Rotated coordinates keyed by event ID for this timestamp
-     * @return array Legacy format: [{pin, name, groups: [{name, data: [...]}]}]
-     */
-    private function batchToLegacy(array $eventTypes, array $events, array $obs): array
-    {
-        $categories = [];
-
-        foreach ($eventTypes as $et) {
-            $groups = [];
-
-            foreach ($et['groups'] as $group) {
-                $data = [];
-
-                foreach ($group['event_ids'] as $eventId) {
-                    // Event not active at this timestamp
-                    if (!isset($obs[$eventId])) continue;
-
-                    $event = $events[$eventId] ?? null;
-                    if (!$event) continue;
-
-                    $coords = $obs[$eventId];
-
-                    // Merge static event data with rotated coordinates
-                    $legacyEvent = $event;
-                    $legacyEvent['hv_hpc_x'] = $coords['hv_hpc_x'];
-                    $legacyEvent['hv_hpc_y'] = $coords['hv_hpc_y'];
-                    $legacyEvent['hv_hpc_x_final'] = $coords['hv_hpc_x'];
-                    $legacyEvent['hv_hpc_y_final'] = $coords['hv_hpc_y'];
-
-                    // Shift footprint polygon by the same rotation delta as the center point
-                    $dx = $coords['hv_hpc_x'] - $event['hv_hpc_x'];
-                    $dy = $coords['hv_hpc_y'] - $event['hv_hpc_y'];
-                    if (!empty($event['footprint'])) {
-                        $legacyEvent['footprint'] = array_map(
-                            fn($p) => ['x' => $p['x'] + $dx, 'y' => $p['y'] + $dy],
-                            $event['footprint']
-                        );
-                    }
-
-                    $data[] = $legacyEvent;
-                }
-
-                if (!empty($data)) {
-                    $groups[] = ['name' => $group['name'], 'data' => $data];
-                }
-            }
-
-            if (!empty($groups)) {
-                $categories[] = [
-                    'pin' => $et['pin'],
-                    'name' => $et['name'],
-                    'groups' => $groups
-                ];
-            }
-        }
-
-        return $categories;
+        return $this->legacyEvents->convertAll($merged);
     }
 
     /**
