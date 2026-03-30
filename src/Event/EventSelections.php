@@ -88,7 +88,12 @@ class EventSelections implements ArrayAccess, Countable, IteratorAggregate
         $events_state_string = trim($events_state_string);
 
         if (!empty($events_state_string)) {
-            $event_strings = explode("],[", trim(stripslashes($events_state_string), ']['));
+            $stripped = stripslashes($events_state_string);
+            // Remove only the outermost [ and ]
+            if (str_starts_with($stripped, '[') && str_ends_with($stripped, ']')) {
+                $stripped = substr($stripped, 1, -1);
+            }
+            $event_strings = explode("],[", $stripped);
 
             // Process individual events in string
             foreach ($event_strings as $es) {
