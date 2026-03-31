@@ -18,6 +18,7 @@ use DatePeriod;
 use InvalidArgumentException;
 use Exception;
 use Helioviewer\Api\Event\Api\EventsApi;
+use Helioviewer\Api\Event\Api\EventsApiInterface;
 
 require_once HV_ROOT_DIR . '/../src/Helper/HelioviewerEvents.php';
 
@@ -35,7 +36,7 @@ class EventsTimeline
 
     private \Helper_HelioviewerEvents $events;
     private EventSelections $eventSelections;
-    private EventsApi $eventsApi;
+    private EventsApiInterface $eventsApi;
     private int $startMs;     // milliseconds
     private int $endMs;       // milliseconds
     private int $currentMs;   // milliseconds
@@ -44,7 +45,7 @@ class EventsTimeline
     /**
      * @throws InvalidArgumentException If parameters are invalid
      */
-    public function __construct(string $eventLayers, $startTimestamp, $endTimestamp, $currentTimestamp, ?EventsApi $eventsApi = null)
+    public function __construct(string $eventLayers, $startTimestamp, $endTimestamp, $currentTimestamp, ?EventsApiInterface $eventsApi = null)
     {
         $this->eventsApi = $eventsApi ?? new EventsApi();
         // Validate all three timestamps are provided and positive integers (in milliseconds)
@@ -70,6 +71,12 @@ class EventsTimeline
         $this->eventSelections = EventSelections::buildFromLegacyEventStrings($eventLayers);
     }
 
+    public function getResolution(): string { return $this->resolution; }
+    public function getStartMs(): int { return $this->startMs; }
+    public function getEndMs(): int { return $this->endMs; }
+    public function getCurrentMs(): int { return $this->currentMs; }
+    public function getEventSelections(): EventSelections { return $this->eventSelections; }
+
     public function timeline(): string
     {
         if ($this->resolution === 'm') {
@@ -81,7 +88,7 @@ class EventsTimeline
     /**
      * Get aggregated event coverage using EventsApi distributions endpoint
      */
-    private function getAggregatedCoverage(): string
+    public function getAggregatedCoverage(): string
     {
         // Original request range (in milliseconds)
         $startMs = $this->startMs;
@@ -144,7 +151,7 @@ class EventsTimeline
     /**
      * Get minute-level event coverage using EventsApi events endpoint
      */
-    private function getMinuteCoverage(): string
+    public function getMinuteCoverage(): string
     {
         // Calculate extended time range (3x visible range for smooth scrolling)
         $distance = $this->endMs - $this->startMs;
