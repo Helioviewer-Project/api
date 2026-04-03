@@ -5,11 +5,8 @@ import os
 
 class SOHODataServer(DataServer):
     def __init__(self):
-        """This assumes that SOHO jp2 files are calculated locally.  They are 
-        then copied over to a directory on the main Helioviewer server, from 
-        which it can be picked up by the ingestion services.  Note that
-        a full path is required to specify the location of the data."""
-        DataServer.__init__(self, "/home/ireland/incoming/soho_incoming/v0.8/jp2", "SOHO")
+        """Fetches SOHO jp2 files from the remote NASCOM server."""
+        DataServer.__init__(self, "https://umbra.nascom.nasa.gov/newsite/jp2/soho_incoming/v0.8/jp2", "SOHO")
         self.pause = datetime.timedelta(minutes=30)
         
     def compute_directories(self, start_date, end_date):
