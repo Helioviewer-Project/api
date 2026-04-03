@@ -5,11 +5,8 @@ import os
 
 class STEREODataServer(DataServer):
     def __init__(self):
-        """This assumes that STEREO jp2 files are calculated locally.  They are 
-        then copied over to a directory on the main Helioviewer server, from 
-        which it can be picked up by the ingestion services.  Note that
-        a full path is required to specify the location of the data."""
-        DataServer.__init__(self, "/home/ireland/incoming/stereo_incoming/v0.8/jp2", "STEREO")
+        """Fetches STEREO jp2 files from the remote NASCOM server."""
+        DataServer.__init__(self, "https://umbra.nascom.nasa.gov/newsite/jp2/stereo_incoming/v0.8/jp2", "STEREO")
         #self.pause = datetime.timedelta(hours=3)
         # for testing purposes use a pause of 15 minutes - remove after testing
         self.pause = datetime.timedelta(minutes=15)
