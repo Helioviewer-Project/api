@@ -59,6 +59,7 @@ class LegacyEvents implements LegacyEventsInterface
                     $coords = $obs[$eventId];
 
                     $legacyEvent = $event;
+                    $legacyEvent['id'] = $eventId;
                     $legacyEvent['hv_hpc_x'] = $coords['hv_hpc_x'];
                     $legacyEvent['hv_hpc_y'] = $coords['hv_hpc_y'];
                     $legacyEvent['hv_hpc_x_final'] = $coords['hv_hpc_x'];
