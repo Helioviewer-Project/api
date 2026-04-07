@@ -27,10 +27,12 @@ final class TimelineTest extends TestCase
             ->method('execute')
             ->with(
                 $this->identicalTo($this->mockEventsApi),
-                // Original: 1000 to 3000, distance = 2000
-                // Extended: -1000 to 5000
+                // Visible: 1000 to 3000, Extended: -1000 to 5000
                 $this->callback(function (TimeRange $range) {
-                    return $range->start() === -1000 && $range->end() === 5000;
+                    return $range->start() === 1000
+                        && $range->end() === 3000
+                        && $range->extendedStart() === -1000
+                        && $range->extendedEnd() === 5000;
                 }),
                 // [AR,all,1],[C3,all,1] → paths
                 $this->equalTo(['HEK>>Active Region', 'CCMC>>DONKI']),

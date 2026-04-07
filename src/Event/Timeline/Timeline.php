@@ -68,11 +68,10 @@ class Timeline
     public function execute(): string
     {
         $paths = iterator_to_array($this->eventSelections);
-        $extendedRange = $this->range->extended();
 
         $data = $this->strategy->execute(
             $this->eventsApi,
-            $extendedRange,
+            $this->range,
             $paths,
             $this->resolution
         );

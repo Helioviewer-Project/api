@@ -39,13 +39,9 @@ class MinuteCoverage implements CoverageInterface
             return [];
         }
 
-        // Fetch individual events from the Events API
-        $response = $eventsApi->getEventsInRange($range->startSec(), $range->endSec(), $paths);
+        // Fetch individual events from the Events API using extended range
+        $response = $eventsApi->getEventsInRange($range->extendedStartSec(), $range->extendedEndSec(), $paths);
         $events = $response['events'] ?? [];
-
-        // Extended range in milliseconds (for clamping)
-        $extendedStartMs = $range->start();
-        $extendedEndMs = $range->end();
 
         // Group events by event_type
         $results = [];
@@ -58,7 +54,7 @@ class MinuteCoverage implements CoverageInterface
                     'data' => [],
                     'event_type' => $eventType,
                     'res' => 'm',
-                    'showInLegend' => true
+                    'showInLegend' => false
                 ];
             }
 
@@ -66,12 +62,17 @@ class MinuteCoverage implements CoverageInterface
             $timeStart = strtotime($event['event_starttime']) * 1000;
             $timeEnd = strtotime($event['event_endtime']) * 1000;
 
-            // Clamp event times to the extended range
-            if ($extendedStartMs > $timeStart) {
-                $timeStart = $extendedStartMs;
+            // Show in legend only if event overlaps the visible range
+            if ($timeEnd >= $range->start() && $timeStart <= $range->end()) {
+                $results[$eventType]['showInLegend'] = true;
             }
-            if ($extendedEndMs < $timeEnd) {
-                $timeEnd = $extendedEndMs;
+
+            // Clamp event times to the extended range
+            if ($range->extendedStart() > $timeStart) {
+                $timeStart = $range->extendedStart();
+            }
+            if ($range->extendedEnd() < $timeEnd) {
+                $timeEnd = $range->extendedEnd();
             }
 
             // Add timeline coordinates to the event

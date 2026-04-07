@@ -35,8 +35,8 @@ class AggregatedCoverage implements CoverageInterface
         // Call the Events API for bucketed counts
         $response = $eventsApi->getDistributions(
             $resolution,
-            $range->startSec(),
-            $range->endSec(),
+            $range->extendedStartSec(),
+            $range->extendedEndSec(),
             $paths
         );
 

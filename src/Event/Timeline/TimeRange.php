@@ -6,56 +6,57 @@ use InvalidArgumentException;
 
 /**
  * Value object for a timeline time range.
+ * Stores both the visible range and the extended range (1x buffer each side).
  * All timestamps are in milliseconds.
  */
 class TimeRange
 {
-    private int $startMs;
-    private int $endMs;
-    private int $currentMs;
+    private int $start;
+    private int $end;
+    private int $current;
+    private int $extendedStart;
+    private int $extendedEnd;
 
     /**
-     * @param int $startTimestamp Start time in milliseconds
-     * @param int $endTimestamp End time in milliseconds
-     * @param int $currentTimestamp Current observation time in milliseconds
-     * @throws InvalidArgumentException If timestamps are not integers or start > end
+     * @param int $start Visible start in milliseconds
+     * @param int $end Visible end in milliseconds
+     * @param int $current Current observation time in milliseconds
+     * @throws InvalidArgumentException If timestamps are not integers or start >= end
      */
-    public function __construct($startTimestamp, $endTimestamp, $currentTimestamp)
+    public function __construct($start, $end, $current)
     {
-        $startTimestamp = filter_var($startTimestamp, FILTER_VALIDATE_INT);
-        $endTimestamp = filter_var($endTimestamp, FILTER_VALIDATE_INT);
-        $currentTimestamp = filter_var($currentTimestamp, FILTER_VALIDATE_INT);
+        $start = filter_var($start, FILTER_VALIDATE_INT);
+        $end = filter_var($end, FILTER_VALIDATE_INT);
+        $current = filter_var($current, FILTER_VALIDATE_INT);
 
-        if ($startTimestamp === false || $endTimestamp === false || $currentTimestamp === false) {
-            throw new InvalidArgumentException('startTimestamp, endTimestamp, and currentTimestamp must be integer timestamps in milliseconds');
+        if ($start === false || $end === false || $current === false) {
+            throw new InvalidArgumentException('start, end, and current must be integer timestamps in milliseconds');
         }
 
-        if ($startTimestamp >= $endTimestamp) {
-            throw new InvalidArgumentException('startTimestamp must be less than endTimestamp');
+        if ($start >= $end) {
+            throw new InvalidArgumentException('start must be less than end');
         }
 
-        $this->startMs = $startTimestamp;
-        $this->endMs = $endTimestamp;
-        $this->currentMs = $currentTimestamp;
+        $this->start = $start;
+        $this->end = $end;
+        $this->current = $current;
+
+        $distance = $end - $start;
+        $this->extendedStart = $start - $distance;
+        $this->extendedEnd = $end + $distance;
     }
 
-    public function start(): int { return $this->startMs; }
-    public function end(): int { return $this->endMs; }
-    public function current(): int { return $this->currentMs; }
-    public function range(): int { return $this->endMs - $this->startMs; }
-    public function startSec(): int { return intval($this->startMs / 1000); }
-    public function endSec(): int { return intval($this->endMs / 1000); }
+    // Visible range
+    public function start(): int { return $this->start; }
+    public function end(): int { return $this->end; }
+    public function current(): int { return $this->current; }
+    public function range(): int { return $this->end - $this->start; }
+    public function startSec(): int { return intval($this->start / 1000); }
+    public function endSec(): int { return intval($this->end / 1000); }
 
-    /**
-     * Returns an extended TimeRange with 1x buffer on each side for smooth scrolling.
-     */
-    public function extended(): self
-    {
-        $distance = $this->range();
-        return new self(
-            $this->startMs - $distance,
-            $this->endMs + $distance,
-            $this->currentMs
-        );
-    }
+    // Extended range (1x buffer each side)
+    public function extendedStart(): int { return $this->extendedStart; }
+    public function extendedEnd(): int { return $this->extendedEnd; }
+    public function extendedStartSec(): int { return intval($this->extendedStart / 1000); }
+    public function extendedEndSec(): int { return intval($this->extendedEnd / 1000); }
 }

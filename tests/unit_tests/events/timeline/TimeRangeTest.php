@@ -62,28 +62,28 @@ final class TimeRangeTest extends TestCase
         $this->assertEquals(3500, $range->endSec());
     }
 
-    public function testItShouldCreateExtendedRange(): void
+    public function testItShouldCalculateExtendedRange(): void
     {
+        // Range: 1000 to 3000, distance = 2000
+        // Extended: 1000-2000 = -1000, 3000+2000 = 5000
         $range = new TimeRange(1000, 3000, 2000);
-        $extended = $range->extended();
-
-        $this->assertInstanceOf(TimeRange::class, $extended);
-        $this->assertEquals(-1000, $extended->start());
-        $this->assertEquals(5000, $extended->end());
-        $this->assertEquals(2000, $extended->current());
+        $this->assertEquals(-1000, $range->extendedStart());
+        $this->assertEquals(5000, $range->extendedEnd());
     }
 
-    public function testItShouldPreserveCurrentInExtendedRange(): void
+    public function testItShouldConvertExtendedToSeconds(): void
     {
         $range = new TimeRange(10000, 20000, 15000);
-        $extended = $range->extended();
-        $this->assertEquals(15000, $extended->current());
+        // distance = 10000, extended: 0 to 30000
+        $this->assertEquals(0, $range->extendedStartSec());
+        $this->assertEquals(30, $range->extendedEndSec());
     }
 
-    public function testItShouldHaveTripleWidthInExtendedRange(): void
+    public function testExtendedRangeShouldBeTripleWidth(): void
     {
         $range = new TimeRange(1000, 5000, 3000);
-        $extended = $range->extended();
-        $this->assertEquals(12000, $extended->range());
+        $extendedWidth = $range->extendedEnd() - $range->extendedStart();
+        // Original: 4000. Extended: 3x = 12000
+        $this->assertEquals(12000, $extendedWidth);
     }
 }
