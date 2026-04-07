@@ -539,8 +539,6 @@ class ImageRetrievalDaemon:
 
             # If everything looks good, move to archive and add to database
             # print image_params['date']
-            date_str = image_params['date'].strftime('%Y/%m/%d')
-
             # The files must be transcoded in order to work with JHelioviewer.
             # Therefore, any problem with the transcoding process must raise
             # an error.
@@ -566,13 +564,7 @@ class ImageRetrievalDaemon:
                 sys.exit(1)
 
             # Move to archive
-            if image_params['observatory'] == "Hinode":
-                directory = os.path.join(self.image_archive, image_params['nickname'], date_str, str(image_params['filter1']), str(image_params['filter2']))
-            elif image_params['observatory'] == "RHESSI":
-                directory = os.path.join(self.image_archive, image_params['nickname'], date_str, str(image_params['reconstruction_method']))
-            else:
-                directory = os.path.join(self.image_archive, image_params['nickname'], date_str, str(image_params['measurement']))
-
+            directory = os.path.join(self.image_archive, image_params['storage_path'])
             dest = os.path.join(directory, filename)
 
             image_params['filepath'] = dest
