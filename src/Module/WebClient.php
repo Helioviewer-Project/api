@@ -19,7 +19,7 @@ require_once HV_ROOT_DIR.'/../src/Helper/ErrorHandler.php';
 use Helioviewer\Api\Module\AbstractModule;
 use Helioviewer\Api\Module\ModuleInterface;
 use Helioviewer\Api\Event\EventsStateManager;
-use Helioviewer\Api\Event\EventsTimeline;
+use Helioviewer\Api\Event\Timeline\Timeline as EventTimeline;
 use Helioviewer\Api\Event\Api\EventsApiException;
 use Helioviewer\Api\Sentry\Sentry;
 
@@ -958,15 +958,14 @@ class Module_WebClient extends AbstractModule implements ModuleInterface {
             return $this->getDataCoverageForLayers();
         } else if (!empty($this->_options['eventLayers'])) {
             try {
-                $eventTimeline = new EventsTimeline(
+                $timeline = new EventTimeline(
                     $this->_options['eventLayers'],
                     $this->_options['startDate'] ?? null,
                     $this->_options['endDate'] ?? null,
                     $this->_options['currentDate'] ?? null,
                     $this->eventsApi()
                 );
-
-                $this->_printJSON($eventTimeline->timeline());
+                $this->_printJSON($timeline->execute());
             } catch (InvalidArgumentException $e) {
                 return $this->_sendResponse(400, 'Invalid time parameters', $e->getMessage());
             } catch (Exception $e) {
