@@ -601,9 +601,8 @@ class Image_Composite_HelioviewerCompositeImage {
                     EventsApi::VALID_SOURCES
                 );
             } catch (EventsApiException $e) {
-                error_log("[CompositeImage] Batch events failed for {$this->date}: " . $e->getMessage());
+                // Already captured to Sentry by EventsApi
             } catch (\Exception $e) {
-                error_log("[CompositeImage] Unexpected error fetching events for {$this->date}: " . $e->getMessage());
                 Sentry::capture($e);
             }
         }
