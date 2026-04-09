@@ -550,7 +550,7 @@ INSERT INTO `datasource_property` (`sourceId`, `label`, `name`, `fitsName`, `des
 (92, 'Instrument', 'SJI', 'SJI', 'Slit Jaw Imager', 2),
 (93, 'Instrument', 'SJI', 'SJI', 'Slit Jaw Imager', 2),
 (94, 'Instrument', 'GONG', 'GONG', 'GONG', 2),
-(131, 'Instrument', 'WFI+NFI CAM Mosaic', 'WFI+NFI', 'Clear low-noise science mosaic, bkg-sub & resolved into B & uncertainty layer', 2),
+(131, 'Instrument', 'WFI+NFI', 'WFI+NFI', 'Clear low-noise science mosaic, bkg-sub & resolved into B & uncertainty layer', 2),
 (134, 'Instrument', 'WFI+NFI', 'WFI+NFI', 'Polarized low-noise science mosaic, bkg-sub & resolved into B, pB, & uncertainty layer', 2),
 (2000, 'Instrument', 'SUVI', 'SUVI', 'Solar UltraViolet Imager', 2),
 (2001, 'Instrument', 'SUVI', 'SUVI', 'Solar UltraViolet Imager', 2),

@@ -1,6 +1,6 @@
 UPDATE datasources SET description = 'PUNCH WFI+NFI CAM Mosaic' WHERE id = 131;
 
-UPDATE datasource_property SET name = 'WFI+NFI CAM Mosaic', fitsName = 'WFI+NFI', description = 'Clear low-noise science mosaic, bkg-sub & resolved into B & uncertainty layer' WHERE sourceId = 131 AND label = 'Instrument';
+UPDATE datasource_property SET name = 'WFI+NFI', fitsName = 'WFI+NFI', description = 'Clear low-noise science mosaic, bkg-sub & resolved into B & uncertainty layer' WHERE sourceId = 131 AND label = 'Instrument';
 
 INSERT INTO datasource_property (sourceId, label, name, fitsName, description, uiOrder)
 VALUES (131, 'Product', 'CAM', 'PUNCH Level-3 Intermediate F-corona Subtracted Unpolarized Mosaic', '', 3);

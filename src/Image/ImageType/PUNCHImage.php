@@ -27,6 +27,12 @@ class Image_ImageType_PUNCHImage extends Image_HelioviewerImage {
      * @return void
      */
     public function __construct($jp2, $filepath, $roi, $uiLabels, $offsetX, $offsetY, $options) {
+        // Assign PUNCH color table
+        $colorTable = HV_ROOT_DIR
+                    . '/resources/images/color-tables/'
+                    . 'PUNCH.png';
+        $this->setColorTable($colorTable);
+
         parent::__construct($jp2, $filepath, $roi, $uiLabels, $offsetX, $offsetY, $options);
     }
 
