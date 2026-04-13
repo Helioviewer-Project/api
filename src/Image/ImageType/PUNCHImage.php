@@ -52,7 +52,7 @@ class Image_ImageType_PUNCHImage extends Image_HelioviewerImage {
 
     protected function makeCenterTransparent(IMagick &$imagickImage) {
         // Ensure alpha channel is active before painting
-        $imagickImage->setImageAlphaChannel(Imagick::ALPHACHANNEL_ACTIVATE);
+        $imagickImage->setImageAlphaChannel(Imagick::ALPHACHANNEL_OPAQUE);
 
         // Paint exact black pixels fully transparent
         $imagickImage->transparentPaintImage(
