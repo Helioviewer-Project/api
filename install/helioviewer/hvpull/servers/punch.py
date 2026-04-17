@@ -7,7 +7,7 @@ import os
 class PUNCHDataServer(DataServer):
     def __init__(self):
         # TODO: Need to update to actual punch source when it's available.
-        DataServer.__init__(self, "https://umbra.nascom.nasa.gov/punch/3/", "PUNCH")
+        DataServer.__init__(self, "https://umbra.nascom.nasa.gov/punch/L/3/", "PUNCH")
         self.pause = datetime.timedelta(minutes=30)
 
     def compute_directories(self, start_date, end_date):
