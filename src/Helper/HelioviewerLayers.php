@@ -46,7 +46,7 @@ class Helper_HelioviewerLayers {
 			$layerString);
 
         // validate layer string
-        if (!preg_match('/^[_\w\[\],\-:\.\+]+$/', $layerString)) {
+        if (!preg_match('/^[_\w\[\],\-:\.\+ ]+$/', $layerString)) {
             throw new Exception('Invalid layer string', 255);
         }
 

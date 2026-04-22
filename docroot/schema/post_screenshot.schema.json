@@ -15,7 +15,7 @@
         "layers": {
             "type": "string",
             "maxLength": 1000,
-            "pattern": "^[\\_\\w\\]\\[,\\-:\\.\\+]+$"
+            "pattern": "^[\\_\\w\\]\\[,\\-:\\.\\+ ]+$"
         },
         "eventsState": {
             "$ref": "https://api.helioviewer.org/schema/event_layers.schema.json"
