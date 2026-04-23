@@ -25,6 +25,45 @@ use Helioviewer\Api\Event\Api\EventsApiException;
 
 class Image_Composite_HelioviewerCompositeImage {
 
+    // Event type colors for polygon fill (hex without #, appended with alpha)
+    private const EVENT_COLORS = [
+        'AR' => 'FF8F97',
+        'CME' => 'FFB294',
+        'CD' => 'FFD391',
+        'CH' => 'FEF38E',
+        'CW' => 'E8FF8C',
+        'FI' => 'C8FF8D',
+        'FE' => 'A3FF8D',
+        'FA' => '7BFF8E',
+        'FL' => '7AFFAE',
+        'LP' => '7CFFC9',
+        'OS' => '81FFFC',
+        'SS' => '8CE6FF',
+        'EF' => '95C6FF',
+        'CJ' => '9DA4FF',
+        'PG' => 'AB8CFF',
+        'OT' => 'CA89FF',
+        'SG' => 'E986FF',
+        'SP' => 'FF82FF',
+        'CR' => 'FF85FF',
+        'CC' => 'FF8ACC',
+        'ER' => 'FF8DAD',
+        'TO' => 'FF8F97',
+        'CE' => 'FFB294',
+        'C3' => 'FFD391',
+        'FP' => 'AB8CFF',
+        'F2' => '7AFFAE',
+        'BU' => 'E8FF8C',
+        'EE' => '95C6FF',
+        'PB' => 'FF85FF',
+        'PT' => 'C8FF8D',
+        'EP' => '81FFFC',
+        'IC' => '8CE6FF',
+        'SR' => '9DA4FF',
+        'HY' => 'CA89FF',
+        'NR' => 'FFD391',
+    ];
+
     private   $_composite;
     private   $_dir;
     private   $_imageLayers;
@@ -681,37 +720,42 @@ class Image_Composite_HelioviewerCompositeImage {
             }
         }
 
-        // Now handle the events
+        // Draw event footprint polygons onto the composite image.
+        // Footprint is an array of {x, y} points in HPC arcseconds (already rotated by Events API).
+        // We convert each point from arcseconds to pixel coordinates relative to the ROI,
+        // then draw a semi-transparent yellow polygon matching the frontend SVG style.
         foreach ($events_to_render as $event) {
-            if ( array_key_exists('hv_poly_width_max_zoom_pixels', $event) ) {
+            if (empty($event['footprint'])) continue;
 
-                $width  = round($event['hv_poly_width_max_zoom_pixels']
-                        * ($this->maxPixelScale/$this->roi->imageScale()));
-                $height = round($event['hv_poly_height_max_zoom_pixels']
-                        * ($this->maxPixelScale/$this->roi->imageScale()));
-
-                if ( $width >= 1 && $height >= 1 ) {
-
-                    $region_polygon = new IMagick(HV_ROOT_DIR.'/'.urldecode($event['hv_poly_url']) );
-
-                    $x = (( $event['hv_poly_hpc_x_final']
-                          - $this->roi->left()) / $this->roi->imageScale());
-                    $y = (( $event['hv_poly_hpc_y_final']
-                          - $this->roi->top() ) / $this->roi->imageScale());
-
-                    $x = $x - $this->_timeOffsetX;
-                    $y = $y - $this->_timeOffsetY;
-
-                    $region_polygon->resizeImage(
-                        $width, $height, Imagick::FILTER_LANCZOS,1);
-                    $imagickImage->compositeImage(
-                        $region_polygon, IMagick::COMPOSITE_DISSOLVE, $x, $y);
-                }
+            // Convert HPC arcseconds to pixel coordinates:
+            //   px_x = (hpc_x - roi_left) / imageScale - timeOffsetX
+            //   px_y = (-hpc_y - roi_top) / imageScale - timeOffsetY  (Y negated: HPC up → pixel down)
+            $polyArray = [];
+            foreach ($event['footprint'] as $point) {
+                $polyArray[] = [
+                    'x' => (( $point['x'] - $this->roi->left()) / $this->roi->imageScale()) - $this->_timeOffsetX,
+                    'y' => ((-$point['y'] - $this->roi->top() ) / $this->roi->imageScale()) - $this->_timeOffsetY,
+                ];
             }
-        }
 
-        if ( isset($region_polygon) ) {
-            $region_polygon->destroy();
+            // Need at least 3 points to form a polygon
+            if (count($polyArray) < 3) continue;
+
+            // Match frontend SVG spec:
+            // - Fill: per-type color (fallback #d4d4d4) at 40% opacity (0x66)
+            // - Stroke: black at ~53% opacity (0x88), 1.5px, round joins
+            $fillHex = self::EVENT_COLORS[$event['type'] ?? ''] ?? 'd4d4d4';
+
+            $draw = new \ImagickDraw();
+            $draw->setStrokeLineJoin(\Imagick::LINEJOIN_ROUND);
+            $draw->setStrokeColor('#00000088');
+            $draw->setStrokeWidth(1.5);
+            $draw->setStrokeAntialias(true);
+            $draw->setFillColor('#' . $fillHex . '66');
+            $draw->polygon($polyArray);
+
+            $imagickImage->drawImage($draw);
+            $draw->destroy();
         }
 
         // Now lay down the event MARKERS
