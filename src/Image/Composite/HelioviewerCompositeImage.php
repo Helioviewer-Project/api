@@ -84,7 +84,6 @@ class Image_Composite_HelioviewerCompositeImage {
     protected $scaleType;
     protected $scaleX;
     protected $scaleY;
-    protected $maxPixelScale;
     protected $roi;
     protected $imageScale;
     protected bool $grayscale;
@@ -180,8 +179,6 @@ class Image_Composite_HelioviewerCompositeImage {
 
         $this->celestialBodiesLabels = $celestialBodies['labels'];
         $this->celestialBodiesTrajectories = $celestialBodies['trajectories'];
-
-        $this->maxPixelScale = 0.60511022;  // arcseconds per pixel
     }
 
     /**
@@ -765,22 +762,8 @@ class Image_Composite_HelioviewerCompositeImage {
                                   . $event['type'].'.png' );
 
 
-            if ( array_key_exists('hpc_boundcc', $event) && ($event['hpc_boundcc'] != '')) {
-		        $polygonCenterX = round($event['hv_poly_width_max_zoom_pixels'] * ($this->maxPixelScale/$this->roi->imageScale())) / 2;
-	            $polygonCenterY = round($event['hv_poly_height_max_zoom_pixels'] * ($this->maxPixelScale/$this->roi->imageScale())) / 2;
-
-		        $scaledMarkerX = round($event['hv_marker_offset_x'] * ($this->maxPixelScale/$this->roi->imageScale()));
-	            $scaledMarkerY = round($event['hv_marker_offset_y'] * ($this->maxPixelScale/$this->roi->imageScale()));
-
-				$polygonPosX = (( $event['hv_poly_hpc_x_final'] - $this->roi->left()) / $this->roi->imageScale());
-                $polygonPosY = (( $event['hv_poly_hpc_y_final'] - $this->roi->top() ) / $this->roi->imageScale());
-
-		        $x = round($polygonPosX + $polygonCenterX + $scaledMarkerX);
-		        $y = round($polygonPosY + $polygonCenterY + $scaledMarkerY);
-	        }else{
-		        $x = round(( $event['hv_hpc_x'] - $this->roi->left()) / $this->roi->imageScale());
-				$y = round((-$event['hv_hpc_y'] - $this->roi->top() ) / $this->roi->imageScale());
-	        }
+            $x = round(( $event['hv_hpc_x'] - $this->roi->left()) / $this->roi->imageScale());
+            $y = round((-$event['hv_hpc_y'] - $this->roi->top() ) / $this->roi->imageScale());
 
 			$x = $x - $this->_timeOffsetX;
 			$y = $y - $this->_timeOffsetY;
@@ -789,14 +772,6 @@ class Image_Composite_HelioviewerCompositeImage {
             if ($event['label_visibility']) {
                 $x = $x + 11;
                 $y = $y - 24;
-
-                /*$x = (( $event['hv_hpc_x_final'] - $this->roi->left())
-                     / $this->roi->imageScale()) + 11;
-                $y = ((-$event['hv_hpc_y_final'] - $this->roi->top() )
-                     / $this->roi->imageScale()) - 24;
-
-				$x = $x - $this->_timeOffsetX;
-				$y = $y - $this->_timeOffsetY;*/
 
                 $count = 0;
 
@@ -1550,50 +1525,6 @@ class Image_Composite_HelioviewerCompositeImage {
         $white->destroy();
         $underText->destroy();
         $text->destroy();
-    }
-
-    /**
-     * Sorts the layers by their associated layering order
-     *
-     * Layering orders that are supported currently are 3 (C3 images),
-     * 2 (C2 images), 1 (EIT/MDI images).
-     * The array is sorted by increasing layeringOrder.
-     *
-     * @param array &$images Array of Composite image layers
-     *
-     * @return array Array containing the sorted image layers
-     */
-    private function _sortByLayeringOrder(&$images) {
-        $sortedImages = array();
-
-        // Array to hold any images with layering order 2 or 3.
-        // These images must go in the sortedImages array last because of how
-        // compositing works.
-        $groups = array('2' => array(), '3' => array());
-
-        // Push all layering order 1 images into the sortedImages array,
-        // push layering order 2 and higher into separate array.
-        foreach ($images as $image) {
-            $order = $image->getLayeringOrder();
-
-            if ($order > 1) {
-                array_push($groups[$order], $image);
-            }
-            else {
-                array_push($sortedImages, $image);
-            }
-        }
-
-        // Push the group 2's and group 3's into the sortedImages array now.
-        foreach ($groups as $group) {
-            foreach ($group as $image) {
-                array_push($sortedImages, $image);
-            }
-        }
-
-        // return the sorted array in order of smallest layering order to
-        // largest.
-        return $sortedImages;
     }
 
     private function _addEclipseOverlay(IMagick $image, float $scale, bool $showMoon) {
