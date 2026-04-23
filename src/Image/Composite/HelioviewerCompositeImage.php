@@ -756,10 +756,16 @@ class Image_Composite_HelioviewerCompositeImage {
         }
 
         // Now lay down the event MARKERS
+        // Cache marker images by type — load each PNG once, clone for reuse
+        $markerCache = [];
         foreach( $events_to_render as $event ) {
-            $marker = new IMagick(  HV_ROOT_DIR
-                                  . '/resources/images/eventMarkers/'
-                                  . $event['type'].'.png' );
+            $type = $event['type'] ?? 'UNK';
+            if (!isset($markerCache[$type])) {
+                $markerCache[$type] = new IMagick(
+                    HV_ROOT_DIR . '/resources/images/eventMarkers/' . $type . '.png'
+                );
+            }
+            $marker = clone $markerCache[$type];
 
 
             $x = round(( $event['hv_hpc_x'] - $this->roi->left()) / $this->roi->imageScale());
@@ -811,8 +817,9 @@ class Image_Composite_HelioviewerCompositeImage {
             }
 
         }
-        if ( isset($marker) ) {
-            $marker->destroy();
+        // Cleanup cached marker images
+        foreach ($markerCache as $m) {
+            $m->destroy();
         }
     }
 
