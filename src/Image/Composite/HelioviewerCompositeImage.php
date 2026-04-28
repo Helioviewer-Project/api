@@ -64,6 +64,21 @@ class Image_Composite_HelioviewerCompositeImage {
         'NR' => 'FFD391',
     ];
 
+    /**
+     * Resolve an event marker PNG path, falling back to UNK.png when the
+     * type-specific file does not exist. Mirrors the polygon path's
+     * EVENT_COLORS fallback behavior so an unknown event type renders a
+     * generic marker instead of throwing an Imagick exception.
+     */
+    public static function resolveMarkerPath(string $baseDir, string $type): string
+    {
+        $path = $baseDir . '/' . $type . '.png';
+        if (!file_exists($path)) {
+            return $baseDir . '/UNK.png';
+        }
+        return $path;
+    }
+
     private   $_composite;
     private   $_dir;
     private   $_imageLayers;
@@ -756,16 +771,16 @@ class Image_Composite_HelioviewerCompositeImage {
         }
 
         // Now lay down the event MARKERS
-        // Cache marker images by type — load each PNG once, clone for reuse
+        // Cache marker images by resolved path — multiple unknown types share one UNK.png load
         $markerCache = [];
+        $markerDir = HV_ROOT_DIR . '/resources/images/eventMarkers';
         foreach( $events_to_render as $event ) {
             $type = $event['type'] ?? 'UNK';
-            if (!isset($markerCache[$type])) {
-                $markerCache[$type] = new IMagick(
-                    HV_ROOT_DIR . '/resources/images/eventMarkers/' . $type . '.png'
-                );
+            $path = self::resolveMarkerPath($markerDir, $type);
+            if (!isset($markerCache[$path])) {
+                $markerCache[$path] = new IMagick($path);
             }
-            $marker = clone $markerCache[$type];
+            $marker = clone $markerCache[$path];
 
 
             $x = round(( $event['hv_hpc_x'] - $this->roi->left()) / $this->roi->imageScale());
