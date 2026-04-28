@@ -1751,11 +1751,11 @@ class Database_Statistics {
     }
 
     /**
-     * Update data source coverage for the given time period
+     * Update the data precomputed statistics for the Image Timeline over the given time range.
      * @param datestring $start Start time for the range to update
      * @param datestring $end   End time for the range to update
      */
-    public function updateDataCoverageOverRange($start, $end) {
+    public function updateImageCoverageOverRange($start, $end) {
         $startFormat = 'Y-m-d 00:00:00';
         $endFormat = 'Y-m-d 23:59:59';
         $defaultTimeFormat = 'Y-m-d H:i:s';
@@ -1786,7 +1786,16 @@ class Database_Statistics {
                 'GROUP BY ' .
                     'bin, ' .
                     'sourceId;';
-        $result = $this->_dbConnection->query($sql);
+        return $this->_dbConnection->query($sql);
+    }
+
+    /**
+     * Update data source coverage for the given time period
+     * @param datestring $start Start time for the range to update
+     * @param datestring $end   End time for the range to update
+     */
+    public function updateDataCoverageOverRange($start, $end) {
+        $result = $this->updateImageCoverageOverRange($start, $end);
 
         // 30m Update Events Data coverage. Align input to 30m mark
         $startDate = clone $alignedStartDate;
