@@ -653,7 +653,7 @@ class Image_Composite_HelioviewerCompositeImage {
                 );
             } catch (EventsApiException $e) {
                 // Already captured to Sentry by EventsApi
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 Sentry::capture($e);
             }
         }

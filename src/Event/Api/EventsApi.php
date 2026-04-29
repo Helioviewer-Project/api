@@ -86,7 +86,7 @@ class EventsApi implements EventsApiInterface {
         try {
             $response = $this->client->request('GET', $url);
             return $this->parseResponse($response);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->sentry->setContext('EventsApi', [
                 'error' => $e->getMessage(),
             ]);
@@ -112,7 +112,7 @@ class EventsApi implements EventsApiInterface {
             ]);
 
             return $this->parseResponse($response);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->sentry->setContext('EventsApi', [
                 'error' => $e->getMessage(),
             ]);
@@ -138,7 +138,7 @@ class EventsApi implements EventsApiInterface {
             ]);
 
             return $this->parseResponse($response);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->sentry->setContext('EventsApi', [
                 'error' => $e->getMessage(),
             ]);
@@ -176,7 +176,7 @@ class EventsApi implements EventsApiInterface {
                     'json' => ['timestamps' => $chunkTimestamps]
                 ]);
                 return $this->parseResponse($response);
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 $this->sentry->setContext('EventsApi', [
                     'error' => $e->getMessage(),
                 ]);

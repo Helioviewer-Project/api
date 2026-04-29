@@ -210,7 +210,7 @@ class Module_SolarEvents extends BaseModule implements ModuleInterface {
                 $data = array_merge($data, $sourceData);
             } catch (EventsApiException $e) {
                 return $this->_sendResponse(500, 'Internal Server Error', 'Failed to fetch events from ' . $source);
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 Sentry::capture($e);
                 return $this->_sendResponse(500, 'Internal Server Error', 'Failed to fetch events from ' . $source);
             }
