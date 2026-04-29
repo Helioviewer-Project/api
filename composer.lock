@@ -569,16 +569,16 @@
         },
         {
             "name": "helioviewer/event-interface",
-            "version": "v0.3.1",
+            "version": "v0.3.2",
             "source": {
                 "type": "git",
-                "url": "https://github.com/dgarciabriseno/helioviewer-event-interface.git",
-                "reference": "7f73bbccbef07acee40348bae377a6bada06f63e"
+                "url": "https://github.com/Helioviewer-Project/helioviewer-event-interface.git",
+                "reference": "3ffa04673cc22bf3c4f920b66c7a5f3d03d56532"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dgarciabriseno/helioviewer-event-interface/zipball/7f73bbccbef07acee40348bae377a6bada06f63e",
-                "reference": "7f73bbccbef07acee40348bae377a6bada06f63e",
+                "url": "https://api.github.com/repos/Helioviewer-Project/helioviewer-event-interface/zipball/3ffa04673cc22bf3c4f920b66c7a5f3d03d56532",
+                "reference": "3ffa04673cc22bf3c4f920b66c7a5f3d03d56532",
                 "shasum": ""
             },
             "require": {
@@ -614,10 +614,10 @@
             ],
             "description": "Interface for querying external data sources for Helioviewer",
             "support": {
-                "source": "https://github.com/dgarciabriseno/helioviewer-event-interface/tree/v0.3.1",
-                "issues": "https://github.com/dgarciabriseno/helioviewer-event-interface/issues"
+                "source": "https://github.com/Helioviewer-Project/helioviewer-event-interface/tree/v0.3.2",
+                "issues": "https://github.com/Helioviewer-Project/helioviewer-event-interface/issues"
             },
-            "time": "2025-02-25T22:28:25+00:00"
+            "time": "2026-04-29T16:59:14+00:00"
         },
         {
             "name": "jean85/pretty-package-versions",
