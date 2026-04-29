@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /**
  * Helioviewer Abstract Module class definition.
  * Base class for all API modules providing common functionality.

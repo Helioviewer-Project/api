@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /**
  * EventSelections Class Definition
  * A helper class to parse legacy event strings and provide event selections
