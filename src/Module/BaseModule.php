@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 /**
- * Helioviewer Abstract Module class definition.
+ * Helioviewer Base Module class definition.
  * Base class for all API modules providing common functionality.
  *
  * @category Application
@@ -13,7 +13,7 @@ namespace Helioviewer\Api\Module;
 
 use Helioviewer\Api\Event\Api\EventsApi;
 
-abstract class AbstractModule {
+abstract class BaseModule {
 
     protected $_params;
     protected $_options;

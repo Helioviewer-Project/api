@@ -12,12 +12,12 @@
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     https://github.com/Helioviewer-Project
  */
-use Helioviewer\Api\Module\AbstractModule;
+use Helioviewer\Api\Module\BaseModule;
 use Helioviewer\Api\Module\ModuleInterface;
 use Helioviewer\Api\Sentry\Sentry;
 use Helioviewer\Api\Event\Api\EventsApiException;
 
-class Module_SolarEvents extends AbstractModule implements ModuleInterface {
+class Module_SolarEvents extends BaseModule implements ModuleInterface {
 
     /**
      * execute

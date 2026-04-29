@@ -12,12 +12,12 @@
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     https://github.com/Helioviewer-Project
  */
-use Helioviewer\Api\Module\AbstractModule;
+use Helioviewer\Api\Module\BaseModule;
 use Helioviewer\Api\Module\ModuleInterface;
 use Helioviewer\Api\Event\EventsStateManager;
 use Helioviewer\Api\Sentry\Sentry;
 
-class Module_Movies extends AbstractModule implements ModuleInterface {
+class Module_Movies extends BaseModule implements ModuleInterface {
 
     const YOUTUBE_THUMBNAIL_FORMAT = "https://i.ytimg.com/vi/{VideoID}/{Quality}default.jpg";
 

@@ -16,14 +16,14 @@
 require_once HV_ROOT_DIR.'/../src/Validation/InputValidator.php';
 require_once HV_ROOT_DIR.'/../src/Helper/ErrorHandler.php';
 
-use Helioviewer\Api\Module\AbstractModule;
+use Helioviewer\Api\Module\BaseModule;
 use Helioviewer\Api\Module\ModuleInterface;
 use Helioviewer\Api\Event\EventsStateManager;
 use Helioviewer\Api\Event\Timeline\Timeline as EventTimeline;
 use Helioviewer\Api\Event\Api\EventsApiException;
 use Helioviewer\Api\Sentry\Sentry;
 
-class Module_WebClient extends AbstractModule implements ModuleInterface {
+class Module_WebClient extends BaseModule implements ModuleInterface {
 
     /**
      * execute

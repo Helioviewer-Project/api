@@ -1,6 +1,6 @@
 <?php
 
-use Helioviewer\Api\Module\AbstractModule;
+use Helioviewer\Api\Module\BaseModule;
 use Helioviewer\Api\Module\ModuleInterface;
 use Helioviewer\Api\Sentry\Sentry;
 
@@ -10,7 +10,7 @@ use Helioviewer\Api\Sentry\Sentry;
  * Used for getting data on a set of planets and satellites as seen from a set of observers.
  * Retrieves data stored in JSON file format on the disk based on request time as a unix timestamp.
  */
-class Module_SolarBodies extends AbstractModule implements ModuleInterface {
+class Module_SolarBodies extends BaseModule implements ModuleInterface {
 
     private $_version;
     private $_observers;
