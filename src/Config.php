@@ -92,7 +92,7 @@ class Config {
         // floats
         foreach ($this->_floats as $float) {
             if (isset($this->config[$float])) {
-                $this->config[$float] = (float)$this->config[$float];
+                $this->config[$float] = floatval($this->config[$float]);
             }
         }
     }
