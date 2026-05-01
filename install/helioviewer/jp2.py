@@ -99,17 +99,8 @@ def insert_images(images, sources, rootdir, db, cursor, mysql, step_function=Non
         prev = ""
         source = sources
 
-        if img['observatory'] == "Hinode":
-            leafs = ["observatory", "instrument", "detector", "filter1", "filter2"]
-        elif img["observatory"] == "RHESSI":
-            leafs = ["observatory", "energy_band", "reconstruction_method"]
-        elif img["observatory"] == "PUNCH":
-            leafs = ["observatory", "instrument", "measurement"]
-        else:
-            leafs = ["observatory", "instrument", "detector", "measurement"]
-
+        leafs = JP2parser.get_detection_keys(img)
         for leaf in leafs:
-
             if img[leaf] != prev:
                 source = source[str(img[leaf])]
             prev = img[leaf]

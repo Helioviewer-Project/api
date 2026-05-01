@@ -4,6 +4,8 @@
 JPEG 2000 Image XML Box parser class
 """
 import sys
+import os
+from os.path import basename
 from xml.etree import cElementTree as ET
 import numpy as np
 from astropy.time import Time
@@ -78,6 +80,7 @@ class JP2parser:
         image['XCEN'] = self._data['XCEN'] if 'XCEN' in self._data else 'NULL'
         image['YCEN'] = self._data['YCEN'] if 'YCEN' in self._data else 'NULL'
         image['CROTA1'] = self._data['CROTA1'] if 'CROTA1' in self._data else 'NULL'
+        image['title'] = self._data['TITLE'] if 'TITLE' in self._data else 'NULL'
 
         #Fix FITS NaN parameters
         for key, value in image.items():
@@ -92,6 +95,10 @@ class JP2parser:
             imageData.nickname = 'CCOR-1'
         elif image['instrument'] == "CCOR2":
             imageData.nickname = 'CCOR-2'
+        elif image['observatory'] == 'PUNCH':
+            # For PUNCH, the different types (e.g. CAM, PAM) are only in the file name,
+            # not anywhere inside the metadata.
+            image['detector'] = self._get_punch_file_type(self._filepath)
         # In sunpy V3, the nickname changed to include the filter.
         # Having the space in it breaks how helioviewer loads images due to
         # the space in the file name. To prevent this problem we're selecting
@@ -128,8 +135,59 @@ class JP2parser:
         if image["observatory"] == "RHESSI":
             image = self._process_rhessi_extras(image, imageData)
 
+        image['storage_path'] = self.get_storage_suffix(image)
+
         return image
 
+    def get_storage_suffix(self, imageData):
+        """
+        Returns the suffix which should be used when saving this image to disk.
+        e.g. by default it is /nickname/year/month/day/measurement.
+             This may be different depending on the data source
+        """
+        date_str = imageData['date'].strftime('%Y/%m/%d')
+
+        if imageData['observatory'] == "Hinode":
+            directory = os.path.join(imageData['nickname'], date_str, str(imageData['filter1']), str(imageData['filter2']))
+        elif imageData['observatory'] == "RHESSI":
+            directory = os.path.join(imageData['nickname'], date_str, str(imageData['reconstruction_method']))
+        elif imageData['observatory'] == "PUNCH":
+            directory = os.path.join(imageData['nickname'], date_str, self._get_punch_file_type(self._filepath))
+        else:
+            directory = os.path.join(imageData['nickname'], date_str, str(imageData['measurement']))
+
+        return directory
+
+    @staticmethod
+    def get_detection_keys(img):
+        """
+        Returns the list of keys to be used to identify this file's source id.
+
+        In various places throughout the ingestion pipeline, we have to identify
+        the image's source ID by iterating over its properties to determine which
+        data source it belongs to. The keys to look at are typically
+        observatory -> instrument -> detector -> measurement, but
+        not every observatory falls into this simple mapping.
+
+        This function returns the list of keys to examine in order to find
+        the correct source id.
+        """
+        if img['observatory'] == "Hinode":
+            leafs = ["observatory", "instrument", "detector", "filter1", "filter2"]
+        elif img["observatory"] == "RHESSI":
+            leafs = ["observatory", "energy_band", "reconstruction_method"]
+        elif img["observatory"] == "PUNCH":
+            leafs = ["observatory", "instrument", "title"]
+        else:
+            leafs = ["observatory", "instrument", "detector", "measurement"]
+        return leafs
+
+    def _get_punch_file_type(self, filepath):
+        """
+        Returns the PUNCH file type e.g. CAM/PAM based on the filename.
+        This information doesn't exist inside the metadata.
+        """
+        return basename(filepath)[9:12]
 
     def get_observatory(self, imageData):
         """
