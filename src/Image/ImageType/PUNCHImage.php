@@ -27,6 +27,12 @@ class Image_ImageType_PUNCHImage extends Image_HelioviewerImage {
      * @return void
      */
     public function __construct($jp2, $filepath, $roi, $uiLabels, $offsetX, $offsetY, $options) {
+        // Assign PUNCH color table
+        $colorTable = HV_ROOT_DIR
+                    . '/resources/images/color-tables/'
+                    . 'PUNCH.png';
+        $this->setColorTable($colorTable);
+
         parent::__construct($jp2, $filepath, $roi, $uiLabels, $offsetX, $offsetY, $options);
     }
 
@@ -39,6 +45,22 @@ class Image_ImageType_PUNCHImage extends Image_HelioviewerImage {
         } else {
             $this->applyOpacity($imagickImage);
         }
+
+        // Attempt to make the center space transparent
+        $this->makeCenterTransparent($imagickImage);
+    }
+
+    protected function makeCenterTransparent(IMagick &$imagickImage) {
+        // Ensure alpha channel is active before painting
+        $imagickImage->setImageAlphaChannel(Imagick::ALPHACHANNEL_OPAQUE);
+
+        // Paint exact black pixels fully transparent
+        $imagickImage->transparentPaintImage(
+            new ImagickPixel('black'),
+            0.0,   // target alpha: 0.0 = fully transparent
+            0,     // no fuzz: exact black only
+            false  // don't invert (only affect matching pixels)
+        );
     }
 
     protected function applyOpacity(IMagick &$imagickImage) {
