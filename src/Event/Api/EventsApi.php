@@ -52,7 +52,8 @@ class EventsApi implements EventsApiInterface {
         $timeout = defined('HV_EVENTS_API_TIMEOUT') ? HV_EVENTS_API_TIMEOUT : 10;
         $connectTimeout = 2;
         $baseUrl = defined('HV_EVENTS_API_URL') ? HV_EVENTS_API_URL : 'https://events.helioviewer.org';
-        $this->client = $client ?? new Client([
+
+        $options = [
             'base_uri' => $baseUrl,
             'timeout' => $timeout,
             'connect_timeout' => $connectTimeout,
@@ -60,7 +61,12 @@ class EventsApi implements EventsApiInterface {
                 'Accept' => 'application/json',
                 'User-Agent' => 'Helioviewer-API/2.0'
             ]
-        ]);
+        ];
+        if (defined('HV_PROXY_HOST')) {
+            $options['proxy'] = HV_PROXY_HOST;
+        }
+
+        $this->client = $client ?? new Client($options);
         $this->sentry = $sentry ?? Sentry::$client;
         $this->legacyEvents = $legacyEvents ?? new LegacyEvents();
 
@@ -68,6 +74,7 @@ class EventsApi implements EventsApiInterface {
             'api_url' => $baseUrl,
             'timeout' => $timeout,
             'connect_timeout' => $connectTimeout,
+            'proxy' => defined('HV_PROXY_HOST') ? HV_PROXY_HOST : null,
         ]);
     }
 
