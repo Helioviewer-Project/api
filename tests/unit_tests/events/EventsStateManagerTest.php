@@ -454,5 +454,49 @@ class EventsStateManagerTest extends TestCase
         $manager = EventsStateManager::buildFromEventsState($this->eventsState);
         $this->assertFalse($manager->isEventTypeLabelVisible('unknown_event_type'));
     }
+
+    public function testItShouldReturnSourceNamesWithoutTreePrefix()
+    {
+        $manager = EventsStateManager::buildFromEventsState($this->eventsState);
+        $sources = $manager->getSources();
+        $this->assertEquals(['HEK', 'CCMC'], $sources);
+    }
+
+    public function testItShouldReturnAllThreeSourcesWhenPresent()
+    {
+        $state = $this->eventsState;
+        $state['tree_RHESSI'] = [
+            'id' => 'RHESSI',
+            'markers_visible' => true,
+            'labels_visible' => true,
+            'layers' => [
+                [
+                    'event_type' => 'xray',
+                    'frms' => ['all'],
+                    'event_instances' => [],
+                    'open' => true,
+                ]
+            ]
+        ];
+        $manager = EventsStateManager::buildFromEventsState($state);
+        $sources = $manager->getSources();
+        $this->assertEquals(['HEK', 'CCMC', 'RHESSI'], $sources);
+    }
+
+    public function testItShouldReturnSingleSourceWhenOnlyOnePresent()
+    {
+        $state = [
+            'tree_CCMC' => $this->eventsState['tree_CCMC']
+        ];
+        $manager = EventsStateManager::buildFromEventsState($state);
+        $this->assertEquals(['CCMC'], $manager->getSources());
+    }
+
+    public function testItShouldReturnEmptySourcesWhenStateIsEmpty()
+    {
+        $state = [];
+        $manager = EventsStateManager::buildFromEventsState($state);
+        $this->assertEquals([], $manager->getSources());
+    }
 }
 

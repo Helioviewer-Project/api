@@ -36,6 +36,8 @@ require_once HV_ROOT_DIR . '/../src/Helper/RegionOfInterest.php';
 require_once HV_ROOT_DIR . '/../src/Helper/Serialize.php';
 
 use Helioviewer\Api\Event\EventsStateManager;
+use Helioviewer\Api\Event\Api\EventsApi;
+use Helioviewer\Api\Event\Api\EventsApiException;
 use Helioviewer\Api\Sentry\Sentry;
 
 /**
@@ -517,6 +519,26 @@ class Movie_HelioviewerMovie {
             'reqObservationDate' => $this->reqObservationDate,
             'switchSources' => $this->switchSources
         );
+
+        // Preload events for all frames in 1-2 batch requests
+        $timestamps = $this->_getTimeStamps();
+        $eventsApi = new EventsApi();
+        $batchResponse = [];
+        $sources = $this->_eventsManager->getSources();
+
+        if ($this->_eventsManager->hasEvents()) {
+            try {
+                $batchResponse = $eventsApi->getEventsBatch($timestamps, $sources);
+            } catch (EventsApiException $e) {
+                error_log("[Movie:{$this->publicId}] Batch events failed: " . $e->getMessage());
+            } catch (\Exception $e) {
+                error_log("[Movie:{$this->publicId}] Unexpected error fetching events: " . $e->getMessage());
+                Sentry::capture($e);
+            }
+        }
+
+        $options['batchEventResponse'] = $batchResponse;
+        $options['eventsApi'] = $eventsApi;
 
         // Index of preview frame
         $previewIndex = floor($this->numFrames/2);

@@ -13,29 +13,17 @@
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     https://github.com/Helioviewer-Project
  */
-require_once "interface.Module.php";
 require_once HV_ROOT_DIR.'/../src/Validation/InputValidator.php';
 require_once HV_ROOT_DIR.'/../src/Helper/ErrorHandler.php';
 
+use Helioviewer\Api\Module\BaseModule;
+use Helioviewer\Api\Module\ModuleInterface;
 use Helioviewer\Api\Event\EventsStateManager;
+use Helioviewer\Api\Event\Timeline\Timeline as EventTimeline;
+use Helioviewer\Api\Event\Api\EventsApiException;
 use Helioviewer\Api\Sentry\Sentry;
 
-class Module_WebClient implements Module {
-
-    private $_params;
-    private $_options;
-
-    /**
-     * Constructor
-     *
-     * @param mixed &$params API Request parameters, including the action name.
-     *
-     * @return void
-     */
-    public function __construct(&$params) {
-        $this->_params  = $params;
-        $this->_options = array();
-    }
+class Module_WebClient extends BaseModule implements ModuleInterface {
 
     /**
      * execute
@@ -542,7 +530,7 @@ class Module_WebClient implements Module {
             $scaleY,
             $json_params['date'],
             $roi,
-            $json_params
+            array_merge($json_params, ['eventsApi' => $this->eventsApi()])
         );
 
         // Display screenshot
@@ -639,7 +627,7 @@ class Module_WebClient implements Module {
             $scaleY,
             $this->_params['date'],
             $roi,
-            $this->_options
+            array_merge($this->_options, ['eventsApi' => $this->eventsApi()])
         );
 
         // Display screenshot
@@ -750,7 +738,7 @@ class Module_WebClient implements Module {
             $metaData['scaleY'],
             $metaData['observationDate'],
             $roi,
-            $options
+            array_merge($options, ['eventsApi' => $this->eventsApi()])
         );
     }
 
@@ -946,127 +934,98 @@ class Module_WebClient implements Module {
     /**
      * Retrieves the latest usage statistics from the database
      */
+    /**
+     * API Endpoint: getDataCoverage
+     *
+     * Returns data coverage information for either IMAGE layers or EVENT layers.
+     * Used by the timeline/chart component in the Helioviewer web client.
+     *
+     * Request Parameters (all in milliseconds):
+     *   - imageLayers: String of image layer definitions (for image coverage)
+     *   - eventLayers: String of event layer definitions (for event coverage)
+     *   - startDate:   Start timestamp in milliseconds
+     *   - endDate:     End timestamp in milliseconds
+     *   - currentDate: Current observation timestamp (for highlighting active events)
+     *
+     * Response:
+     *   JSON array of data series for chart visualization
+     *
+     * Note: Either imageLayers OR eventLayers must be provided, not both.
+     */
     public function getDataCoverage() {
+        // Route to appropriate handler based on which layer type is provided
+        if (!empty($this->_options['imageLayers'])) {
+            return $this->getDataCoverageForLayers();
+        } else if (!empty($this->_options['eventLayers'])) {
+            try {
+                $timeline = new EventTimeline(
+                    $this->_options['eventLayers'],
+                    $this->_options['startDate'] ?? null,
+                    $this->_options['endDate'] ?? null,
+                    $this->_options['currentDate'] ?? null,
+                    $this->eventsApi()
+                );
+                $this->_printJSON($timeline->execute());
+            } catch (InvalidArgumentException $e) {
+                return $this->_sendResponse(400, 'Invalid time parameters', $e->getMessage());
+            } catch (Exception $e) {
+                // EventsApiException already captured to Sentry by EventsApi
+                if (!($e instanceof EventsApiException)) {
+                    Sentry::capture($e);
+                }
+                return $this->_sendResponse(500, 'Internal server error', $e->getMessage());
+            }
+        }
+    }
+
+    /**
+     * Returns data coverage for IMAGE layers.
+     * Queries the data_coverage_30_min table for image availability data.
+     */
+    public function getDataCoverageForLayers() {
         include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerLayers.php';
-        include_once HV_ROOT_DIR.'/../src/Helper/HelioviewerEvents.php';
+        include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
 
-        // Data Layers
-        if(!empty($this->_options['imageLayers'])){
-            $layers = new Helper_HelioviewerLayers($this->_options['imageLayers']);
-        }else{
-            $layers = null;
-        }
+        // Parse image layers (e.g., "[SDO,AIA,171,1,100]")
+        $layers = new Helper_HelioviewerLayers($this->_options['imageLayers']);
 
-        // Events Layers
-        if(!empty($this->_options['eventLayers'])){
-            $events = new Helper_HelioviewerEvents($this->_options['eventLayers']);
-        }else{
-            $events = null;
-        }
+        // Validate and parse time parameters (inline)
+        $start = $this->_options['startDate'] ?? null;
+        $end = $this->_options['endDate'] ?? null;
 
-        $start = @$this->_options['startDate'];
         if ($start && !preg_match('/^[0-9]+$/', $start)) {
-            die("Invalid start parameter: $start");
+            return $this->_sendResponse(400, 'Invalid time parameters', 'startDate must be numeric timestamp in milliseconds');
         }
-        $end = @$this->_options['endDate'];
         if ($end && !preg_match('/^[0-9]+$/', $end)) {
-            die("Invalid end parameter: $end");
+            return $this->_sendResponse(400, 'Invalid time parameters', 'endDate must be numeric timestamp in milliseconds');
         }
-        $current = @$this->_options['currentDate'];
-        if ($current && !preg_match('/^[0-9]+$/', $current)) {
-            die("Invalid end parameter: $current");
-        }
+
         if (!$start) $start = 0;
         if (!$end) $end = time() * 1000;
-        if (!$current) $current = 0;
 
-        // set some utility variables
         $range = $end - $start;
 
-        // find the right range
-        if ($range < 105 * 60 * 1000) {
-            $resolution = 'm';
-
-        // 12 hours range loads hourly data
-        } elseif  ($range < 12 * 3600 * 1000) {
-            $resolution = '5m';
-
-        // one month range loads hourly data
-        } elseif  ($range < 2 * 24 * 3600 * 1000) {
-            $resolution = '15m';
-
-        // one month range loads hourly data
-        } elseif ($range < 10 * 24 * 3600 * 1000) {
-            $resolution = 'h';
-
-        // one year range loads daily data
-        } elseif ($range < 6 * 31 * 24 * 3600 * 1000) {
-            $resolution = 'D';
-
-        // half year range loads daily data
-        } elseif ($range < 15 * 31 * 24 * 3600 * 1000) {
-            $resolution = 'W';
-
-        // greater range loads monthly data
-        } else {
-            $resolution = 'M';
-        }
-        //$resolution = 'm';
-
         $dateEnd = new DateTime();
-        if ( isset($this->_options['endDate']) ) {
-            $dateEnd->setTimestamp(intval($this->_options['endDate']/1000));
-        }else{
-            $dateEnd->setTimestamp(intval($end/1000));
-        }
+        $dateEnd->setTimestamp(intval($end / 1000));
+
         $dateStart = new DateTime();
-        if ( isset($this->_options['startDate']) ) {
-            $dateStart->setTimestamp(intval($this->_options['startDate']/1000));
-        }else{
-            $dateStart->setTimestamp(intval($start/1000));
-        }
-        $dateCurrent = new DateTime();
-        if ( isset($this->_options['currentDate']) ) {
-            $dateCurrent->setTimestamp( $this->_options['currentDate']);
-        }else{
-            $dateCurrent->setTimestamp( $current);
-        }
+        $dateStart->setTimestamp(intval($start / 1000));
 
-        include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
+        // Calculate resolution for images
+        $resolution = $this->_calculateResolution($range);
+
+        // Fetch and return coverage data
         $statistics = new Database_Statistics();
-
-        if($layers != null){
-            $this->_printJSON(
-                $statistics->getDataCoverage(
-                    $layers,
-                    $resolution,
-                    $dateStart,
-                    $dateEnd
-                )
-            );
-        }else if($events != null){
-            if ($range < 24 * 60 * 60 * 1000) {
-                $resolution = 'm';
-            }
-
-            if($resolution == '5m' || $resolution == '15m' ){
-                $resolution = '30m';
-            }
-            $this->_printJSON(
-                $statistics->getDataCoverageEvents(
-                    $events,
-                    $resolution,
-                    $dateStart,
-                    $dateEnd,
-                    $dateCurrent
-                )
-            );
-        } else {
-            return $this->_sendResponse(400, 'eventLayers or imageLayers needs to be set for this endpoint to work in API', '');
-        }
-
-
+        $this->_printJSON(
+            $statistics->getDataCoverage(
+                $layers,
+                $resolution,
+                $dateStart,
+                $dateEnd
+            )
+        );
     }
+
 
     /**
      * Retrieves the latest usage statistics from the database
@@ -1392,7 +1351,8 @@ class Module_WebClient implements Module {
             [
                 'grayscale' => true,
                 'eclipse' => true,
-                'moon' => $this->_options['moon']
+                'moon' => $this->_options['moon'],
+                'eventsApi' => $this->eventsApi()
             ]
         );
         $screenshot->display();
@@ -1556,64 +1516,6 @@ class Module_WebClient implements Module {
     }
 
     /**
-     * Helper function to handle response code and response message with
-     * output result as either JSON or JSONP
-     *
-     * @param int    $code HTTP response code to return
-     * @param string $message  Message for the response code,
-     * @param mixed  $data Data can be anything
-     *
-     * @return void
-     */
-    private function _sendResponse(int $code, string $message, mixed $data) : void
-    {
-        http_response_code($code);
-        $this->_printJSON(json_encode([
-            'status_code' => $code,
-            'status_txt' => $message,
-            'data' => $data,
-        ]));
-    }
-
-    /**
-     * Helper function to output result as either JSON or JSONP
-     *
-     * @param string $json JSON object string
-     * @param bool   $xml  Whether to wrap an XML response as JSONP
-     * @param bool   $utf  Whether to return result as UTF-8
-     *
-     * @return void
-     */
-    private function _printJSON($json, $xml=false, $utf=false) {
-
-        // Wrap JSONP requests with callback
-        if ( isset($this->_params['callback']) ) {
-
-            // For XML responses, surround with quotes and remove newlines to
-            // make a valid JavaScript string
-            if ($xml) {
-                $xmlStr = str_replace("\n", '', str_replace("'", "\'", $json));
-                $json   = sprintf("%s('%s')", $this->_params['callback'],
-                    $xmlStr);
-            }
-            else {
-                $json = sprintf("%s(%s)", $this->_params['callback'], $json);
-            }
-        }
-
-        // Set Content-type HTTP header
-        if ($utf) {
-            header('Content-type: application/json;charset=UTF-8');
-        }
-        else {
-            header('Content-Type: application/json');
-        }
-
-        // Print result
-        echo $json;
-    }
-
-    /**
      * Converts from tile coordinates to physical coordinates in arcseconds
      * and uses those coordinates to return an ROI object
      *
@@ -1651,6 +1553,47 @@ class Module_WebClient implements Module {
      *
      * @return date The date given, or the helioviewer minimum date.
      */
+    /**
+     * Determines the appropriate data resolution based on the time range.
+     *
+     * This auto-scales the data granularity for performance and usability:
+     * - Smaller time ranges get finer resolution (individual data points)
+     * - Larger time ranges get coarser resolution (aggregated buckets)
+     *
+     * @param int $rangeMs Time range in milliseconds (end - start)
+     * @return string Resolution code: 'm', '5m', '15m', 'h', 'D', 'W', or 'M'
+     */
+    private function _calculateResolution(int $rangeMs): string {
+        if ($rangeMs < 105 * 60 * 1000) {
+            // < 1.75 hours: Show individual events/data points (minute-level)
+            return 'm';
+
+        } elseif ($rangeMs < 12 * 3600 * 1000) {
+            // < 12 hours: 5-minute buckets
+            return '5m';
+
+        } elseif ($rangeMs < 2 * 24 * 3600 * 1000) {
+            // < 2 days: 15-minute buckets
+            return '15m';
+
+        } elseif ($rangeMs < 10 * 24 * 3600 * 1000) {
+            // < 10 days: Hourly buckets
+            return 'h';
+
+        } elseif ($rangeMs < 6 * 31 * 24 * 3600 * 1000) {
+            // < 6 months: Daily buckets
+            return 'D';
+
+        } elseif ($rangeMs < 15 * 31 * 24 * 3600 * 1000) {
+            // < 15 months: Weekly buckets
+            return 'W';
+
+        } else {
+            // >= 15 months: Monthly buckets
+            return 'M';
+        }
+    }
+
     private function _clampDate($date) {
         $minDate = new DateTime(HV_MINIMUM_DATE);
         if ($date < $minDate) {

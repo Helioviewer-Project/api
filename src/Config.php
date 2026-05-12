@@ -19,7 +19,7 @@ class Config {
     private $_bools  = array('disable_cache', 'enable_statistics_collection', 'db_events','sentry_enabled');
     private $_ints   = array('build_num', 'ffmpeg_max_threads',
                              'max_jpx_frames', 'max_movie_frames');
-    private $_floats = array();
+    private $_floats = array('events_api_timeout');
     private $config;
 
     /**
@@ -35,7 +35,15 @@ class Config {
 
         if ( in_array('acao_url', array_keys($this->config)) ) {
 
-            if ( in_array('HTTP_ORIGIN', array_keys($_SERVER))
+            // In dev environments, allow CORS from all origins
+            if ( in_array('app_env', array_keys($this->config)) 
+              && str_starts_with($this->config['app_env'], 'dev') ) {
+
+                header("Access-Control-Allow-Origin: *");
+                header("Access-Control-Allow-Methods: ".$this->config['acam']);
+                header("Access-Control-Allow-Headers: Content-Type");
+
+            } elseif ( in_array('HTTP_ORIGIN', array_keys($_SERVER))
               && in_array($_SERVER['HTTP_ORIGIN'], $this->config['acao_url']) ) {
 
                 header("Access-Control-Allow-Origin: ".$_SERVER['HTTP_ORIGIN']);
@@ -83,7 +91,9 @@ class Config {
 
         // floats
         foreach ($this->_floats as $float) {
-            $this->config[$float] = (float)$this->config[$float];
+            if (isset($this->config[$float])) {
+                $this->config[$float] = floatval($this->config[$float]);
+            }
         }
     }
 

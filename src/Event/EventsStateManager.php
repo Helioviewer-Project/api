@@ -12,7 +12,7 @@
 
 namespace Helioviewer\Api\Event;
 
-class EventsStateManager 
+class EventsStateManager
 {
     // internal events state original
     public array $events_state; 
@@ -175,9 +175,21 @@ class EventsStateManager
      * Tells if there is events in this manager
      * @return bool
      */
-    public function hasEvents() : bool 
+    public function hasEvents() : bool
     {
         return count($this->events_tree) > 0;
+    }
+
+    /**
+     * Get the source names (HEK, CCMC, RHESSI) that have events enabled
+     * @return string[]
+     */
+    public function getSources(): array
+    {
+        return array_map(
+            fn($key) => str_replace('tree_', '', $key),
+            array_keys($this->events_state)
+        );
     }
 
     /**

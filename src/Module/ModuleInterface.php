@@ -11,7 +11,10 @@
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     https://github.com/Helioviewer-Project
  */
-interface Module {
+
+namespace Helioviewer\Api\Module;
+
+interface ModuleInterface {
     /**
      * Executes the requested action
      *

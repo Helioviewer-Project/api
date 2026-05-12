@@ -20,7 +20,8 @@ final class SentryIssue1Test extends TestCase
 
         // Send a GET request to the specified URL
         $response = $client->get(HV_LOCAL_TEST_URL, [
-            'http_errors' => false
+            'http_errors' => false,
+            'connect_timeout' => 1
         ]);
 
         // Assert Status code and Reason Phrase

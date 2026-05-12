@@ -12,27 +12,14 @@
  * @license  http://www.mozilla.org/MPL/MPL-1.1.html Mozilla Public License 1.1
  * @link     https://github.com/Helioviewer-Project
  */
-require_once 'interface.Module.php';
-
+use Helioviewer\Api\Module\BaseModule;
+use Helioviewer\Api\Module\ModuleInterface;
 use Helioviewer\Api\Event\EventsStateManager;
-
 use Helioviewer\Api\Sentry\Sentry;
 
-class Module_Movies implements Module {
+class Module_Movies extends BaseModule implements ModuleInterface {
 
     const YOUTUBE_THUMBNAIL_FORMAT = "https://i.ytimg.com/vi/{VideoID}/{Quality}default.jpg";
-    private $_params;
-    private $_options;
-
-    /**
-     * Movie module constructor
-     *
-     * @param mixed &$params API request parameters
-     */
-    public function __construct(&$params) {
-        $this->_params  = $params;
-        $this->_options = array();
-    }
 
     /**
      * execute
@@ -1462,33 +1449,6 @@ class Module_Movies implements Module {
      *
      * @return void
      */
-    private function _printJSON($json, $xml=false, $utf=false)
-    {
-        // Wrap JSONP requests with callback
-        if(isset($this->_params['callback'])) {
-            // For XML responses, surround with quotes and remove newlines to
-            // make a valid JavaScript string
-            if ($xml) {
-                $xmlStr = str_replace("\n", '', str_replace("'", "\'", $json));
-                $json = sprintf("%s('%s')", $this->_params['callback'], $xmlStr);
-            }
-            else {
-                $json = sprintf("%s(%s)", $this->_params['callback'], $json);
-            }
-        }
-
-        // Set Content-type HTTP header
-        if ($utf) {
-            header('Content-type: application/json;charset=UTF-8');
-        }
-        else {
-            header('Content-Type: application/json');
-        }
-
-        // Print result
-        echo $json;
-    }
-
     /**
      * Generates a youtube movie thumbnail link from the Movie's youtube Id
      *
@@ -1630,26 +1590,6 @@ class Module_Movies implements Module {
         }
 
         return true;
-    }
-
-    /**
-     * Helper function to handle response code and response message with
-     * output result as either JSON or JSONP
-     *
-     * @param int    $code HTTP response code to return
-     * @param string $message  Message for the response code,
-     * @param mixed  $data Data can be anything
-     *
-     * @return void
-     */
-    private function _sendResponse(int $code, string $message, mixed $data) : void
-    {
-        http_response_code($code);
-        $this->_printJSON(json_encode([
-            'status_code' => $code,
-            'status_txt' => $message,
-            'data' => $data,
-        ]));
     }
 }
 ?>

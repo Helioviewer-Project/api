@@ -19,7 +19,65 @@ require_once HV_ROOT_DIR.'/../src/Image/JPEG2000/JP2Image.php';
 require_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
 require_once HV_ROOT_DIR.'/../src/Module/SolarBodies.php';
 
+use Helioviewer\Api\Sentry\Sentry;
+use Helioviewer\Api\Event\Api\EventsApi;
+use Helioviewer\Api\Event\Api\EventsApiException;
+
 class Image_Composite_HelioviewerCompositeImage {
+
+    // Event type colors for polygon fill (hex without #, appended with alpha)
+    private const EVENT_COLORS = [
+        'AR' => 'FF8F97',
+        'CME' => 'FFB294',
+        'CD' => 'FFD391',
+        'CH' => 'FEF38E',
+        'CW' => 'E8FF8C',
+        'FI' => 'C8FF8D',
+        'FE' => 'A3FF8D',
+        'FA' => '7BFF8E',
+        'FL' => '7AFFAE',
+        'LP' => '7CFFC9',
+        'OS' => '81FFFC',
+        'SS' => '8CE6FF',
+        'EF' => '95C6FF',
+        'CJ' => '9DA4FF',
+        'PG' => 'AB8CFF',
+        'OT' => 'CA89FF',
+        'SG' => 'E986FF',
+        'SP' => 'FF82FF',
+        'CR' => 'FF85FF',
+        'CC' => 'FF8ACC',
+        'ER' => 'FF8DAD',
+        'TO' => 'FF8F97',
+        'CE' => 'FFB294',
+        'C3' => 'FFD391',
+        'FP' => 'AB8CFF',
+        'F2' => '7AFFAE',
+        'BU' => 'E8FF8C',
+        'EE' => '95C6FF',
+        'PB' => 'FF85FF',
+        'PT' => 'C8FF8D',
+        'EP' => '81FFFC',
+        'IC' => '8CE6FF',
+        'SR' => '9DA4FF',
+        'HY' => 'CA89FF',
+        'NR' => 'FFD391',
+    ];
+
+    /**
+     * Resolve an event marker PNG path, falling back to UNK.png when the
+     * type-specific file does not exist. Mirrors the polygon path's
+     * EVENT_COLORS fallback behavior so an unknown event type renders a
+     * generic marker instead of throwing an Imagick exception.
+     */
+    public static function resolveMarkerPath(string $baseDir, string $type): string
+    {
+        $path = $baseDir . '/' . $type . '.png';
+        if (!file_exists($path)) {
+            return $baseDir . '/UNK.png';
+        }
+        return $path;
+    }
 
     private   $_composite;
     private   $_dir;
@@ -41,7 +99,6 @@ class Image_Composite_HelioviewerCompositeImage {
     protected $scaleType;
     protected $scaleX;
     protected $scaleY;
-    protected $maxPixelScale;
     protected $roi;
     protected $imageScale;
     protected bool $grayscale;
@@ -59,6 +116,8 @@ class Image_Composite_HelioviewerCompositeImage {
     protected $switchSources;
     protected $celestialBodiesLabels;
     protected $celestialBodiesTrajectories;
+    protected $eventsApi;
+    protected array $batchEventResponse;
 
     /**
      * Creates a new HelioviewerCompositeImage instance
@@ -94,9 +153,11 @@ class Image_Composite_HelioviewerCompositeImage {
             'switchSources' => false,
             'grayscale' => false,
             'eclipse' => false,
-            'moon' => false
+            'moon' => false,
+            'eventsApi' => null,
+            'batchEventResponse' => []
         );
-
+ 
         $options = array_replace($defaults, $options);
 
         $this->width  = $roi->getPixelWidth();
@@ -104,6 +165,8 @@ class Image_Composite_HelioviewerCompositeImage {
         $this->imageScale = $roi->imageScale();
 
         $this->db = $options['database'] ? $options['database'] : new Database_ImgIndex();
+        $this->eventsApi = $options['eventsApi'] ?? new EventsApi();
+        $this->batchEventResponse = $options['batchEventResponse'];
         $this->layers = $layers;
         $this->eventsManager = $eventsManager;
         $this->movieIcons = $movieIcons;
@@ -131,8 +194,6 @@ class Image_Composite_HelioviewerCompositeImage {
 
         $this->celestialBodiesLabels = $celestialBodies['labels'];
         $this->celestialBodiesTrajectories = $celestialBodies['trajectories'];
-
-        $this->maxPixelScale = 0.60511022;  // arcseconds per pixel
     }
 
     /**
@@ -583,20 +644,24 @@ class Image_Composite_HelioviewerCompositeImage {
         $markerPinPixelOffsetX = 12;
         $markerPinPixelOffsetY = 38;
 
-        require_once HV_ROOT_DIR.'/../src/Event/HEKAdapter.php';
-        require_once HV_ROOT_DIR . "/../src/Helper/EventInterface.php";
+        // Fetch events via batch (movies have pre-fetched, screenshots fetch for single timestamp)
+        if (empty($this->batchEventResponse)) {
+            try {
+                $this->batchEventResponse = $this->eventsApi->getEventsBatch(
+                    [$this->date],
+                    EventsApi::VALID_SOURCES
+                );
+            } catch (EventsApiException $e) {
+                // Already captured to Sentry by EventsApi
+            } catch (\Throwable $e) {
+                Sentry::capture($e);
+            }
+        }
 
-        // Collect events from all data sources.
-        $hek = new Event_HEKAdapter();
-        $event_categories = $hek->getNormalizedEvents($this->date, Array());
-
-        $observationTime = new DateTimeImmutable($this->date);
-        $startDate = $observationTime->sub(new DateInterval("PT12H"));
-        $length = new DateInterval("P1D");
-        $event_categories = array_merge($event_categories, Helper_EventInterface::GetEvents($startDate, $length, $observationTime));
+        $event_categories = $this->batchEventResponse[$this->date] ?? [];
+        if (empty($event_categories)) return;
 
         // Lay down all relevant event REGIONS first
-
         $events_to_render = [];
         $events_manager = $this->eventsManager;
         $add_label_visibility_and_concept = function($events_data, $event_cat_pin, $event_group_name) use ($events_manager) {
@@ -667,62 +732,59 @@ class Image_Composite_HelioviewerCompositeImage {
             }
         }
 
-        // Now handle the events
+        // Draw event footprint polygons onto the composite image.
+        // Footprint is an array of {x, y} points in HPC arcseconds (already rotated by Events API).
+        // We convert each point from arcseconds to pixel coordinates relative to the ROI,
+        // then draw a semi-transparent yellow polygon matching the frontend SVG style.
         foreach ($events_to_render as $event) {
-            if ( array_key_exists('hv_poly_width_max_zoom_pixels', $event) ) {
+            if (empty($event['footprint'])) continue;
 
-                $width  = round($event['hv_poly_width_max_zoom_pixels']
-                        * ($this->maxPixelScale/$this->roi->imageScale()));
-                $height = round($event['hv_poly_height_max_zoom_pixels']
-                        * ($this->maxPixelScale/$this->roi->imageScale()));
-
-                if ( $width >= 1 && $height >= 1 ) {
-
-                    $region_polygon = new IMagick(HV_ROOT_DIR.'/'.urldecode($event['hv_poly_url']) );
-
-                    $x = (( $event['hv_poly_hpc_x_final']
-                          - $this->roi->left()) / $this->roi->imageScale());
-                    $y = (( $event['hv_poly_hpc_y_final']
-                          - $this->roi->top() ) / $this->roi->imageScale());
-
-                    $x = $x - $this->_timeOffsetX;
-                    $y = $y - $this->_timeOffsetY;
-
-                    $region_polygon->resizeImage(
-                        $width, $height, Imagick::FILTER_LANCZOS,1);
-                    $imagickImage->compositeImage(
-                        $region_polygon, IMagick::COMPOSITE_DISSOLVE, $x, $y);
-                }
+            // Convert HPC arcseconds to pixel coordinates:
+            //   px_x = (hpc_x - roi_left) / imageScale - timeOffsetX
+            //   px_y = (-hpc_y - roi_top) / imageScale - timeOffsetY  (Y negated: HPC up → pixel down)
+            $polyArray = [];
+            foreach ($event['footprint'] as $point) {
+                $polyArray[] = [
+                    'x' => (( $point['x'] - $this->roi->left()) / $this->roi->imageScale()) - $this->_timeOffsetX,
+                    'y' => ((-$point['y'] - $this->roi->top() ) / $this->roi->imageScale()) - $this->_timeOffsetY,
+                ];
             }
-        }
 
-        if ( isset($region_polygon) ) {
-            $region_polygon->destroy();
+            // Need at least 3 points to form a polygon
+            if (count($polyArray) < 3) continue;
+
+            // Match frontend SVG spec:
+            // - Fill: per-type color (fallback #d4d4d4) at 40% opacity (0x66)
+            // - Stroke: black at ~53% opacity (0x88), 1.5px, round joins
+            $fillHex = self::EVENT_COLORS[$event['type'] ?? ''] ?? 'd4d4d4';
+
+            $draw = new \ImagickDraw();
+            $draw->setStrokeLineJoin(\Imagick::LINEJOIN_ROUND);
+            $draw->setStrokeColor('#00000088');
+            $draw->setStrokeWidth(1.5);
+            $draw->setStrokeAntialias(true);
+            $draw->setFillColor('#' . $fillHex . '66');
+            $draw->polygon($polyArray);
+
+            $imagickImage->drawImage($draw);
+            $draw->destroy();
         }
 
         // Now lay down the event MARKERS
+        // Cache marker images by resolved path — multiple unknown types share one UNK.png load
+        $markerCache = [];
+        $markerDir = HV_ROOT_DIR . '/resources/images/eventMarkers';
         foreach( $events_to_render as $event ) {
-            $marker = new IMagick(  HV_ROOT_DIR
-                                  . '/resources/images/eventMarkers/'
-                                  . $event['type'].'.png' );
+            $type = $event['type'] ?? 'UNK';
+            $path = self::resolveMarkerPath($markerDir, $type);
+            if (!isset($markerCache[$path])) {
+                $markerCache[$path] = new IMagick($path);
+            }
+            $marker = clone $markerCache[$path];
 
 
-            if ( array_key_exists('hpc_boundcc', $event) && ($event['hpc_boundcc'] != '')) {
-		        $polygonCenterX = round($event['hv_poly_width_max_zoom_pixels'] * ($this->maxPixelScale/$this->roi->imageScale())) / 2;
-	            $polygonCenterY = round($event['hv_poly_height_max_zoom_pixels'] * ($this->maxPixelScale/$this->roi->imageScale())) / 2;
-
-		        $scaledMarkerX = round($event['hv_marker_offset_x'] * ($this->maxPixelScale/$this->roi->imageScale()));
-	            $scaledMarkerY = round($event['hv_marker_offset_y'] * ($this->maxPixelScale/$this->roi->imageScale()));
-
-				$polygonPosX = (( $event['hv_poly_hpc_x_final'] - $this->roi->left()) / $this->roi->imageScale());
-                $polygonPosY = (( $event['hv_poly_hpc_y_final'] - $this->roi->top() ) / $this->roi->imageScale());
-
-		        $x = round($polygonPosX + $polygonCenterX + $scaledMarkerX);
-		        $y = round($polygonPosY + $polygonCenterY + $scaledMarkerY);
-	        }else{
-		        $x = round(( $event['hv_hpc_x'] - $this->roi->left()) / $this->roi->imageScale());
-				$y = round((-$event['hv_hpc_y'] - $this->roi->top() ) / $this->roi->imageScale());
-	        }
+            $x = round(( $event['hv_hpc_x'] - $this->roi->left()) / $this->roi->imageScale());
+            $y = round((-$event['hv_hpc_y'] - $this->roi->top() ) / $this->roi->imageScale());
 
 			$x = $x - $this->_timeOffsetX;
 			$y = $y - $this->_timeOffsetY;
@@ -731,14 +793,6 @@ class Image_Composite_HelioviewerCompositeImage {
             if ($event['label_visibility']) {
                 $x = $x + 11;
                 $y = $y - 24;
-
-                /*$x = (( $event['hv_hpc_x_final'] - $this->roi->left())
-                     / $this->roi->imageScale()) + 11;
-                $y = ((-$event['hv_hpc_y_final'] - $this->roi->top() )
-                     / $this->roi->imageScale()) - 24;
-
-				$x = $x - $this->_timeOffsetX;
-				$y = $y - $this->_timeOffsetY;*/
 
                 $count = 0;
 
@@ -778,8 +832,9 @@ class Image_Composite_HelioviewerCompositeImage {
             }
 
         }
-        if ( isset($marker) ) {
-            $marker->destroy();
+        // Cleanup cached marker images
+        foreach ($markerCache as $m) {
+            $m->destroy();
         }
     }
 
@@ -1492,50 +1547,6 @@ class Image_Composite_HelioviewerCompositeImage {
         $white->destroy();
         $underText->destroy();
         $text->destroy();
-    }
-
-    /**
-     * Sorts the layers by their associated layering order
-     *
-     * Layering orders that are supported currently are 3 (C3 images),
-     * 2 (C2 images), 1 (EIT/MDI images).
-     * The array is sorted by increasing layeringOrder.
-     *
-     * @param array &$images Array of Composite image layers
-     *
-     * @return array Array containing the sorted image layers
-     */
-    private function _sortByLayeringOrder(&$images) {
-        $sortedImages = array();
-
-        // Array to hold any images with layering order 2 or 3.
-        // These images must go in the sortedImages array last because of how
-        // compositing works.
-        $groups = array('2' => array(), '3' => array());
-
-        // Push all layering order 1 images into the sortedImages array,
-        // push layering order 2 and higher into separate array.
-        foreach ($images as $image) {
-            $order = $image->getLayeringOrder();
-
-            if ($order > 1) {
-                array_push($groups[$order], $image);
-            }
-            else {
-                array_push($sortedImages, $image);
-            }
-        }
-
-        // Push the group 2's and group 3's into the sortedImages array now.
-        foreach ($groups as $group) {
-            foreach ($group as $image) {
-                array_push($sortedImages, $image);
-            }
-        }
-
-        // return the sorted array in order of smallest layering order to
-        // largest.
-        return $sortedImages;
     }
 
     private function _addEclipseOverlay(IMagick $image, float $scale, bool $showMoon) {

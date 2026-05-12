@@ -1,7 +1,7 @@
 <?php
 
-require_once 'interface.Module.php';
-
+use Helioviewer\Api\Module\BaseModule;
+use Helioviewer\Api\Module\ModuleInterface;
 use Helioviewer\Api\Sentry\Sentry;
 
 /**
@@ -10,10 +10,8 @@ use Helioviewer\Api\Sentry\Sentry;
  * Used for getting data on a set of planets and satellites as seen from a set of observers.
  * Retrieves data stored in JSON file format on the disk based on request time as a unix timestamp.
  */
-class Module_SolarBodies implements Module {
+class Module_SolarBodies extends BaseModule implements ModuleInterface {
 
-    private $_params;
-    private $_options;
     private $_version;
     private $_observers;
     private $_bodies;
@@ -26,9 +24,8 @@ class Module_SolarBodies implements Module {
      *
      * @param mixed &$params API request parameters
      */
-    public function __construct(&$params) {
-        $this->_params = $params;
-        $this->_options = array();
+    public function __construct($params) {
+        parent::__construct($params);
         // version number - used to reset all client cookies when this module changes significantly
         $this->_version = 3;
         // list of observers - add new observers here
@@ -413,33 +410,6 @@ class Module_SolarBodies implements Module {
      *
      * @return void
      */
-    private function _printJSON($json, $xml=false, $utf=false)
-    {
-        // Wrap JSONP requests with callback
-        if(isset($this->_params['callback'])) {
-            // For XML responses, surround with quotes and remove newlines to
-            // make a valid JavaScript string
-            if ($xml) {
-                $xmlStr = str_replace("\n", '', str_replace("'", "\'", $json));
-                $json = sprintf("%s('%s')", $this->_params['callback'], $xmlStr);
-            }
-            else {
-                $json = sprintf("%s(%s)", $this->_params['callback'], $json);
-            }
-        }
-
-        // Set Content-type HTTP header
-        if ($utf) {
-            header('Content-type: application/json;charset=UTF-8');
-        }
-        else {
-            header('Content-Type: application/json');
-        }
-
-        // Print result
-        echo $json;
-    }
-
     public function getValidationRules(): array {
         switch( $this->_params['action'] ) {
             case 'getSolarBodies':
