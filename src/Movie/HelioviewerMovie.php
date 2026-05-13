@@ -423,9 +423,11 @@ class Movie_HelioviewerMovie {
             }
         }
 
-        // Do not call closedir boolean if we can not open directory
+        // The frames directory may not exist yet when getMovieStatus is polled
+        // very early in PROCESSING -- before _buildMovieFrames has created it.
+        // Treat that as "0 frames written so far" instead of throwing.
         if (false === $handle) {
-            throw new \Exception("Could not find requested movie frames");
+            return 0;
         }
 
         @closedir($handle);
@@ -502,6 +504,14 @@ class Movie_HelioviewerMovie {
 
         $this->_dbSetup();
 
+        // Pre-create the frames directory so getMovieStatus polls that arrive
+        // while the events prefetch is still running don't see a missing dir
+        // (status flips to PROCESSING the moment build() is invoked).
+        $framesDir = $this->directory . 'frames';
+        if (!@file_exists($framesDir)) {
+            @mkdir($framesDir, 0775, true);
+        }
+
         $frameNum = 0;
 
         // Movie frame parameters
@@ -520,21 +530,48 @@ class Movie_HelioviewerMovie {
             'switchSources' => $this->switchSources
         );
 
-        // Preload events for all frames in 1-2 batch requests
+        // Preload events for all frames. EventsApi handles chunking internally
+        // using the configured chunk size and labels per-chunk logs with the movie ID.
         $timestamps = $this->_getTimeStamps();
         $eventsApi = new EventsApi();
         $batchResponse = [];
         $sources = $this->_eventsManager->getSources();
+        $movieId = $this->publicId;
+
+        error_log(sprintf(
+            "[Movie:%s] Starting movie build, frames=%d, sources=%s, hasEvents=%s",
+            $movieId,
+            count($timestamps),
+            $sources ? implode(',', $sources) : '(none)',
+            $this->_eventsManager->hasEvents() ? 'true' : 'false'
+        ));
 
         if ($this->_eventsManager->hasEvents()) {
+            $chunkSize = defined('HV_EVENTS_API_EVENTS_PER_FRAME_CHUNKSIZE')
+                ? HV_EVENTS_API_EVENTS_PER_FRAME_CHUNKSIZE
+                : 50;
+
+            $totalStart = microtime(true);
             try {
-                $batchResponse = $eventsApi->getEventsBatch($timestamps, $sources);
+                $batchResponse = $eventsApi->getEventsBatch(
+                    $timestamps,
+                    $sources,
+                    $chunkSize,
+                    "Movie:{$movieId}"
+                );
             } catch (EventsApiException $e) {
-                error_log("[Movie:{$this->publicId}] Batch events failed: " . $e->getMessage());
-            } catch (\Exception $e) {
-                error_log("[Movie:{$this->publicId}] Unexpected error fetching events: " . $e->getMessage());
+                error_log("[Movie:{$movieId}] Batch events failed: " . $e->getMessage());
+            } catch (\Throwable $e) {
+                error_log("[Movie:{$movieId}] Unexpected error fetching events: " . $e->getMessage());
                 Sentry::capture($e);
             }
+            $totalMs = (int) round((microtime(true) - $totalStart) * 1000);
+            error_log(sprintf(
+                "[Movie:%s] all event chunks done in %dms (%d frames)",
+                $movieId, $totalMs, count($timestamps)
+            ));
+        } else {
+            error_log("[Movie:{$movieId}] No event types selected, skipping EventsApi request");
         }
 
         $options['batchEventResponse'] = $batchResponse;
