@@ -646,6 +646,7 @@ class Image_Composite_HelioviewerCompositeImage {
 
         // Fetch events via batch (movies have pre-fetched, screenshots fetch for single timestamp)
         if (empty($this->batchEventResponse)) {
+            error_log("[date={$this->date}] batchEventResponse empty, fetching single timestamp");
             try {
                 $this->batchEventResponse = $this->eventsApi->getEventsBatch(
                     [$this->date],
