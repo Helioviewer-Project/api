@@ -423,9 +423,11 @@ class Movie_HelioviewerMovie {
             }
         }
 
-        // Do not call closedir boolean if we can not open directory
+        // The frames directory may not exist yet when getMovieStatus is polled
+        // very early in PROCESSING -- before _buildMovieFrames has created it.
+        // Treat that as "0 frames written so far" instead of throwing.
         if (false === $handle) {
-            throw new \Exception("Could not find requested movie frames");
+            return 0;
         }
 
         @closedir($handle);
@@ -501,6 +503,14 @@ class Movie_HelioviewerMovie {
     private function _buildMovieFrames($watermark) {
 
         $this->_dbSetup();
+
+        // Pre-create the frames directory so getMovieStatus polls that arrive
+        // while the events prefetch is still running don't see a missing dir
+        // (status flips to PROCESSING the moment build() is invoked).
+        $framesDir = $this->directory . 'frames';
+        if (!@file_exists($framesDir)) {
+            @mkdir($framesDir, 0775, true);
+        }
 
         $frameNum = 0;
 
