@@ -546,8 +546,8 @@ class Movie_HelioviewerMovie {
         ));
 
         if ($this->_eventsManager->hasEvents()) {
-            $chunkSize = defined('HV_EVENT_API_EVENTS_PER_FRAME_CHUNKSIZE')
-                ? HV_EVENT_API_EVENTS_PER_FRAME_CHUNKSIZE
+            $chunkSize = defined('HV_EVENTS_API_EVENTS_PER_FRAME_CHUNKSIZE')
+                ? HV_EVENTS_API_EVENTS_PER_FRAME_CHUNKSIZE
                 : 50;
 
             $totalStart = microtime(true);

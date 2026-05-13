@@ -19,7 +19,7 @@ class Config {
     private $_bools  = array('disable_cache', 'enable_statistics_collection', 'db_events','sentry_enabled');
     private $_ints   = array('build_num', 'ffmpeg_max_threads',
                              'max_jpx_frames', 'max_movie_frames',
-                             'event_api_events_per_frame_chunksize');
+                             'events_api_events_per_frame_chunksize');
     private $_floats = array('events_api_timeout');
     private $config;
 
