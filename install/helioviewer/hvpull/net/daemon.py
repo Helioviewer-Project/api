@@ -325,11 +325,13 @@ class ImageRetrievalDaemon:
             if self.servers[0].name in ['LMSAL2']:
                 new_urls.append(extra_filtered)
                 if len(extra_filtered) > 0:
-                    self.oldest_timestamp = self._get_oldest_image(extra_filtered)
+                    # Using max(starttime, ...) so oldest_timestamp never goes earlier than the initial requested starttime
+                    self.oldest_timestamp = max(starttime, self._get_oldest_image(extra_filtered))
             else:
                 new_urls.append(filtered)
                 if len(filtered) > 0:
-                    self.oldest_timestamp = self._get_oldest_image(filtered)
+                    # Using max(starttime, ...) so oldest_timestamp never goes earlier than the initial requested starttime
+                    self.oldest_timestamp = max(starttime, self._get_oldest_image(filtered))
 
         # check disk space
         if not self.sent_diskspace_warning:
