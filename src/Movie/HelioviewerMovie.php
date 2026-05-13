@@ -539,10 +539,11 @@ class Movie_HelioviewerMovie {
         $movieId = $this->publicId;
 
         error_log(sprintf(
-            "[Movie:%s] Starting movie build, frames=%d, sources=%s",
+            "[Movie:%s] Starting movie build, frames=%d, sources=%s, hasEvents=%s",
             $movieId,
             count($timestamps),
-            $sources ? implode(',', $sources) : '(none)'
+            $sources ? implode(',', $sources) : '(none)',
+            $this->_eventsManager->hasEvents() ? 'true' : 'false'
         ));
 
         if ($this->_eventsManager->hasEvents()) {
@@ -569,6 +570,8 @@ class Movie_HelioviewerMovie {
                 "[Movie:%s] all event chunks done in %dms (%d frames)",
                 $movieId, $totalMs, count($timestamps)
             ));
+        } else {
+            error_log("[Movie:{$movieId}] No event types selected, skipping EventsApi request");
         }
 
         $options['batchEventResponse'] = $batchResponse;
