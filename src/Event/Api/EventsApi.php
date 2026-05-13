@@ -156,7 +156,7 @@ class EventsApi implements EventsApiInterface {
     }
 
     /** {@inheritdoc} */
-    public function getEventsBatch(array $timestamps, array $sources): array
+    public function getEventsBatch(array $timestamps, array $sources, int $chunkSize = 50, string $logLabel = ''): array
     {
         // Only allow known sources
         $validSources = self::filterSources($sources);
@@ -166,9 +166,12 @@ class EventsApi implements EventsApiInterface {
         if (empty($timestamps)) {
             return [];
         }
+        if ($chunkSize < 1) {
+            $chunkSize = 50;
+        }
 
         $sourcesParam = implode('::', $validSources);
-        $chunks = array_chunk($timestamps, 150);
+        $chunks = array_chunk($timestamps, $chunkSize);
         $url = "/helioviewer/events/{$sourcesParam}/observations";
 
         // Closure to fetch a single chunk of timestamps
@@ -193,12 +196,26 @@ class EventsApi implements EventsApiInterface {
             }
         };
 
+        $logChunk = function (int $i, int $total, int $size, int $elapsedMs) use ($logLabel) {
+            if ($logLabel === '') {
+                return;
+            }
+            error_log(sprintf(
+                "[%s] EventsApi chunk %d/%d (%d timestamps) took %dms",
+                $logLabel, $i + 1, $total, $size, $elapsedMs
+            ));
+        };
+
         // First chunk returns full response (event_types + events + observations)
+        $start = microtime(true);
         $merged = $fetchChunk($chunks[0]);
+        $logChunk(0, count($chunks), count($chunks[0]), (int) round((microtime(true) - $start) * 1000));
 
         // Subsequent chunks only add new observations (event_types and events are the same)
         for ($i = 1; $i < count($chunks); $i++) {
+            $start = microtime(true);
             $chunk = $fetchChunk($chunks[$i]);
+            $logChunk($i, count($chunks), count($chunks[$i]), (int) round((microtime(true) - $start) * 1000));
             $merged['observations'] += $chunk['observations'];
         }
 
@@ -216,7 +233,7 @@ class EventsApi implements EventsApiInterface {
      */
     private function parseResponse($response): array
     {
-        $body = (string)$response->getBody();
+         $body = (string)$response->getBody();
         $data = json_decode($body, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {

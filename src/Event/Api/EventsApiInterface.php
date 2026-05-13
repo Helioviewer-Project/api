@@ -45,8 +45,10 @@ interface EventsApiInterface {
      *
      * @param string[] $timestamps Array of observation datetime strings
      * @param string[] $sources Array of source names (e.g. ['HEK', 'CCMC', 'RHESSI'])
+     * @param int $chunkSize Max timestamps per upstream POST request
+     * @param string $logLabel Optional label prepended to per-chunk error_log lines (e.g. "Movie:Xp66n")
      * @return array Keyed by timestamp, each value is legacy-format event categories
      * @throws EventsApiException on API errors or unexpected responses
      */
-    public function getEventsBatch(array $timestamps, array $sources): array;
+    public function getEventsBatch(array $timestamps, array $sources, int $chunkSize = 50, string $logLabel = ''): array;
 }

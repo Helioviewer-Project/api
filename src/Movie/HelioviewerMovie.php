@@ -520,21 +520,45 @@ class Movie_HelioviewerMovie {
             'switchSources' => $this->switchSources
         );
 
-        // Preload events for all frames in 1-2 batch requests
+        // Preload events for all frames. EventsApi handles chunking internally
+        // using the configured chunk size and labels per-chunk logs with the movie ID.
         $timestamps = $this->_getTimeStamps();
         $eventsApi = new EventsApi();
         $batchResponse = [];
         $sources = $this->_eventsManager->getSources();
+        $movieId = $this->publicId;
+
+        error_log(sprintf(
+            "[Movie:%s] Starting movie build, frames=%d, sources=%s",
+            $movieId,
+            count($timestamps),
+            $sources ? implode(',', $sources) : '(none)'
+        ));
 
         if ($this->_eventsManager->hasEvents()) {
+            $chunkSize = defined('HV_EVENT_API_EVENTS_PER_FRAME_CHUNKSIZE')
+                ? HV_EVENT_API_EVENTS_PER_FRAME_CHUNKSIZE
+                : 50;
+
+            $totalStart = microtime(true);
             try {
-                $batchResponse = $eventsApi->getEventsBatch($timestamps, $sources);
+                $batchResponse = $eventsApi->getEventsBatch(
+                    $timestamps,
+                    $sources,
+                    $chunkSize,
+                    "Movie:{$movieId}"
+                );
             } catch (EventsApiException $e) {
-                error_log("[Movie:{$this->publicId}] Batch events failed: " . $e->getMessage());
-            } catch (\Exception $e) {
-                error_log("[Movie:{$this->publicId}] Unexpected error fetching events: " . $e->getMessage());
+                error_log("[Movie:{$movieId}] Batch events failed: " . $e->getMessage());
+            } catch (\Throwable $e) {
+                error_log("[Movie:{$movieId}] Unexpected error fetching events: " . $e->getMessage());
                 Sentry::capture($e);
             }
+            $totalMs = (int) round((microtime(true) - $totalStart) * 1000);
+            error_log(sprintf(
+                "[Movie:%s] all event chunks done in %dms (%d frames)",
+                $movieId, $totalMs, count($timestamps)
+            ));
         }
 
         $options['batchEventResponse'] = $batchResponse;
