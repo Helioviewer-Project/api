@@ -174,7 +174,7 @@ class ImageRetrievalDaemon:
             # get a list of files available
             # self.oldest_timestamp gets set by query() during the first run
             # before the main loop.
-            self.query(starttime, now)
+            self.query(self.oldest_timestamp, now)
 
             self.sleep()
 
@@ -241,6 +241,7 @@ class ImageRetrievalDaemon:
                 try:
                     # Filter by time range
                     filtered = self._filter_files_by_time(url_list, starttime, endtime)
+                    # Filter to only download new files that have not already been downloaded previously.
                     filtered = list(filter(self._filter_new, filtered))
                 except mysqld.OperationalError:
                     # MySQL has gone away -- try again in 5s

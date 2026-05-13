@@ -76,11 +76,6 @@ class DataServer:
         """
         return True
 
-    def get_file_regex(self):
-        """Returns a regex which described the expected format of filenames on
-        the server"""
-        return self.filename_regex
-
     def get_measurements(self, nicknames, dates):
         """Get a list of all the URIs down to the measurement"""
         return None
@@ -93,7 +88,7 @@ class DataServer:
         return get_datetime_from_file(filename)
 
 
-class DataServerPauseDelayDefinesDefaultStartTime:
+class DataServerPauseDelayDefinesDefaultStartTime(DataServer):
     """Class for interacting with data servers. In this class the
     pause defines the default start time. If real time is UTC, then
     the default start time is UTC - pause minutes."""
@@ -133,11 +128,6 @@ class DataServerPauseDelayDefinesDefaultStartTime:
         dates.reverse()
 
         return dates
-
-    def get_file_regex(self):
-        """Returns a regex which described the expected format of filenames on
-        the server"""
-        return self.filename_regex
 
     def get_measurements(self, nicknames, dates):
         """Get a list of all the URIs down to the measurement"""
