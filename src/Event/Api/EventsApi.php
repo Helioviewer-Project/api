@@ -233,7 +233,7 @@ class EventsApi implements EventsApiInterface {
      */
     private function parseResponse($response): array
     {
-         $body = (string)$response->getBody();
+        $body = (string)$response->getBody();
         $data = json_decode($body, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
