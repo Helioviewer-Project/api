@@ -68,6 +68,14 @@ class DataServer:
 
         return dates
 
+    def filter(self, file: str) -> bool:
+        """
+        Returns True if the file should be downloaded, otherwise False.
+        This may be overridden by specific Data Servers to only download
+        specific files from the upstream directory
+        """
+        return True
+
     def get_file_regex(self):
         """Returns a regex which described the expected format of filenames on
         the server"""

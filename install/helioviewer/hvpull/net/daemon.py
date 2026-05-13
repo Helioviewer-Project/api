@@ -421,7 +421,7 @@ class ImageRetrievalDaemon:
                     return []
 
                 try:
-                    matches = browser.get_files(directory, "jp2")
+                    matches = browser.get_files(directory, "jp2", browser.server.filter)
 
                     files.extend(matches)
                 except NetworkError:
