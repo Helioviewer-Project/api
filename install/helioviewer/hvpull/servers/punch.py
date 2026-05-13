@@ -24,9 +24,3 @@ class PUNCHDataServer(DataServer):
         fname = os.path.basename(filename)
         datestr = fname[13:27]
         return datetime.datetime.strptime(datestr, '%Y%m%d%H%M%S')
-
-    def filter(self, filename: str) -> bool:
-        """
-        PUNCH should only download the v0k files at this time.
-        """
-        return "v0k" in filename
