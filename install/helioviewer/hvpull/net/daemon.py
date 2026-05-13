@@ -201,6 +201,8 @@ class ImageRetrievalDaemon:
         if any new files have appeared since the first execution. This continues
         until no new files are found (for xxx minutes?)
         """
+        if (starttime > endtime):
+            raise ValueError(f"Start Time {starttime} is ahead of End Time {endtime}. No files would be downloaded.")
         urls = []
 
         fmt = '%Y-%m-%d %H:%M:%S'
