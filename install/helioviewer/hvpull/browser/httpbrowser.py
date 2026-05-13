@@ -22,9 +22,9 @@ if (sys.version_info >= (3, 0)):
             usock = urllib.request.urlopen(uri)
             self.feed(usock.read().decode(usock.headers.get_content_charset()))
             usock.close()
-        
+
             return self.urls
-        
+
         def reset(self):
             """Reset state of URLLister"""
             HTMLParser.reset(self)
@@ -58,7 +58,7 @@ else:
                 print (e)
 
             return self.urls
-        
+
         def reset(self):
             """Reset state of URLLister"""
             SGMLParser.reset(self)
@@ -73,7 +73,7 @@ class HTTPDataBrowser(BaseDataBrowser):
     def __init__(self, server):
         BaseDataBrowser.__init__(self, server)
         socket.setdefaulttimeout(60)
-        
+
     def get_directories(self, start_date, end_date):
         """Generates a list of remote directories which may be queried
         for files corresponding to the requested range. Note that these
@@ -81,17 +81,21 @@ class HTTPDataBrowser(BaseDataBrowser):
         # filter(lambda url: url.endswith("/"), self._query(location))
         return self.server.compute_directories(start_date, end_date)
 
-    def get_files(self, location, extension):
+    def get_files(self, location, extension, filter_func: callable | None = None):
         """Get all the files that end with specified extension at the uri"""
         files = None
         num_retries = 0
-        
+
         # Get a list of the files at the remote location, if it exists
         # To avoid spending too much time, we will timeout after a short time
         # and retry up to 10 times.
         while files is None and num_retries <= 10:
             try:
+                # Only grab files with the matching file extension
                 files = filter(lambda url: url.endswith("." + extension), self._query(location))
+                # If there is a user-defined filter function, use that to only get those specific files.
+                if filter_func is not None:
+                    files = filter(filter_func, files)
             except IOError as e:
                 if isinstance(e.strerror, socket.error):
                     # if server is unreachable, raise an exception
@@ -105,10 +109,10 @@ class HTTPDataBrowser(BaseDataBrowser):
                     files = []
 
         return files
-    
+
     def _query(self, location):
         """Get a list of files and folders at the specified remote location"""
-        # query the remote location for the list of files and subdirectories 
+        # query the remote location for the list of files and subdirectories
 
         if (sys.version_info >= (3, 0)):
             url_lister = URLLister()
@@ -121,4 +125,4 @@ class HTTPDataBrowser(BaseDataBrowser):
         urls = filter(lambda url: url[0] != "/" and url[0] != "?", result)
 
         return [os.path.join(location, url) for url in urls]
-    
+

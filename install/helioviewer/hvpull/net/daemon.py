@@ -174,7 +174,7 @@ class ImageRetrievalDaemon:
             # get a list of files available
             # self.oldest_timestamp gets set by query() during the first run
             # before the main loop.
-            self.query(starttime, now)
+            self.query(self.oldest_timestamp, now)
 
             self.sleep()
 
@@ -201,6 +201,8 @@ class ImageRetrievalDaemon:
         if any new files have appeared since the first execution. This continues
         until no new files are found (for xxx minutes?)
         """
+        if (starttime > endtime):
+            raise ValueError(f"Start Time {starttime} is ahead of End Time {endtime}. No files would be downloaded.")
         urls = []
 
         fmt = '%Y-%m-%d %H:%M:%S'
@@ -241,6 +243,7 @@ class ImageRetrievalDaemon:
                 try:
                     # Filter by time range
                     filtered = self._filter_files_by_time(url_list, starttime, endtime)
+                    # Filter to only download new files that have not already been downloaded previously.
                     filtered = list(filter(self._filter_new, filtered))
                 except mysqld.OperationalError:
                     # MySQL has gone away -- try again in 5s
@@ -322,11 +325,13 @@ class ImageRetrievalDaemon:
             if self.servers[0].name in ['LMSAL2']:
                 new_urls.append(extra_filtered)
                 if len(extra_filtered) > 0:
-                    self.oldest_timestamp = self._get_oldest_image(extra_filtered)
+                    # Using max(starttime, ...) so oldest_timestamp never goes earlier than the initial requested starttime
+                    self.oldest_timestamp = max(starttime, self._get_oldest_image(extra_filtered))
             else:
                 new_urls.append(filtered)
                 if len(filtered) > 0:
-                    self.oldest_timestamp = self._get_oldest_image(filtered)
+                    # Using max(starttime, ...) so oldest_timestamp never goes earlier than the initial requested starttime
+                    self.oldest_timestamp = max(starttime, self._get_oldest_image(filtered))
 
         # check disk space
         if not self.sent_diskspace_warning:
@@ -421,7 +426,7 @@ class ImageRetrievalDaemon:
                     return []
 
                 try:
-                    matches = browser.get_files(directory, "jp2")
+                    matches = browser.get_files(directory, "jp2", browser.server.filter)
 
                     files.extend(matches)
                 except NetworkError:
