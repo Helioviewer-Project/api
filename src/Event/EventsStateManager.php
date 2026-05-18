@@ -12,6 +12,8 @@
 
 namespace Helioviewer\Api\Event;
 
+use Helioviewer\Api\Event\Api\EventsApi;
+
 class EventsStateManager
 {
     // internal events state original
@@ -35,8 +37,9 @@ class EventsStateManager
         $this->events_tree_label_visibility = [];
 
         foreach($events_state as $eventHelioGroupName => $eventHelioGroupState) { // CCMC or HEK state
-            
-            // If  we don't have visible markers for CCMC or HEK then no need to handle them
+
+            // Skip only when markers_visible is explicitly set to a non-truthy
+            // value. Missing key is treated as "on" by historical convention.
             if (array_key_exists('markers_visible', $eventHelioGroupState) && $eventHelioGroupState['markers_visible'] != true) {
                 continue;
             }
@@ -44,36 +47,45 @@ class EventsStateManager
 
             foreach(($eventHelioGroupState['layers'] ?? []) as $eventHelioGroupLayer) {
 
-                $layer_event_type = $eventHelioGroupLayer['event_type'];
-            
-                if (!array_key_exists($layer_event_type, $this->events_tree)) {
-                    $this->events_tree[$layer_event_type] = [];
-                    $this->events_tree_label_visibility[$layer_event_type] = $eventHelioGroupState['labels_visible'];
+                $layer_event_type = $eventHelioGroupLayer['event_type'] ?? null;
+                if ($layer_event_type === null) {
+                    continue;
                 }
 
+                if (!array_key_exists($layer_event_type, $this->events_tree)) {
+                    $this->events_tree[$layer_event_type] = [];
+                    $this->events_tree_label_visibility[$layer_event_type] = $eventHelioGroupState['labels_visible'] ?? false;
+                }
+
+                $layerFrms = $eventHelioGroupLayer['frms'] ?? [];
+
                 // This damn all fix
-                if (in_array("all",$eventHelioGroupLayer['frms'])) {
+                if (in_array("all", $layerFrms)) {
                     $this->events_tree[$layer_event_type] = "all_frms";
                 } else {
 
-                    foreach($eventHelioGroupLayer['frms'] as $eventLayerFrm) {
+                    foreach($layerFrms as $eventLayerFrm) {
                         $event_layer_frm = str_replace('\\', '', $eventLayerFrm);
                         if (!array_key_exists($event_layer_frm, $this->events_tree[$layer_event_type])) {
                             $this->events_tree[$layer_event_type][$event_layer_frm] = 'all_event_instances';
                         }
                     }
 
-                    foreach($eventHelioGroupLayer['event_instances'] as $eventLayerEventInstance) {
+                    foreach(($eventHelioGroupLayer['event_instances'] ?? []) as $eventLayerEventInstance) {
 
                         $event_instance_frm_pieces = explode('--',$eventLayerEventInstance);
-                        $event_instance_frm = $event_instance_frm_pieces[1];
+                        $event_instance_frm = $event_instance_frm_pieces[1] ?? null;
+                        if ($event_instance_frm === null) {
+                            // Malformed instance id (missing "--<frm>--" segment); skip
+                            continue;
+                        }
 
                         $event_instance_frm = str_replace('\\', '', $event_instance_frm);
 
-                        // if we have frms all included like "frm1" and in event instance "flare--frm1--event1" 
+                        // if we have frms all included like "frm1" and in event instance "flare--frm1--event1"
                         // we just ignore those since they are all included into the tree with frm1 anyways
-                        // this is also indicates, eventsState is invalid somehow   
-                        if (in_array($event_instance_frm, $eventHelioGroupLayer['frms'])) {
+                        // this is also indicates, eventsState is invalid somehow
+                        if (in_array($event_instance_frm, $layerFrms)) {
                             continue;
                         }
                         
@@ -302,13 +314,194 @@ class EventsStateManager
 
 
     /**
+     * Build path-prefix selection strings for the events API
+     * frames_with_selections endpoint.
+     *
+     * ─── End-to-end example ───────────────────────────────────────────────
+     *
+     * INPUT  $this->events_state:
+     *   [
+     *     'tree_HEK' => [
+     *       'markers_visible' => true,
+     *       'layers' => [
+     *         ['event_type' => 'AR', 'frms' => ['all'],        'event_instances' => []],
+     *         ['event_type' => 'FL', 'frms' => ['NOAA_SWPC'], 'event_instances' => ['flare--SDO HMI--evt-123']],
+     *       ],
+     *     ],
+     *     'tree_CCMC' => [
+     *       'markers_visible' => true,
+     *       'layers_v2' => ['CCMC>>DONKI>>CME'],
+     *     ],
+     *     'tree_RHESSI' => [
+     *       'markers_visible' => false,   // <- muted, skipped entirely
+     *       'layers' => [...],
+     *     ],
+     *   ]
+     *
+     * OUTPUT (after dedup):
+     *   [
+     *     'HEK>>Active Region',          // AR with frms=['all'] -> level 1
+     *     'HEK>>Flare>>NOAA_SWPC',       // FL + 'NOAA_SWPC'
+     *     'HEK>>Flare>>NOAA SWPC',       //   variant: underscores -> spaces
+     *     'HEK>>Flare>>SDO HMI',         // FRM parsed out of event_instance
+     *     'HEK>>Flare>>SDO_HMI',         //   variant: spaces -> underscores
+     *     'CCMC>>DONKI>>CME',            // layers_v2 passed straight through
+     *   ]
+     *
+     * Why three variants for FRM names?
+     *   FRM strings come from user/frontend input and the upstream events API
+     *   has historically been inconsistent about whether spaces or underscores
+     *   are canonical. Emitting raw + both transforms means whichever form the
+     *   upstream stores, at least one of our paths will prefix-match it.
+     *
+     * @return string[]  deduplicated list of path-prefix selection strings
+     */
+    public function getSelections(): array
+    {
+        $selections = [];
+
+        // Drive the loop off the canonical source list (EventsApi::VALID_SOURCES)
+        // rather than whatever happens to be in events_state. Typo'd entries
+        // like "tree_HEKL" are silently ignored; iteration order is stable.
+        foreach (EventsApi::VALID_SOURCES as $source) {
+
+            $treeKey = 'tree_' . $source;
+            if (!isset($this->events_state[$treeKey])) {
+                continue;
+            }
+            $sourceState = $this->events_state[$treeKey];
+
+            // Muted source contributes nothing. Mirrors the constructor's
+            // historical convention: only skip when markers_visible is
+            // EXPLICITLY non-truthy; absent key falls through.
+            //   e.g. tree_RHESSI with markers_visible=false  =>  skip
+            if (array_key_exists('markers_visible', $sourceState) && $sourceState['markers_visible'] != true) {
+                continue;
+            }
+
+            // ─── Shortcut: layers_v2 ────────────────────────────────────────
+            // If the frontend has already produced canonical selection paths
+            // (e.g. ['CCMC>>DONKI>>CME']), pass them through verbatim. No pin
+            // lookup, no FRM variants — the frontend owns that.
+            if (!empty($sourceState['layers_v2'])) {
+                foreach ($sourceState['layers_v2'] as $path) {
+                    $selections[] = $path;
+                }
+                continue;
+            }
+
+            // ─── Walk layers (legacy / v1 path) ─────────────────────────────
+            // Each layer entry describes one event_type within this source.
+            //   layer = ['event_type'=>'AR', 'frms'=>['all'], 'event_instances'=>[]]
+            foreach ($sourceState['layers'] ?? [] as $layer) {
+
+                $pin = $layer['event_type'] ?? null;
+                if ($pin === null) {
+                    // Malformed layer: no event_type field. Log and skip.
+                    error_log(sprintf(
+                        "[getSelections] layer missing 'event_type' in source=%s layer=%s",
+                        $source, json_encode($layer)
+                    ));
+                    continue;
+                }
+
+                // Translate the 2-3 letter pin into the upstream API's
+                // human-readable label.
+                //   ('HEK', 'AR') -> 'Active Region'
+                //   ('HEK', 'FL') -> 'Flare'
+                //   ('CCMC', 'FP') -> 'Solar Flare Predictions'
+                //   Unknown pin -> null -> skip (matches EventSelections behavior)
+                $label = EventSelections::$event_types_map[$source][$pin] ?? null;
+                if ($label === null) {
+                    // Pin isn't in the map - usually means a typo or a new
+                    // event type we haven't registered yet. Visible signal,
+                    // except for 'UNK' which is intentionally out of the map
+                    // (it's the frontend's "unknown / fallback" sentinel).
+                    if ($pin !== 'UNK') {
+                        error_log(sprintf(
+                            "[getSelections] unknown pin '%s' for source=%s (not in EventSelections::\$event_types_map)",
+                            $pin, $source
+                        ));
+                    }
+                    continue;
+                }
+
+                $frms           = $layer['frms']            ?? [];   // e.g. ['NOAA_SWPC'] or ['all']
+                $eventInstances = $layer['event_instances'] ?? [];   // e.g. ['flare--SDO HMI--evt-123']
+
+                // ─── Level 1: 'all' wildcard ────────────────────────────────
+                // frms=['all'] means "include every FRM under this event_type".
+                // We can emit a single 2-part path; the upstream prefix matcher
+                // will catch every event regardless of FRM.
+                //   ('HEK', 'Active Region')  =>  "HEK>>Active Region"
+                if (in_array('all', $frms, true)) {
+                    $selections[] = "{$source}>>{$label}";
+                    continue;
+                }
+
+                // Helper: emit a FRM-deep path plus two whitespace variants.
+                // FRM strings come from user input, so we hedge against
+                // upstream naming drift (space vs underscore).
+                //   $frm = "NOAA_SWPC"  =>
+                //     "HEK>>Flare>>NOAA_SWPC"   (raw)
+                //     "HEK>>Flare>>NOAA_SWPC"   (spaces->underscores: no change)
+                //     "HEK>>Flare>>NOAA SWPC"   (underscores->spaces)
+                $pushFrmVariants = function (string $frm) use (&$selections, $source, $label) {
+                    $selections[] = "{$source}>>{$label}>>{$frm}";
+                    $selections[] = "{$source}>>{$label}>>" . str_replace(' ', '_', $frm);
+                    $selections[] = "{$source}>>{$label}>>" . str_replace('_', ' ', $frm);
+                };
+
+                // ─── Level 2: explicit FRM list ─────────────────────────────
+                // frms=['NOAA_SWPC','SPoCA']  =>  one path-variants-set per FRM
+                foreach ($frms as $frm) {
+                    $pushFrmVariants($frm);
+                }
+
+                // ─── Level 3: FRMs only referenced via event_instances ──────
+                // The frontend can target a single event by listing an entry
+                // in event_instances without including that event's FRM in
+                // the `frms` array. We still need to fetch at the FRM level
+                // (upstream matches by path prefix, not by event id) and
+                // filter to the specific instance later in the renderer.
+                //
+                //   event_instance = "flare--SDO HMI--evt-123"
+                //   parts          = ['flare', 'SDO HMI', 'evt-123']
+                //   frm            = 'SDO HMI'   (parts[1])
+                //   -> only push if SDO HMI isn't already in $frms (no dup work)
+                foreach ($eventInstances as $ei) {
+                    $parts = explode('--', $ei);
+                    $frm = $parts[1] ?? null;
+                    if ($frm === null) {
+                        // event_instance string didn't carry a FRM segment.
+                        // Expected shape: "<type>--<frm>--<id>".
+                        error_log(sprintf(
+                            "[getSelections] malformed event_instance '%s' (no FRM segment) source=%s pin=%s",
+                            $ei, $source, $pin
+                        ));
+                        continue;
+                    }
+                    if (!in_array($frm, $frms, true)) {
+                        $pushFrmVariants($frm);
+                    }
+                }
+            }
+        }
+
+        // Dedup: same FRM in multiple layers, or variant collisions where the
+        // raw FRM already has the canonical form (e.g. "NOAA_SWPC" produces
+        // an identical raw and spaces->underscores result).
+        return array_values(array_unique($selections));
+    }
+
+    /**
      * Makes event id from given event and its belonging event_type and frm_name
      * @param  string event_category_pin , given event_type
      * @param  string frm_name , given frm_name
-     * @param  array event , given event to check 
+     * @param  array event , given event to check
      * @return string
      */
-    public static function makeEventId(string $event_category_pin, string $frm_name, array $event): string 
+    public static function makeEventId(string $event_category_pin, string $frm_name, array $event): string
     {
         $event_id_pieces = [
             $event_category_pin, 
