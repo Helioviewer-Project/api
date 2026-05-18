@@ -42,7 +42,7 @@ class EventsStateManager
             }
 
 
-            foreach($eventHelioGroupState['layers'] as $eventHelioGroupLayer) {
+            foreach(($eventHelioGroupState['layers'] ?? []) as $eventHelioGroupLayer) {
 
                 $layer_event_type = $eventHelioGroupLayer['event_type'];
             
