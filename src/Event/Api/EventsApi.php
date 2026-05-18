@@ -23,6 +23,12 @@ class EventsApi implements EventsApiInterface {
     /** Known event sources */
     public const VALID_SOURCES = ['HEK', 'CCMC', 'RHESSI'];
 
+    /** Upstream-imposed cap on timestamps per batch request */
+    public const MAX_CHUNK_SIZE = 150;
+
+    /** Upstream-imposed cap on selections per frames_with_selections request */
+    public const MAX_SELECTIONS = 200;
+
     private ClientInterface $client;
     private SentryClientInterface $sentry;
     private LegacyEventsInterface $legacyEvents;
@@ -167,7 +173,10 @@ class EventsApi implements EventsApiInterface {
             return [];
         }
         if ($chunkSize < 1) {
-            $chunkSize = 50;
+            $chunkSize = defined('HV_EVENTS_API_EVENTS_PER_FRAME_CHUNKSIZE') ? (int) HV_EVENTS_API_EVENTS_PER_FRAME_CHUNKSIZE : 50;
+        }
+        if ($chunkSize > self::MAX_CHUNK_SIZE) {
+            $chunkSize = self::MAX_CHUNK_SIZE;
         }
 
         $sourcesParam = implode('::', $validSources);
