@@ -13,6 +13,7 @@
 namespace Helioviewer\Api\Event;
 
 use Helioviewer\Api\Event\Api\EventsApi;
+use Helioviewer\Api\Sentry\Sentry;
 
 class EventsStateManager
 {
@@ -397,11 +398,13 @@ class EventsStateManager
 
                 $pin = $layer['event_type'] ?? null;
                 if ($pin === null) {
-                    // Malformed layer: no event_type field. Log and skip.
-                    error_log(sprintf(
-                        "[getSelections] layer missing 'event_type' in source=%s layer=%s",
-                        $source, json_encode($layer)
-                    ));
+                    // Malformed layer: no event_type field.
+                    Sentry::setContext('getSelections', [
+                        'source'       => $source,
+                        'layer'        => $layer,
+                        'events_state' => $this->events_state, // original payload, for debugging
+                    ]);
+                    Sentry::message("getSelections: layer missing 'event_type'");
                     continue;
                 }
 
@@ -418,10 +421,12 @@ class EventsStateManager
                     // except for 'UNK' which is intentionally out of the map
                     // (it's the frontend's "unknown / fallback" sentinel).
                     if ($pin !== 'UNK') {
-                        error_log(sprintf(
-                            "[getSelections] unknown pin '%s' for source=%s (not in EventSelections::\$event_types_map)",
-                            $pin, $source
-                        ));
+                        Sentry::setContext('getSelections', [
+                            'source'       => $source,
+                            'pin'          => $pin,
+                            'events_state' => $this->events_state, // original payload, for debugging
+                        ]);
+                        Sentry::message("getSelections: unknown pin '{$pin}' for source '{$source}'");
                     }
                     continue;
                 }
@@ -475,10 +480,13 @@ class EventsStateManager
                     if ($frm === null) {
                         // event_instance string didn't carry a FRM segment.
                         // Expected shape: "<type>--<frm>--<id>".
-                        error_log(sprintf(
-                            "[getSelections] malformed event_instance '%s' (no FRM segment) source=%s pin=%s",
-                            $ei, $source, $pin
-                        ));
+                        Sentry::setContext('getSelections', [
+                            'source'         => $source,
+                            'pin'            => $pin,
+                            'event_instance' => $ei,
+                            'events_state'   => $this->events_state, // original payload, for debugging
+                        ]);
+                        Sentry::message("getSelections: malformed event_instance (no FRM segment)");
                         continue;
                     }
                     if (!in_array($frm, $frms, true)) {
@@ -492,6 +500,38 @@ class EventsStateManager
         // raw FRM already has the canonical form (e.g. "NOAA_SWPC" produces
         // an identical raw and spaces->underscores result).
         return array_values(array_unique($selections));
+    }
+
+    /**
+     * Build per-source visibility config for use by EventContext / renderer.
+     *
+     * Returns one entry per source in EventsApi::VALID_SOURCES (so callers
+     * always get a complete map). Missing source in events_state OR missing
+     * 'labels_visible' key both default to TRUE (labels are visible by
+     * default; the frontend must explicitly opt out).
+     *
+     * Shape:
+     *   [
+     *     'HEK'    => ['label_visibility' => true],
+     *     'CCMC'   => ['label_visibility' => true],
+     *     'RHESSI' => ['label_visibility' => true],
+     *   ]
+     *
+     * Nested dict (one key today, room for more like marker_visibility
+     * later without breaking callers).
+     *
+     * @return array<string, array{label_visibility: bool}>
+     */
+    public function getVisibilitySelections(): array
+    {
+        $result = [];
+        foreach (EventsApi::VALID_SOURCES as $source) {
+            $treeKey = 'tree_' . $source;
+            // Default to true: labels are visible unless the frontend explicitly opts out.
+            $labelVisible = $this->events_state[$treeKey]['labels_visible'] ?? true;
+            $result[$source] = ['label_visibility' => (bool) $labelVisible];
+        }
+        return $result;
     }
 
     /**
