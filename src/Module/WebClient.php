@@ -19,6 +19,7 @@ require_once HV_ROOT_DIR.'/../src/Helper/ErrorHandler.php';
 use Helioviewer\Api\Module\BaseModule;
 use Helioviewer\Api\Module\ModuleInterface;
 use Helioviewer\Api\Event\EventsStateManager;
+use Helioviewer\Api\Event\EventContext;
 use Helioviewer\Api\Event\Timeline\Timeline as EventTimeline;
 use Helioviewer\Api\Event\Api\EventsApiException;
 use Helioviewer\Api\Sentry\Sentry;
@@ -505,6 +506,13 @@ class Module_WebClient extends BaseModule implements ModuleInterface {
 
         $events_manager = EventsStateManager::buildFromEventsState($json_params['eventsState']);
 
+        $eventContext = EventContext::build(
+            timestamps: [$json_params['date']],
+            selections: $events_manager->getSelections(),
+            visibilitySelections: $events_manager->getVisibilitySelections(),
+            api: $this->eventsApi(),
+        );
+
         Sentry::setContext('Screenshot Request Variables',[
             'layers' => $layers,
             'events_manager' => $events_manager,
@@ -530,7 +538,7 @@ class Module_WebClient extends BaseModule implements ModuleInterface {
             $scaleY,
             $json_params['date'],
             $roi,
-            array_merge($json_params, ['eventsApi' => $this->eventsApi()])
+            array_merge($json_params, ['eventContext' => $eventContext])
         );
 
         // Display screenshot
@@ -615,6 +623,13 @@ class Module_WebClient extends BaseModule implements ModuleInterface {
         // Events manager built from old logic
         $events_manager = EventsStateManager::buildFromLegacyEventStrings($events_legacy_string, $event_labels);
 
+        $eventContext = EventContext::build(
+            timestamps: [$this->_params['date']],
+            selections: $events_manager->getSelections(),
+            visibilitySelections: $events_manager->getVisibilitySelections(),
+            api: $this->eventsApi(),
+        );
+
         // Create the screenshot
         $screenshot = new Image_Composite_HelioviewerScreenshot(
             $layers,
@@ -627,7 +642,7 @@ class Module_WebClient extends BaseModule implements ModuleInterface {
             $scaleY,
             $this->_params['date'],
             $roi,
-            array_merge($this->_options, ['eventsApi' => $this->eventsApi()])
+            array_merge($this->_options, ['eventContext' => $eventContext])
         );
 
         // Display screenshot
@@ -722,6 +737,12 @@ class Module_WebClient extends BaseModule implements ModuleInterface {
             $events_manager = EventsStateManager::buildFromLegacyEventStrings($metaData['eventSourceString'], (bool)$metaData['eventsLabels']);
         }
 
+        $eventContext = EventContext::build(
+            timestamps: [$metaData['observationDate']],
+            selections: $events_manager->getSelections(),
+            visibilitySelections: $events_manager->getVisibilitySelections(),
+            api: $this->eventsApi(),
+        );
 
         $celestialBodies = array( "labels" => $metaData['celestialBodiesLabels'],
                             "trajectories" => $metaData['celestialBodiesTrajectories']);
@@ -738,7 +759,7 @@ class Module_WebClient extends BaseModule implements ModuleInterface {
             $metaData['scaleY'],
             $metaData['observationDate'],
             $roi,
-            array_merge($options, ['eventsApi' => $this->eventsApi()])
+            array_merge($options, ['eventContext' => $eventContext])
         );
     }
 
@@ -1352,7 +1373,7 @@ class Module_WebClient extends BaseModule implements ModuleInterface {
                 'grayscale' => true,
                 'eclipse' => true,
                 'moon' => $this->_options['moon'],
-                'eventsApi' => $this->eventsApi()
+                'eventContext' => EventContext::empty()
             ]
         );
         $screenshot->display();

@@ -36,8 +36,8 @@ require_once HV_ROOT_DIR . '/../src/Helper/RegionOfInterest.php';
 require_once HV_ROOT_DIR . '/../src/Helper/Serialize.php';
 
 use Helioviewer\Api\Event\EventsStateManager;
+use Helioviewer\Api\Event\EventContext;
 use Helioviewer\Api\Event\Api\EventsApi;
-use Helioviewer\Api\Event\Api\EventsApiException;
 use Helioviewer\Api\Sentry\Sentry;
 
 /**
@@ -530,52 +530,24 @@ class Movie_HelioviewerMovie {
             'switchSources' => $this->switchSources
         );
 
-        // Preload events for all frames. EventsApi handles chunking internally
-        // using the configured chunk size and labels per-chunk logs with the movie ID.
+        // Preload events for all frames via EventContext. Chunking + per-chunk
+        // logging is handled inside EventsApi::getEventsForFramesWithSelections.
+        // Empty selections short-circuit internally with no HTTP call.
         $timestamps = $this->_getTimeStamps();
-        $eventsApi = new EventsApi();
-        $batchResponse = [];
-        $sources = $this->_eventsManager->getSources();
-        $movieId = $this->publicId;
+        $movieId    = $this->publicId;
+        $chunkSize  = defined('HV_EVENTS_API_EVENTS_PER_FRAME_CHUNKSIZE')
+            ? (int) HV_EVENTS_API_EVENTS_PER_FRAME_CHUNKSIZE
+            : 50;
 
-        error_log(sprintf(
-            "[Movie:%s] Starting movie build, frames=%d, sources=%s, hasEvents=%s",
-            $movieId,
-            count($timestamps),
-            $sources ? implode(',', $sources) : '(none)',
-            $this->_eventsManager->hasEvents() ? 'true' : 'false'
-        ));
+        $eventContext = EventContext::build(
+            timestamps: $timestamps,
+            selections: $this->_eventsManager->getSelections(),
+            visibilitySelections: $this->_eventsManager->getVisibilitySelections(),
+            api: new EventsApi(),
+            chunkSize: $chunkSize,
+        );
 
-        if ($this->_eventsManager->hasEvents()) {
-            $chunkSize = defined('HV_EVENTS_API_EVENTS_PER_FRAME_CHUNKSIZE')
-                ? HV_EVENTS_API_EVENTS_PER_FRAME_CHUNKSIZE
-                : 50;
-
-            $totalStart = microtime(true);
-            try {
-                $batchResponse = $eventsApi->getEventsBatch(
-                    $timestamps,
-                    $sources,
-                    $chunkSize,
-                    "Movie:{$movieId}"
-                );
-            } catch (EventsApiException $e) {
-                error_log("[Movie:{$movieId}] Batch events failed: " . $e->getMessage());
-            } catch (\Throwable $e) {
-                error_log("[Movie:{$movieId}] Unexpected error fetching events: " . $e->getMessage());
-                Sentry::capture($e);
-            }
-            $totalMs = (int) round((microtime(true) - $totalStart) * 1000);
-            error_log(sprintf(
-                "[Movie:%s] all event chunks done in %dms (%d frames)",
-                $movieId, $totalMs, count($timestamps)
-            ));
-        } else {
-            error_log("[Movie:{$movieId}] No event types selected, skipping EventsApi request");
-        }
-
-        $options['batchEventResponse'] = $batchResponse;
-        $options['eventsApi'] = $eventsApi;
+        $options['eventContext'] = $eventContext;
 
         // Index of preview frame
         $previewIndex = floor($this->numFrames/2);
