@@ -531,21 +531,32 @@ class Movie_HelioviewerMovie {
         );
 
         // Preload events for all frames via EventContext. Chunking + per-chunk
-        // logging is handled inside EventsApi::getEventsForFramesWithSelections.
-        // Empty selections short-circuit internally with no HTTP call.
+        // logging is handled inside EventsApi::getEventsForFramesWithSelections,
+        // labelled with the movie ID. Empty selections short-circuit internally.
         $timestamps = $this->_getTimeStamps();
         $movieId    = $this->publicId;
         $chunkSize  = defined('HV_EVENTS_API_EVENTS_PER_FRAME_CHUNKSIZE')
             ? (int) HV_EVENTS_API_EVENTS_PER_FRAME_CHUNKSIZE
             : 50;
 
+        $contextStart = microtime(true);
         $eventContext = EventContext::build(
             timestamps: $timestamps,
             selections: $this->_eventsManager->getSelections(),
             visibilitySelections: $this->_eventsManager->getVisibilitySelections(),
             api: new EventsApi(),
             chunkSize: $chunkSize,
+            logLabel: "Movie:{$movieId}",
         );
+        $contextMs = (int) round((microtime(true) - $contextStart) * 1000);
+
+        error_log(sprintf(
+            "[Movie:%s] Starting movie build, frames=%d, hasEvents=%s, event context built in %dms",
+            $movieId,
+            count($timestamps),
+            $eventContext->hasEvents() ? 'true' : 'false',
+            $contextMs
+        ));
 
         $options['eventContext'] = $eventContext;
 
@@ -555,17 +566,25 @@ class Movie_HelioviewerMovie {
         // Add tolerance for single-frame failures
         $numFailures = 0;
 
+        // Frame-loop progress tracking
+        $totalFrames    = count($timestamps);
+        $frameLoopStart = microtime(true);
+        $frameTimingsMs = [];
+
         // Compile frames
         foreach ($this->_getTimeStamps() as $time) {
 
             $filepath =  sprintf('%sframes/frame%d.bmp', $this->directory, $frameNum);
 
             try {
+                $frameStart = microtime(true);
                 $screenshot = new Image_Composite_HelioviewerMovieFrame(
                     $filepath, $this->_layers, $this->_eventsManager,
                     $this->movieIcons, $this->celestialBodies,
                     $this->scale, $this->scaleType, $this->scaleX, $this->scaleY,
                     $time, $this->_roi, $options);
+                $frameMs = (int) round((microtime(true) - $frameStart) * 1000);
+                $frameTimingsMs[] = $frameMs;
 
                 if ( $frameNum == $previewIndex ) {
                     // Make a copy of frame to be used for preview images
@@ -574,10 +593,21 @@ class Movie_HelioviewerMovie {
 
                 $frameNum++;
                 array_push($this->_frames, $filepath);
+
+                $pct = $totalFrames > 0 ? (int) round(($frameNum / $totalFrames) * 100) : 0;
+                error_log(sprintf(
+                    "[Movie:%s] frame %d/%d (%d%%) in %dms",
+                    $movieId, $frameNum, $totalFrames, $pct, $frameMs
+                ));
             }
             catch (Exception $e) {
                 Sentry::capture($e);
                 $numFailures += 1;
+
+                error_log(sprintf(
+                    "[Movie:%s] frame %d/%d FAILED (failure %d/3): %s",
+                    $movieId, $frameNum + 1, $totalFrames, $numFailures, $e->getMessage()
+                ));
 
                 if ($numFailures <= 3) {
                     // Recover if failure occurs on a single frame
@@ -590,6 +620,22 @@ class Movie_HelioviewerMovie {
                 }
             }
         }
+
+        // Frame-loop summary
+        $frameLoopMs   = (int) round((microtime(true) - $frameLoopStart) * 1000);
+        $framesBuilt   = count($frameTimingsMs);
+        $avgFrameMs    = $framesBuilt > 0 ? (int) round(array_sum($frameTimingsMs) / $framesBuilt) : 0;
+        $totalBuildMs  = $contextMs + $frameLoopMs;
+        $contextShare  = $totalBuildMs > 0 ? (int) round(($contextMs / $totalBuildMs) * 100) : 0;
+        error_log(sprintf(
+            "[Movie:%s] Build complete: %d/%d frames in %dms total (event context: %dms / %d%%, frame loop: %dms, avg %dms/frame, failures: %d)",
+            $movieId,
+            $framesBuilt, $totalFrames,
+            $totalBuildMs,
+            $contextMs, $contextShare,
+            $frameLoopMs, $avgFrameMs,
+            $numFailures
+        ));
 
         $this->_createPreviewImages($previewImage);
     }

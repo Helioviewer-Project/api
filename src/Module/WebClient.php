@@ -506,12 +506,22 @@ class Module_WebClient extends BaseModule implements ModuleInterface {
 
         $events_manager = EventsStateManager::buildFromEventsState($json_params['eventsState']);
 
+        $screenshotDate = $json_params['date'];
+        $totalStart = microtime(true);
         $eventContext = EventContext::build(
-            timestamps: [$json_params['date']],
+            timestamps: [$screenshotDate],
             selections: $events_manager->getSelections(),
             visibilitySelections: $events_manager->getVisibilitySelections(),
             api: $this->eventsApi(),
+            logLabel: "Screenshot:{$screenshotDate}",
         );
+        $totalMs = (int) round((microtime(true) - $totalStart) * 1000);
+        error_log(sprintf(
+            "[Screenshot:%s] postScreenshot, hasEvents=%s, event context built in %dms",
+            $screenshotDate,
+            $eventContext->hasEvents() ? 'true' : 'false',
+            $totalMs
+        ));
 
         Sentry::setContext('Screenshot Request Variables',[
             'layers' => $layers,
@@ -623,12 +633,22 @@ class Module_WebClient extends BaseModule implements ModuleInterface {
         // Events manager built from old logic
         $events_manager = EventsStateManager::buildFromLegacyEventStrings($events_legacy_string, $event_labels);
 
+        $screenshotDate = $this->_params['date'];
+        $totalStart = microtime(true);
         $eventContext = EventContext::build(
-            timestamps: [$this->_params['date']],
+            timestamps: [$screenshotDate],
             selections: $events_manager->getSelections(),
             visibilitySelections: $events_manager->getVisibilitySelections(),
             api: $this->eventsApi(),
+            logLabel: "Screenshot:{$screenshotDate}",
         );
+        $totalMs = (int) round((microtime(true) - $totalStart) * 1000);
+        error_log(sprintf(
+            "[Screenshot:%s] takeScreenshot, hasEvents=%s, event context built in %dms",
+            $screenshotDate,
+            $eventContext->hasEvents() ? 'true' : 'false',
+            $totalMs
+        ));
 
         // Create the screenshot
         $screenshot = new Image_Composite_HelioviewerScreenshot(
@@ -737,12 +757,23 @@ class Module_WebClient extends BaseModule implements ModuleInterface {
             $events_manager = EventsStateManager::buildFromLegacyEventStrings($metaData['eventSourceString'], (bool)$metaData['eventsLabels']);
         }
 
+        $screenshotDate = $metaData['observationDate'];
+        $totalStart = microtime(true);
         $eventContext = EventContext::build(
-            timestamps: [$metaData['observationDate']],
+            timestamps: [$screenshotDate],
             selections: $events_manager->getSelections(),
             visibilitySelections: $events_manager->getVisibilitySelections(),
             api: $this->eventsApi(),
+            logLabel: "Screenshot:{$screenshotDate}",
         );
+        $totalMs = (int) round((microtime(true) - $totalStart) * 1000);
+        error_log(sprintf(
+            "[Screenshot:%s] reTakeScreenshot id=%d, hasEvents=%s, event context built in %dms",
+            $screenshotDate,
+            $screenshotId,
+            $eventContext->hasEvents() ? 'true' : 'false',
+            $totalMs
+        ));
 
         $celestialBodies = array( "labels" => $metaData['celestialBodiesLabels'],
                             "trajectories" => $metaData['celestialBodiesTrajectories']);

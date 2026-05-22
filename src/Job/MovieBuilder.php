@@ -34,17 +34,23 @@ class Job_MovieBuilder
 
     public function perform()
     {
-        printf("Starting movie %s\n", $this->args['movieId']);
+        $movieId = $this->args['movieId'];
+        $format  = $this->args['format'] ?? 'mp4';
+        error_log(sprintf("[Movie:%s] Worker picked up, format=%s", $movieId, $format));
 
         // Build movie
+        $startMs = microtime(true);
         try {
-            $movie = new Movie_HelioviewerMovie($this->args['movieId']);
+            $movie = new Movie_HelioviewerMovie($movieId);
             $movie->build();
         } catch (Exception $e) {
 
             Sentry::capture($e);
-            // Handle any errors encountered
-            printf("Error processing movie %s\n", $this->args['movieId']);
+            $elapsed = (int) round((microtime(true) - $startMs) * 1000);
+            error_log(sprintf(
+                "[Movie:%s] Worker error after %dms: %s",
+                $movieId, $elapsed, $e->getMessage()
+            ));
             logException($e, "Resque_");
 
             // If counter was increased at queue time, decrement
@@ -53,7 +59,8 @@ class Job_MovieBuilder
             throw $e;
         }
 
-        printf("Finished movie %s\n", $this->args['movieId']);
+        $elapsed = (int) round((microtime(true) - $startMs) * 1000);
+        error_log(sprintf("[Movie:%s] Worker finished in %dms", $movieId, $elapsed));
         $this->_updateCounter();
 
         // If the queue is empty and no jobs are being processed, set estimated
