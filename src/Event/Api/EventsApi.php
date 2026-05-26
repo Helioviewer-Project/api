@@ -23,11 +23,31 @@ class EventsApi implements EventsApiInterface {
     /** Known event sources */
     public const VALID_SOURCES = ['HEK', 'CCMC', 'RHESSI'];
 
-    /** Upstream-imposed cap on timestamps per batch request */
-    public const MAX_CHUNK_SIZE = 150;
+    /** Fallback used when the HV_* config constant is not defined. */
+    private const DEFAULT_MAX_CHUNK_SIZE = 150;
+    private const DEFAULT_MAX_SELECTIONS = 200;
 
-    /** Upstream-imposed cap on selections per frames_with_selections request */
-    public const MAX_SELECTIONS = 200;
+    /**
+     * Upstream-imposed cap on timestamps per batch request. Driven by
+     * HV_EVENTS_API_EVENTS_PER_FRAME_MAX_CHUNK_SIZE in Config.ini.
+     */
+    public static function maxChunkSize(): int
+    {
+        return defined('HV_EVENTS_API_EVENTS_PER_FRAME_MAX_CHUNK_SIZE')
+            ? (int) HV_EVENTS_API_EVENTS_PER_FRAME_MAX_CHUNK_SIZE
+            : self::DEFAULT_MAX_CHUNK_SIZE;
+    }
+
+    /**
+     * Upstream-imposed cap on selections per frames_with_selections request.
+     * Driven by HV_EVENTS_API_EVENTS_PER_FRAME_MAX_SELECTIONS in Config.ini.
+     */
+    public static function maxSelections(): int
+    {
+        return defined('HV_EVENTS_API_EVENTS_PER_FRAME_MAX_SELECTIONS')
+            ? (int) HV_EVENTS_API_EVENTS_PER_FRAME_MAX_SELECTIONS
+            : self::DEFAULT_MAX_SELECTIONS;
+    }
 
     private ClientInterface $client;
     private SentryClientInterface $sentry;
@@ -175,8 +195,9 @@ class EventsApi implements EventsApiInterface {
         if ($chunkSize < 1) {
             $chunkSize = defined('HV_EVENTS_API_EVENTS_PER_FRAME_CHUNKSIZE') ? (int) HV_EVENTS_API_EVENTS_PER_FRAME_CHUNKSIZE : 50;
         }
-        if ($chunkSize > self::MAX_CHUNK_SIZE) {
-            $chunkSize = self::MAX_CHUNK_SIZE;
+        $maxChunk = self::maxChunkSize();
+        if ($chunkSize > $maxChunk) {
+            $chunkSize = $maxChunk;
         }
 
         $sourcesParam = implode('::', $validSources);
@@ -242,8 +263,9 @@ class EventsApi implements EventsApiInterface {
         if (empty($selections)) {
             throw new EventsApiException("No selections given. At least one path-prefix selection is required.");
         }
-        if (count($selections) > self::MAX_SELECTIONS) {
-            throw new EventsApiException("Too many selections: " . count($selections) . ". Upstream limit is " . self::MAX_SELECTIONS . ".");
+        $maxSelections = self::maxSelections();
+        if (count($selections) > $maxSelections) {
+            throw new EventsApiException("Too many selections: " . count($selections) . ". Upstream limit is " . $maxSelections . ".");
         }
         if (empty($timestamps)) {
             return [];
@@ -251,8 +273,9 @@ class EventsApi implements EventsApiInterface {
         if ($chunkSize < 1) {
             $chunkSize = defined('HV_EVENTS_API_EVENTS_PER_FRAME_CHUNKSIZE') ? (int) HV_EVENTS_API_EVENTS_PER_FRAME_CHUNKSIZE : 50;
         }
-        if ($chunkSize > self::MAX_CHUNK_SIZE) {
-            $chunkSize = self::MAX_CHUNK_SIZE;
+        $maxChunk = self::maxChunkSize();
+        if ($chunkSize > $maxChunk) {
+            $chunkSize = $maxChunk;
         }
 
         $url = "/helioviewer/events/frames_with_selections";
