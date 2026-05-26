@@ -152,9 +152,9 @@ class Image_Composite_HelioviewerCompositeImage {
             'grayscale' => false,
             'eclipse' => false,
             'moon' => false,
-            'eventContext' => null,
+            'eventContext' => EventContext::empty(),
         );
- 
+
         $options = array_replace($defaults, $options);
 
         $this->width  = $roi->getPixelWidth();
@@ -162,7 +162,7 @@ class Image_Composite_HelioviewerCompositeImage {
         $this->imageScale = $roi->imageScale();
 
         $this->db = $options['database'] ? $options['database'] : new Database_ImgIndex();
-        $this->eventContext = $options['eventContext'] ?? EventContext::empty();
+        $this->eventContext = $options['eventContext'];
         $this->layers = $layers;
         $this->eventsManager = $eventsManager;
         $this->movieIcons = $movieIcons;

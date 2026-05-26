@@ -1404,7 +1404,6 @@ class Module_WebClient extends BaseModule implements ModuleInterface {
                 'grayscale' => true,
                 'eclipse' => true,
                 'moon' => $this->_options['moon'],
-                'eventContext' => EventContext::empty()
             ]
         );
         $screenshot->display();

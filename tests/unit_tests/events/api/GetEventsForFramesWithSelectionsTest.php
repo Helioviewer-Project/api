@@ -39,7 +39,7 @@ final class GetEventsForFramesWithSelectionsTest extends TestCase
 
     public function testItShouldThrowWhenSelectionsExceedUpstreamLimit(): void
     {
-        $tooMany = array_fill(0, EventsApi::MAX_SELECTIONS + 1, 'HEK>>Flare');
+        $tooMany = array_fill(0, EventsApi::maxSelections() + 1, 'HEK>>Flare');
 
         $this->mockClient->expects($this->never())->method('request');
 
