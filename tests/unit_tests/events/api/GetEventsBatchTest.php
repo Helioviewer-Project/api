@@ -88,7 +88,7 @@ final class GetEventsBatchTest extends TestCase
 
         $this->mockLegacyEvents->method('convertAll')->willReturn([]);
 
-        $this->eventsApi->getEventsBatch($timestamps, ['HEK']);
+        $this->eventsApi->getEventsBatch($timestamps, ['HEK'], 150);
     }
 
     public function testItShouldThrowAndCaptureSentryOnHttpError(): void
@@ -156,6 +156,6 @@ final class GetEventsBatchTest extends TestCase
             }))
             ->willReturn([]);
 
-        $this->eventsApi->getEventsBatch($timestamps, ['HEK']);
+        $this->eventsApi->getEventsBatch($timestamps, ['HEK'], 150);
     }
 }

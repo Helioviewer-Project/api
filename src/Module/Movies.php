@@ -204,6 +204,11 @@ class Module_Movies extends BaseModule implements ModuleInterface {
 
         $token = Resque::enqueue(HV_MOVIE_QUEUE, 'Job_MovieBuilder', $args, true);
 
+        error_log(sprintf(
+            "[Movie:%s] enqueued via postMovie, format=%s, eta=%ds, queueSize=%d, token=%s",
+            $publicId, $options['format'], (int)$estBuildTime, $queueSize, $token
+        ));
+
         // Print response
         $response = array(
             'id'    => $publicId,
@@ -393,6 +398,11 @@ class Module_Movies extends BaseModule implements ModuleInterface {
 
         $token = Resque::enqueue(HV_MOVIE_QUEUE, 'Job_MovieBuilder', $args, true);
 
+        error_log(sprintf(
+            "[Movie:%s] enqueued via queueMovie, format=%s, eta=%ds, queueSize=%d, token=%s",
+            $publicId, $options['format'], (int)$estBuildTime, $queueSize, $token
+        ));
+
         // Print response
         $response = array(
             'id'    => $publicId,
@@ -569,6 +579,13 @@ class Module_Movies extends BaseModule implements ModuleInterface {
             'counter' => $updateCounter
         );
         $token = Resque::enqueue(HV_MOVIE_QUEUE, 'Job_MovieBuilder', $args, true);
+
+        error_log(sprintf(
+            "[Movie:%s] enqueued via reQueueMovie (force=%s), format=%s, eta=%ds, queueSize=%d, token=%s",
+            $publicId,
+            $options['force'] ? 'true' : 'false',
+            $options['format'], (int)$estBuildTime, $queueSize, $token
+        ));
 
 
         // Create entries for each version of the movie in the movieFormats

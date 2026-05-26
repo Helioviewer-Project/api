@@ -9,6 +9,14 @@
  * included in every main php source file...).
  */
 
+// Redirect PHP's error_log destination off stderr. PHPUnit's
+// @runInSeparateProcess tests use stderr as their IPC channel with the child
+// process, so any stray error_log() call in production code corrupts the IPC
+// and surfaces as a PHPUnit\Framework\Exception. Sending to a temp file keeps
+// the messages around for inspection without breaking the tests.
+ini_set('log_errors', '1');
+ini_set('error_log', sys_get_temp_dir() . '/helioviewer-test.log');
+
 // Load Helioviewer Configuration. This defines all the HV_* variables
 // seen throughout the project
 require_once __DIR__ . '/../src/Config.php';

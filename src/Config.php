@@ -18,7 +18,10 @@ class Config {
 
     private $_bools  = array('disable_cache', 'enable_statistics_collection', 'db_events','sentry_enabled');
     private $_ints   = array('build_num', 'ffmpeg_max_threads',
-                             'max_jpx_frames', 'max_movie_frames');
+                             'max_jpx_frames', 'max_movie_frames',
+                             'events_api_events_per_frame_chunksize',
+                             'events_api_events_per_frame_max_chunk_size',
+                             'events_api_events_per_frame_max_selections');
     private $_floats = array('events_api_timeout');
     private $config;
 
@@ -86,7 +89,9 @@ class Config {
 
         // integers
         foreach ($this->_ints as $int) {
-            $this->config[$int] = (int)$this->config[$int];
+            if (isset($this->config[$int])) {
+                $this->config[$int] = (int)$this->config[$int];
+            }
         }
 
         // floats

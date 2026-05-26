@@ -20,8 +20,7 @@ require_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
 require_once HV_ROOT_DIR.'/../src/Module/SolarBodies.php';
 
 use Helioviewer\Api\Sentry\Sentry;
-use Helioviewer\Api\Event\Api\EventsApi;
-use Helioviewer\Api\Event\Api\EventsApiException;
+use Helioviewer\Api\Event\EventContext;
 
 class Image_Composite_HelioviewerCompositeImage {
 
@@ -116,8 +115,7 @@ class Image_Composite_HelioviewerCompositeImage {
     protected $switchSources;
     protected $celestialBodiesLabels;
     protected $celestialBodiesTrajectories;
-    protected $eventsApi;
-    protected array $batchEventResponse;
+    protected EventContext $eventContext;
 
     /**
      * Creates a new HelioviewerCompositeImage instance
@@ -154,10 +152,9 @@ class Image_Composite_HelioviewerCompositeImage {
             'grayscale' => false,
             'eclipse' => false,
             'moon' => false,
-            'eventsApi' => null,
-            'batchEventResponse' => []
+            'eventContext' => EventContext::empty(),
         );
- 
+
         $options = array_replace($defaults, $options);
 
         $this->width  = $roi->getPixelWidth();
@@ -165,8 +162,7 @@ class Image_Composite_HelioviewerCompositeImage {
         $this->imageScale = $roi->imageScale();
 
         $this->db = $options['database'] ? $options['database'] : new Database_ImgIndex();
-        $this->eventsApi = $options['eventsApi'] ?? new EventsApi();
-        $this->batchEventResponse = $options['batchEventResponse'];
+        $this->eventContext = $options['eventContext'];
         $this->layers = $layers;
         $this->eventsManager = $eventsManager;
         $this->movieIcons = $movieIcons;
@@ -479,9 +475,7 @@ class Image_Composite_HelioviewerCompositeImage {
             $image = $this->_imageLayers[0]->getIMagickImage();
 		}
 
-        if ( $this->eventsManager->hasEvents() && $this->date != '2999-01-01T00:00:00.000Z') {
-            $this->_addEventLayer($image);
-        }
+        $this->_addEventLayer($image);
 
         if ( $this->movieIcons) {
 
@@ -644,93 +638,8 @@ class Image_Composite_HelioviewerCompositeImage {
         $markerPinPixelOffsetX = 12;
         $markerPinPixelOffsetY = 38;
 
-        // Fetch events via batch (movies have pre-fetched, screenshots fetch for single timestamp)
-        if (empty($this->batchEventResponse)) {
-            try {
-                $this->batchEventResponse = $this->eventsApi->getEventsBatch(
-                    [$this->date],
-                    EventsApi::VALID_SOURCES
-                );
-            } catch (EventsApiException $e) {
-                // Already captured to Sentry by EventsApi
-            } catch (\Throwable $e) {
-                Sentry::capture($e);
-            }
-        }
-
-        $event_categories = $this->batchEventResponse[$this->date] ?? [];
-        if (empty($event_categories)) return;
-
-        // Lay down all relevant event REGIONS first
-        $events_to_render = [];
-        $events_manager = $this->eventsManager;
-        $add_label_visibility_and_concept = function($events_data, $event_cat_pin, $event_group_name) use ($events_manager) {
-            return array_map(function($ed) use ($events_manager, $event_cat_pin, $event_group_name) {
-                $ed['concept'] = $event_group_name;
-                $ed['label_visibility'] = $events_manager->isEventTypeLabelVisible($event_cat_pin) ? true : false;
-                return $ed;
-            }, $events_data);
-        };
-
-
-        foreach($event_categories as $event_cat) {
-            
-            $event_cat_pin = $event_cat['pin'];
-
-            // if we dont  have any configuration for this event_type
-            if (!$this->eventsManager->hasEventsForEventType($event_cat_pin)) {
-                continue;
-            }
-
-            // Are we going to go for all children of this event type
-            if ($this->eventsManager->appliesAllEventsForEventType($event_cat_pin)) {
-
-                foreach($event_cat['groups'] as $ecg) {
-                    $events_to_render = array_merge(
-                        $events_to_render,  
-                        $add_label_visibility_and_concept($ecg['data'], $event_cat_pin, $ecg['name'])
-                    );
-                }
-
-                continue;
-                
-            }
-
-            // Check each group  now 
-            foreach($event_cat['groups'] as $event_cat_group) {
-                
-                // Applies for event type
-                if($this->eventsManager->appliesFrmForEventType($event_cat_pin, $event_cat_group['name'])) {
-                    
-                    // applies all events for this group
-                    if($this->eventsManager->appliesAllEventInstancesForFrm($event_cat_pin, $event_cat_group['name'])) {
-                        $events_to_render = array_merge(
-                            $events_to_render,  
-                            $add_label_visibility_and_concept($event_cat_group['data'], $event_cat_pin, $event_cat_group['name'])
-                        );
-                    } else {
-
-                        // applies some events for this group
-                        $events_filtered_for_event_instances = [];
-
-                        foreach($event_cat_group['data'] as $ev) {
-
-                            if ($this->eventsManager->appliesEventInstance($event_cat_pin, $event_cat_group['name'], $ev)) {
-                                $events_filtered_for_event_instances[] = $ev;
-                            }
-
-                        }
-
-                        $events_to_render = array_merge(
-                            $events_to_render,  
-                            $add_label_visibility_and_concept($events_filtered_for_event_instances, $event_cat_pin, $event_cat_group['name'])
-                        );
-
-                    }
-                }
-            
-            }
-        }
+        $events_to_render = $this->eventContext->getEventsForDate($this->date);
+        if (empty($events_to_render)) return;
 
         // Draw event footprint polygons onto the composite image.
         // Footprint is an array of {x, y} points in HPC arcseconds (already rotated by Events API).
@@ -790,7 +699,7 @@ class Image_Composite_HelioviewerCompositeImage {
 			$y = $y - $this->_timeOffsetY;
 
             $imagickImage->compositeImage($marker, IMagick::COMPOSITE_DISSOLVE, $x - $markerPinPixelOffsetX, $y - $markerPinPixelOffsetY);
-            if ($event['label_visibility']) {
+            if ($event['label'] !== '') {
                 $x = $x + 11;
                 $y = $y - 24;
 

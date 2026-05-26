@@ -23,6 +23,32 @@ class EventsApi implements EventsApiInterface {
     /** Known event sources */
     public const VALID_SOURCES = ['HEK', 'CCMC', 'RHESSI'];
 
+    /** Fallback used when the HV_* config constant is not defined. */
+    private const DEFAULT_MAX_CHUNK_SIZE = 150;
+    private const DEFAULT_MAX_SELECTIONS = 200;
+
+    /**
+     * Upstream-imposed cap on timestamps per batch request. Driven by
+     * HV_EVENTS_API_EVENTS_PER_FRAME_MAX_CHUNK_SIZE in Config.ini.
+     */
+    public static function maxChunkSize(): int
+    {
+        return defined('HV_EVENTS_API_EVENTS_PER_FRAME_MAX_CHUNK_SIZE')
+            ? (int) HV_EVENTS_API_EVENTS_PER_FRAME_MAX_CHUNK_SIZE
+            : self::DEFAULT_MAX_CHUNK_SIZE;
+    }
+
+    /**
+     * Upstream-imposed cap on selections per frames_with_selections request.
+     * Driven by HV_EVENTS_API_EVENTS_PER_FRAME_MAX_SELECTIONS in Config.ini.
+     */
+    public static function maxSelections(): int
+    {
+        return defined('HV_EVENTS_API_EVENTS_PER_FRAME_MAX_SELECTIONS')
+            ? (int) HV_EVENTS_API_EVENTS_PER_FRAME_MAX_SELECTIONS
+            : self::DEFAULT_MAX_SELECTIONS;
+    }
+
     private ClientInterface $client;
     private SentryClientInterface $sentry;
     private LegacyEventsInterface $legacyEvents;
@@ -156,7 +182,7 @@ class EventsApi implements EventsApiInterface {
     }
 
     /** {@inheritdoc} */
-    public function getEventsBatch(array $timestamps, array $sources): array
+    public function getEventsBatch(array $timestamps, array $sources, int $chunkSize = 50, string $logLabel = ''): array
     {
         // Only allow known sources
         $validSources = self::filterSources($sources);
@@ -166,9 +192,16 @@ class EventsApi implements EventsApiInterface {
         if (empty($timestamps)) {
             return [];
         }
+        if ($chunkSize < 1) {
+            $chunkSize = defined('HV_EVENTS_API_EVENTS_PER_FRAME_CHUNKSIZE') ? (int) HV_EVENTS_API_EVENTS_PER_FRAME_CHUNKSIZE : 50;
+        }
+        $maxChunk = self::maxChunkSize();
+        if ($chunkSize > $maxChunk) {
+            $chunkSize = $maxChunk;
+        }
 
         $sourcesParam = implode('::', $validSources);
-        $chunks = array_chunk($timestamps, 150);
+        $chunks = array_chunk($timestamps, $chunkSize);
         $url = "/helioviewer/events/{$sourcesParam}/observations";
 
         // Closure to fetch a single chunk of timestamps
@@ -193,17 +226,110 @@ class EventsApi implements EventsApiInterface {
             }
         };
 
+        $logChunk = function (int $i, int $total, int $size, int $elapsedMs) use ($logLabel) {
+            if ($logLabel === '') {
+                return;
+            }
+            error_log(sprintf(
+                "[%s] EventsApi chunk %d/%d (%d timestamps) took %dms",
+                $logLabel, $i + 1, $total, $size, $elapsedMs
+            ));
+        };
+
         // First chunk returns full response (event_types + events + observations)
+        $start = microtime(true);
         $merged = $fetchChunk($chunks[0]);
+        $logChunk(0, count($chunks), count($chunks[0]), (int) round((microtime(true) - $start) * 1000));
 
         // Subsequent chunks only add new observations (event_types and events are the same)
         for ($i = 1; $i < count($chunks); $i++) {
+            $start = microtime(true);
             $chunk = $fetchChunk($chunks[$i]);
+            $logChunk($i, count($chunks), count($chunks[$i]), (int) round((microtime(true) - $start) * 1000));
             $merged['observations'] += $chunk['observations'];
         }
 
         // Convert deduplicated response to legacy format per timestamp
         return $this->legacyEvents->convertAll($merged);
+    }
+
+    /** {@inheritdoc} */
+    public function getEventsForFramesWithSelections(
+        array $timestamps,
+        array $selections,
+        int $chunkSize = 50,
+        string $logLabel = ''
+    ): array {
+        if (empty($selections)) {
+            throw new EventsApiException("No selections given. At least one path-prefix selection is required.");
+        }
+        $maxSelections = self::maxSelections();
+        if (count($selections) > $maxSelections) {
+            throw new EventsApiException("Too many selections: " . count($selections) . ". Upstream limit is " . $maxSelections . ".");
+        }
+        if (empty($timestamps)) {
+            return [];
+        }
+        if ($chunkSize < 1) {
+            $chunkSize = defined('HV_EVENTS_API_EVENTS_PER_FRAME_CHUNKSIZE') ? (int) HV_EVENTS_API_EVENTS_PER_FRAME_CHUNKSIZE : 50;
+        }
+        $maxChunk = self::maxChunkSize();
+        if ($chunkSize > $maxChunk) {
+            $chunkSize = $maxChunk;
+        }
+
+        $url = "/helioviewer/events/frames_with_selections";
+        $chunks = array_chunk($timestamps, $chunkSize);
+
+        $fetchChunk = function (array $chunkTimestamps) use ($url, $selections) {
+            $this->sentry->setContext('EventsApi', [
+                'endpoint' => $url,
+                'timestamp_count' => count($chunkTimestamps),
+                'selection_count' => count($selections),
+            ]);
+
+            try {
+                $response = $this->client->request('POST', $url, [
+                    'json' => [
+                        'timestamps' => $chunkTimestamps,
+                        'selections' => $selections,
+                    ],
+                ]);
+                return $this->parseResponse($response);
+            } catch (\Throwable $e) {
+                $this->sentry->setContext('EventsApi', [
+                    'error' => $e->getMessage(),
+                ]);
+                $exception = new EventsApiException("Failed to fetch frames_with_selections: " . $e->getMessage(), 0, $e);
+                $this->sentry->capture($exception);
+                throw $exception;
+            }
+        };
+
+        $logChunk = function (int $i, int $total, int $size, int $elapsedMs) use ($logLabel) {
+            if ($logLabel === '') {
+                return;
+            }
+            error_log(sprintf(
+                "[%s] EventsApi frames_with_selections chunk %d/%d (%d timestamps) took %dms",
+                $logLabel, $i + 1, $total, $size, $elapsedMs
+            ));
+        };
+
+        $start = microtime(true);
+        $merged = $fetchChunk($chunks[0]);
+        $logChunk(0, count($chunks), count($chunks[0]), (int) round((microtime(true) - $start) * 1000));
+
+        for ($i = 1; $i < count($chunks); $i++) {
+            $start = microtime(true);
+            $chunk = $fetchChunk($chunks[$i]);
+            $logChunk($i, count($chunks), count($chunks[$i]), (int) round((microtime(true) - $start) * 1000));
+            // events keyed by uuid; timestamps keyed by datetime string. + does first-wins union.
+            $merged['events']     = ($merged['events']     ?? []) + ($chunk['events']     ?? []);
+            $merged['timestamps'] = ($merged['timestamps'] ?? []) + ($chunk['timestamps'] ?? []);
+        }
+
+        return $merged;
     }
 
     /**
