@@ -18,11 +18,18 @@ class Client implements ClientInterface
     */
     public function __construct(array $config)
     {
-        \Sentry\init([
-            'dsn' => $config['dsn'],
+        $init = [
+            'dsn'         => $config['dsn'],
             'sample_rate' => (float)$config['sample_rate'],
             'environment' => $config['environment'],
-        ]);
+        ];
+        // Route the SDK's HTTP transport through the same egress proxy other
+        // outbound clients use (e.g. EventsApi). Without this the SDK goes
+        // direct and the events POST silently fails behind NDC firewalls.
+        if (defined('HV_PROXY_HOST') && HV_PROXY_HOST !== '') {
+            $init['http_proxy'] = HV_PROXY_HOST;
+        }
+        \Sentry\init($init);
     }
 
     /**
