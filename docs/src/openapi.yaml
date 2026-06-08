@@ -13,6 +13,10 @@ info:
 servers:
   - url: https://api.helioviewer.org/v2
     description: Production server
+  - url: https://api.beta.helioviewer.org/v2
+    description: Beta server
+  - url: https://helioviewer-api.ias.u-psud.fr/v2
+    description: IAS Mirror
 
 tags:
   - name: JPEG2000
