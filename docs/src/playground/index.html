@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Helioviewer API Playground</title>
+    <link rel="icon" href="/favicon.ico" />
+    <style>
+      body { margin: 0; }
+    </style>
+  </head>
+  <body>
+    <script
+      id="api-reference"
+      data-url="/docs/v2/openapi.yaml"></script>
+    <script>
+      var configuration = {
+        theme: 'purple',
+        layout: 'modern',
+        darkMode: true,
+        hideDownloadButton: false,
+        // Don't load fonts from fonts.scalar.com — fall back to system fonts.
+        withDefaultFonts: false,
+        // Don't route "try it" requests through proxy.scalar.com.
+        proxyUrl: '',
+        // Disable any analytics/telemetry the bundle might attempt.
+        telemetry: false,
+        metaData: {
+          title: 'Helioviewer API Playground',
+          description: 'Interactive playground for the Helioviewer API.',
+        },
+      };
+      document.getElementById('api-reference').dataset.configuration =
+        JSON.stringify(configuration);
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+  </body>
+</html>
