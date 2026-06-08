@@ -20,6 +20,7 @@ help:
 docs: html
 	mkdir -p ${TARGET_DIR}
 	cp -r ${BUILDDIR}/html/* ${TARGET_DIR}
+	cp openapi.yaml ${TARGET_DIR}
 
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
