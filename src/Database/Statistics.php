@@ -121,8 +121,6 @@ class Database_Statistics {
         $sql = sprintf(
                   "INSERT INTO movies_jpx "
                 . "SET "
-                .     "id "        . " = NULL, "
-                .     "timestamp " . " = NULL, "
                 .     "reqStartDate " . " = '%s', "
                 .     "reqEndDate " . " = '%s', "
                 .     "sourceId " . " = %d;",
@@ -131,10 +129,13 @@ class Database_Statistics {
                 $this->_dbConnection->link->real_escape_string($sourceId)
                );
         try {
+            echo $sql;
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
             $this->_reportDatabaseError($e);
+            var_dump($e);
+            echo "DEAD";
             return false;
         }
 
