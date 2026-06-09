@@ -69,6 +69,15 @@ class Config {
 
         include_once HV_ROOT_DIR.'/../lib/Resque.php';
         Resque::setBackend(HV_REDIS_HOST . ":" . HV_REDIS_PORT);
+
+        if (defined('HV_HTTP_PROXY') && HV_HTTP_PROXY !== '') {
+            putenv('HTTP_PROXY=' . HV_HTTP_PROXY);
+            putenv('http_proxy=' . HV_HTTP_PROXY);
+        }
+        if (defined('HV_HTTPS_PROXY') && HV_HTTPS_PROXY !== '') {
+            putenv('HTTPS_PROXY=' . HV_HTTPS_PROXY);
+            putenv('https_proxy=' . HV_HTTPS_PROXY);
+        }
     }
 
     /**
