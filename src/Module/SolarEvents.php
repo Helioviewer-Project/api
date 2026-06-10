@@ -15,6 +15,7 @@
 use Helioviewer\Api\Module\BaseModule;
 use Helioviewer\Api\Module\ModuleInterface;
 use Helioviewer\Api\Sentry\Sentry;
+use Helioviewer\Api\Event\Api\EventsApi;
 use Helioviewer\Api\Event\Api\EventsApiException;
 
 class Module_SolarEvents extends BaseModule implements ModuleInterface {
@@ -191,8 +192,16 @@ class Module_SolarEvents extends BaseModule implements ModuleInterface {
     public function events() {
         $observationTime = new DateTimeImmutable($this->_params['startTime']);
 
+        // Output format selector: 'tree' (legacy nested categories, default)
+        // or 'flat' (new v1 per-source endpoint). Anything else falls back to
+        // 'tree' for backwards compatibility.
+        $format = $this->_options['format'] ?? 'tree';
+        if ($format !== 'flat') {
+            $format = 'tree';
+        }
+
         // All event sources supported by the Events API
-        $allSources = ['CCMC', 'HEK', 'RHESSI'];
+        $allSources = EventsApi::VALID_SOURCES;
 
         // Determine which sources to query
         if (array_key_exists('sources', $this->_options)) {
@@ -206,7 +215,9 @@ class Module_SolarEvents extends BaseModule implements ModuleInterface {
 
         foreach ($sources as $source) {
             try {
-                $sourceData = $this->eventsApi()->getEventsForSourceLegacy($observationTime, $source);
+                $sourceData = ($format === 'flat')
+                    ? $this->eventsApi()->getEventsForSource($observationTime, $source)
+                    : $this->eventsApi()->getEventsForSourceLegacy($observationTime, $source);
                 $data = array_merge($data, $sourceData);
             } catch (EventsApiException $e) {
                 return $this->_sendResponse(500, 'Internal Server Error', 'Failed to fetch events from ' . $source);
@@ -268,10 +279,11 @@ class Module_SolarEvents extends BaseModule implements ModuleInterface {
             $expected = array(
                 'required' => array('startTime'),
                 'optional' => array('eventType', 'cacheOnly', 'force',
-                                    'ar_filter', 'sources'),
+                                    'ar_filter', 'sources', 'format'),
                 'bools'    => array('cacheOnly','force','ar_filter'),
                 'dates'    => array('startTime'),
-                'alphanumlist' => array('eventType', 'sources')
+                'alphanumlist' => array('eventType', 'sources'),
+                'choices'  => array('format' => ['tree', 'flat']),
             );
             break;
         default:

@@ -17,6 +17,17 @@ interface EventsApiInterface {
     public function getEventsForSourceLegacy(DateTimeInterface $observationTime, string $source): array;
 
     /**
+     * Get events for a specific source via the v1 endpoint
+     * (events/{source}/observation/{ISO-8601-Z time}).
+     *
+     * @param DateTimeInterface $observationTime The observation time
+     * @param string $source The data source (e.g. "HEK", "CCMC", "RHESSI")
+     * @return array Array of event data
+     * @throws EventsApiException on API errors or unexpected responses
+     */
+    public function getEventsForSource(DateTimeInterface $observationTime, string $source): array;
+
+    /**
      * Get events within a time range for given selection paths
      *
      * @param int $fromTimestamp Unix timestamp (seconds) for range start
