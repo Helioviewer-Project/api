@@ -129,13 +129,10 @@ class Database_Statistics {
                 $this->_dbConnection->link->real_escape_string($sourceId)
                );
         try {
-            echo $sql;
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
             $this->_reportDatabaseError($e);
-            var_dump($e);
-            echo "DEAD";
             return false;
         }
 
@@ -167,6 +164,8 @@ class Database_Statistics {
             $redis->incr($key);
         }catch(Exception $e){
             //continue gracefully if redis statistics logging fails
+            Sentry::setTag('error_type', 'Redis Error');
+            Sentry::capture($e);
         }
     }
 
