@@ -305,10 +305,10 @@ final class LegacyEventStringTest extends TestCase
                 false,
                 'Nested brackets'
             ],
-            'invalid_only_brackets' => [
+            'valid_empty_brackets' => [
                 '[]',
-                false,
-                'Empty brackets'
+                true,
+                'Empty brackets are accepted as "no events selected" (frontends wrap selections in [...] and send [] for none)'
             ],
         ];
     }
