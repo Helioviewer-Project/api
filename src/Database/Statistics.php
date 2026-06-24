@@ -17,10 +17,19 @@ require_once HV_ROOT_DIR . "/../src/Helper/ArrayExtensions.php";
 
 use DeviceDetector\ClientHints;
 use DeviceDetector\DeviceDetector;
+use Helioviewer\Api\Sentry\Sentry;
 
 class Database_Statistics {
 
     private $_dbConnection;
+
+    /**
+     * Report a database failure to Sentry tagged as "Database Error".
+     */
+    private function _reportDatabaseError(\Throwable $e): void {
+        Sentry::setTag('error_type', 'Database Error');
+        Sentry::capture($e);
+    }
 
     /**
      * Constructor
@@ -94,6 +103,7 @@ class Database_Statistics {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            $this->_reportDatabaseError($e);
             return false;
         }
 
@@ -111,8 +121,6 @@ class Database_Statistics {
         $sql = sprintf(
                   "INSERT INTO movies_jpx "
                 . "SET "
-                .     "id "        . " = NULL, "
-                .     "timestamp " . " = NULL, "
                 .     "reqStartDate " . " = '%s', "
                 .     "reqEndDate " . " = '%s', "
                 .     "sourceId " . " = %d;",
@@ -124,6 +132,7 @@ class Database_Statistics {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            $this->_reportDatabaseError($e);
             return false;
         }
 
@@ -155,6 +164,8 @@ class Database_Statistics {
             $redis->incr($key);
         }catch(Exception $e){
             //continue gracefully if redis statistics logging fails
+            Sentry::setTag('error_type', 'Redis Error');
+            Sentry::capture($e);
         }
     }
 
@@ -204,7 +215,7 @@ class Database_Statistics {
                 }
             }
             catch (Exception $e) {
-
+                $this->_reportDatabaseError($e);
             }
         }
 
@@ -253,7 +264,7 @@ class Database_Statistics {
                 }
             }
             catch (Exception $e) {
-
+                $this->_reportDatabaseError($e);
             }
         }
 
@@ -481,6 +492,7 @@ class Database_Statistics {
                 $result = $this->_dbConnection->query($sql);
             }
             catch (Exception $e) {
+                $this->_reportDatabaseError($e);
                 return false;
             }
 
@@ -526,6 +538,7 @@ class Database_Statistics {
                 $result = $this->_dbConnection->query($sql);
             }
             catch (Exception $e) {
+                $this->_reportDatabaseError($e);
                 return false;
             }
 
@@ -552,6 +565,7 @@ class Database_Statistics {
                 $result = $this->_dbConnection->query($sql);
             }
             catch (Exception $e) {
+                $this->_reportDatabaseError($e);
                 return false;
             }
 
@@ -600,6 +614,7 @@ class Database_Statistics {
                     $resultScreenshots = $this->_dbConnection->query($sqlScreenshots);
                 }
                 catch (Exception $e) {
+                    $this->_reportDatabaseError($e);
                     return false;
                 }
 
@@ -651,6 +666,7 @@ class Database_Statistics {
                     $resultScreenshots = $this->_dbConnection->query($sqlScreenshots);
                 }
                 catch (Exception $e) {
+                    $this->_reportDatabaseError($e);
                     return false;
                 }
 
@@ -718,6 +734,7 @@ class Database_Statistics {
             $result = $this->_dbConnection->query($sql);
         }
         catch (Exception $e) {
+            $this->_reportDatabaseError($e);
             return false;
         }
 
