@@ -10,7 +10,7 @@ BUILDDIR      = build
 # Since sphinx forces an "html" folder with the documentation, we're going to
 # move all that content into the docs/v2 folder
 TARGET_DIR = ../../docroot/docs/v2
-PLAYGROUND_TARGET_DIR = ../../docroot/playground
+PLAYGROUND_TARGET_DIR = $(TARGET_DIR)/playground
 
 # Put it first so that "make" without argument is like "make help".
 help:

@@ -5,34 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Helioviewer API Playground</title>
     <link rel="icon" href="/favicon.ico" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css" />
     <style>
-      body { margin: 0; }
+      body { margin: 0; background: #fafafa; }
     </style>
   </head>
   <body>
-    <script
-      id="api-reference"
-      data-url="/docs/v2/openapi.yaml"></script>
+    <div id="swagger-ui"></div>
+    <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-standalone-preset.js"></script>
     <script>
-      var configuration = {
-        theme: 'purple',
-        layout: 'modern',
-        darkMode: true,
-        hideDownloadButton: false,
-        // Don't load fonts from fonts.scalar.com — fall back to system fonts.
-        withDefaultFonts: false,
-        // Don't route "try it" requests through proxy.scalar.com.
-        proxyUrl: '',
-        // Disable any analytics/telemetry the bundle might attempt.
-        telemetry: false,
-        metaData: {
-          title: 'Helioviewer API Playground',
-          description: 'Interactive playground for the Helioviewer API.',
-        },
-      };
-      document.getElementById('api-reference').dataset.configuration =
-        JSON.stringify(configuration);
+      window.addEventListener('load', function () {
+        window.ui = SwaggerUIBundle({
+          url: '/docs/v2/openapi.yaml',
+          dom_id: '#swagger-ui',
+          deepLinking: true,
+          presets: [
+            SwaggerUIBundle.presets.apis,
+            SwaggerUIStandalonePreset,
+          ],
+          plugins: [SwaggerUIBundle.plugins.DownloadUrl],
+          layout: 'StandaloneLayout',
+        });
+      });
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
   </body>
 </html>
