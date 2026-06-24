@@ -112,7 +112,7 @@ class HTTPDataBrowser(BaseDataBrowser):
 
     def _query(self, location):
         """Get a list of files and folders at the specified remote location"""
-        # query the remote location for the list of files and subdirectories
+        # query the remote location for the list of files and subdirectories.
 
         if (sys.version_info >= (3, 0)):
             url_lister = URLLister()
