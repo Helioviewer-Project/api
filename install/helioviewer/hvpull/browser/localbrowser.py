@@ -14,7 +14,7 @@ class LocalDataBrowser(BaseDataBrowser):
         """Get a list of directories at the passed uri"""
         return self.server.compute_directories(start_date, end_date)
 
-    def get_files(self, location, extension):
+    def get_files(self, location, extension, filter_func: callable | None = None):
         """Get all the files that end with specified extension at the uri"""
 
         # ensure the location exists
@@ -25,5 +25,8 @@ class LocalDataBrowser(BaseDataBrowser):
                 lambda f: f.endswith("." + extension), os.listdir(full_path)
             )
             files = [os.path.join(full_path, f) for f in filenames]
+
+        if filter_func is not None:
+            files = list(filter(filter_func, files))
 
         return files
