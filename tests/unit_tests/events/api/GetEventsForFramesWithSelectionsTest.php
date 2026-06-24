@@ -59,9 +59,17 @@ final class GetEventsForFramesWithSelectionsTest extends TestCase
 
     public function testItShouldFallBackToConfiguredChunkSizeWhenCallerPassesLessThanOne(): void
     {
-        // 60 timestamps with chunkSize=0 -> defined config or fallback 50 -> 2 chunks (50 + 10)
+        // Generate enough timestamps to force 2 chunks at whatever the
+        // configured fallback chunksize is. If HV_EVENTS_API_EVENTS_PER_FRAME_CHUNKSIZE
+        // is defined (via Config.ini) the fallback uses it; otherwise 50.
+        $fallbackChunk = defined('HV_EVENTS_API_EVENTS_PER_FRAME_CHUNKSIZE')
+            ? (int) HV_EVENTS_API_EVENTS_PER_FRAME_CHUNKSIZE
+            : 50;
+        $tail  = 10;
+        $total = $fallbackChunk + $tail;
+
         $timestamps = [];
-        for ($i = 0; $i < 60; $i++) {
+        for ($i = 0; $i < $total; $i++) {
             $timestamps[] = "2024-01-15 " . sprintf('%02d:%02d:00', intdiv($i, 60), $i % 60);
         }
 
@@ -70,11 +78,11 @@ final class GetEventsForFramesWithSelectionsTest extends TestCase
         $this->mockClient->expects($this->exactly(2))
             ->method('request')
             ->withConsecutive(
-                ['POST', '/helioviewer/events/frames_with_selections', $this->callback(function ($options) {
-                    return count($options['json']['timestamps']) === 50;
+                ['POST', '/helioviewer/events/frames_with_selections', $this->callback(function ($options) use ($fallbackChunk) {
+                    return count($options['json']['timestamps']) === $fallbackChunk;
                 })],
-                ['POST', '/helioviewer/events/frames_with_selections', $this->callback(function ($options) {
-                    return count($options['json']['timestamps']) === 10;
+                ['POST', '/helioviewer/events/frames_with_selections', $this->callback(function ($options) use ($tail) {
+                    return count($options['json']['timestamps']) === $tail;
                 })]
             )
             ->willReturn(new Response(200, [], json_encode($emptyResponse)));

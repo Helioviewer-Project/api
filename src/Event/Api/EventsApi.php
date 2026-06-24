@@ -130,6 +130,31 @@ class EventsApi implements EventsApiInterface {
     }
 
     /** {@inheritdoc} */
+    public function getEventsForSource(DateTimeInterface $observationTime, string $source): array
+    {
+        $formattedTime = $observationTime->format('Y-m-d\TH:i:s\Z');
+        $encodedTime = urlencode($formattedTime);
+
+        $url = "/api/v1/events/{$source}/observation/{$encodedTime}";
+
+        $this->sentry->setContext('EventsApi', [
+            'endpoint' => $url,
+        ]);
+
+        try {
+            $response = $this->client->request('GET', $url);
+            return $this->parseResponse($response);
+        } catch (\Throwable $e) {
+            $this->sentry->setContext('EventsApi', [
+                'error' => $e->getMessage(),
+            ]);
+            $exception = new EventsApiException("Failed to fetch events for source: " . $e->getMessage(), 0, $e);
+            $this->sentry->capture($exception);
+            throw $exception;
+        }
+    }
+
+    /** {@inheritdoc} */
     public function getEventsInRange(int $fromTimestamp, int $toTimestamp, array $paths): array
     {
         $url = "/helioviewer/events/from/{$fromTimestamp}/to/{$toTimestamp}";

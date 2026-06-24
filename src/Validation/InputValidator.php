@@ -506,8 +506,9 @@ class Validation_InputValidator
             if (isset($params[$req])) {
                 $value = $params[$req];
 
-                // Empty string is valid (no events selected)
-                if ($value === '') {
+                // Empty string OR empty brackets is valid (no events selected).
+                // Frontends that wrap selections in [...] send '[]' to mean none.
+                if ($value === '' || $value === '[]') {
                     continue;
                 }
 
