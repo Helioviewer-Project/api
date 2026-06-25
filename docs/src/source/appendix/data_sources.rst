@@ -20,4 +20,5 @@ parameter shown in the following tables.
 .. include:: data_sources/rhessi.rst
 .. include:: data_sources/goes.rst
 .. include:: data_sources/swfo.rst
+.. include:: data_sources/punch.rst
 
