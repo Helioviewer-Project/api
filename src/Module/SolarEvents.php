@@ -17,6 +17,7 @@ use Helioviewer\Api\Module\ModuleInterface;
 use Helioviewer\Api\Sentry\Sentry;
 use Helioviewer\Api\Event\Api\EventsApi;
 use Helioviewer\Api\Event\Api\EventsApiException;
+use Helioviewer\Api\Event\EventTree;
 
 class Module_SolarEvents extends BaseModule implements ModuleInterface {
 
@@ -192,11 +193,13 @@ class Module_SolarEvents extends BaseModule implements ModuleInterface {
     public function events() {
         $observationTime = new DateTimeImmutable($this->_params['startTime']);
 
-        // Output format selector: 'tree' (legacy nested categories, default)
-        // or 'flat' (new v1 per-source endpoint). Anything else falls back to
-        // 'tree' for backwards compatibility.
+        // Output format selector:
+        //   'tree'       legacy nested categories (default)
+        //   'flat'       new v1 per-source endpoint
+        //   'simpletree' same flat fetch, dumped via pre() for now
+        // Anything else falls back to 'tree' for backwards compatibility.
         $format = $this->_options['format'] ?? 'tree';
-        if ($format !== 'flat') {
+        if (!in_array($format, ['tree', 'flat', 'simpletree'], true)) {
             $format = 'tree';
         }
 
@@ -210,21 +213,35 @@ class Module_SolarEvents extends BaseModule implements ModuleInterface {
             $sources = $allSources;
         }
 
-        // Fetch events from each source via EventsApi
+        // Fetch events from each source via EventsApi.
         $data = [];
 
         foreach ($sources as $source) {
             try {
-                $sourceData = ($format === 'flat')
-                    ? $this->eventsApi()->getEventsForSource($observationTime, $source)
-                    : $this->eventsApi()->getEventsForSourceLegacy($observationTime, $source);
+
+                $sourceData = [];
+
+                if ($format === 'tree') {
+                    $sourceData = $this->eventsApi()->getEventsForSourceLegacy($observationTime, $source);
+                }
+
+                if (in_array($format, ['flat', 'simpletree'], true)) {
+                    $sourceData = $this->eventsApi()->getEventsForSource($observationTime, $source);
+                }
+
                 $data = array_merge($data, $sourceData);
+
             } catch (EventsApiException $e) {
                 return $this->_sendResponse(500, 'Internal Server Error', 'Failed to fetch events from ' . $source);
             } catch (\Throwable $e) {
                 Sentry::capture($e);
                 return $this->_sendResponse(500, 'Internal Server Error', 'Failed to fetch events from ' . $source);
             }
+        }
+
+        // simpletree: re-shape the flat payload into a SOURCE>>Label tree.
+        if ($format === 'simpletree') {
+            $data = EventTree::make($data, $sources)->export();
         }
 
         header("Content-Type: application/json");
@@ -283,7 +300,7 @@ class Module_SolarEvents extends BaseModule implements ModuleInterface {
                 'bools'    => array('cacheOnly','force','ar_filter'),
                 'dates'    => array('startTime'),
                 'alphanumlist' => array('eventType', 'sources'),
-                'choices'  => array('format' => ['tree', 'flat']),
+                'choices'  => array('format' => ['tree', 'flat', 'simpletree']),
             );
             break;
         default:
