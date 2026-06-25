@@ -32,6 +32,23 @@ extensions = [
     'sphinxcontrib.openapi',
 ]
 
+# sphinxcontrib-openapi's :examples: flag renders both response examples and
+# auto-generated request examples in raw HTTP wire format (e.g.
+# `GET /foo HTTP/1.1\nHost: example.com`). We want the response examples but
+# write request examples by hand in each operation's description, so suppress
+# the auto-generated request example.
+import sphinxcontrib.openapi.openapi30 as _openapi30
+_orig_example = _openapi30._example
+
+def _example_responses_only(media_type_objects, method=None, endpoint=None,
+                            status=None, nb_indent=0):
+    if method is not None:
+        return iter(())
+    return _orig_example(media_type_objects, method=method, endpoint=endpoint,
+                         status=status, nb_indent=nb_indent)
+
+_openapi30._example = _example_responses_only
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
@@ -54,3 +71,7 @@ html_theme = 'sphinx_rtd_theme'
 # html_static_path = ['appendix/images']
 
 pygments_style = 'solarized-dark'
+
+# Default unlabeled code blocks to plain text so URLs aren't auto-detected as
+# Python and styled accordingly.
+highlight_language = 'text'

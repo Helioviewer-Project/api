@@ -42,10 +42,16 @@ paths:
     get:
       tags: [JPEG2000]
       summary: Download a colorized image
-      description: >
+      description: |
         Download a specific JP2 image colorized and converted to PNG, JPG, or
         WebP. If the requested size is larger than the source image, no
         upscaling is performed.
+
+        **Example Request**
+
+        .. code-block::
+
+            https://api.helioviewer.org/v2/downloadImage/?id=7654321
       operationId: downloadImage
       parameters:
         - name: id
@@ -103,9 +109,15 @@ paths:
     get:
       tags: [JPEG2000]
       summary: Get JP2 image XML header
-      description: >
+      description: |
         Get the XML header embedded in a JPEG2000 image, including the FITS
         header and Helioviewer-specific metadata.
+
+        **Example Request**
+
+        .. code-block::
+
+            https://api.helioviewer.org/v2/getJP2Header/?id=7654321
       operationId: getJP2Header
       parameters:
         - name: id
@@ -136,11 +148,29 @@ paths:
     get:
       tags: [JPEG2000]
       summary: Download JP2 image closest to a given date
-      description: >
+      description: |
         Download the JP2 image for the specified datasource that is closest in
         time to the requested date. By default returns binary JP2 data. Set
-        `jpip=true` for a JPIP URI, and additionally `json=true` for a JSON
+        ``jpip=true`` for a JPIP URI, and additionally ``json=true`` for a JSON
         response.
+
+        **Example Request** — binary JP2 image data (default):
+
+        .. code-block::
+
+            https://api.helioviewer.org/v2/getJP2Image/?date=2014-01-01T23:59:59Z&sourceId=14
+
+        **Example Request** — JPIP URI as plain text:
+
+        .. code-block::
+
+            https://api.helioviewer.org/v2/getJP2Image/?date=2014-01-01T23:59:59Z&sourceId=14&jpip=true
+
+        **Example Request** — JPIP URI as JSON:
+
+        .. code-block::
+
+            https://api.helioviewer.org/v2/getJP2Image/?date=2014-01-01T23:59:59Z&sourceId=14&jpip=true&json=true
       operationId: getJP2Image
       parameters:
         - name: date
@@ -183,7 +213,7 @@ paths:
             text/plain:
               schema:
                 type: string
-                example: "jpip://api.helioviewer.org:8090/AIA/2014/01/02/335/..."
+              example: "jpip://api.helioviewer.org:8090/AIA/2014/01/02/335/2014_01_02__00_00_02_62__SDO_AIA_AIA_335.jp2"
             application/json:
               schema:
                 type: object
@@ -191,15 +221,40 @@ paths:
                   uri:
                     type: string
                     description: JPIP protocol link to JP2 image.
-                    example: "jpip://api.helioviewer.org:8090/AIA/2014/01/02/335/..."
+              example:
+                uri: "jpip://api.helioviewer.org:8090/AIA/2014/01/02/335/2014_01_02__00_00_02_62__SDO_AIA_AIA_335.jp2"
 
   /getJPX/:
     get:
       tags: [JPEG2000]
       summary: Generate and download a JPX movie
-      description: >
+      description: |
         Generate and optionally download a custom JPX movie for the specified
-        datasource. Without `jpip` or `verbose`, returns binary JPX data.
+        datasource. Without ``jpip`` or ``verbose``, returns binary JPX data.
+
+        **Example Request** — binary JPX movie data:
+
+        .. code-block::
+
+            https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14
+
+        **Example Request** — JPIP URI as plain text:
+
+        .. code-block::
+
+            https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14&jpip=true
+
+        **Example Request** — JPIP URI in JSON with frame timestamps:
+
+        .. code-block::
+
+            https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14&jpip=true&verbose=true
+
+        **Example Request** — HTTP URI in JSON with frame timestamps:
+
+        .. code-block::
+
+            https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14&verbose=true
       operationId: getJPX
       parameters:
         - name: startTime
@@ -269,18 +324,35 @@ paths:
             text/plain:
               schema:
                 type: string
+              example: "jpip://api.helioviewer.org:8090/movies/SDO_AIA_335_F2014-01-01T00.00.00Z_T2014-01-01T00.45.00Z.jpx"
             application/json:
               schema:
                 $ref: '#/components/schemas/JpxResponse'
+              example:
+                message: "Movie cadence has been changed to one image every 1284 seconds in order to avoid exceeding the maximum allowed number of frames (1000) between the requested start and end dates."
+                uri: "http://api.helioviewer.org/jp2/movies/SOHO_MDI_MDI_magnetogram_F2003-10-05T00.00.00Z_T2003-10-20T00.00.00ZB1L.jpx"
+                frames: [1065323703, 1065329463, 1066602183, 1066607943]
 
   /getJPXClosestToMidPoint/:
     get:
       tags: [JPEG2000]
       summary: Generate a JPX movie with one frame per time interval
-      description: >
+      description: |
         Generate a JPX movie with one frame per pair of startTimes/endTimes,
         selecting the image closest to the midpoint of each interval.
         Maximum 360 timestamps per request.
+
+        **Example Request** — binary JPX movie data:
+
+        .. code-block::
+
+            https://api.helioviewer.org/v2/getJPXClosestToMidPoint/?startTimes=1306886400,1306887000,1306887600&endTimes=1306886700,1306887300,1306887900&sourceId=14
+
+        **Example Request** — JPIP URI in JSON:
+
+        .. code-block::
+
+            https://api.helioviewer.org/v2/getJPXClosestToMidPoint/?startTimes=1306886400,1306887000,1306887600&endTimes=1306886700,1306887300,1306887900&sourceId=14&jpip=true&verbose=true
       operationId: getJPXClosestToMidPoint
       parameters:
         - name: startTimes
@@ -340,17 +412,28 @@ paths:
             text/plain:
               schema:
                 type: string
+              example: "jpip://api.helioviewer.org:8090/movies/SDO_AIA_335_F2011-06-01T00.00.00Z_T2011-06-01T00.25.00Z.jpx"
             application/json:
               schema:
                 $ref: '#/components/schemas/JpxResponse'
+              example:
+                frames: [1306886547, 1306887735]
+                message: null
+                uri: "jpip://api.helioviewer.org:8090/movies/SDO_AIA_335_F2011-06-01T00.00.00Z_T2011-06-01T00.25.00Z.jpx"
 
   /getStatus/:
     get:
       tags: [JPEG2000]
       summary: Get JPEG2000 data ingestion status
-      description: >
+      description: |
         Returns information about how far behind the latest available JPEG2000
         images are for each instrument.
+
+        **Example Request**
+
+        .. code-block::
+
+            https://api.helioviewer.org/v2/getStatus/
       operationId: getStatus
       responses:
         "200":
@@ -374,10 +457,16 @@ paths:
     get:
       tags: [Movies]
       summary: Queue a custom movie (GET)
-      description: >
+      description: |
         Submit a request to the movie generation queue and receive a unique
-        Movie ID. Use `getMovieStatus` to poll for completion and
-        `downloadMovie` to retrieve the file.
+        Movie ID. Use ``getMovieStatus`` to poll for completion and
+        ``downloadMovie`` to retrieve the file.
+
+        **Example Request**
+
+        .. code-block::
+
+            https://api.helioviewer.org/v2/queueMovie/?startTime=2010-03-01T12:12:12Z&endTime=2010-03-04T12:12:12Z&layers=[3,1,100],[4,1,100]&events=[AR,HMI_HARP;SPoCA,1],[CH,all,1]&eventsLabels=false&imageScale=21.04&x1=-5000&y1=-5000&x2=5000&y2=5000
       operationId: queueMovie
       parameters:
         - $ref: '#/components/parameters/movieStartTime'
@@ -430,14 +519,46 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/QueueMovieResponse'
+              example:
+                id: z6vX5
+                eta: 376
+                queue: 0
+                token: 50e0d98f645b42d159ec1c8a1e15de3e
 
   /postMovie/:
     post:
       tags: [Movies]
       summary: Queue a custom movie (POST)
-      description: >
+      description: |
         Create a custom movie by submitting a JSON body to the movie generation
         queue. Returns a unique Movie ID.
+
+        **Example Request Body**
+
+        .. code-block:: json
+
+            {
+                "startTime":   "2010-03-01T12:12:12Z",
+                "endTime":     "2010-03-04T12:12:12Z",
+                "imageScale":  21.04,
+                "layers":      "[3,1,100]",
+                "eventsState": {
+                    "tree_HEK": {
+                        "labels_visible": true,
+                        "layers": [
+                            {
+                                "event_type": "flare",
+                                "frms": ["frm10", "frm20"],
+                                "event_instances": ["flare--frm1--event1", "flare--frm2--event2"]
+                            }
+                        ]
+                    }
+                },
+                "x1": -5000,
+                "y1": -5000,
+                "x2":  5000,
+                "y2":  5000
+            }
       operationId: postMovie
       requestBody:
         required: true
@@ -452,14 +573,25 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/QueueMovieResponse'
+              example:
+                id: z6vX5
+                eta: 376
+                queue: 0
+                token: 50e0d98f645b42d159ec1c8a1e15de3e
 
   /reQueueMovie/:
     get:
       tags: [Movies]
       summary: Re-generate an expired movie
-      description: >
+      description: |
         Re-generate a custom movie that is no longer cached on disk. Use the
-        returned Movie ID with `getMovieStatus` and `downloadMovie`.
+        returned Movie ID with ``getMovieStatus`` and ``downloadMovie``.
+
+        **Example Request**
+
+        .. code-block::
+
+            https://api.helioviewer.org/v2/reQueueMovie/?id=VXvX5
       operationId: reQueueMovie
       parameters:
         - name: id
@@ -483,14 +615,31 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/QueueMovieResponse'
+              example:
+                id: VXvX5
+                eta: 285
+                queue: 0
+                token: 4673d6db4e2a3365ab361267f2a9a112
 
   /getMovieStatus/:
     get:
       tags: [Movies]
       summary: Check movie generation status
-      description: >
+      description: |
         Returns metadata and generation status for a user-generated movie.
         Status codes: 0=queued, 1=processing, 2=finished, 3=invalid.
+
+        **Example Request**
+
+        .. code-block::
+
+            https://api.helioviewer.org/v2/getMovieStatus/?id=VXvX5&format=mp4
+
+        **Example Request** — verbose with JSONP callback:
+
+        .. code-block::
+
+            https://api.helioviewer.org/v2/getMovieStatus/?id=VXvX5&format=webm&verbose=true&callback=callbackTest
       operationId: getMovieStatus
       parameters:
         - name: id
@@ -529,12 +678,36 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MovieStatus'
+              example:
+                frameRate: 15
+                numFrames: 300
+                startDate: "2014-02-03 20:26:16"
+                status: 2
+                endDate: "2014-02-05 20:16:40"
+                width: 846
+                height: 820
+                title: "SDO AIA AIA 1600 (2014-02-03 20:26:16 - 20:16:40 UTC)"
+                thumbnails:
+                  icon: "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-icon.png"
+                  small: "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-small.png"
+                  medium: "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-medium.png"
+                  large: "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-large.png"
+                  full: "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-full.png"
+                url: "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/2014_02_03_20_26_16_2014_02_05_20_16_40_.mp4"
+                statusLabel: Completed
 
   /downloadMovie/:
     get:
       tags: [Movies]
       summary: Download a generated movie
-      description: Download a custom movie in mp4 or webm format.
+      description: |
+        Download a custom movie in mp4 or webm format.
+
+        **Example Request**
+
+        .. code-block::
+
+            https://api.helioviewer.org/v2/downloadMovie/?id=VXvX5&format=mp4
       operationId: downloadMovie
       parameters:
         - name: id
@@ -575,7 +748,14 @@ paths:
     get:
       tags: [Movies]
       summary: Get an HTML page with the movie embedded
-      description: Returns an HTML page with the requested movie embedded in a player.
+      description: |
+        Returns an HTML page with the requested movie embedded in a player.
+
+        **Example Request**
+
+        .. code-block::
+
+            https://api.helioviewer.org/v2/playMovie/?id=VXvX5&format=mp4&hq=true
       operationId: playMovie
       parameters:
         - name: id
@@ -627,11 +807,23 @@ paths:
     get:
       tags: [Screenshots]
       summary: Generate a custom screenshot (GET)
-      description: >
+      description: |
         Generate a custom screenshot. Specify the field of view using either
-        (`x1`, `y1`, `x2`, `y2`) or (`x0`, `y0`, `width`, `height`).
-        By default returns a JSON object with a screenshot `id`; set
-        `display=true` to receive the PNG binary directly.
+        (``x1``, ``y1``, ``x2``, ``y2``) or (``x0``, ``y0``, ``width``,
+        ``height``). By default returns a JSON object with a screenshot ``id``;
+        set ``display=true`` to receive the PNG binary directly.
+
+        **Example Request** — JSON response with screenshot ID:
+
+        .. code-block::
+
+            https://api.helioviewer.org/v2/takeScreenshot/?date=2014-01-01T23:59:59Z&imageScale=2.4204409&layers=[SDO,AIA,AIA,335,1,100]&events=[AR,HMI_HARP;SPoCA,1],[CH,all,1]&eventsLabels=false&x0=0&y0=0&width=1920&height=1200
+
+        **Example Request** — PNG binary directly:
+
+        .. code-block::
+
+            https://api.helioviewer.org/v2/takeScreenshot/?imageScale=2.4204409&layers=[SDO,AIA,AIA,304,1,100]&events=[CH,all,1]&eventLabels=true&scale=true&scaleType=earth&scaleX=0&scaleY=0&date=2014-02-25T15:53:00.136Z&x1=-929.2475775696686&x2=106.70112763033143&y1=-970.7984919973343&y2=486.3069298026657&display=true&watermark=true
       operationId: takeScreenshot
       parameters:
         - $ref: '#/components/parameters/screenshotDate'
@@ -672,6 +864,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ScreenshotResponse'
+              example:
+                id: 3285980
             image/png:
               schema:
                 type: string
@@ -681,10 +875,32 @@ paths:
     post:
       tags: [Screenshots]
       summary: Generate a custom screenshot (POST)
-      description: >
+      description: |
         Generate a custom screenshot via a JSON POST request. Specify the field
-        of view with (`x1`, `y1`, `x2`, `y2`) or (`x0`, `y0`, `width`,
-        `height`). Set `display=true` to receive the PNG binary directly.
+        of view with (``x1``, ``y1``, ``x2``, ``y2``) or (``x0``, ``y0``,
+        ``width``, ``height``). Set ``display=true`` to receive the PNG binary
+        directly.
+
+        **Example Request Body** — JSON response with screenshot ID:
+
+        .. code-block:: json
+
+            {
+                "date":       "2014-01-01T23:59:59Z",
+                "imageScale": 2.4204409,
+                "layers":     "[3,1,100]"
+            }
+
+        **Example Request Body** — PNG binary directly:
+
+        .. code-block:: json
+
+            {
+                "date":       "2014-01-01T23:59:59Z",
+                "imageScale": 2.4204409,
+                "layers":     "[3,1,100]",
+                "display":    true
+            }
       operationId: postScreenshot
       requestBody:
         required: true
@@ -699,6 +915,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ScreenshotResponse'
+              example:
+                id: 3285980
             image/png:
               schema:
                 type: string
@@ -708,7 +926,14 @@ paths:
     get:
       tags: [Screenshots]
       summary: Download a generated screenshot
-      description: Download a screenshot that was previously generated with `takeScreenshot`.
+      description: |
+        Download a screenshot that was previously generated with ``takeScreenshot``.
+
+        **Example Request**
+
+        .. code-block::
+
+            https://api.helioviewer.org/v2/downloadScreenshot/?id=3240748
       operationId: downloadScreenshot
       parameters:
         - name: id
@@ -731,9 +956,15 @@ paths:
     get:
       tags: [Screenshots]
       summary: Generate a LASCO C2 eclipse image
-      description: >
+      description: |
         Generates a grayscale image of LASCO C2 with a preset field of view.
         Optionally shows a moon in place of the Sun.
+
+        **Example Request**
+
+        .. code-block::
+
+            https://api.helioviewer.org/v2/getEclipseImage/
       operationId: getEclipseImage
       parameters:
         - name: moon
@@ -757,10 +988,16 @@ paths:
     get:
       tags: [Official Clients]
       summary: Find image metadata closest to a date/time
-      description: >
+      description: |
         Find the image data closest to the requested date/time for a given
         datasource. Returns metadata from the Helioviewer database and the
         JPEG2000 XML header.
+
+        **Example Request**
+
+        .. code-block::
+
+            https://api.helioviewer.org/v2/getClosestImage/?date=2014-01-01T23:59:59Z&sourceId=14
       operationId: getClosestImage
       parameters:
         - name: date
@@ -786,15 +1023,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ClosestImageResponse'
+              example:
+                id: 34205701
+                date: "2014-01-02 00:00:02"
+                scale: 0.58996068317702
+                scaleCorrection: 1.01701692521
+                width: 4096
+                height: 4096
+                refPixelX: 2048.5
+                refPixelY: 2048.5
+                rsun: 1600
+                sunCenterOffsetParams: []
+                layeringOrder: 1
 
   /getDataSources/:
     get:
       tags: [Official Clients]
       summary: List available image datasources
-      description: >
-        Return a hierarchical list of available datasources. Set `verbose=true`
-        for a JHelioviewer-compatible format. Use `enable` to include
-        additional observatories in verbose mode.
+      description: |
+        Return a hierarchical list of available datasources. Set
+        ``verbose=true`` for a JHelioviewer-compatible format. Use ``enable``
+        to include additional observatories in verbose mode.
+
+        **Example Request**
+
+        .. code-block::
+
+            https://api.helioviewer.org/v2/getDataSources/
       operationId: getDataSources
       parameters:
         - name: verbose
@@ -826,14 +1081,36 @@ paths:
                 description: >
                   Nested object keyed by observatory → instrument → detector
                   → measurement. Leaf nodes contain sourceId and date range.
+              example:
+                Hinode:
+                  XRT:
+                    Al_med:
+                      Al_mesh:
+                        end: "2007-05-09 09:50:35"
+                        layeringOrder: 1
+                        nickname: "XRT Al_med/Al_mesh"
+                        sourceId: 38
+                        start: "2006-11-02 10:25:55"
+                        uiLabels:
+                          - {label: Observatory, name: Hinode}
+                          - {label: Instrument, name: XRT}
+                          - {label: "Filter Wheel 1", name: Al_med}
+                          - {label: "Filter Wheel 2", name: Al_mesh}
 
   /getTile/:
     get:
       tags: [Official Clients]
       summary: Request a 512×512 image tile
-      description: >
+      description: |
         Request a single 512×512 pixel PNG image tile for use in the
-        Helioviewer viewport. Obtain the image identifier via `getClosestImage`.
+        Helioviewer viewport. Obtain the image identifier via
+        ``getClosestImage``.
+
+        **Example Request**
+
+        .. code-block::
+
+            https://api.helioviewer.org/v2/getTile/?id=36275490&x=-1&y=-1&imageScale=2.42044088
       operationId: getTile
       parameters:
         - name: id
@@ -921,7 +1198,14 @@ paths:
     get:
       tags: [Official Clients]
       summary: Shorten a Helioviewer URL
-      description: Shorten a Helioviewer.org URL using the bit.ly service.
+      description: |
+        Shorten a Helioviewer.org URL using the bit.ly service.
+
+        **Example Request**
+
+        .. code-block::
+
+            https://api.helioviewer.org/v2/shortenURL/?queryString=date%3D2014-02-25T15%3A18%3A07.000Z%26imageScale%3D2.4204409%26imageLayers%3D%255BSDO%2CAIA%2CAIA%2C304%2C1%2C100%255D
       operationId: shortenURL
       parameters:
         - name: queryString
@@ -956,6 +1240,15 @@ paths:
                         type: string
                       new_hash:
                         type: integer
+              example:
+                status_code: 200
+                status_txt: OK
+                data:
+                  long_url: "http://helioviewer.org/?date=2014-02-25T15:18:07.000Z&imageScale=2.4204409&imageLayers=[SDO,AIA,AIA,304,1,100]"
+                  url: "http://bit.ly/1hbCHMq"
+                  hash: "1hbCHMq"
+                  global_hash: "1hbCHMr"
+                  new_hash: 0
 
   # ── SOLAR FEATURES & EVENTS ──────────────────────────────────────────────
 
@@ -963,9 +1256,15 @@ paths:
     get:
       tags: [Solar Features & Events]
       summary: Get solar feature and event data
-      description: >
+      description: |
         Returns a list of HEK events in the Helioviewer event format.
         Event-specific data conforms to the HEK Event Specification.
+
+        **Example Request**
+
+        .. code-block::
+
+            https://api.helioviewer.org/v2/events/?startTime=2023-03-30T00:00:00Z
       operationId: getEvents
       parameters:
         - name: startTime
@@ -994,6 +1293,19 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/EventGroup'
+              example:
+                - name: Active Region
+                  pin: AR
+                  groups:
+                    - name: NOAA SWPC Observer
+                      contact: "http://www.swpc.noaa.gov/"
+                      url: "N/A"
+                      data:
+                        - active: "true"
+                          area_atdiskcenter: 213057280
+                          area_unit: km2
+                          ar_mcintoshcls: HAX
+                          ar_mtwilsoncls: ALPHA
 
   # ── YOUTUBE ──────────────────────────────────────────────────────────────
 
@@ -1001,9 +1313,15 @@ paths:
     get:
       tags: [YouTube]
       summary: Check YouTube authorization status
-      description: >
+      description: |
         Check whether Helioviewer.org is authorized to interact with the
         user's YouTube account via the current browser session.
+
+        **Example Request**
+
+        .. code-block::
+
+            https://api.helioviewer.org/v2/checkYouTubeAuth/
       operationId: checkYouTubeAuth
       parameters:
         - $ref: '#/components/parameters/callback'
@@ -1014,15 +1332,21 @@ paths:
             text/plain:
               schema:
                 type: boolean
-                example: false
+              example: "false"
 
   /getYouTubeAuth/:
     get:
       tags: [YouTube]
       summary: Initiate YouTube authorization
-      description: >
+      description: |
         Redirect the user to a Google/YouTube OAuth authorization page so
         Helioviewer can upload videos on their behalf.
+
+        **Example Request**
+
+        .. code-block::
+
+            https://api.helioviewer.org/v2/getYouTubeAuth/?id=VXvX5&title=AIA%204500%20(2013-12-30%2016%3A00%3A07%20-%202014-01-27%2015%3A00%3A07%20UTC)&description=This%20movie%20was%20produced%20by%20Helioviewer.org&tags=SDO%2CAIA%2C4500&share=true
       operationId: getYouTubeAuth
       parameters:
         - name: id
@@ -1065,12 +1389,20 @@ paths:
             Location:
               schema:
                 type: string
+                example: "https://www.google.com/accounts/AuthSubRequest?next=http%3A%2F%2Fhelioviewer.org%2Fapi%2Findex.php%3Faction%3DuploadMovieToYouTube%26id%3DVXvX5%26html%3Dtrue&scope=http://gdata.youtube.com&secure=&session=1"
 
   /uploadMovieToYouTube/:
     get:
       tags: [YouTube]
       summary: Upload a movie to YouTube
-      description: Share an existing user-generated movie to YouTube.
+      description: |
+        Share an existing user-generated movie to YouTube.
+
+        **Example Request**
+
+        .. code-block::
+
+            https://api.helioviewer.org/v2/uploadMovieToYouTube/?id=y9tX5&title=AIA+94+(2014-02-26+16%3A14%3A25+-+2014-02-27+15%3A37%3A49+UTC)&description=This+movie+was+produced+by+Helioviewer.org&tags=SDO%2CAIA%2C94&share=true
       operationId: uploadMovieToYouTube
       parameters:
         - name: id
@@ -1121,15 +1453,22 @@ paths:
                 properties:
                   status:
                     type: string
-                    example: "upload in progress."
+              example:
+                status: "upload in progress."
 
   /getUserVideos/:
     get:
       tags: [YouTube]
       summary: List recently shared user videos
-      description: >
+      description: |
         Get a list (newest first) of user-generated movies that have been
         publicly shared to YouTube.
+
+        **Example Request**
+
+        .. code-block::
+
+            https://api.helioviewer.org/v2/getUserVideos/?num=2
       operationId: getUserVideos
       parameters:
         - name: num
@@ -1166,6 +1505,25 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/UserVideo'
+              example:
+                - id: J5tX5
+                  url: "http://www.youtube.com/watch?v=x2VYjI1Eo3M"
+                  thumbnails:
+                    icon: "http://api.helioviewer.org/cache/movies/2014/02/27/J5tX5/preview-icon.png"
+                    small: "http://api.helioviewer.org/cache/movies/2014/02/27/J5tX5/preview-small.png"
+                    medium: "http://api.helioviewer.org/cache/movies/2014/02/27/J5tX5/preview-medium.png"
+                    large: "http://api.helioviewer.org/cache/movies/2014/02/27/J5tX5/preview-large.png"
+                    full: "http://api.helioviewer.org/cache/movies/2014/02/27/J5tX5/preview-full.png"
+                  published: "2014-02-27 14:56:00"
+                - id: L5tX5
+                  url: "http://www.youtube.com/watch?v=h6Y6vhpKPRk"
+                  thumbnails:
+                    icon: "http://api.helioviewer.org/cache/movies/2014/02/27/L5tX5/preview-icon.png"
+                    small: "http://api.helioviewer.org/cache/movies/2014/02/27/L5tX5/preview-small.png"
+                    medium: "http://api.helioviewer.org/cache/movies/2014/02/27/L5tX5/preview-medium.png"
+                    large: "http://api.helioviewer.org/cache/movies/2014/02/27/L5tX5/preview-large.png"
+                    full: "http://api.helioviewer.org/cache/movies/2014/02/27/L5tX5/preview-full.png"
+                  published: "2014-02-27 14:54:08"
 
   # ── WEBSITE ──────────────────────────────────────────────────────────────
 
@@ -1173,7 +1531,14 @@ paths:
     get:
       tags: [Website]
       summary: Get the Helioviewer Project blog RSS feed
-      description: Returns the XML RSS feed of the official Helioviewer Project Blog.
+      description: |
+        Returns the XML RSS feed of the official Helioviewer Project Blog.
+
+        **Example Request**
+
+        .. code-block::
+
+            https://api.helioviewer.org/v2/getNewsFeed/
       operationId: getNewsFeed
       parameters:
         - $ref: '#/components/parameters/callback'
@@ -1184,6 +1549,21 @@ paths:
             application/rss+xml:
               schema:
                 type: string
+              example: |
+                <?xml version="1.0" encoding="UTF-8"?>
+                <rss version="2.0">
+                  <channel>
+                    <title>The Helioviewer Project Blog</title>
+                    <link>http://blog.helioviewer.org</link>
+                    <description>Explore your heliosphere</description>
+                    <item>
+                      <title>Follow the Helioviewer Project on Twitter</title>
+                      <link>http://blog.helioviewer.org/2014/01/28/follow-the-helioviewer-project-on-twitter/</link>
+                      <pubDate>Tue, 28 Jan 2014 15:16:51 +0000</pubDate>
+                      <description>The Helioviewer Project is now on Twitter, @Helioviewer.</description>
+                    </item>
+                  </channel>
+                </rss>
 
 # ── COMPONENTS ─────────────────────────────────────────────────────────────
 
