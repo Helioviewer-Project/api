@@ -196,7 +196,10 @@ class Module_SolarEvents extends BaseModule implements ModuleInterface {
         // Output format selector:
         //   'tree'       legacy nested categories (default)
         //   'flat'       new v1 per-source endpoint
-        //   'simpletree' same flat fetch, dumped via pre() for now
+        //   'simpletree' flat events bucketed into a "SOURCE>>Label" tree
+        //                (see EventTree) -- one key per known event type for
+        //                the requested sources, empty arrays for types with
+        //                no events in the response.
         // Anything else falls back to 'tree' for backwards compatibility.
         $format = $this->_options['format'] ?? 'tree';
         if (!in_array($format, ['tree', 'flat', 'simpletree'], true)) {
