@@ -49,9 +49,9 @@ paths:
 
         **Example Request**
 
-        .. code-block::
+        .. parsed-literal::
 
-            https://api.helioviewer.org/v2/downloadImage/?id=7654321
+            `https://api.helioviewer.org/v2/downloadImage/?id=189536650 <https://api.helioviewer.org/v2/downloadImage/?id=189536650>`_
       operationId: downloadImage
       parameters:
         - name: id
@@ -115,9 +115,9 @@ paths:
 
         **Example Request**
 
-        .. code-block::
+        .. parsed-literal::
 
-            https://api.helioviewer.org/v2/getJP2Header/?id=7654321
+            `https://api.helioviewer.org/v2/getJP2Header/?id=189536650 <https://api.helioviewer.org/v2/getJP2Header/?id=189536650>`_
       operationId: getJP2Header
       parameters:
         - name: id
@@ -137,7 +137,7 @@ paths:
         "200":
           description: XML header string
           content:
-            application/xml:
+            text/xml:
               schema:
                 type: string
                 example: |
@@ -156,21 +156,21 @@ paths:
 
         **Example Request** — binary JP2 image data (default):
 
-        .. code-block::
+        .. parsed-literal::
 
-            https://api.helioviewer.org/v2/getJP2Image/?date=2014-01-01T23:59:59Z&sourceId=14
+            `https://api.helioviewer.org/v2/getJP2Image/?date=2014-01-01T23:59:59Z&sourceId=14 <https://api.helioviewer.org/v2/getJP2Image/?date=2014-01-01T23:59:59Z&sourceId=14>`_
 
         **Example Request** — JPIP URI as plain text:
 
-        .. code-block::
+        .. parsed-literal::
 
-            https://api.helioviewer.org/v2/getJP2Image/?date=2014-01-01T23:59:59Z&sourceId=14&jpip=true
+            `https://api.helioviewer.org/v2/getJP2Image/?date=2014-01-01T23:59:59Z&sourceId=14&jpip=true <https://api.helioviewer.org/v2/getJP2Image/?date=2014-01-01T23:59:59Z&sourceId=14&jpip=true>`_
 
         **Example Request** — JPIP URI as JSON:
 
-        .. code-block::
+        .. parsed-literal::
 
-            https://api.helioviewer.org/v2/getJP2Image/?date=2014-01-01T23:59:59Z&sourceId=14&jpip=true&json=true
+            `https://api.helioviewer.org/v2/getJP2Image/?date=2014-01-01T23:59:59Z&sourceId=14&jpip=true&json=true <https://api.helioviewer.org/v2/getJP2Image/?date=2014-01-01T23:59:59Z&sourceId=14&jpip=true&json=true>`_
       operationId: getJP2Image
       parameters:
         - name: date
@@ -234,27 +234,27 @@ paths:
 
         **Example Request** — binary JPX movie data:
 
-        .. code-block::
+        .. parsed-literal::
 
-            https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14
+            `https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14 <https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14>`_
 
         **Example Request** — JPIP URI as plain text:
 
-        .. code-block::
+        .. parsed-literal::
 
-            https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14&jpip=true
+            `https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14&jpip=true <https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14&jpip=true>`_
 
         **Example Request** — JPIP URI in JSON with frame timestamps:
 
-        .. code-block::
+        .. parsed-literal::
 
-            https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14&jpip=true&verbose=true
+            `https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14&jpip=true&verbose=true <https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14&jpip=true&verbose=true>`_
 
         **Example Request** — HTTP URI in JSON with frame timestamps:
 
-        .. code-block::
+        .. parsed-literal::
 
-            https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14&verbose=true
+            `https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14&verbose=true <https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14&verbose=true>`_
       operationId: getJPX
       parameters:
         - name: startTime
@@ -344,15 +344,15 @@ paths:
 
         **Example Request** — binary JPX movie data:
 
-        .. code-block::
+        .. parsed-literal::
 
-            https://api.helioviewer.org/v2/getJPXClosestToMidPoint/?startTimes=1306886400,1306887000,1306887600&endTimes=1306886700,1306887300,1306887900&sourceId=14
+            `https://api.helioviewer.org/v2/getJPXClosestToMidPoint/?startTimes=1306886400,1306887000,1306887600&endTimes=1306886700,1306887300,1306887900&sourceId=14 <https://api.helioviewer.org/v2/getJPXClosestToMidPoint/?startTimes=1306886400,1306887000,1306887600&endTimes=1306886700,1306887300,1306887900&sourceId=14>`_
 
         **Example Request** — JPIP URI in JSON:
 
-        .. code-block::
+        .. parsed-literal::
 
-            https://api.helioviewer.org/v2/getJPXClosestToMidPoint/?startTimes=1306886400,1306887000,1306887600&endTimes=1306886700,1306887300,1306887900&sourceId=14&jpip=true&verbose=true
+            `https://api.helioviewer.org/v2/getJPXClosestToMidPoint/?startTimes=1306886400,1306887000,1306887600&endTimes=1306886700,1306887300,1306887900&sourceId=14&jpip=true&verbose=true <https://api.helioviewer.org/v2/getJPXClosestToMidPoint/?startTimes=1306886400,1306887000,1306887600&endTimes=1306886700,1306887300,1306887900&sourceId=14&jpip=true&verbose=true>`_
       operationId: getJPXClosestToMidPoint
       parameters:
         - name: startTimes
@@ -431,9 +431,9 @@ paths:
 
         **Example Request**
 
-        .. code-block::
+        .. parsed-literal::
 
-            https://api.helioviewer.org/v2/getStatus/
+            `https://api.helioviewer.org/v2/getStatus/ <https://api.helioviewer.org/v2/getStatus/>`_
       operationId: getStatus
       responses:
         "200":
@@ -464,9 +464,9 @@ paths:
 
         **Example Request**
 
-        .. code-block::
+        .. parsed-literal::
 
-            https://api.helioviewer.org/v2/queueMovie/?startTime=2010-03-01T12:12:12Z&endTime=2010-03-04T12:12:12Z&layers=[3,1,100],[4,1,100]&events=[AR,HMI_HARP;SPoCA,1],[CH,all,1]&eventsLabels=false&imageScale=21.04&x1=-5000&y1=-5000&x2=5000&y2=5000
+            `https://api.helioviewer.org/v2/queueMovie/?startTime=2010-03-01T12:12:12Z&endTime=2010-03-04T12:12:12Z&layers=[3,1,100],[4,1,100]&events=[AR,HMI_HARP;SPoCA,1],[CH,all,1]&eventsLabels=false&imageScale=21.04&x1=-5000&y1=-5000&x2=5000&y2=5000 <https://api.helioviewer.org/v2/queueMovie/?startTime=2010-03-01T12:12:12Z&endTime=2010-03-04T12:12:12Z&layers=[3,1,100],[4,1,100]&events=[AR,HMI_HARP;SPoCA,1],[CH,all,1]&eventsLabels=false&imageScale=21.04&x1=-5000&y1=-5000&x2=5000&y2=5000>`_
       operationId: queueMovie
       parameters:
         - $ref: '#/components/parameters/movieStartTime'
@@ -589,9 +589,9 @@ paths:
 
         **Example Request**
 
-        .. code-block::
+        .. parsed-literal::
 
-            https://api.helioviewer.org/v2/reQueueMovie/?id=VXvX5
+            `https://api.helioviewer.org/v2/reQueueMovie/?id=w1Pj5 <https://api.helioviewer.org/v2/reQueueMovie/?id=w1Pj5>`_
       operationId: reQueueMovie
       parameters:
         - name: id
@@ -600,7 +600,7 @@ paths:
           description: Unique movie identifier.
           schema:
             type: string
-            example: VXvX5
+            example: w1Pj5
         - name: force
           in: query
           required: false
@@ -616,7 +616,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/QueueMovieResponse'
               example:
-                id: VXvX5
+                id: w1Pj5
                 eta: 285
                 queue: 0
                 token: 4673d6db4e2a3365ab361267f2a9a112
@@ -631,15 +631,15 @@ paths:
 
         **Example Request**
 
-        .. code-block::
+        .. parsed-literal::
 
-            https://api.helioviewer.org/v2/getMovieStatus/?id=VXvX5&format=mp4
+            `https://api.helioviewer.org/v2/getMovieStatus/?id=w1Pj5&format=mp4 <https://api.helioviewer.org/v2/getMovieStatus/?id=w1Pj5&format=mp4>`_
 
         **Example Request** — verbose with JSONP callback:
 
-        .. code-block::
+        .. parsed-literal::
 
-            https://api.helioviewer.org/v2/getMovieStatus/?id=VXvX5&format=webm&verbose=true&callback=callbackTest
+            `https://api.helioviewer.org/v2/getMovieStatus/?id=w1Pj5&format=webm&verbose=true&callback=callbackTest <https://api.helioviewer.org/v2/getMovieStatus/?id=w1Pj5&format=webm&verbose=true&callback=callbackTest>`_
       operationId: getMovieStatus
       parameters:
         - name: id
@@ -648,7 +648,7 @@ paths:
           description: Unique movie identifier.
           schema:
             type: string
-            example: VXvX5
+            example: w1Pj5
         - name: format
           in: query
           required: true
@@ -680,20 +680,20 @@ paths:
                 $ref: '#/components/schemas/MovieStatus'
               example:
                 frameRate: 15
-                numFrames: 300
-                startDate: "2014-02-03 20:26:16"
+                numFrames: 175
+                startDate: "2010-03-01 12:30:06"
                 status: 2
-                endDate: "2014-02-05 20:16:40"
-                width: 846
-                height: 820
-                title: "SDO AIA AIA 1600 (2014-02-03 20:26:16 - 20:16:40 UTC)"
+                endDate: "2010-03-04 12:06:06"
+                width: 476
+                height: 476
+                title: "SOHO EIT 304, SOHO LASCO C2 white-light (2010-03-01 12:30:06 - 12:06:06 UTC)"
                 thumbnails:
-                  icon: "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-icon.png"
-                  small: "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-small.png"
-                  medium: "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-medium.png"
-                  large: "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-large.png"
-                  full: "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/preview-full.png"
-                url: "http://api.helioviewer.org/cache/movies/2014/02/05/VXvX5/2014_02_03_20_26_16_2014_02_05_20_16_40_.mp4"
+                  icon: "https://api.helioviewer.org/cache/movies/2026/06/25/w1Pj5/preview-icon.png"
+                  small: "https://api.helioviewer.org/cache/movies/2026/06/25/w1Pj5/preview-small.png"
+                  medium: "https://api.helioviewer.org/cache/movies/2026/06/25/w1Pj5/preview-medium.png"
+                  large: "https://api.helioviewer.org/cache/movies/2026/06/25/w1Pj5/preview-large.png"
+                  full: "https://api.helioviewer.org/cache/movies/2026/06/25/w1Pj5/preview-full.png"
+                url: "https://api.helioviewer.org/cache/movies/2026/06/25/w1Pj5/2010_03_01_12_30_06_2010_03_04_12_06_06_EIT_304__LASCO_C2.mp4"
                 statusLabel: Completed
 
   /downloadMovie/:
@@ -705,9 +705,9 @@ paths:
 
         **Example Request**
 
-        .. code-block::
+        .. parsed-literal::
 
-            https://api.helioviewer.org/v2/downloadMovie/?id=VXvX5&format=mp4
+            `https://api.helioviewer.org/v2/downloadMovie/?id=w1Pj5&format=mp4 <https://api.helioviewer.org/v2/downloadMovie/?id=w1Pj5&format=mp4>`_
       operationId: downloadMovie
       parameters:
         - name: id
@@ -716,7 +716,7 @@ paths:
           description: Unique movie identifier.
           schema:
             type: string
-            example: VXvX5
+            example: w1Pj5
         - name: format
           in: query
           required: true
@@ -753,9 +753,9 @@ paths:
 
         **Example Request**
 
-        .. code-block::
+        .. parsed-literal::
 
-            https://api.helioviewer.org/v2/playMovie/?id=VXvX5&format=mp4&hq=true
+            `https://api.helioviewer.org/v2/playMovie/?id=w1Pj5&format=mp4&hq=true <https://api.helioviewer.org/v2/playMovie/?id=w1Pj5&format=mp4&hq=true>`_
       operationId: playMovie
       parameters:
         - name: id
@@ -815,15 +815,15 @@ paths:
 
         **Example Request** — JSON response with screenshot ID:
 
-        .. code-block::
+        .. parsed-literal::
 
-            https://api.helioviewer.org/v2/takeScreenshot/?date=2014-01-01T23:59:59Z&imageScale=2.4204409&layers=[SDO,AIA,AIA,335,1,100]&events=[AR,HMI_HARP;SPoCA,1],[CH,all,1]&eventsLabels=false&x0=0&y0=0&width=1920&height=1200
+            `https://api.helioviewer.org/v2/takeScreenshot/?date=2014-01-01T23:59:59Z&imageScale=2.4204409&layers=[SDO,AIA,AIA,335,1,100]&events=[AR,HMI_HARP;SPoCA,1],[CH,all,1]&eventsLabels=false&x0=0&y0=0&width=1920&height=1200 <https://api.helioviewer.org/v2/takeScreenshot/?date=2014-01-01T23:59:59Z&imageScale=2.4204409&layers=[SDO,AIA,AIA,335,1,100]&events=[AR,HMI_HARP;SPoCA,1],[CH,all,1]&eventsLabels=false&x0=0&y0=0&width=1920&height=1200>`_
 
         **Example Request** — PNG binary directly:
 
-        .. code-block::
+        .. parsed-literal::
 
-            https://api.helioviewer.org/v2/takeScreenshot/?imageScale=2.4204409&layers=[SDO,AIA,AIA,304,1,100]&events=[CH,all,1]&eventLabels=true&scale=true&scaleType=earth&scaleX=0&scaleY=0&date=2014-02-25T15:53:00.136Z&x1=-929.2475775696686&x2=106.70112763033143&y1=-970.7984919973343&y2=486.3069298026657&display=true&watermark=true
+            `https://api.helioviewer.org/v2/takeScreenshot/?imageScale=2.4204409&layers=[SDO,AIA,AIA,304,1,100]&events=[CH,all,1]&eventLabels=true&scale=true&scaleType=earth&scaleX=0&scaleY=0&date=2014-02-25T15:53:00.136Z&x1=-929.2475775696686&x2=106.70112763033143&y1=-970.7984919973343&y2=486.3069298026657&display=true&watermark=true <https://api.helioviewer.org/v2/takeScreenshot/?imageScale=2.4204409&layers=[SDO,AIA,AIA,304,1,100]&events=[CH,all,1]&eventLabels=true&scale=true&scaleType=earth&scaleX=0&scaleY=0&date=2014-02-25T15:53:00.136Z&x1=-929.2475775696686&x2=106.70112763033143&y1=-970.7984919973343&y2=486.3069298026657&display=true&watermark=true>`_
       operationId: takeScreenshot
       parameters:
         - $ref: '#/components/parameters/screenshotDate'
@@ -931,9 +931,9 @@ paths:
 
         **Example Request**
 
-        .. code-block::
+        .. parsed-literal::
 
-            https://api.helioviewer.org/v2/downloadScreenshot/?id=3240748
+            `https://api.helioviewer.org/v2/downloadScreenshot/?id=3240748 <https://api.helioviewer.org/v2/downloadScreenshot/?id=3240748>`_
       operationId: downloadScreenshot
       parameters:
         - name: id
@@ -962,9 +962,9 @@ paths:
 
         **Example Request**
 
-        .. code-block::
+        .. parsed-literal::
 
-            https://api.helioviewer.org/v2/getEclipseImage/
+            `https://api.helioviewer.org/v2/getEclipseImage/ <https://api.helioviewer.org/v2/getEclipseImage/>`_
       operationId: getEclipseImage
       parameters:
         - name: moon
@@ -995,9 +995,9 @@ paths:
 
         **Example Request**
 
-        .. code-block::
+        .. parsed-literal::
 
-            https://api.helioviewer.org/v2/getClosestImage/?date=2014-01-01T23:59:59Z&sourceId=14
+            `https://api.helioviewer.org/v2/getClosestImage/?date=2014-01-01T23:59:59Z&sourceId=14 <https://api.helioviewer.org/v2/getClosestImage/?date=2014-01-01T23:59:59Z&sourceId=14>`_
       operationId: getClosestImage
       parameters:
         - name: date
@@ -1047,9 +1047,9 @@ paths:
 
         **Example Request**
 
-        .. code-block::
+        .. parsed-literal::
 
-            https://api.helioviewer.org/v2/getDataSources/
+            `https://api.helioviewer.org/v2/getDataSources/ <https://api.helioviewer.org/v2/getDataSources/>`_
       operationId: getDataSources
       parameters:
         - name: verbose
@@ -1108,9 +1108,9 @@ paths:
 
         **Example Request**
 
-        .. code-block::
+        .. parsed-literal::
 
-            https://api.helioviewer.org/v2/getTile/?id=36275490&x=-1&y=-1&imageScale=2.42044088
+            `https://api.helioviewer.org/v2/getTile/?id=36275490&x=-1&y=-1&imageScale=2.42044088 <https://api.helioviewer.org/v2/getTile/?id=36275490&x=-1&y=-1&imageScale=2.42044088>`_
       operationId: getTile
       parameters:
         - name: id
@@ -1199,13 +1199,17 @@ paths:
       tags: [Official Clients]
       summary: Shorten a Helioviewer URL
       description: |
+        .. warning::
+
+            **This endpoint is obsolete and will go away in future versions**
+
         Shorten a Helioviewer.org URL using the bit.ly service.
 
         **Example Request**
 
-        .. code-block::
+        .. parsed-literal::
 
-            https://api.helioviewer.org/v2/shortenURL/?queryString=date%3D2014-02-25T15%3A18%3A07.000Z%26imageScale%3D2.4204409%26imageLayers%3D%255BSDO%2CAIA%2CAIA%2C304%2C1%2C100%255D
+            `https://api.helioviewer.org/v2/shortenURL/?queryString=date%3D2014-02-25T15%3A18%3A07.000Z%26imageScale%3D2.4204409%26imageLayers%3D%255BSDO%2CAIA%2CAIA%2C304%2C1%2C100%255D <https://api.helioviewer.org/v2/shortenURL/?queryString=date%3D2014-02-25T15%3A18%3A07.000Z%26imageScale%3D2.4204409%26imageLayers%3D%255BSDO%2CAIA%2CAIA%2C304%2C1%2C100%255D>`_
       operationId: shortenURL
       parameters:
         - name: queryString
@@ -1262,9 +1266,9 @@ paths:
 
         **Example Request**
 
-        .. code-block::
+        .. parsed-literal::
 
-            https://api.helioviewer.org/v2/events/?startTime=2023-03-30T00:00:00Z
+            `https://api.helioviewer.org/v2/events/?startTime=2023-03-30T00:00:00Z <https://api.helioviewer.org/v2/events/?startTime=2023-03-30T00:00:00Z>`_
       operationId: getEvents
       parameters:
         - name: startTime
@@ -1319,9 +1323,9 @@ paths:
 
         **Example Request**
 
-        .. code-block::
+        .. parsed-literal::
 
-            https://api.helioviewer.org/v2/checkYouTubeAuth/
+            `https://api.helioviewer.org/v2/checkYouTubeAuth/ <https://api.helioviewer.org/v2/checkYouTubeAuth/>`_
       operationId: checkYouTubeAuth
       parameters:
         - $ref: '#/components/parameters/callback'
@@ -1344,9 +1348,9 @@ paths:
 
         **Example Request**
 
-        .. code-block::
+        .. parsed-literal::
 
-            https://api.helioviewer.org/v2/getYouTubeAuth/?id=VXvX5&title=AIA%204500%20(2013-12-30%2016%3A00%3A07%20-%202014-01-27%2015%3A00%3A07%20UTC)&description=This%20movie%20was%20produced%20by%20Helioviewer.org&tags=SDO%2CAIA%2C4500&share=true
+            `https://api.helioviewer.org/v2/getYouTubeAuth/?id=VXvX5&title=AIA%204500%20(2013-12-30%2016%3A00%3A07%20-%202014-01-27%2015%3A00%3A07%20UTC)&description=This%20movie%20was%20produced%20by%20Helioviewer.org&tags=SDO%2CAIA%2C4500&share=true <https://api.helioviewer.org/v2/getYouTubeAuth/?id=VXvX5&title=AIA%204500%20(2013-12-30%2016%3A00%3A07%20-%202014-01-27%2015%3A00%3A07%20UTC)&description=This%20movie%20was%20produced%20by%20Helioviewer.org&tags=SDO%2CAIA%2C4500&share=true>`_
       operationId: getYouTubeAuth
       parameters:
         - name: id
@@ -1466,9 +1470,9 @@ paths:
 
         **Example Request**
 
-        .. code-block::
+        .. parsed-literal::
 
-            https://api.helioviewer.org/v2/getUserVideos/?num=2
+            `https://api.helioviewer.org/v2/getUserVideos/?num=2 <https://api.helioviewer.org/v2/getUserVideos/?num=2>`_
       operationId: getUserVideos
       parameters:
         - name: num
@@ -1536,9 +1540,9 @@ paths:
 
         **Example Request**
 
-        .. code-block::
+        .. parsed-literal::
 
-            https://api.helioviewer.org/v2/getNewsFeed/
+            `https://api.helioviewer.org/v2/getNewsFeed/ <https://api.helioviewer.org/v2/getNewsFeed/>`_
       operationId: getNewsFeed
       parameters:
         - $ref: '#/components/parameters/callback'
