@@ -13,7 +13,7 @@
     <script type="text/javascript" src="https://www.google.com/jsapi"></script>
     <script type="text/javascript" src="statistics.js?v=<?php echo md5_file(__DIR__ . '/statistics.js'); ?>"></script>
     <title>Helioviewer.org - Usage Statistics</title>
-    <link rel='stylesheet' href='statistics.css' />
+    <link rel='stylesheet' href='statistics.css?v=<?php echo md5_file(__DIR__ . "/statistics.css"); ?>' />
     <script type="text/javascript">
         google.load("jquery", "1.5");
         google.load("visualization", "1", {packages:["corechart"]});
@@ -39,6 +39,9 @@
             <div id='headerText'>The Helioviewer Project - Recent Activity</div>
         </div>
         <div id="overview"></div>
+        <div id="dashboard-links">
+            <a href="statistics.php">New Statistics Dashboard</a>
+        </div>
         <div id="visualizations">
             <div id="pieChartsGroup">
                 <div id="versionsChart"></div>
