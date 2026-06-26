@@ -60,7 +60,7 @@ paths:
           description: ID of the image to download
           schema:
             type: integer
-            example: 7654321
+            example: 189536650
         - name: width
           in: query
           required: false
@@ -126,7 +126,7 @@ paths:
           description: Unique JP2 image identifier
           schema:
             type: integer
-            example: 7654321
+            example: 189536650
         - name: callback
           in: query
           required: false
