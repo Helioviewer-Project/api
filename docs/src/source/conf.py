@@ -18,7 +18,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'Helioviewer API V2'
-copyright = '2022, The Helioviewer Project'
+copyright = '2026, The Helioviewer Project'
 author = 'The Helioviewer Project'
 
 

@@ -20,9 +20,4 @@ about the available datasources and working with coordinates.
    api/index.rst
    appendix.rst
 
-.. Indices and tables
-.. ==================
 
-.. * :ref:`genindex`
-.. * :ref:`modindex`
-.. * :ref:`search`
