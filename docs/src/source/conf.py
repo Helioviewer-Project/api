@@ -72,6 +72,7 @@ html_theme = 'sphinx_rtd_theme'
 
 html_static_path = ['_static']
 html_style = 'css/custom.css'
+html_js_files = ['js/new-tab-links.js']
 
 # Default unlabeled code blocks to plain text so URLs aren't auto-detected as
 # Python and styled accordingly.
