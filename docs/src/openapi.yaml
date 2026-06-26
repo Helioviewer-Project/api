@@ -1264,11 +1264,29 @@ paths:
         Returns a list of HEK events in the Helioviewer event format.
         Event-specific data conforms to the HEK Event Specification.
 
+        When ``format=simpletree`` is requested, that flat payload is re-shaped into
+        a single-level map whose keys are ``SOURCE>>Label`` strings (one per known
+        event type for the requested sources) and whose values are arrays of the
+        matching events. Empty buckets are kept so the client can render the full
+        catalogue regardless of what's in the response.
+
         **Example Request**
 
         .. parsed-literal::
 
             `https://api.helioviewer.org/v2/events/?startTime=2023-03-30T00:00:00Z <https://api.helioviewer.org/v2/events/?startTime=2023-03-30T00:00:00Z>`_
+
+        **Example simpletree Request**
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/events/?startTime=2023-03-30T00:00:00Z&sources=HEK&format=simpletree <https://api.helioviewer.org/v2/events/?startTime=2023-03-30T00:00:00Z&sources=HEK&format=simpletree>`_
+
+        **Example flat Request**
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/events/?startTime=2023-03-30T00:00:00Z&sources=HEK&format=flat <https://api.helioviewer.org/v2/events/?startTime=2023-03-30T00:00:00Z&sources=HEK&format=flat>`_
       operationId: getEvents
       parameters:
         - name: startTime
@@ -1288,6 +1306,21 @@ paths:
           schema:
             type: string
             example: "HEK,DONKI"
+        - name: format
+          in: query
+          required: false
+          description: >
+            Output shape. ``tree`` (default) returns the legacy nested
+            category/group structure described in the Helioviewer event format.
+            ``simpletree`` buckets the flat response into a one-level
+            ``SOURCE>>Label`` map keyed by event type. ``flat`` returns the new
+            v1 per-source response (one object per event with no category
+            nesting).
+          schema:
+            type: string
+            enum: [tree, simpletree, flat]
+            default: tree
+            example: simpletree
       responses:
         "200":
           description: Array of solar event groups.
@@ -1297,19 +1330,47 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/EventGroup'
-              example:
-                - name: Active Region
-                  pin: AR
-                  groups:
-                    - name: NOAA SWPC Observer
-                      contact: "http://www.swpc.noaa.gov/"
-                      url: "N/A"
-                      data:
-                        - active: "true"
-                          area_atdiskcenter: 213057280
-                          area_unit: km2
-                          ar_mcintoshcls: HAX
-                          ar_mtwilsoncls: ALPHA
+              examples:
+                tree:
+                  summary: Default tree format
+                  value:
+                    - name: Active Region
+                      pin: AR
+                      groups:
+                        - name: NOAA SWPC Observer
+                          contact: "http://www.swpc.noaa.gov/"
+                          url: "N/A"
+                          data:
+                            - active: "true"
+                              area_atdiskcenter: 213057280
+                              area_unit: km2
+                              ar_mcintoshcls: HAX
+                              ar_mtwilsoncls: ALPHA
+                simpletree:
+                  summary: format=simpletree
+                  value:
+                    "HEK>>Active Region":
+                      - concept: Active Region
+                        frm_name: NOAA SWPC Observer
+                        path: "HEK>>Active Region>>NOAA SWPC Observer"
+                        pin: AR
+                    "HEK>>CME": []
+                    "HEK>>Coronal Hole":
+                      - concept: Coronal Hole
+                        frm_name: SPoCA
+                        path: "HEK>>Coronal Hole>>SPoCA"
+                    "HEK>>Flare": []
+                    "HEK>>Sunspot": []
+                flat:
+                  summary: format=flat
+                  value:
+                    - concept: Active Region
+                      frm_name: NOAA SWPC Observer
+                      path: "HEK>>Active Region>>NOAA SWPC Observer"
+                      pin: AR
+                    - concept: Coronal Hole
+                      frm_name: SPoCA
+                      path: "HEK>>Coronal Hole>>SPoCA"
 
   # ── YOUTUBE ──────────────────────────────────────────────────────────────
 
