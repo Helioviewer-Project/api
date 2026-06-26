@@ -18,7 +18,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'Helioviewer API V2'
-copyright = '2022, The Helioviewer Project'
+copyright = '2026, The Helioviewer Project'
 author = 'The Helioviewer Project'
 
 
@@ -28,8 +28,27 @@ author = 'The Helioviewer Project'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx_rtd_theme'
+    'sphinx_rtd_theme',
+    'sphinx_rtd_dark_mode',
+    'sphinxcontrib.openapi',
 ]
+
+# sphinxcontrib-openapi's :examples: flag renders both response examples and
+# auto-generated request examples in raw HTTP wire format (e.g.
+# `GET /foo HTTP/1.1\nHost: example.com`). We want the response examples but
+# write request examples by hand in each operation's description, so suppress
+# the auto-generated request example.
+import sphinxcontrib.openapi.openapi30 as _openapi30
+_orig_example = _openapi30._example
+
+def _example_responses_only(media_type_objects, method=None, endpoint=None,
+                            status=None, nb_indent=0):
+    if method is not None:
+        return iter(())
+    return _orig_example(media_type_objects, method=method, endpoint=endpoint,
+                         status=status, nb_indent=nb_indent)
+
+_openapi30._example = _example_responses_only
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -50,6 +69,11 @@ html_theme = 'sphinx_rtd_theme'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-# html_static_path = ['appendix/images']
 
-pygments_style = 'solarized-dark'
+html_static_path = ['_static']
+html_style = 'css/custom.css'
+html_js_files = ['js/new-tab-links.js']
+
+# Default unlabeled code blocks to plain text so URLs aren't auto-detected as
+# Python and styled accordingly.
+highlight_language = 'text'

@@ -1,17 +1,14 @@
-API Groups
-==========
+API Reference
+=============
 
-The API is organized into several groups related to performing specific tasks.
-These are the available groups of APIs:
+The Helioviewer API is organized into groups of related endpoints. The reference
+below is generated from the OpenAPI specification and grouped by tag.
 
-.. toctree::
-   :maxdepth: 10
-   :caption: Contents:
+For a complete list of all endoings, see :ref:`http-routingtable`.
 
-   api_groups/jpeg2000
-   api_groups/movies
-   api_groups/screenshots
-   api_groups/solar_features_and_events
-   api_groups/youtube
-   api_groups/official_clients
-   api_groups/web_site
+For an interactive "Try it out" experience, see the
+`API Playground </docs/v2/playground>`_.
+
+.. openapi:: ../../openapi.yaml
+   :group:
+   :examples:

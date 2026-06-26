@@ -73,3 +73,4 @@ docroot/status.xml
 py_env
 py_venv_local_sunpy
 vendor
+docroot/playground

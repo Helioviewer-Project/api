@@ -1,0 +1,2408 @@
+openapi: 3.0.3
+info:
+  title: Helioviewer API
+  description: >
+    The Helioviewer API provides access to solar image data, JPEG2000 images,
+    movies, screenshots, and solar feature/event information from various
+    space observatories.
+  version: "2"
+  contact:
+    name: Helioviewer Project
+    url: https://helioviewer.org
+    email: webmaster@helioviewer.org
+servers:
+  - url: https://api.helioviewer.org/v2
+    description: Production server
+  - url: https://api.beta.helioviewer.org/v2
+    description: Beta server
+  - url: https://helioviewer-api.ias.u-psud.fr/v2
+    description: IAS Mirror
+
+tags:
+  - name: JPEG2000
+    description: Access and download JPEG2000 solar image data
+  - name: Movies
+    description: Generate, queue, and download custom solar movies
+  - name: Screenshots
+    description: Generate and download custom solar screenshots
+  - name: Official Clients
+    description: Endpoints intended for use by official Helioviewer clients
+  - name: Solar Features & Events
+    description: Solar feature and event data from HEK and DONKI
+  - name: YouTube
+    description: Share movies to YouTube
+  - name: Website
+    description: Website utility endpoints
+
+paths:
+
+  # ── JPEG2000 ─────────────────────────────────────────────────────────────
+
+  /downloadImage/:
+    get:
+      tags: [JPEG2000]
+      summary: Download a colorized image
+      description: |
+        Download a specific JP2 image colorized and converted to PNG, JPG, or
+        WebP. If the requested size is larger than the source image, no
+        upscaling is performed.
+
+        **Example Request**
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/downloadImage/?id=189536650 <https://api.helioviewer.org/v2/downloadImage/?id=189536650>`_
+      operationId: downloadImage
+      parameters:
+        - name: id
+          in: query
+          required: true
+          description: ID of the image to download
+          schema:
+            type: integer
+            example: 189536650
+        - name: width
+          in: query
+          required: false
+          description: >
+            Desired width of the resulting image. Takes priority over the
+            `scale` option.
+          schema:
+            type: integer
+            example: 1024
+        - name: scale
+          in: query
+          required: false
+          description: >
+            Ratio of the original image size to the downloaded image size.
+            1 = original, 2 = half size, 3 = one-third size, etc.
+            Ignored if `width` is provided.
+          schema:
+            type: integer
+            example: 4
+        - name: type
+          in: query
+          required: false
+          description: "Output image format. Options: jpg, png, webp."
+          schema:
+            type: string
+            enum: [jpg, png, webp]
+            example: jpg
+      responses:
+        "200":
+          description: Image binary data
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+
+  /getJP2Header/:
+    get:
+      tags: [JPEG2000]
+      summary: Get JP2 image XML header
+      description: |
+        Get the XML header embedded in a JPEG2000 image, including the FITS
+        header and Helioviewer-specific metadata.
+
+        **Example Request**
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/getJP2Header/?id=189536650 <https://api.helioviewer.org/v2/getJP2Header/?id=189536650>`_
+      operationId: getJP2Header
+      parameters:
+        - name: id
+          in: query
+          required: true
+          description: Unique JP2 image identifier
+          schema:
+            type: integer
+            example: 189536650
+        - name: callback
+          in: query
+          required: false
+          description: Wrap the response in a named JavaScript function call (JSONP).
+          schema:
+            type: string
+      responses:
+        "200":
+          description: XML header string
+          content:
+            text/xml:
+              schema:
+                type: string
+                example: |
+                  <?xml version="1.0" encoding="utf-8"?>
+                  <meta><fits>...</fits><helioviewer>...</helioviewer></meta>
+
+  /getJP2Image:
+    get:
+      tags: [JPEG2000]
+      summary: Download JP2 image closest to a given date
+      description: |
+        Download the JP2 image for the specified datasource that is closest in
+        time to the requested date. By default returns binary JP2 data. Set
+        ``jpip=true`` for a JPIP URI, and additionally ``json=true`` for a JSON
+        response.
+
+        **Example Request** — binary JP2 image data (default):
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/getJP2Image/?date=2014-01-01T23:59:59Z&sourceId=14 <https://api.helioviewer.org/v2/getJP2Image/?date=2014-01-01T23:59:59Z&sourceId=14>`_
+
+        **Example Request** — JPIP URI as plain text:
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/getJP2Image/?date=2014-01-01T23:59:59Z&sourceId=14&jpip=true <https://api.helioviewer.org/v2/getJP2Image/?date=2014-01-01T23:59:59Z&sourceId=14&jpip=true>`_
+
+        **Example Request** — JPIP URI as JSON:
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/getJP2Image/?date=2014-01-01T23:59:59Z&sourceId=14&jpip=true&json=true <https://api.helioviewer.org/v2/getJP2Image/?date=2014-01-01T23:59:59Z&sourceId=14&jpip=true&json=true>`_
+      operationId: getJP2Image
+      parameters:
+        - name: date
+          in: query
+          required: true
+          description: "Desired date/time of the JP2 image. ISO 8601 UTC format."
+          schema:
+            type: string
+            format: date-time
+            example: "2014-01-01T23:59:59Z"
+        - name: sourceId
+          in: query
+          required: true
+          description: Unique image datasource identifier.
+          schema:
+            type: integer
+            example: 14
+        - name: jpip
+          in: query
+          required: false
+          description: Return a JPIP URI instead of binary image data.
+          schema:
+            type: boolean
+            default: false
+        - name: json
+          in: query
+          required: false
+          description: Return a JSON object (only meaningful when `jpip=true`).
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: JP2 binary data, a JPIP URI string, or a JSON object.
+          content:
+            image/jp2:
+              schema:
+                type: string
+                format: binary
+            text/plain:
+              schema:
+                type: string
+              example: "jpip://api.helioviewer.org:8090/AIA/2014/01/02/335/2014_01_02__00_00_02_62__SDO_AIA_AIA_335.jp2"
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uri:
+                    type: string
+                    description: JPIP protocol link to JP2 image.
+              example:
+                uri: "jpip://api.helioviewer.org:8090/AIA/2014/01/02/335/2014_01_02__00_00_02_62__SDO_AIA_AIA_335.jp2"
+
+  /getJPX/:
+    get:
+      tags: [JPEG2000]
+      summary: Generate and download a JPX movie
+      description: |
+        Generate and optionally download a custom JPX movie for the specified
+        datasource. Without ``jpip`` or ``verbose``, returns binary JPX data.
+
+        **Example Request** — binary JPX movie data:
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14 <https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14>`_
+
+        **Example Request** — JPIP URI as plain text:
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14&jpip=true <https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14&jpip=true>`_
+
+        **Example Request** — JPIP URI in JSON with frame timestamps:
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14&jpip=true&verbose=true <https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14&jpip=true&verbose=true>`_
+
+        **Example Request** — HTTP URI in JSON with frame timestamps:
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14&verbose=true <https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14&verbose=true>`_
+      operationId: getJPX
+      parameters:
+        - name: startTime
+          in: query
+          required: true
+          description: "Start date/time of the JPX movie. ISO 8601 UTC format."
+          schema:
+            type: string
+            format: date-time
+            example: "2014-01-01T00:00:00Z"
+        - name: endTime
+          in: query
+          required: true
+          description: "End date/time of the JPX movie. ISO 8601 UTC format."
+          schema:
+            type: string
+            format: date-time
+            example: "2014-01-01T00:45:00Z"
+        - name: sourceId
+          in: query
+          required: true
+          description: Unique image datasource identifier.
+          schema:
+            type: integer
+            example: 14
+        - name: linked
+          in: query
+          required: false
+          description: >
+            Generate a linked JPX file containing image pointers rather than
+            full frame data.
+          schema:
+            type: boolean
+            default: false
+        - name: verbose
+          in: query
+          required: false
+          description: >
+            Include frame timestamps and warning messages in the JSON response.
+          schema:
+            type: boolean
+            default: false
+        - name: jpip
+          in: query
+          required: false
+          description: Return a JPIP URI instead of binary data.
+          schema:
+            type: boolean
+            default: false
+        - name: cadence
+          in: query
+          required: false
+          description: >
+            Desired time (in seconds) between each frame. If omitted, the
+            server selects an optimal cadence.
+          schema:
+            type: integer
+            example: 12
+      responses:
+        "200":
+          description: JPX binary data, a JPIP URI string, or a JSON object.
+          content:
+            image/jpx:
+              schema:
+                type: string
+                format: binary
+            text/plain:
+              schema:
+                type: string
+              example: "jpip://api.helioviewer.org:8090/movies/SDO_AIA_335_F2014-01-01T00.00.00Z_T2014-01-01T00.45.00Z.jpx"
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JpxResponse'
+              example:
+                message: "Movie cadence has been changed to one image every 1284 seconds in order to avoid exceeding the maximum allowed number of frames (1000) between the requested start and end dates."
+                uri: "http://api.helioviewer.org/jp2/movies/SOHO_MDI_MDI_magnetogram_F2003-10-05T00.00.00Z_T2003-10-20T00.00.00ZB1L.jpx"
+                frames: [1065323703, 1065329463, 1066602183, 1066607943]
+
+  /getJPXClosestToMidPoint/:
+    get:
+      tags: [JPEG2000]
+      summary: Generate a JPX movie with one frame per time interval
+      description: |
+        Generate a JPX movie with one frame per pair of startTimes/endTimes,
+        selecting the image closest to the midpoint of each interval.
+        Maximum 360 timestamps per request.
+
+        **Example Request** — binary JPX movie data:
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/getJPXClosestToMidPoint/?startTimes=1306886400,1306887000,1306887600&endTimes=1306886700,1306887300,1306887900&sourceId=14 <https://api.helioviewer.org/v2/getJPXClosestToMidPoint/?startTimes=1306886400,1306887000,1306887600&endTimes=1306886700,1306887300,1306887900&sourceId=14>`_
+
+        **Example Request** — JPIP URI in JSON:
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/getJPXClosestToMidPoint/?startTimes=1306886400,1306887000,1306887600&endTimes=1306886700,1306887300,1306887900&sourceId=14&jpip=true&verbose=true <https://api.helioviewer.org/v2/getJPXClosestToMidPoint/?startTimes=1306886400,1306887000,1306887600&endTimes=1306886700,1306887300,1306887900&sourceId=14&jpip=true&verbose=true>`_
+      operationId: getJPXClosestToMidPoint
+      parameters:
+        - name: startTimes
+          in: query
+          required: true
+          description: >
+            Comma-separated Unix timestamps for the start of each interval
+            (max 360).
+          schema:
+            type: string
+            example: "1306886400,1306887000,1306887600"
+        - name: endTimes
+          in: query
+          required: true
+          description: >
+            Comma-separated Unix timestamps for the end of each interval
+            (max 360).
+          schema:
+            type: string
+            example: "1306886700,1306887300,1306887900"
+        - name: sourceId
+          in: query
+          required: true
+          description: Unique image datasource identifier.
+          schema:
+            type: integer
+            example: 14
+        - name: linked
+          in: query
+          required: false
+          description: Generate a linked JPX file containing image pointers.
+          schema:
+            type: boolean
+            default: false
+        - name: verbose
+          in: query
+          required: false
+          description: Include frame timestamps and warnings in the JSON response.
+          schema:
+            type: boolean
+            default: false
+        - name: jpip
+          in: query
+          required: false
+          description: Return a JPIP URI instead of binary data.
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: JPX binary data, a JPIP URI string, or a JSON object.
+          content:
+            image/jpx:
+              schema:
+                type: string
+                format: binary
+            text/plain:
+              schema:
+                type: string
+              example: "jpip://api.helioviewer.org:8090/movies/SDO_AIA_335_F2011-06-01T00.00.00Z_T2011-06-01T00.25.00Z.jpx"
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JpxResponse'
+              example:
+                frames: [1306886547, 1306887735]
+                message: null
+                uri: "jpip://api.helioviewer.org:8090/movies/SDO_AIA_335_F2011-06-01T00.00.00Z_T2011-06-01T00.25.00Z.jpx"
+
+  /getStatus/:
+    get:
+      tags: [JPEG2000]
+      summary: Get JPEG2000 data ingestion status
+      description: |
+        Returns information about how far behind the latest available JPEG2000
+        images are for each instrument.
+
+        **Example Request**
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/getStatus/ <https://api.helioviewer.org/v2/getStatus/>`_
+      operationId: getStatus
+      responses:
+        "200":
+          description: Status object keyed by instrument name.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/InstrumentStatus'
+              example:
+                AIA:
+                  time: "2021-12-08T10:01:57Z"
+                  level: 5
+                  secondsBehind: 1745203
+                  measurement: "AIA 171"
+
+  # ── MOVIES ───────────────────────────────────────────────────────────────
+
+  /queueMovie/:
+    get:
+      tags: [Movies]
+      summary: Queue a custom movie (GET)
+      description: |
+        Submit a request to the movie generation queue and receive a unique
+        Movie ID. Use ``getMovieStatus`` to poll for completion and
+        ``downloadMovie`` to retrieve the file.
+
+        **Example Request**
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/queueMovie/?startTime=2010-03-01T12:12:12Z&endTime=2010-03-04T12:12:12Z&layers=[3,1,100],[4,1,100]&events=[AR,HMI_HARP;SPoCA,1],[CH,all,1]&eventsLabels=false&imageScale=21.04&x1=-5000&y1=-5000&x2=5000&y2=5000 <https://api.helioviewer.org/v2/queueMovie/?startTime=2010-03-01T12:12:12Z&endTime=2010-03-04T12:12:12Z&layers=[3,1,100],[4,1,100]&events=[AR,HMI_HARP;SPoCA,1],[CH,all,1]&eventsLabels=false&imageScale=21.04&x1=-5000&y1=-5000&x2=5000&y2=5000>`_
+      operationId: queueMovie
+      parameters:
+        - $ref: '#/components/parameters/movieStartTime'
+        - $ref: '#/components/parameters/movieEndTime'
+        - $ref: '#/components/parameters/movieLayers'
+        - name: events
+          in: query
+          required: true
+          description: >
+            Comma-separated list of feature/event type annotations
+            (e.g. `[AR,HMI_HARP;SPoCA,1],[CH,all,1]`). Use an empty string for
+            no annotations.
+          schema:
+            type: string
+            example: "[AR,HMI_HARP;SPoCA,1],[CH,all,1]"
+        - name: eventsLabels
+          in: query
+          required: true
+          description: Annotate each event marker with a text label.
+          schema:
+            type: boolean
+            example: false
+        - $ref: '#/components/parameters/movieImageScale'
+        - $ref: '#/components/parameters/movieFormat'
+        - $ref: '#/components/parameters/movieFrameRate'
+        - $ref: '#/components/parameters/movieMaxFrames'
+        - $ref: '#/components/parameters/movieScale'
+        - $ref: '#/components/parameters/movieScaleType'
+        - $ref: '#/components/parameters/movieScaleX'
+        - $ref: '#/components/parameters/movieScaleY'
+        - $ref: '#/components/parameters/movieLength'
+        - $ref: '#/components/parameters/movieWatermark'
+        - $ref: '#/components/parameters/movieWidth'
+        - $ref: '#/components/parameters/movieHeight'
+        - $ref: '#/components/parameters/movieX0'
+        - $ref: '#/components/parameters/movieY0'
+        - $ref: '#/components/parameters/movieX1'
+        - $ref: '#/components/parameters/movieY1'
+        - $ref: '#/components/parameters/movieX2'
+        - $ref: '#/components/parameters/movieY2'
+        - $ref: '#/components/parameters/callback'
+        - $ref: '#/components/parameters/movieSize'
+        - $ref: '#/components/parameters/movieIcons'
+        - $ref: '#/components/parameters/followViewport'
+        - $ref: '#/components/parameters/reqObservationDate'
+      responses:
+        "200":
+          description: Queued movie response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueMovieResponse'
+              example:
+                id: z6vX5
+                eta: 376
+                queue: 0
+                token: 50e0d98f645b42d159ec1c8a1e15de3e
+
+  /postMovie/:
+    post:
+      tags: [Movies]
+      summary: Queue a custom movie (POST)
+      description: |
+        Create a custom movie by submitting a JSON body to the movie generation
+        queue. Returns a unique Movie ID.
+
+        **Example Request Body**
+
+        .. code-block:: json
+
+            {
+                "startTime":   "2010-03-01T12:12:12Z",
+                "endTime":     "2010-03-04T12:12:12Z",
+                "imageScale":  21.04,
+                "layers":      "[3,1,100]",
+                "eventsState": {
+                    "tree_HEK": {
+                        "labels_visible": true,
+                        "layers": [
+                            {
+                                "event_type": "flare",
+                                "frms": ["frm10", "frm20"],
+                                "event_instances": ["flare--frm1--event1", "flare--frm2--event2"]
+                            }
+                        ]
+                    }
+                },
+                "x1": -5000,
+                "y1": -5000,
+                "x2":  5000,
+                "y2":  5000
+            }
+      operationId: postMovie
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostMovieRequest'
+      responses:
+        "200":
+          description: Queued movie response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueMovieResponse'
+              example:
+                id: z6vX5
+                eta: 376
+                queue: 0
+                token: 50e0d98f645b42d159ec1c8a1e15de3e
+
+  /reQueueMovie/:
+    get:
+      tags: [Movies]
+      summary: Re-generate an expired movie
+      description: |
+        Re-generate a custom movie that is no longer cached on disk. Use the
+        returned Movie ID with ``getMovieStatus`` and ``downloadMovie``.
+
+        **Example Request**
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/reQueueMovie/?id=w1Pj5 <https://api.helioviewer.org/v2/reQueueMovie/?id=w1Pj5>`_
+      operationId: reQueueMovie
+      parameters:
+        - name: id
+          in: query
+          required: true
+          description: Unique movie identifier.
+          schema:
+            type: string
+            example: w1Pj5
+        - name: force
+          in: query
+          required: false
+          description: Force rebuild even if a cached copy exists.
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: Queued movie response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueMovieResponse'
+              example:
+                id: w1Pj5
+                eta: 285
+                queue: 0
+                token: 4673d6db4e2a3365ab361267f2a9a112
+
+  /getMovieStatus/:
+    get:
+      tags: [Movies]
+      summary: Check movie generation status
+      description: |
+        Returns metadata and generation status for a user-generated movie.
+        Status codes: 0=queued, 1=processing, 2=finished, 3=invalid.
+
+        **Example Request**
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/getMovieStatus/?id=w1Pj5&format=mp4 <https://api.helioviewer.org/v2/getMovieStatus/?id=w1Pj5&format=mp4>`_
+
+        **Example Request** — verbose with JSONP callback:
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/getMovieStatus/?id=w1Pj5&format=webm&verbose=true&callback=callbackTest <https://api.helioviewer.org/v2/getMovieStatus/?id=w1Pj5&format=webm&verbose=true&callback=callbackTest>`_
+      operationId: getMovieStatus
+      parameters:
+        - name: id
+          in: query
+          required: true
+          description: Unique movie identifier.
+          schema:
+            type: string
+            example: w1Pj5
+        - name: format
+          in: query
+          required: true
+          description: Movie format.
+          schema:
+            type: string
+            enum: [mp4, webm]
+            example: mp4
+        - name: verbose
+          in: query
+          required: false
+          description: Include extra metadata in the response.
+          schema:
+            type: boolean
+            default: false
+        - $ref: '#/components/parameters/callback'
+        - name: token
+          in: query
+          required: false
+          description: Handle to job in the movie builder queue.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Movie status object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovieStatus'
+              example:
+                frameRate: 15
+                numFrames: 175
+                startDate: "2010-03-01 12:30:06"
+                status: 2
+                endDate: "2010-03-04 12:06:06"
+                width: 476
+                height: 476
+                title: "SOHO EIT 304, SOHO LASCO C2 white-light (2010-03-01 12:30:06 - 12:06:06 UTC)"
+                thumbnails:
+                  icon: "https://api.helioviewer.org/cache/movies/2026/06/25/w1Pj5/preview-icon.png"
+                  small: "https://api.helioviewer.org/cache/movies/2026/06/25/w1Pj5/preview-small.png"
+                  medium: "https://api.helioviewer.org/cache/movies/2026/06/25/w1Pj5/preview-medium.png"
+                  large: "https://api.helioviewer.org/cache/movies/2026/06/25/w1Pj5/preview-large.png"
+                  full: "https://api.helioviewer.org/cache/movies/2026/06/25/w1Pj5/preview-full.png"
+                url: "https://api.helioviewer.org/cache/movies/2026/06/25/w1Pj5/2010_03_01_12_30_06_2010_03_04_12_06_06_EIT_304__LASCO_C2.mp4"
+                statusLabel: Completed
+
+  /downloadMovie/:
+    get:
+      tags: [Movies]
+      summary: Download a generated movie
+      description: |
+        Download a custom movie in mp4 or webm format.
+
+        **Example Request**
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/downloadMovie/?id=w1Pj5&format=mp4 <https://api.helioviewer.org/v2/downloadMovie/?id=w1Pj5&format=mp4>`_
+      operationId: downloadMovie
+      parameters:
+        - name: id
+          in: query
+          required: true
+          description: Unique movie identifier.
+          schema:
+            type: string
+            example: w1Pj5
+        - name: format
+          in: query
+          required: true
+          description: Movie format.
+          schema:
+            type: string
+            enum: [mp4, webm]
+            example: mp4
+        - name: hq
+          in: query
+          required: false
+          description: Download higher-quality version (mp4 only).
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Movie binary data.
+          content:
+            video/mp4:
+              schema:
+                type: string
+                format: binary
+            video/webm:
+              schema:
+                type: string
+                format: binary
+
+  /playMovie/:
+    get:
+      tags: [Movies]
+      summary: Get an HTML page with the movie embedded
+      description: |
+        Returns an HTML page with the requested movie embedded in a player.
+
+        **Example Request**
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/playMovie/?id=w1Pj5&format=mp4&hq=true <https://api.helioviewer.org/v2/playMovie/?id=w1Pj5&format=mp4&hq=true>`_
+      operationId: playMovie
+      parameters:
+        - name: id
+          in: query
+          required: true
+          description: Unique movie identifier.
+          schema:
+            type: string
+            example: VXvX5
+        - name: format
+          in: query
+          required: true
+          description: Movie format.
+          schema:
+            type: string
+            enum: [mp4, webm]
+            example: mp4
+        - name: hq
+          in: query
+          required: false
+          description: Use higher-quality version (mp4 only).
+          schema:
+            type: boolean
+        - name: width
+          in: query
+          required: false
+          description: Width of the embedded player in pixels.
+          schema:
+            type: integer
+            example: 846
+        - name: height
+          in: query
+          required: false
+          description: Height of the embedded player in pixels.
+          schema:
+            type: integer
+            example: 820
+      responses:
+        "200":
+          description: HTML page with embedded movie player.
+          content:
+            text/html:
+              schema:
+                type: string
+
+  # ── SCREENSHOTS ──────────────────────────────────────────────────────────
+
+  /takeScreenshot/:
+    get:
+      tags: [Screenshots]
+      summary: Generate a custom screenshot (GET)
+      description: |
+        Generate a custom screenshot. Specify the field of view using either
+        (``x1``, ``y1``, ``x2``, ``y2``) or (``x0``, ``y0``, ``width``,
+        ``height``). By default returns a JSON object with a screenshot ``id``;
+        set ``display=true`` to receive the PNG binary directly.
+
+        **Example Request** — JSON response with screenshot ID:
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/takeScreenshot/?date=2014-01-01T23:59:59Z&imageScale=2.4204409&layers=[SDO,AIA,AIA,335,1,100]&events=[AR,HMI_HARP;SPoCA,1],[CH,all,1]&eventsLabels=false&x0=0&y0=0&width=1920&height=1200 <https://api.helioviewer.org/v2/takeScreenshot/?date=2014-01-01T23:59:59Z&imageScale=2.4204409&layers=[SDO,AIA,AIA,335,1,100]&events=[AR,HMI_HARP;SPoCA,1],[CH,all,1]&eventsLabels=false&x0=0&y0=0&width=1920&height=1200>`_
+
+        **Example Request** — PNG binary directly:
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/takeScreenshot/?imageScale=2.4204409&layers=[SDO,AIA,AIA,304,1,100]&events=[CH,all,1]&eventLabels=true&scale=true&scaleType=earth&scaleX=0&scaleY=0&date=2014-02-25T15:53:00.136Z&x1=-929.2475775696686&x2=106.70112763033143&y1=-970.7984919973343&y2=486.3069298026657&display=true&watermark=true <https://api.helioviewer.org/v2/takeScreenshot/?imageScale=2.4204409&layers=[SDO,AIA,AIA,304,1,100]&events=[CH,all,1]&eventLabels=true&scale=true&scaleType=earth&scaleX=0&scaleY=0&date=2014-02-25T15:53:00.136Z&x1=-929.2475775696686&x2=106.70112763033143&y1=-970.7984919973343&y2=486.3069298026657&display=true&watermark=true>`_
+      operationId: takeScreenshot
+      parameters:
+        - $ref: '#/components/parameters/screenshotDate'
+        - $ref: '#/components/parameters/screenshotImageScale'
+        - $ref: '#/components/parameters/screenshotLayers'
+        - name: events
+          in: query
+          required: false
+          description: >
+            Feature/event annotations (e.g. `[AR,HMI_HARP;SPoCA,1],[CH,all,1]`).
+          schema:
+            type: string
+        - name: eventLabels
+          in: query
+          required: false
+          description: Annotate each event marker with a text label.
+          schema:
+            type: boolean
+        - $ref: '#/components/parameters/screenshotScale'
+        - $ref: '#/components/parameters/screenshotScaleType'
+        - $ref: '#/components/parameters/screenshotScaleX'
+        - $ref: '#/components/parameters/screenshotScaleY'
+        - $ref: '#/components/parameters/screenshotWidth'
+        - $ref: '#/components/parameters/screenshotHeight'
+        - $ref: '#/components/parameters/screenshotX0'
+        - $ref: '#/components/parameters/screenshotY0'
+        - $ref: '#/components/parameters/screenshotX1'
+        - $ref: '#/components/parameters/screenshotY1'
+        - $ref: '#/components/parameters/screenshotX2'
+        - $ref: '#/components/parameters/screenshotY2'
+        - $ref: '#/components/parameters/screenshotDisplay'
+        - $ref: '#/components/parameters/screenshotWatermark'
+        - $ref: '#/components/parameters/callback'
+      responses:
+        "200":
+          description: Screenshot ID or PNG binary.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScreenshotResponse'
+              example:
+                id: 3285980
+            image/png:
+              schema:
+                type: string
+                format: binary
+
+  /postScreenshot/:
+    post:
+      tags: [Screenshots]
+      summary: Generate a custom screenshot (POST)
+      description: |
+        Generate a custom screenshot via a JSON POST request. Specify the field
+        of view with (``x1``, ``y1``, ``x2``, ``y2``) or (``x0``, ``y0``,
+        ``width``, ``height``). Set ``display=true`` to receive the PNG binary
+        directly.
+
+        **Example Request Body** — JSON response with screenshot ID:
+
+        .. code-block:: json
+
+            {
+                "date":       "2014-01-01T23:59:59Z",
+                "imageScale": 2.4204409,
+                "layers":     "[3,1,100]"
+            }
+
+        **Example Request Body** — PNG binary directly:
+
+        .. code-block:: json
+
+            {
+                "date":       "2014-01-01T23:59:59Z",
+                "imageScale": 2.4204409,
+                "layers":     "[3,1,100]",
+                "display":    true
+            }
+      operationId: postScreenshot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostScreenshotRequest'
+      responses:
+        "200":
+          description: Screenshot ID or PNG binary.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScreenshotResponse'
+              example:
+                id: 3285980
+            image/png:
+              schema:
+                type: string
+                format: binary
+
+  /downloadScreenshot/:
+    get:
+      tags: [Screenshots]
+      summary: Download a generated screenshot
+      description: |
+        Download a screenshot that was previously generated with ``takeScreenshot``.
+
+        **Example Request**
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/downloadScreenshot/?id=3240748 <https://api.helioviewer.org/v2/downloadScreenshot/?id=3240748>`_
+      operationId: downloadScreenshot
+      parameters:
+        - name: id
+          in: query
+          required: true
+          description: Unique screenshot identifier.
+          schema:
+            type: integer
+            example: 3240748
+      responses:
+        "200":
+          description: PNG image binary.
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+
+  /getEclipseImage/:
+    get:
+      tags: [Screenshots]
+      summary: Generate a LASCO C2 eclipse image
+      description: |
+        Generates a grayscale image of LASCO C2 with a preset field of view.
+        Optionally shows a moon in place of the Sun.
+
+        **Example Request**
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/getEclipseImage/ <https://api.helioviewer.org/v2/getEclipseImage/>`_
+      operationId: getEclipseImage
+      parameters:
+        - name: moon
+          in: query
+          required: false
+          description: Show a moon where the Sun would be.
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: PNG image file.
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+
+  # ── OFFICIAL CLIENTS ─────────────────────────────────────────────────────
+
+  /getClosestImage/:
+    get:
+      tags: [Official Clients]
+      summary: Find image metadata closest to a date/time
+      description: |
+        Find the image data closest to the requested date/time for a given
+        datasource. Returns metadata from the Helioviewer database and the
+        JPEG2000 XML header.
+
+        **Example Request**
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/getClosestImage/?date=2014-01-01T23:59:59Z&sourceId=14 <https://api.helioviewer.org/v2/getClosestImage/?date=2014-01-01T23:59:59Z&sourceId=14>`_
+      operationId: getClosestImage
+      parameters:
+        - name: date
+          in: query
+          required: true
+          description: "Desired date/time. ISO 8601 UTC format."
+          schema:
+            type: string
+            format: date-time
+            example: "2014-01-01T23:59:59Z"
+        - name: sourceId
+          in: query
+          required: true
+          description: Unique image datasource identifier.
+          schema:
+            type: integer
+            example: 14
+        - $ref: '#/components/parameters/callback'
+      responses:
+        "200":
+          description: Image metadata object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClosestImageResponse'
+              example:
+                id: 34205701
+                date: "2014-01-02 00:00:02"
+                scale: 0.58996068317702
+                scaleCorrection: 1.01701692521
+                width: 4096
+                height: 4096
+                refPixelX: 2048.5
+                refPixelY: 2048.5
+                rsun: 1600
+                sunCenterOffsetParams: []
+                layeringOrder: 1
+
+  /getDataSources/:
+    get:
+      tags: [Official Clients]
+      summary: List available image datasources
+      description: |
+        Return a hierarchical list of available datasources. Set
+        ``verbose=true`` for a JHelioviewer-compatible format. Use ``enable``
+        to include additional observatories in verbose mode.
+
+        **Example Request**
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/getDataSources/ <https://api.helioviewer.org/v2/getDataSources/>`_
+      operationId: getDataSources
+      parameters:
+        - name: verbose
+          in: query
+          required: false
+          description: >
+            Output in JHelioviewer-compatible format (limits to SDO/SOHO by
+            default unless `enable` is specified).
+          schema:
+            type: boolean
+            default: false
+        - name: enable
+          in: query
+          required: false
+          description: >
+            Comma-separated list of additional observatories to enable in
+            verbose mode (e.g. `[Yohkoh,STEREO_A,STEREO_B]`).
+          schema:
+            type: string
+            example: "[Yohkoh,STEREO_A,STEREO_B]"
+        - $ref: '#/components/parameters/callback'
+      responses:
+        "200":
+          description: Hierarchical datasource tree.
+          content:
+            application/json:
+              schema:
+                type: object
+                description: >
+                  Nested object keyed by observatory → instrument → detector
+                  → measurement. Leaf nodes contain sourceId and date range.
+              example:
+                Hinode:
+                  XRT:
+                    Al_med:
+                      Al_mesh:
+                        end: "2007-05-09 09:50:35"
+                        layeringOrder: 1
+                        nickname: "XRT Al_med/Al_mesh"
+                        sourceId: 38
+                        start: "2006-11-02 10:25:55"
+                        uiLabels:
+                          - {label: Observatory, name: Hinode}
+                          - {label: Instrument, name: XRT}
+                          - {label: "Filter Wheel 1", name: Al_med}
+                          - {label: "Filter Wheel 2", name: Al_mesh}
+
+  /getTile/:
+    get:
+      tags: [Official Clients]
+      summary: Request a 512×512 image tile
+      description: |
+        Request a single 512×512 pixel PNG image tile for use in the
+        Helioviewer viewport. Obtain the image identifier via
+        ``getClosestImage``.
+
+        **Example Request**
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/getTile/?id=36275490&x=-1&y=-1&imageScale=2.42044088 <https://api.helioviewer.org/v2/getTile/?id=36275490&x=-1&y=-1&imageScale=2.42044088>`_
+      operationId: getTile
+      parameters:
+        - name: id
+          in: query
+          required: true
+          description: Unique image identifier.
+          schema:
+            type: integer
+            example: 36275490
+        - name: x
+          in: query
+          required: true
+          description: Horizontal tile position.
+          schema:
+            type: integer
+            example: -1
+        - name: y
+          in: query
+          required: true
+          description: Vertical tile position.
+          schema:
+            type: integer
+            example: -1
+        - name: imageScale
+          in: query
+          required: true
+          description: Image scale in arcseconds per pixel.
+          schema:
+            type: number
+            format: double
+            example: 2.42044088
+        - name: difference
+          in: query
+          required: false
+          description: |
+            Image difference type:
+            - 0: regular (default)
+            - 1: running difference
+            - 2: base difference
+          schema:
+            type: integer
+            enum: [0, 1, 2]
+            default: 0
+        - name: diffCount
+          in: query
+          required: false
+          description: >
+            Amount of time units used for running difference. Works with
+            `diffTime`.
+          schema:
+            type: integer
+            example: 60
+        - name: diffTime
+          in: query
+          required: false
+          description: |
+            Time unit for running difference:
+            - 1: Minutes
+            - 2: Hours
+            - 3: Days
+            - 4: Weeks
+            - 5: Month
+            - 6: Years
+          schema:
+            type: integer
+            enum: [1, 2, 3, 4, 5, 6]
+        - name: baseDiffTime
+          in: query
+          required: false
+          description: >
+            Date/time string for base difference images. Required when
+            `difference` is 1 or 2.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: PNG tile image.
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+
+  /shortenURL/:
+    get:
+      tags: [Official Clients]
+      summary: Shorten a Helioviewer URL
+      description: |
+        .. warning::
+
+            **This endpoint is obsolete and will go away in future versions**
+
+        Shorten a Helioviewer.org URL using the bit.ly service.
+
+        **Example Request**
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/shortenURL/?queryString=date%3D2014-02-25T15%3A18%3A07.000Z%26imageScale%3D2.4204409%26imageLayers%3D%255BSDO%2CAIA%2CAIA%2C304%2C1%2C100%255D <https://api.helioviewer.org/v2/shortenURL/?queryString=date%3D2014-02-25T15%3A18%3A07.000Z%26imageScale%3D2.4204409%26imageLayers%3D%255BSDO%2CAIA%2CAIA%2C304%2C1%2C100%255D>`_
+      operationId: shortenURL
+      parameters:
+        - name: queryString
+          in: query
+          required: true
+          description: URL-encoded full Helioviewer URL to shorten.
+          schema:
+            type: string
+        - $ref: '#/components/parameters/callback'
+      responses:
+        "200":
+          description: Shortened URL details.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                  status_txt:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      long_url:
+                        type: string
+                      url:
+                        type: string
+                      hash:
+                        type: string
+                      global_hash:
+                        type: string
+                      new_hash:
+                        type: integer
+              example:
+                status_code: 200
+                status_txt: OK
+                data:
+                  long_url: "http://helioviewer.org/?date=2014-02-25T15:18:07.000Z&imageScale=2.4204409&imageLayers=[SDO,AIA,AIA,304,1,100]"
+                  url: "http://bit.ly/1hbCHMq"
+                  hash: "1hbCHMq"
+                  global_hash: "1hbCHMr"
+                  new_hash: 0
+
+  # ── SOLAR FEATURES & EVENTS ──────────────────────────────────────────────
+
+  /events:
+    get:
+      tags: [Solar Features & Events]
+      summary: Get solar feature and event data
+      description: |
+        Returns a list of HEK events in the Helioviewer event format.
+        Event-specific data conforms to the HEK Event Specification.
+
+        When ``format=simpletree`` is requested, that flat payload is re-shaped into
+        a single-level map whose keys are ``SOURCE>>Label`` strings (one per known
+        event type for the requested sources) and whose values are arrays of the
+        matching events. Empty buckets are kept so the client can render the full
+        catalogue regardless of what's in the response.
+
+        **Example Request**
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/events/?startTime=2023-03-30T00:00:00Z <https://api.helioviewer.org/v2/events/?startTime=2023-03-30T00:00:00Z>`_
+
+        **Example simpletree Request**
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/events/?startTime=2023-03-30T00:00:00Z&sources=HEK&format=simpletree <https://api.helioviewer.org/v2/events/?startTime=2023-03-30T00:00:00Z&sources=HEK&format=simpletree>`_
+
+        **Example flat Request**
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/events/?startTime=2023-03-30T00:00:00Z&sources=HEK&format=flat <https://api.helioviewer.org/v2/events/?startTime=2023-03-30T00:00:00Z&sources=HEK&format=flat>`_
+      operationId: getEvents
+      parameters:
+        - name: startTime
+          in: query
+          required: true
+          description: "Date/time to query events for. ISO 8601 UTC format."
+          schema:
+            type: string
+            format: date-time
+            example: "2023-01-01T00:00:00Z"
+        - name: sources
+          in: query
+          required: false
+          description: >
+            Comma-separated external data sources to query. Current options:
+            HEK, DONKI. If omitted, all sources are queried.
+          schema:
+            type: string
+            example: "HEK,DONKI"
+        - name: format
+          in: query
+          required: false
+          description: >
+            Output shape. ``tree`` (default) returns the legacy nested
+            category/group structure described in the Helioviewer event format.
+            ``simpletree`` buckets the flat response into a one-level
+            ``SOURCE>>Label`` map keyed by event type. ``flat`` returns the new
+            v1 per-source response (one object per event with no category
+            nesting).
+          schema:
+            type: string
+            enum: [tree, simpletree, flat]
+            default: tree
+            example: simpletree
+      responses:
+        "200":
+          description: Array of solar event groups.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventGroup'
+              examples:
+                tree:
+                  summary: Default tree format
+                  value:
+                    - name: Active Region
+                      pin: AR
+                      groups:
+                        - name: NOAA SWPC Observer
+                          contact: "http://www.swpc.noaa.gov/"
+                          url: "N/A"
+                          data:
+                            - active: "true"
+                              area_atdiskcenter: 213057280
+                              area_unit: km2
+                              ar_mcintoshcls: HAX
+                              ar_mtwilsoncls: ALPHA
+                simpletree:
+                  summary: format=simpletree
+                  value:
+                    "HEK>>Active Region":
+                      - concept: Active Region
+                        frm_name: NOAA SWPC Observer
+                        path: "HEK>>Active Region>>NOAA SWPC Observer"
+                        pin: AR
+                    "HEK>>CME": []
+                    "HEK>>Coronal Hole":
+                      - concept: Coronal Hole
+                        frm_name: SPoCA
+                        path: "HEK>>Coronal Hole>>SPoCA"
+                    "HEK>>Flare": []
+                    "HEK>>Sunspot": []
+                flat:
+                  summary: format=flat
+                  value:
+                    - concept: Active Region
+                      frm_name: NOAA SWPC Observer
+                      path: "HEK>>Active Region>>NOAA SWPC Observer"
+                      pin: AR
+                    - concept: Coronal Hole
+                      frm_name: SPoCA
+                      path: "HEK>>Coronal Hole>>SPoCA"
+
+  # ── YOUTUBE ──────────────────────────────────────────────────────────────
+
+  /checkYouTubeAuth/:
+    get:
+      tags: [YouTube]
+      summary: Check YouTube authorization status
+      description: |
+        Check whether Helioviewer.org is authorized to interact with the
+        user's YouTube account via the current browser session.
+
+        **Example Request**
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/checkYouTubeAuth/ <https://api.helioviewer.org/v2/checkYouTubeAuth/>`_
+      operationId: checkYouTubeAuth
+      parameters:
+        - $ref: '#/components/parameters/callback'
+      responses:
+        "200":
+          description: Boolean indicating authorization status.
+          content:
+            text/plain:
+              schema:
+                type: boolean
+              example: "false"
+
+  /getYouTubeAuth/:
+    get:
+      tags: [YouTube]
+      summary: Initiate YouTube authorization
+      description: |
+        Redirect the user to a Google/YouTube OAuth authorization page so
+        Helioviewer can upload videos on their behalf.
+
+        **Example Request**
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/getYouTubeAuth/?id=VXvX5&title=AIA%204500%20(2013-12-30%2016%3A00%3A07%20-%202014-01-27%2015%3A00%3A07%20UTC)&description=This%20movie%20was%20produced%20by%20Helioviewer.org&tags=SDO%2CAIA%2C4500&share=true <https://api.helioviewer.org/v2/getYouTubeAuth/?id=VXvX5&title=AIA%204500%20(2013-12-30%2016%3A00%3A07%20-%202014-01-27%2015%3A00%3A07%20UTC)&description=This%20movie%20was%20produced%20by%20Helioviewer.org&tags=SDO%2CAIA%2C4500&share=true>`_
+      operationId: getYouTubeAuth
+      parameters:
+        - name: id
+          in: query
+          required: true
+          description: Unique movie identifier.
+          schema:
+            type: string
+            example: VXvX5
+        - name: title
+          in: query
+          required: true
+          description: Movie title.
+          schema:
+            type: string
+        - name: description
+          in: query
+          required: true
+          description: Movie description.
+          schema:
+            type: string
+        - name: tags
+          in: query
+          required: true
+          description: Comma-separated keyword tags.
+          schema:
+            type: string
+            example: "SDO,AIA,4500"
+        - name: share
+          in: query
+          required: false
+          description: Share the movie with the Helioviewer community.
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "302":
+          description: Redirect to Google/YouTube OAuth authorization page.
+          headers:
+            Location:
+              schema:
+                type: string
+                example: "https://www.google.com/accounts/AuthSubRequest?next=http%3A%2F%2Fhelioviewer.org%2Fapi%2Findex.php%3Faction%3DuploadMovieToYouTube%26id%3DVXvX5%26html%3Dtrue&scope=http://gdata.youtube.com&secure=&session=1"
+
+  /uploadMovieToYouTube/:
+    get:
+      tags: [YouTube]
+      summary: Upload a movie to YouTube
+      description: |
+        Share an existing user-generated movie to YouTube.
+
+        **Example Request**
+
+        .. code-block::
+
+            https://api.helioviewer.org/v2/uploadMovieToYouTube/?id=y9tX5&title=AIA+94+(2014-02-26+16%3A14%3A25+-+2014-02-27+15%3A37%3A49+UTC)&description=This+movie+was+produced+by+Helioviewer.org&tags=SDO%2CAIA%2C94&share=true
+      operationId: uploadMovieToYouTube
+      parameters:
+        - name: id
+          in: query
+          required: true
+          description: Unique movie identifier.
+          schema:
+            type: string
+            example: y9tX5
+        - name: title
+          in: query
+          required: false
+          description: Movie title.
+          schema:
+            type: string
+        - name: description
+          in: query
+          required: false
+          description: Movie description.
+          schema:
+            type: string
+        - name: tags
+          in: query
+          required: false
+          description: Comma-separated keyword tags.
+          schema:
+            type: string
+        - name: share
+          in: query
+          required: false
+          description: Share the movie with the Helioviewer community.
+          schema:
+            type: boolean
+        - name: html
+          in: query
+          required: false
+          description: Output response as HTML instead of JSON.
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: Upload status.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+              example:
+                status: "upload in progress."
+
+  /getUserVideos/:
+    get:
+      tags: [YouTube]
+      summary: List recently shared user videos
+      description: |
+        Get a list (newest first) of user-generated movies that have been
+        publicly shared to YouTube.
+
+        **Example Request**
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/getUserVideos/?num=2 <https://api.helioviewer.org/v2/getUserVideos/?num=2>`_
+      operationId: getUserVideos
+      parameters:
+        - name: num
+          in: query
+          required: false
+          description: Number of movies to return. Default is 10.
+          schema:
+            type: integer
+            default: 10
+            example: 10
+        - name: since
+          in: query
+          required: false
+          description: >
+            Truncate results if this date/time is reached. ISO 8601 UTC
+            format.
+          schema:
+            type: string
+            format: date-time
+        - name: force
+          in: query
+          required: false
+          description: Bypass cache to retrieve the most up-to-date data.
+          schema:
+            type: boolean
+            default: false
+        - $ref: '#/components/parameters/callback'
+      responses:
+        "200":
+          description: Array of shared user videos.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserVideo'
+              example:
+                - id: J5tX5
+                  url: "http://www.youtube.com/watch?v=x2VYjI1Eo3M"
+                  thumbnails:
+                    icon: "http://api.helioviewer.org/cache/movies/2014/02/27/J5tX5/preview-icon.png"
+                    small: "http://api.helioviewer.org/cache/movies/2014/02/27/J5tX5/preview-small.png"
+                    medium: "http://api.helioviewer.org/cache/movies/2014/02/27/J5tX5/preview-medium.png"
+                    large: "http://api.helioviewer.org/cache/movies/2014/02/27/J5tX5/preview-large.png"
+                    full: "http://api.helioviewer.org/cache/movies/2014/02/27/J5tX5/preview-full.png"
+                  published: "2014-02-27 14:56:00"
+                - id: L5tX5
+                  url: "http://www.youtube.com/watch?v=h6Y6vhpKPRk"
+                  thumbnails:
+                    icon: "http://api.helioviewer.org/cache/movies/2014/02/27/L5tX5/preview-icon.png"
+                    small: "http://api.helioviewer.org/cache/movies/2014/02/27/L5tX5/preview-small.png"
+                    medium: "http://api.helioviewer.org/cache/movies/2014/02/27/L5tX5/preview-medium.png"
+                    large: "http://api.helioviewer.org/cache/movies/2014/02/27/L5tX5/preview-large.png"
+                    full: "http://api.helioviewer.org/cache/movies/2014/02/27/L5tX5/preview-full.png"
+                  published: "2014-02-27 14:54:08"
+
+  # ── WEBSITE ──────────────────────────────────────────────────────────────
+
+  /getNewsFeed/:
+    get:
+      tags: [Website]
+      summary: Get the Helioviewer Project blog RSS feed
+      description: |
+        Returns the XML RSS feed of the official Helioviewer Project Blog.
+
+        **Example Request**
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/getNewsFeed/ <https://api.helioviewer.org/v2/getNewsFeed/>`_
+      operationId: getNewsFeed
+      parameters:
+        - $ref: '#/components/parameters/callback'
+      responses:
+        "200":
+          description: RSS XML feed.
+          content:
+            application/rss+xml:
+              schema:
+                type: string
+              example: |
+                <?xml version="1.0" encoding="UTF-8"?>
+                <rss version="2.0">
+                  <channel>
+                    <title>The Helioviewer Project Blog</title>
+                    <link>http://blog.helioviewer.org</link>
+                    <description>Explore your heliosphere</description>
+                    <item>
+                      <title>Follow the Helioviewer Project on Twitter</title>
+                      <link>http://blog.helioviewer.org/2014/01/28/follow-the-helioviewer-project-on-twitter/</link>
+                      <pubDate>Tue, 28 Jan 2014 15:16:51 +0000</pubDate>
+                      <description>The Helioviewer Project is now on Twitter, @Helioviewer.</description>
+                    </item>
+                  </channel>
+                </rss>
+
+# ── COMPONENTS ─────────────────────────────────────────────────────────────
+
+components:
+
+  parameters:
+
+    callback:
+      name: callback
+      in: query
+      required: false
+      description: Wrap the response object in a named JavaScript function call (JSONP).
+      schema:
+        type: string
+
+    # Movie shared parameters
+    movieStartTime:
+      name: startTime
+      in: query
+      required: true
+      description: "Date/time of the first frame. ISO 8601 UTC format."
+      schema:
+        type: string
+        format: date-time
+        example: "2010-03-01T12:12:12Z"
+
+    movieEndTime:
+      name: endTime
+      in: query
+      required: true
+      description: "Date/time of the final frame. ISO 8601 UTC format."
+      schema:
+        type: string
+        format: date-time
+        example: "2010-03-04T12:12:12Z"
+
+    movieLayers:
+      name: layers
+      in: query
+      required: true
+      description: "Image datasource layer(s), e.g. `[3,1,100],[4,1,100]`."
+      schema:
+        type: string
+        example: "[3,1,100],[4,1,100]"
+
+    movieImageScale:
+      name: imageScale
+      in: query
+      required: true
+      description: Image scale in arcseconds per pixel.
+      schema:
+        type: number
+        format: double
+        example: 21.04
+
+    movieFormat:
+      name: format
+      in: query
+      required: false
+      description: Movie format. Default is mp4.
+      schema:
+        type: string
+        enum: [mp4, webm]
+        default: mp4
+
+    movieFrameRate:
+      name: frameRate
+      in: query
+      required: false
+      description: Frames per second. Default is 15.
+      schema:
+        type: integer
+        default: 15
+
+    movieMaxFrames:
+      name: maxFrames
+      in: query
+      required: false
+      description: Maximum number of frames (may be capped by the server).
+      schema:
+        type: integer
+        example: 300
+
+    movieScale:
+      name: scale
+      in: query
+      required: false
+      description: Overlay an image scale indicator.
+      schema:
+        type: boolean
+        default: false
+
+    movieScaleType:
+      name: scaleType
+      in: query
+      required: false
+      description: Type of image scale indicator.
+      schema:
+        type: string
+        example: earth
+
+    movieScaleX:
+      name: scaleX
+      in: query
+      required: false
+      description: Horizontal offset of the scale indicator in arcseconds from Sun center.
+      schema:
+        type: number
+        example: -1000
+
+    movieScaleY:
+      name: scaleY
+      in: query
+      required: false
+      description: Vertical offset of the scale indicator in arcseconds from Sun center.
+      schema:
+        type: number
+        example: -500
+
+    movieLength:
+      name: movieLength
+      in: query
+      required: false
+      description: Movie length in seconds.
+      schema:
+        type: number
+        example: 4.3333
+
+    movieWatermark:
+      name: watermark
+      in: query
+      required: false
+      description: Overlay a Helioviewer.org watermark. Enabled by default.
+      schema:
+        type: boolean
+        default: true
+
+    movieWidth:
+      name: width
+      in: query
+      required: false
+      description: Width of the field of view in pixels (used with x0, y0, height).
+      schema:
+        type: integer
+        example: 1920
+
+    movieHeight:
+      name: height
+      in: query
+      required: false
+      description: Height of the field of view in pixels (used with x0, y0, width).
+      schema:
+        type: integer
+        example: 1200
+
+    movieX0:
+      name: x0
+      in: query
+      required: false
+      description: Horizontal offset of the field-of-view center from Sun center (arcseconds).
+      schema:
+        type: number
+        example: 0
+
+    movieY0:
+      name: y0
+      in: query
+      required: false
+      description: Vertical offset of the field-of-view center from Sun center (arcseconds).
+      schema:
+        type: number
+        example: 0
+
+    movieX1:
+      name: x1
+      in: query
+      required: false
+      description: Horizontal offset of the top-left corner from Sun center (arcseconds).
+      schema:
+        type: number
+        example: -5000
+
+    movieY1:
+      name: y1
+      in: query
+      required: false
+      description: Vertical offset of the top-left corner from Sun center (arcseconds).
+      schema:
+        type: number
+        example: -5000
+
+    movieX2:
+      name: x2
+      in: query
+      required: false
+      description: Horizontal offset of the bottom-right corner from Sun center (arcseconds).
+      schema:
+        type: number
+        example: 5000
+
+    movieY2:
+      name: y2
+      in: query
+      required: false
+      description: Vertical offset of the bottom-right corner from Sun center (arcseconds).
+      schema:
+        type: number
+        example: 5000
+
+    movieSize:
+      name: size
+      in: query
+      required: false
+      description: |
+        Scale video to a preset size:
+        - 0: Original size (default)
+        - 1: 720p (HD Ready)
+        - 2: 1080p (Full HD)
+        - 3: 1440p (Quad HD)
+        - 4: 2160p (4K / Ultra HD)
+      schema:
+        type: integer
+        enum: [0, 1, 2, 3, 4]
+        default: 0
+
+    movieIcons:
+      name: movieIcons
+      in: query
+      required: false
+      description: Display other user-generated movies on the video.
+      schema:
+        type: integer
+        default: 0
+
+    followViewport:
+      name: followViewport
+      in: query
+      required: false
+      description: Rotate field of view with the Sun.
+      schema:
+        type: integer
+        default: 0
+
+    reqObservationDate:
+      name: reqObservationDate
+      in: query
+      required: false
+      description: Viewport time used when `followViewport` is enabled.
+      schema:
+        type: string
+        format: date-time
+        example: "2017-08-30T14:45:53.000Z"
+
+    # Screenshot shared parameters
+    screenshotDate:
+      name: date
+      in: query
+      required: true
+      description: "Desired date/time of the image. ISO 8601 UTC format."
+      schema:
+        type: string
+        format: date-time
+        example: "2014-01-01T23:59:59Z"
+
+    screenshotImageScale:
+      name: imageScale
+      in: query
+      required: true
+      description: Image scale in arcseconds per pixel.
+      schema:
+        type: number
+        format: double
+        example: 2.4204409
+
+    screenshotLayers:
+      name: layers
+      in: query
+      required: true
+      description: "Image datasource layer(s), e.g. `[3,1,100]`."
+      schema:
+        type: string
+        example: "[SDO,AIA,AIA,335,1,100]"
+
+    screenshotScale:
+      name: scale
+      in: query
+      required: false
+      description: Overlay an image scale indicator.
+      schema:
+        type: boolean
+        default: false
+
+    screenshotScaleType:
+      name: scaleType
+      in: query
+      required: false
+      description: Type of image scale indicator.
+      schema:
+        type: string
+
+    screenshotScaleX:
+      name: scaleX
+      in: query
+      required: false
+      description: Horizontal offset of the scale indicator (arcseconds).
+      schema:
+        type: number
+
+    screenshotScaleY:
+      name: scaleY
+      in: query
+      required: false
+      description: Vertical offset of the scale indicator (arcseconds).
+      schema:
+        type: number
+
+    screenshotWidth:
+      name: width
+      in: query
+      required: false
+      description: Width of the field of view in pixels.
+      schema:
+        type: integer
+
+    screenshotHeight:
+      name: height
+      in: query
+      required: false
+      description: Height of the field of view in pixels.
+      schema:
+        type: integer
+
+    screenshotX0:
+      name: x0
+      in: query
+      required: false
+      description: Horizontal offset of the field-of-view center (arcseconds).
+      schema:
+        type: number
+
+    screenshotY0:
+      name: y0
+      in: query
+      required: false
+      description: Vertical offset of the field-of-view center (arcseconds).
+      schema:
+        type: number
+
+    screenshotX1:
+      name: x1
+      in: query
+      required: false
+      description: Horizontal offset of the top-left corner (arcseconds).
+      schema:
+        type: number
+        example: -5000
+
+    screenshotY1:
+      name: y1
+      in: query
+      required: false
+      description: Vertical offset of the top-left corner (arcseconds).
+      schema:
+        type: number
+        example: -5000
+
+    screenshotX2:
+      name: x2
+      in: query
+      required: false
+      description: Horizontal offset of the bottom-right corner (arcseconds).
+      schema:
+        type: number
+        example: 5000
+
+    screenshotY2:
+      name: y2
+      in: query
+      required: false
+      description: Vertical offset of the bottom-right corner (arcseconds).
+      schema:
+        type: number
+        example: 5000
+
+    screenshotDisplay:
+      name: display
+      in: query
+      required: false
+      description: Return PNG binary directly instead of a JSON ID object.
+      schema:
+        type: boolean
+        default: false
+
+    screenshotWatermark:
+      name: watermark
+      in: query
+      required: false
+      description: Overlay a Helioviewer watermark. Enabled by default.
+      schema:
+        type: boolean
+        default: true
+
+  schemas:
+
+    JpxResponse:
+      type: object
+      required: [message, uri]
+      properties:
+        message:
+          type: string
+          nullable: true
+          description: Informational message (e.g. if cadence was overridden).
+        uri:
+          type: string
+          description: HTTP or JPIP protocol link to the JPX movie.
+        frames:
+          type: array
+          items:
+            type: integer
+          description: Unix timestamps of each frame.
+
+    InstrumentStatus:
+      type: object
+      required: [time, level, secondsBehind, measurement]
+      properties:
+        time:
+          type: string
+          format: date-time
+          description: Timestamp of the latest available image.
+        level:
+          type: integer
+          description: Status level indicator.
+        secondsBehind:
+          type: integer
+          description: Seconds behind real-time.
+        measurement:
+          type: string
+          description: Human-readable measurement label.
+
+    QueueMovieResponse:
+      type: object
+      required: [id, eta, queue, token]
+      properties:
+        id:
+          type: string
+          description: Unique movie identifier.
+          example: z6vX5
+        eta:
+          type: integer
+          description: Estimated seconds until movie generation completes.
+          example: 376
+        queue:
+          type: integer
+          description: Position in the movie generation queue.
+          example: 0
+        token:
+          type: string
+          description: Handle to the job in the movie builder queue.
+          example: 50e0d98f645b42d159ec1c8a1e15de3e
+
+    MovieStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: integer
+          description: "0=queued, 1=processing, 2=finished, 3=invalid"
+          example: 2
+        statusLabel:
+          type: string
+          example: Completed
+        frameRate:
+          type: integer
+          example: 15
+        numFrames:
+          type: integer
+          example: 300
+        startDate:
+          type: string
+          example: "2014-02-03 20:26:16"
+        endDate:
+          type: string
+          example: "2014-02-05 20:16:40"
+        width:
+          type: integer
+          example: 846
+        height:
+          type: integer
+          example: 820
+        title:
+          type: string
+        url:
+          type: string
+          description: Download URL for the movie.
+        thumbnails:
+          $ref: '#/components/schemas/MovieThumbnails'
+        duration:
+          type: number
+          description: Movie duration in seconds.
+        imageScale:
+          type: number
+          description: Image scale in arcseconds per pixel.
+        layers:
+          type: string
+        events:
+          type: string
+        timestamp:
+          type: string
+        x1:
+          type: number
+        y1:
+          type: number
+        x2:
+          type: number
+        y2:
+          type: number
+
+    MovieThumbnails:
+      type: object
+      properties:
+        icon:
+          type: string
+        small:
+          type: string
+        medium:
+          type: string
+        large:
+          type: string
+        full:
+          type: string
+
+    PostMovieRequest:
+      type: object
+      required: [startTime, endTime, imageScale, layers]
+      properties:
+        startTime:
+          type: string
+          format: date-time
+          example: "2010-03-01T12:12:12Z"
+        endTime:
+          type: string
+          format: date-time
+          example: "2010-03-04T12:12:12Z"
+        layers:
+          type: string
+          example: "[3,1,100]"
+        eventsState:
+          type: object
+          description: >
+            Optional feature/event annotation state. See the Helioviewer
+            events state documentation for structure details.
+        imageScale:
+          type: number
+          format: double
+          example: 21.04
+        format:
+          type: string
+          enum: [mp4, webm]
+          default: mp4
+        frameRate:
+          type: integer
+          default: 15
+        maxFrames:
+          type: integer
+        scale:
+          type: boolean
+          default: false
+        scaleType:
+          type: string
+        scaleX:
+          type: number
+        scaleY:
+          type: number
+        movieLength:
+          type: number
+        watermark:
+          type: boolean
+          default: true
+        width:
+          type: integer
+        height:
+          type: integer
+        x0:
+          type: number
+        y0:
+          type: number
+        x1:
+          type: number
+        y1:
+          type: number
+        x2:
+          type: number
+        y2:
+          type: number
+        callback:
+          type: string
+        size:
+          type: integer
+          enum: [0, 1, 2, 3, 4]
+          default: 0
+        movieIcons:
+          type: integer
+          default: 0
+        followViewport:
+          type: integer
+          default: 0
+        reqObservationDate:
+          type: string
+          format: date-time
+
+    ScreenshotResponse:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: integer
+          description: Unique screenshot identifier.
+          example: 3285980
+
+    PostScreenshotRequest:
+      type: object
+      required: [date, imageScale, layers]
+      properties:
+        date:
+          type: string
+          format: date-time
+          example: "2014-01-01T23:59:59Z"
+        imageScale:
+          type: number
+          format: double
+          example: 2.4204409
+        layers:
+          type: string
+          example: "[3,1,100]"
+        eventsState:
+          type: object
+          description: Optional feature/event annotation state.
+        scale:
+          type: boolean
+          default: false
+        scaleType:
+          type: string
+        scaleX:
+          type: number
+        scaleY:
+          type: number
+        width:
+          type: integer
+        height:
+          type: integer
+        x0:
+          type: number
+        y0:
+          type: number
+        x1:
+          type: number
+        y1:
+          type: number
+        x2:
+          type: number
+        y2:
+          type: number
+        display:
+          type: boolean
+          default: false
+        watermark:
+          type: boolean
+          default: true
+        callback:
+          type: string
+
+    ClosestImageResponse:
+      type: object
+      required:
+        - id
+        - date
+        - scale
+        - scaleCorrection
+        - width
+        - height
+        - refPixelX
+        - refPixelY
+        - rsun
+        - sunCenterOffsetParams
+        - layeringOrder
+      properties:
+        id:
+          type: integer
+          description: Unique image identifier.
+          example: 34205701
+        date:
+          type: string
+          description: Date/time of the selected image.
+          example: "2014-01-02 00:00:02"
+        scale:
+          type: number
+          description: Normalized image scale in arcseconds per pixel.
+          example: 0.58996068317702
+        scaleCorrection:
+          type: number
+          description: Actual image scale / normalized image scale.
+          example: 1.01701692521
+        width:
+          type: integer
+          description: Width in pixels of the source JP2 image.
+          example: 4096
+        height:
+          type: integer
+          description: Height in pixels of the source JP2 image.
+          example: 4096
+        refPixelX:
+          type: number
+          description: X-coordinate of the reference pixel.
+          example: 2048.5
+        refPixelY:
+          type: number
+          description: Y-coordinate of the reference pixel.
+          example: 2048.5
+        rsun:
+          type: number
+          description: Solar radius in pixels.
+          example: 1600
+        sunCenterOffsetParams:
+          description: FITS header positioning metadata.
+        layeringOrder:
+          type: integer
+          description: Relative order for image layer compositing.
+          example: 1
+
+    EventGroup:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Event type name (e.g. "Active Region").
+          example: Active Region
+        pin:
+          type: string
+          description: Short event type code (e.g. "AR").
+          example: AR
+        groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventFRM'
+
+    EventFRM:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Feature Recognition Method (FRM) name.
+        contact:
+          type: string
+        url:
+          type: string
+        data:
+          type: array
+          items:
+            type: object
+            description: Event-specific data conforming to the HEK Event Specification.
+
+    UserVideo:
+      type: object
+      properties:
+        id:
+          type: string
+          example: J5tX5
+        url:
+          type: string
+          description: YouTube URL.
+          example: "http://www.youtube.com/watch?v=x2VYjI1Eo3M"
+        thumbnails:
+          $ref: '#/components/schemas/MovieThumbnails'
+        published:
+          type: string
+          description: Publication timestamp.
+          example: "2014-02-27 14:56:00"
