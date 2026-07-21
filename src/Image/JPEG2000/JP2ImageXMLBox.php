@@ -236,92 +236,312 @@ class Image_JPEG2000_JP2ImageXMLBox {
     }
 
     /**
-     * Checks if the CUNIT1 is degrees.
+     * Returns an optional FITS/XML element.
+     */
+    private function _getOptionalElementValue(
+        string $name,
+        $default = null
+    ) {
+        try {
+            return $this->_getElementValue($name);
+        } catch (Exception $e) {
+            return $default;
+        }
+    }
+
+    /**
+     * Returns the unit declared for a WCS axis.
+     *
+     * CUNIT2 falls back to CUNIT1 for compatibility with older JP2 files.
+     */
+    private function _getAxisUnit(int $axis): string {
+        $unit = $this->_getOptionalElementValue(
+            'CUNIT'.$axis,
+            null
+        );
+
+        if ($unit === null && $axis !== 1) {
+            $unit = $this->_getOptionalElementValue(
+                'CUNIT1',
+                ''
+            );
+        }
+
+        return strtolower(trim((string) $unit));
+    }
+
+    /**
+     * Checks whether an axis is expressed in degrees.
+     */
+    private function _axisUsesWholeDegrees(int $axis): bool {
+        return $this->_getAxisUnit($axis) === 'deg';
+    }
+
+    /**
+     * Historical public helper retained for compatibility.
      */
     public function _usesWholeDegrees(): bool {
-        try {
-            $unit = $this->_getElementValue('CUNIT1');
-            if (trim($unit) === "deg") {
-                return true;
-            }
-        } catch (Exception $e) {}
-
-        // If unit is not deg or CUNIT1 doesn't exist, then return false.
-        // In this case we assume it's arcseconds.
-        return false;
+        return $this->_axisUsesWholeDegrees(1);
     }
 
     /**
-     * Returns the plate scale for a given image
+     * Converts an axis value to arcseconds.
+     */
+    private function _axisValueToArcseconds(
+        float $value,
+        int $axis
+    ): float {
+        if ($this->_axisUsesWholeDegrees($axis)) {
+            return $value * 3600.0;
+        }
+
+        return $value;
+    }
+
+    /**
+     * Returns the signed CDELT values in arcseconds per pixel.
      *
-     * @return string JP2 image scale
+     * CDELT2 falls back to CDELT1 when absent.
+     */
+    public function getImagePlateScales(): array {
+        $rawScaleX = $this->_getOptionalElementValue(
+            'CDELT1',
+            null
+        );
+
+        if ($rawScaleX === null) {
+            throw new Exception(
+                'Unable to locate CDELT1 in header tags!',
+                15
+            );
+        }
+
+        $rawScaleY = $this->_getOptionalElementValue(
+            'CDELT2',
+            $rawScaleX
+        );
+
+        $scaleX = $this->_axisValueToArcseconds(
+            (float) $rawScaleX,
+            1
+        );
+
+        $scaleY = $this->_axisValueToArcseconds(
+            (float) $rawScaleY,
+            2
+        );
+
+        if (
+            !is_finite($scaleX) ||
+            !is_finite($scaleY) ||
+            abs($scaleX) < 1.0e-15 ||
+            abs($scaleY) < 1.0e-15
+        ) {
+            throw new Exception(
+                sprintf(
+                    'Invalid WCS plate scales: CDELT1=%s, CDELT2=%s',
+                    $scaleX,
+                    $scaleY
+                ),
+                15
+            );
+        }
+
+        return array($scaleX, $scaleY);
+    }
+
+    /**
+     * Returns the legacy scalar image scale.
+     *
+     * The tile API continues to use the absolute CDELT1 scale.
      */
     public function getImagePlateScale() {
-        try {
-            $scale = $this->_getElementValue('CDELT1');
-            if ($this->_usesWholeDegrees()) {
-                $scale = floatval($scale) * 3600;
-            }
-        }
-        catch (Exception $e) {
-            throw new Exception(
-                'Unable to locate image scale in header tags!');
-        }
+        $scales = $this->getImagePlateScales();
 
-        // Check to make sure header information is valid
-        if ( (filter_var($scale, FILTER_VALIDATE_FLOAT) === false) ||
-             ($scale <= 0) ) {
-
-            throw new Exception('Invalid value for CDELT1: '.$scale, 15);
-        }
-
-        return $scale;
+        return abs($scales[0]);
     }
 
     /**
-     * Returns the CRVAL values from the jp2 metadata.
-     * This is the coordinate of the reference pixel on the sun.
+     * Returns a PC matrix element with an identity-matrix fallback.
+     */
+    private function _getPCValue(
+        string $name,
+        float $default
+    ): float {
+        $value = $this->_getOptionalElementValue(
+            $name,
+            $default
+        );
+
+        $value = (float) $value;
+
+        if (!is_finite($value)) {
+            throw new Exception(
+                'Invalid WCS matrix element '.$name,
+                15
+            );
+        }
+
+        return $value;
+    }
+
+    /**
+     * Returns the two-dimensional PC matrix.
+     *
+     * FITS WCS defines an identity matrix when PC keywords are absent.
+     */
+    public function getPCMatrix(): array {
+        return array(
+            array(
+                $this->_getPCValue('PC1_1', 1.0),
+                $this->_getPCValue('PC1_2', 0.0)
+            ),
+            array(
+                $this->_getPCValue('PC2_1', 0.0),
+                $this->_getPCValue('PC2_2', 1.0)
+            )
+        );
+    }
+
+    /**
+     * Returns the effective CD matrix in arcseconds per pixel.
+     *
+     * CD = diag(CDELT1, CDELT2) * PC
+     */
+    public function getCDMatrix(): array {
+        $scales = $this->getImagePlateScales();
+        $pc = $this->getPCMatrix();
+
+        return array(
+            array(
+                $scales[0] * $pc[0][0],
+                $scales[0] * $pc[0][1]
+            ),
+            array(
+                $scales[1] * $pc[1][0],
+                $scales[1] * $pc[1][1]
+            )
+        );
+    }
+
+    /**
+     * Returns CRVAL1 and CRVAL2 in their original FITS units.
      */
     public function getCRValOffsets() {
-        try {
-            $crval1 = $this->_getElementValue('CRVAL1');
-            $crval2 = $this->_getElementValue('CRVAL2');
-        } catch (Exception $e) {
-            $crval1 = 0;
-            $crval2 = 0;
-        }
-        return array(floatval($crval1), floatval($crval2));
+        $crval1 = $this->_getOptionalElementValue(
+            'CRVAL1',
+            0.0
+        );
+
+        $crval2 = $this->_getOptionalElementValue(
+            'CRVAL2',
+            0.0
+        );
+
+        return array(
+            (float) $crval1,
+            (float) $crval2
+        );
     }
 
     /**
-     * Returns the coordinates for the image's reference pixel.
+     * Returns CRVAL1 and CRVAL2 in arcseconds.
+     */
+    private function _getCRValArcseconds(): array {
+        $offsets = $this->getCRValOffsets();
+
+        return array(
+            $this->_axisValueToArcseconds(
+                $offsets[0],
+                1
+            ),
+            $this->_axisValueToArcseconds(
+                $offsets[1],
+                2
+            )
+        );
+    }
+
+    /**
+     * Returns the pixel coordinates corresponding to solar (0, 0).
      *
-     * NOTE: The values for CRPIX1 and CRPIX2 reflect the x and y coordinates
-     *       with the origin at the bottom-left corner of the image, not the
-     *       top-left corner.
+     * FITS WCS:
      *
-     * @return array Pixel coordinates of the reference pixel
+     * world = CRVAL + CD * (pixel - CRPIX)
+     *
+     * Therefore:
+     *
+     * pixel_sun = CRPIX - inverse(CD) * CRVAL
      */
     public function getRefPixelCoords() {
         try {
-            try {
-                $crval1 = $this->_getElementValue('CRVAL1');
-                $crval2 = $this->_getElementValue('CRVAL2');
-            } catch (Exception $e) {
-                $crval1 = 0;
-                $crval2 = 0;
+            $crpix1 = (float) $this->_getElementValue(
+                'CRPIX1'
+            );
+
+            $crpix2 = (float) $this->_getElementValue(
+                'CRPIX2'
+            );
+
+            $crval = $this->_getCRValArcseconds();
+            $cd = $this->getCDMatrix();
+
+            $a = (float) $cd[0][0];
+            $b = (float) $cd[0][1];
+            $c = (float) $cd[1][0];
+            $d = (float) $cd[1][1];
+
+            $determinant = ($a * $d) - ($b * $c);
+
+            if (
+                !is_finite($determinant) ||
+                abs($determinant) < 1.0e-15
+            ) {
+                throw new Exception(
+                    'The two-dimensional CD matrix is singular.',
+                    15
+                );
             }
 
-            $x = -($crval1 / $this->_getElementValue('CDELT1') - $this->_getElementValue('CRPIX1'));
-            $y = -($crval2 / $this->_getElementValue('CDELT2') - $this->_getElementValue('CRPIX2'));
-        }
-        catch (Exception $e) {
+            $deltaX = (
+                ($d * $crval[0]) -
+                ($b * $crval[1])
+            ) / $determinant;
+
+            $deltaY = (
+                (-$c * $crval[0]) +
+                ($a * $crval[1])
+            ) / $determinant;
+
+            $x = $crpix1 - $deltaX;
+            $y = $crpix2 - $deltaY;
+        } catch (Exception $e) {
             throw new Exception(
-                'Unable to locate reference pixel coordinates in header tags!',
-                15);
+                'Unable to compute WCS reference pixel coordinates: '
+                . $e->getMessage(),
+                15
+            );
         }
 
         return array($x, $y);
+    }
+
+    /**
+     * Returns metadata required by clients supporting native 2D WCS.
+     */
+    public function getWCSMetadata(): array {
+        $scales = $this->getImagePlateScales();
+        $pc = $this->getPCMatrix();
+        $cd = $this->getCDMatrix();
+
+        return array(
+            'scaleX' => abs($scales[0]),
+            'scaleY' => abs($scales[1]),
+            'cdeltX' => $scales[0],
+            'cdeltY' => $scales[1],
+            'pc' => $pc,
+            'cd' => $cd
+        );
     }
 
     /**
