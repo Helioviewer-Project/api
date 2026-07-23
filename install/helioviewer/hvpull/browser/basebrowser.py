@@ -1,4 +1,6 @@
 """Base data browser definition"""
+from collections.abc import Callable
+
 class BaseDataBrowser:
     """BaseDataBrowser"""
     def __init__(self, server):
@@ -8,7 +10,7 @@ class BaseDataBrowser:
         """Gets a list of directories to be queried for the given time range"""
         return None
     
-    def get_files(self, uri, extension, filter_func: callable | None = None):
+    def get_files(self, uri, extension, filter_func: Callable | None = None):
         """Get all the files that end with specified extension at the uri"""
         return None
     
