@@ -413,8 +413,8 @@ class EventsStateManager
                 //   ('HEK', 'AR') -> 'Active Region'
                 //   ('HEK', 'FL') -> 'Flare'
                 //   ('CCMC', 'FP') -> 'Solar Flare Predictions'
-                //   Unknown pin -> null -> skip (matches EventSelections behavior)
-                $label = EventSelections::$event_types_map[$source][$pin] ?? null;
+                //   Unknown pin -> null -> skip
+                $label = EventTypeCatalogue::MAP[$source][$pin] ?? null;
                 if ($label === null) {
                     // Pin isn't in the map - usually means a typo or a new
                     // event type we haven't registered yet. Visible signal,

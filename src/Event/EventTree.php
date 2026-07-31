@@ -8,7 +8,7 @@ use Helioviewer\Api\Sentry\ClientInterface as SentryClientInterface;
 /**
  * Buckets a flat list of events (the shape returned by
  * EventsApi::getEventsForSource()) into a "SOURCE>>Label" tree, using
- * EventSelections::$event_types_map as the canonical catalogue.
+ * EventTypeCatalogue::MAP as the canonical catalogue.
  *
  * Usage:
  *   $tree    = EventTree::make($flatEvents, $requestedSources);
@@ -46,10 +46,10 @@ class EventTree
 
         // Pre-seed every known bucket for the requested sources.
         foreach ($sources as $source) {
-            if (!isset(EventSelections::$event_types_map[$source])) {
+            if (!isset(EventTypeCatalogue::MAP[$source])) {
                 continue;
             }
-            foreach (EventSelections::$event_types_map[$source] as $code => $label) {
+            foreach (EventTypeCatalogue::MAP[$source] as $code => $label) {
                 $buckets[$source . '>>' . $label] = [];
             }
         }
@@ -93,7 +93,7 @@ class EventTree
                 'requested_sources' => $sources,
             ]);
             $sentry->message(
-                'simpletree: encountered paths not in EventSelections::$event_types_map'
+                'simpletree: encountered paths not in EventTypeCatalogue::MAP'
             );
         }
 

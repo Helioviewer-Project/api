@@ -1,0 +1,24 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://api.helioviewer.org/schema/event_visibility_selections.schema.json",
+    "title": "Event Visibility Selections",
+    "description": "Per-source marker and label visibility flags. Keys are canonical event source names; unknown sources are rejected. Both flags are optional per source and default to true server-side when omitted.",
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+        "HEK":    { "$ref": "#/$defs/source_flags" },
+        "CCMC":   { "$ref": "#/$defs/source_flags" },
+        "RHESSI": { "$ref": "#/$defs/source_flags" },
+        "WSA":    { "$ref": "#/$defs/source_flags" }
+    },
+    "$defs": {
+        "source_flags": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "marker_visibility": { "type": "boolean" },
+                "label_visibility":  { "type": "boolean" }
+            }
+        }
+    }
+}

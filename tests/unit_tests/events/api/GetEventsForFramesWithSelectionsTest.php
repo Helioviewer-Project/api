@@ -9,22 +9,19 @@ use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Psr7\Response;
 use Helioviewer\Api\Event\Api\EventsApi;
 use Helioviewer\Api\Event\Api\EventsApiException;
-use Helioviewer\Api\Event\Api\LegacyEventsInterface;
 use Helioviewer\Api\Sentry\ClientInterface as SentryClientInterface;
 
 final class GetEventsForFramesWithSelectionsTest extends TestCase
 {
     private $mockClient;
     private $mockSentry;
-    private $mockLegacyEvents;
     private $eventsApi;
 
     protected function setUp(): void
     {
         $this->mockClient = $this->createMock(ClientInterface::class);
         $this->mockSentry = $this->createMock(SentryClientInterface::class);
-        $this->mockLegacyEvents = $this->createMock(LegacyEventsInterface::class);
-        $this->eventsApi = new EventsApi($this->mockClient, $this->mockSentry, $this->mockLegacyEvents);
+        $this->eventsApi = new EventsApi($this->mockClient, $this->mockSentry);
     }
 
     public function testItShouldThrowForEmptySelections(): void
@@ -78,10 +75,10 @@ final class GetEventsForFramesWithSelectionsTest extends TestCase
         $this->mockClient->expects($this->exactly(2))
             ->method('request')
             ->withConsecutive(
-                ['POST', '/helioviewer/events/frames_with_selections', $this->callback(function ($options) use ($fallbackChunk) {
+                ['POST', '/helioviewer/events/frames_with_selections?withDelta', $this->callback(function ($options) use ($fallbackChunk) {
                     return count($options['json']['timestamps']) === $fallbackChunk;
                 })],
-                ['POST', '/helioviewer/events/frames_with_selections', $this->callback(function ($options) use ($tail) {
+                ['POST', '/helioviewer/events/frames_with_selections?withDelta', $this->callback(function ($options) use ($tail) {
                     return count($options['json']['timestamps']) === $tail;
                 })]
             )
@@ -103,10 +100,10 @@ final class GetEventsForFramesWithSelectionsTest extends TestCase
         $this->mockClient->expects($this->exactly(2))
             ->method('request')
             ->withConsecutive(
-                ['POST', '/helioviewer/events/frames_with_selections', $this->callback(function ($options) {
+                ['POST', '/helioviewer/events/frames_with_selections?withDelta', $this->callback(function ($options) {
                     return count($options['json']['timestamps']) === 150;
                 })],
-                ['POST', '/helioviewer/events/frames_with_selections', $this->callback(function ($options) {
+                ['POST', '/helioviewer/events/frames_with_selections?withDelta', $this->callback(function ($options) {
                     return count($options['json']['timestamps']) === 50;
                 })]
             )
@@ -129,15 +126,15 @@ final class GetEventsForFramesWithSelectionsTest extends TestCase
         $this->mockClient->expects($this->exactly(3))
             ->method('request')
             ->withConsecutive(
-                ['POST', '/helioviewer/events/frames_with_selections', $this->callback(function ($options) {
+                ['POST', '/helioviewer/events/frames_with_selections?withDelta', $this->callback(function ($options) {
                     return count($options['json']['timestamps']) === 3
                         && $options['json']['selections'] === ['HEK>>Flare', 'CCMC>>DONKI>>CME'];
                 })],
-                ['POST', '/helioviewer/events/frames_with_selections', $this->callback(function ($options) {
+                ['POST', '/helioviewer/events/frames_with_selections?withDelta', $this->callback(function ($options) {
                     return count($options['json']['timestamps']) === 3
                         && $options['json']['selections'] === ['HEK>>Flare', 'CCMC>>DONKI>>CME'];
                 })],
-                ['POST', '/helioviewer/events/frames_with_selections', $this->callback(function ($options) {
+                ['POST', '/helioviewer/events/frames_with_selections?withDelta', $this->callback(function ($options) {
                     return count($options['json']['timestamps']) === 1
                         && $options['json']['selections'] === ['HEK>>Flare', 'CCMC>>DONKI>>CME'];
                 })]

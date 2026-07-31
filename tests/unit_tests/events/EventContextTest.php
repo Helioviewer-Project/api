@@ -82,12 +82,12 @@ final class EventContextTest extends TestCase
                     'path'      => 'HEK>>Active Region>>SPoCA',
                     'hv_hpc_x'  => 100.0,
                     'hv_hpc_y'  => 200.0,
-                    'footprint' => [['x' => 110.0, 'y' => 210.0]],
+                    'footprint' => [[['x' => 110.0, 'y' => 210.0]]],
                 ],
             ],
             'timestamps' => [
                 $ts => [
-                    $eventId => ['hv_hpc_x' => 120.0, 'hv_hpc_y' => 230.0],
+                    $eventId => ['dx' => 20.0, 'dy' => 30.0],
                 ],
             ],
         ]);
@@ -96,9 +96,12 @@ final class EventContextTest extends TestCase
 
         $events = $context->getEventsForDate($ts);
         $this->assertCount(1, $events);
-        // dx = 120 - 100 = 20, dy = 230 - 200 = 30. Footprint point (110, 210) -> (130, 240).
-        $this->assertSame(130.0, $events[0]['footprint'][0]['x']);
-        $this->assertSame(240.0, $events[0]['footprint'][0]['y']);
+        // Upstream sends dx=20, dy=30 directly.
+        // Footprint point (110, 210) + (dx, dy) -> (130, 240).
+        // Marker: canonical (100, 200) + (dx, dy) -> (120, 230).
+        // Footprint is a list of rings; single-ring, single-point fixture -> [0][0].
+        $this->assertSame(130.0, $events[0]['footprint'][0][0]['x']);
+        $this->assertSame(240.0, $events[0]['footprint'][0][0]['y']);
         $this->assertSame(120.0, $events[0]['hv_hpc_x']);
         $this->assertSame(230.0, $events[0]['hv_hpc_y']);
         $this->assertTrue($context->hasEvents());
@@ -121,7 +124,7 @@ final class EventContextTest extends TestCase
             ],
             'timestamps' => [
                 $ts => [
-                    $eventId => ['hv_hpc_x' => 0.0, 'hv_hpc_y' => 0.0],
+                    $eventId => ['dx' => 0.0, 'dy' => 0.0],
                 ],
             ],
         ]);
@@ -153,7 +156,7 @@ final class EventContextTest extends TestCase
                 ],
             ],
             'timestamps' => [
-                $ts => [$eventId => ['hv_hpc_x' => 0.0, 'hv_hpc_y' => 0.0]],
+                $ts => [$eventId => ['dx' => 0.0, 'dy' => 0.0]],
             ],
         ]);
 
@@ -174,8 +177,7 @@ final class EventContextTest extends TestCase
             ->method('setContext')
             ->with('EventContext', $this->callback(function ($params) {
                 return array_key_exists('requested_date', $params)
-                    && array_key_exists('available_dates', $params)
-                    && array_key_exists('events_by_date', $params);
+                    && array_key_exists('available_dates', $params);
             }));
         $this->mockSentry->expects($this->once())->method('message');
 
@@ -206,7 +208,7 @@ final class EventContextTest extends TestCase
                 ],
             ],
             'timestamps' => [
-                $ts1 => [$eventId => ['hv_hpc_x' => 0.0, 'hv_hpc_y' => 0.0]],
+                $ts1 => [$eventId => ['dx' => 0.0, 'dy' => 0.0]],
                 $ts2 => [],
             ],
         ]);

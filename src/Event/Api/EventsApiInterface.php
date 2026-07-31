@@ -51,26 +51,13 @@ interface EventsApiInterface {
     public function getDistributions(string $size, int $fromTimestamp, int $toTimestamp, array $paths): array;
 
     /**
-     * Fetch events for multiple observation timestamps in batched requests.
-     * Returns legacy format keyed by timestamp.
-     *
-     * @param string[] $timestamps Array of observation datetime strings
-     * @param string[] $sources Array of source names (e.g. ['HEK', 'CCMC', 'RHESSI'])
-     * @param int $chunkSize Max timestamps per upstream POST request
-     * @param string $logLabel Optional label prepended to per-chunk error_log lines (e.g. "Movie:Xp66n")
-     * @return array Keyed by timestamp, each value is legacy-format event categories
-     * @throws EventsApiException on API errors or unexpected responses
-     */
-    public function getEventsBatch(array $timestamps, array $sources, int $chunkSize = 50, string $logLabel = ''): array;
-
-    /**
      * Fetch events for multiple observation timestamps filtered by a list of
      * path-prefix selections. Posts to /helioviewer/events/frames_with_selections.
      *
      * Returns the RAW merged response (no legacy conversion):
      *   [
      *     'events'     => [ <uuid> => {path, label, start, end, hv_hpc_x, hv_hpc_y, footprint, type, pin} ],
-     *     'timestamps' => [ <ts>   => { <uuid> => {hv_hpc_x, hv_hpc_y} } ],
+     *     'timestamps' => [ <ts>   => { <uuid> => {dx, dy} } ],
      *   ]
      *
      * Timestamps are paginated by $chunkSize (capped at the upstream limit of

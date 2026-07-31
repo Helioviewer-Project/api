@@ -22,9 +22,9 @@ class Image_Composite_HelioviewerScreenshot extends Image_Composite_HelioviewerC
     /**
      * Creates a new screenshot
      */
-    public function __construct($layers, $eventsManager, $movieIcons, $celestialBodies, $scale, $scaleType, $scaleX, $scaleY, $obsDate, $roi, $options) {
+    public function __construct($layers, $eventContext, $movieIcons, $celestialBodies, $scale, $scaleType, $scaleX, $scaleY, $obsDate, $roi, $options) {
 
-        parent::__construct($layers, $eventsManager, $movieIcons, $celestialBodies, $scale, $scaleType, $scaleX, $scaleY, $obsDate, $roi, $options);
+        parent::__construct($layers, $eventContext, $movieIcons, $celestialBodies, $scale, $scaleType, $scaleX, $scaleY, $obsDate, $roi, $options);
 
         if ( array_key_exists('action', $options) && $options['action'] == 'downloadScreenshot' ) {
 
@@ -76,7 +76,7 @@ class Image_Composite_HelioviewerScreenshot extends Image_Composite_HelioviewerC
             $this->watermark,
             $this->layers->serialize(),
             $this->layers->getBitMask(),
-            $this->eventsManager->export(),
+            $this->eventContext->exportEventsStateBlob(),
             $this->movieIcons,
             $this->scale,
             $this->scaleType,

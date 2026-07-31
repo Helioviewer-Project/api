@@ -18,7 +18,7 @@ require_once HV_ROOT_DIR.'/../src/Helper/ErrorHandler.php';
 
 use Helioviewer\Api\Module\BaseModule;
 use Helioviewer\Api\Module\ModuleInterface;
-use Helioviewer\Api\Event\EventsStateManager;
+use Helioviewer\Api\Event\LegacyEventsStringParser;
 use Helioviewer\Api\Event\EventContext;
 use Helioviewer\Api\Event\Timeline\Timeline as EventTimeline;
 use Helioviewer\Api\Event\Api\EventsApiException;
@@ -504,14 +504,12 @@ class Module_WebClient extends BaseModule implements ModuleInterface {
 
         }
 
-        $events_manager = EventsStateManager::buildFromEventsState($json_params['eventsState']);
-
         $screenshotDate = $json_params['date'];
         $totalStart = microtime(true);
         $eventContext = EventContext::build(
-            timestamps: [$screenshotDate],
-            selections: $events_manager->getSelections(),
-            visibilitySelections: $events_manager->getVisibilitySelections(),
+            frameTimestamps: [$screenshotDate],
+            selections: $json_params['event_selections'] ?? [],
+            visibilitySelections: $json_params['event_visibility_selections'] ?? [],
             api: $this->eventsApi(),
             logLabel: "Screenshot:{$screenshotDate}",
         );
@@ -525,7 +523,8 @@ class Module_WebClient extends BaseModule implements ModuleInterface {
 
         Sentry::setContext('Screenshot Request Variables',[
             'layers' => $layers,
-            'events_manager' => $events_manager,
+            'event_selections' => $json_params['event_selections'] ?? [],
+            'event_visibility_selections' => $json_params['event_visibility_selections'] ?? [],
             'movieIcons' => $movieIcons,
             'celestialBodies' => $celestialBodies,
             'scale' => $scale,
@@ -539,7 +538,7 @@ class Module_WebClient extends BaseModule implements ModuleInterface {
         // Create the screenshot
         $screenshot = new Image_Composite_HelioviewerScreenshot(
             $layers,
-            $events_manager,
+            $eventContext,
             $movieIcons,
             $celestialBodies,
             $scale,
@@ -548,7 +547,7 @@ class Module_WebClient extends BaseModule implements ModuleInterface {
             $scaleY,
             $json_params['date'],
             $roi,
-            array_merge($json_params, ['eventContext' => $eventContext])
+            $json_params
         );
 
         // Display screenshot
@@ -615,30 +614,34 @@ class Module_WebClient extends BaseModule implements ModuleInterface {
             );
         }
 
-        // Event legacy string
-        $events_legacy_string = "";
-        if ( array_key_exists('events', $this->_params) ) {
-            $events_legacy_string = $this->_params['events'];
+        // eventLabels sets per-source label visibility (markers always on) and
+        // applies to whichever event param is used. Optional; defaults off.
+        $event_labels = array_key_exists('eventLabels', $this->_params) ? (bool)$this->_params['eventLabels'] : false;
+        $visibilitySelections = LegacyEventsStringParser::visibilityFromLabels($event_labels);
+
+        // Selections. Precedence: event_selections (canonical) first, then the
+        // legacy ?events= bracket-string, then none. Both params are optional.
+        // The composite persists $selections + $visibilitySelections (via
+        // EventContext) as the new-shape blob -- so a URL-params screenshot row is
+        // indistinguishable from a JSON postScreenshot row.
+        if ( array_key_exists('event_selections', $this->_params) ) {
+            // Canonical: semicolon-separated "SOURCE>>Label[>>FRM]" paths, e.g.
+            // event_selections=HEK>>Active Region;WSA>>Magnetic Connectivity>>SO
+            $parts = array_map('trim', explode(';', $this->_params['event_selections']));
+            $selections = array_values(array_filter($parts, fn($p) => $p !== ''));
+        } elseif ( array_key_exists('events', $this->_params) ) {
+            // Legacy bracket-string.
+            $selections = LegacyEventsStringParser::parse($this->_params['events']);
+        } else {
+            $selections = [];
         }
-
-        // Event legacy labels switch
-        $event_labels = false;
-        if ( array_key_exists('eventLabels', $this->_params) ) {
-            $event_labels = (bool)$this->_params['eventLabels'];
-        }
-
-
-        // ATTENTION! These two fields eventsLabels and eventSourceString needs to be kept in DB schema
-        // We are keeping them to support old takeScreenshot , queueMovie requests
-        // Events manager built from old logic
-        $events_manager = EventsStateManager::buildFromLegacyEventStrings($events_legacy_string, $event_labels);
 
         $screenshotDate = $this->_params['date'];
         $totalStart = microtime(true);
         $eventContext = EventContext::build(
-            timestamps: [$screenshotDate],
-            selections: $events_manager->getSelections(),
-            visibilitySelections: $events_manager->getVisibilitySelections(),
+            frameTimestamps: [$screenshotDate],
+            selections: $selections,
+            visibilitySelections: $visibilitySelections,
             api: $this->eventsApi(),
             logLabel: "Screenshot:{$screenshotDate}",
         );
@@ -653,7 +656,7 @@ class Module_WebClient extends BaseModule implements ModuleInterface {
         // Create the screenshot
         $screenshot = new Image_Composite_HelioviewerScreenshot(
             $layers,
-            $events_manager,
+            $eventContext,
             $movieIcons,
             $celestialBodies,
             $scale,
@@ -662,7 +665,7 @@ class Module_WebClient extends BaseModule implements ModuleInterface {
             $scaleY,
             $this->_params['date'],
             $roi,
-            array_merge($this->_options, ['eventContext' => $eventContext])
+            $this->_options
         );
 
         // Display screenshot
@@ -744,25 +747,18 @@ class Module_WebClient extends BaseModule implements ModuleInterface {
                 'layer names.', 22);
         }
 
-        // Event Layers
-        $events_state_from_metadata = json_decode($metaData['eventsState'], true);
-        $events_manager;
-
-        // ATTENTION! These two fields eventsLabels and eventSourceString needs to be kept in DB schema
-        // We are keeping them to support old takeScreenshot , queueMovie requests
-
-        if(!empty($events_state_from_metadata)) {
-            $events_manager = EventsStateManager::buildFromEventsState($events_state_from_metadata);
-        } else {
-            $events_manager = EventsStateManager::buildFromLegacyEventStrings($metaData['eventSourceString'], (bool)$metaData['eventsLabels']);
-        }
+        // Event Layers — the persisted blob is the canonical shape; every row
+        // is converted by the deploy-time migration scripts, so read it directly.
+        $events_state_from_metadata = json_decode($metaData['eventsState'], true) ?? [];
+        $selections           = $events_state_from_metadata['event_selections']            ?? [];
+        $visibilitySelections = $events_state_from_metadata['event_visibility_selections'] ?? [];
 
         $screenshotDate = $metaData['observationDate'];
         $totalStart = microtime(true);
         $eventContext = EventContext::build(
-            timestamps: [$screenshotDate],
-            selections: $events_manager->getSelections(),
-            visibilitySelections: $events_manager->getVisibilitySelections(),
+            frameTimestamps: [$screenshotDate],
+            selections: $selections,
+            visibilitySelections: $visibilitySelections,
             api: $this->eventsApi(),
             logLabel: "Screenshot:{$screenshotDate}",
         );
@@ -781,7 +777,7 @@ class Module_WebClient extends BaseModule implements ModuleInterface {
         // Create the screenshot
         $screenshot = new Image_Composite_HelioviewerScreenshot(
             $layers,
-            $events_manager,
+            $eventContext,
             (bool)$metaData['movieIcons'],
             $celestialBodies,
             (bool)$metaData['scale'],
@@ -790,7 +786,7 @@ class Module_WebClient extends BaseModule implements ModuleInterface {
             $metaData['scaleY'],
             $metaData['observationDate'],
             $roi,
-            array_merge($options, ['eventContext' => $eventContext])
+            $options
         );
     }
 
@@ -1010,8 +1006,11 @@ class Module_WebClient extends BaseModule implements ModuleInterface {
             return $this->getDataCoverageForLayers();
         } else if (!empty($this->_options['eventLayers'])) {
             try {
+                // Legacy callers still pass the bracket-string; parse it into
+                // canonical paths for the (now path-based) Timeline.
+                $paths = LegacyEventsStringParser::parse($this->_options['eventLayers']);
                 $timeline = new EventTimeline(
-                    $this->_options['eventLayers'],
+                    $paths,
                     $this->_options['startDate'] ?? null,
                     $this->_options['endDate'] ?? null,
                     $this->_options['currentDate'] ?? null,
@@ -1027,6 +1026,43 @@ class Module_WebClient extends BaseModule implements ModuleInterface {
                 }
                 return $this->_sendResponse(500, 'Internal server error', $e->getMessage());
             }
+        }
+    }
+
+    /**
+     * API Endpoint: eventsDataCoverage
+     *
+     * POST replacement for the eventLayers half of getDataCoverage. Takes
+     * canonical selection paths in the JSON body instead of legacy event-type
+     * pins in the query string.
+     *
+     * Query params: currentDate, startDate, endDate (ms epoch)
+     * Body: { "event_selections": ["SOURCE>>Label>>FRM", ...] }
+     *
+     * Response shape unchanged from getDataCoverage's eventLayers branch --
+     * see docs for eventsDataCoverage.
+     */
+    public function eventsDataCoverage() {
+        try {
+            $json_params = $this->_params['json'] ?? [];
+            $paths       = $json_params['event_selections'] ?? [];
+
+            $timeline = new EventTimeline(
+                $paths,
+                $this->_params['startDate'] ?? null,
+                $this->_params['endDate']   ?? null,
+                $this->_params['currentDate'] ?? null,
+                $this->eventsApi()
+            );
+            $this->_printJSON($timeline->execute());
+        } catch (InvalidArgumentException $e) {
+            return $this->_sendResponse(400, 'Invalid time parameters', $e->getMessage());
+        } catch (Exception $e) {
+            // EventsApiException already captured to Sentry by EventsApi
+            if (!($e instanceof EventsApiException)) {
+                Sentry::capture($e);
+            }
+            return $this->_sendResponse(500, 'Internal server error', $e->getMessage());
         }
     }
 
@@ -1380,9 +1416,6 @@ class Module_WebClient extends BaseModule implements ModuleInterface {
         // ATTENTION! These two fields eventsLabels and eventSourceString needs to be kept in DB schema
         // We are keeping them to support old takeScreenshot , queueMovie requests
 
-        // Create empty events object required for screenshots.
-        $events_manager = EventsStateManager::buildFromLegacyEventStrings('', false);
-
         // Create empty celestial bodies list
         $celestialBodies = array( "labels" => "",
                                 "trajectories" => "");
@@ -1391,7 +1424,7 @@ class Module_WebClient extends BaseModule implements ModuleInterface {
         include_once HV_ROOT_DIR.'/../src/Image/Composite/HelioviewerScreenshot.php';
         $screenshot = new Image_Composite_HelioviewerScreenshot(
             $layers,
-            $events_manager,
+            EventContext::empty(),
             false,
             $celestialBodies,
             false,
@@ -1750,6 +1783,13 @@ class Module_WebClient extends BaseModule implements ModuleInterface {
                 'legacy_event_string' => array('eventLayers')
             );
             break;
+        case 'eventsDataCoverage':
+            $expected = array(
+                'required' => array('startDate', 'endDate', 'currentDate', 'json'),
+                'ints'     => array('startDate', 'endDate', 'currentDate'),
+                'schema'   => array('json' => 'https://api.helioviewer.org/schema/events_data_coverage.schema.json'),
+            );
+            break;
         case 'getDataCoverageTimeline':
             $expected = array(
                 'optional' => array('resolution', 'endDate'),
@@ -1775,7 +1815,7 @@ class Module_WebClient extends BaseModule implements ModuleInterface {
                 'required' => array('date', 'imageScale', 'layers'),
                 'optional' => array('display', 'watermark', 'x1', 'x2',
                                     'y1', 'y2', 'x0', 'y0', 'width', 'height',
-                                    'events', 'eventLabels', 'movieIcons', 'scale',
+                                    'events', 'event_selections', 'eventLabels', 'movieIcons', 'scale',
                                     'scaleType', 'scaleX', 'scaleY',
                                     'callback', 'switchSources', 'celestialBodiesLabels', 'celestialBodiesTrajectories'),
                 'floats'   => array('imageScale', 'x1', 'x2', 'y1', 'y2',
@@ -1786,6 +1826,7 @@ class Module_WebClient extends BaseModule implements ModuleInterface {
                                     'scale', 'movieIcons', 'switchSources'),
                 'alphanum' => array('scaleType', 'callback', 'celestialBodiesLabels', 'celestialBodiesTrajectories'),
                 'legacy_event_string' => array('events'),
+                'any'      => array('event_selections'),
                 'choices'  => array('scaleType' => ['earth', 'scalebar']),
                 'layer'    => array('layers')
             );

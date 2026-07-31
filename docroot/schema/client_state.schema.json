@@ -10,8 +10,11 @@
         "centerX": { "type": "number" },
         "centerY": { "type": "number" },
         "imageScale": { "type": "number" },
-        "eventLayers": {
-            "$ref": "https://api.helioviewer.org/schema/event_layers.schema.json"
+        "event_selections": {
+            "$ref": "https://api.helioviewer.org/schema/event_selections.schema.json"
+        },
+        "event_visibility_selections": {
+            "$ref": "https://api.helioviewer.org/schema/event_visibility_selections.schema.json"
         },
         "imageLayers": {
             "type": "array",
@@ -29,7 +32,8 @@
         "centerX",
         "centerY",
         "imageScale",
-        "eventLayers",
+        "event_selections",
+        "event_visibility_selections",
         "imageLayers",
         "celestialBodies"
     ]

@@ -93,7 +93,7 @@ final class EventTreeTest extends TestCase
         $this->sentry->expects($this->once())
             ->method('message')
             ->with($this->equalTo(
-                'simpletree: encountered paths not in EventSelections::$event_types_map'
+                'simpletree: encountered paths not in EventTypeCatalogue::MAP'
             ));
 
         $event   = ['path' => 'HEK>>NewConcept>>SomeFRM', 'id' => 'x'];

@@ -17,8 +17,11 @@
             "maxLength": 1000,
             "pattern": "^[\\_\\w\\]\\[,\\-:\\.\\+ ]+$"
         },
-        "eventsState": {
-            "$ref": "https://api.helioviewer.org/schema/event_layers.schema.json"
+        "event_selections": {
+            "$ref": "https://api.helioviewer.org/schema/event_selections.schema.json"
+        },
+        "event_visibility_selections": {
+            "$ref": "https://api.helioviewer.org/schema/event_visibility_selections.schema.json"
         },
         "scale": { "type": "boolean" },
         "scaleType": {

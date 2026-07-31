@@ -542,17 +542,9 @@ paths:
                 "endTime":     "2010-03-04T12:12:12Z",
                 "imageScale":  21.04,
                 "layers":      "[3,1,100]",
-                "eventsState": {
-                    "tree_HEK": {
-                        "labels_visible": true,
-                        "layers": [
-                            {
-                                "event_type": "flare",
-                                "frms": ["frm10", "frm20"],
-                                "event_instances": ["flare--frm1--event1", "flare--frm2--event2"]
-                            }
-                        ]
-                    }
+                "event_selections": ["HEK>>Active Region", "HEK>>Flare>>SWPC"],
+                "event_visibility_selections": {
+                    "HEK": { "marker_visibility": true, "label_visibility": true }
                 },
                 "x1": -5000,
                 "y1": -5000,
@@ -829,17 +821,32 @@ paths:
         - $ref: '#/components/parameters/screenshotDate'
         - $ref: '#/components/parameters/screenshotImageScale'
         - $ref: '#/components/parameters/screenshotLayers'
+        - name: event_selections
+          in: query
+          required: false
+          description: >
+            Canonical event selections as a semicolon-separated list of
+            ``SOURCE>>Label[>>FRM]`` paths, e.g.
+            ``HEK>>Active Region;CCMC>>DONKI``. Takes precedence over the legacy
+            ``events`` bracket-string when both are supplied. URL-encode the
+            value (``;`` and ``>>`` in particular).
+          schema:
+            type: string
         - name: events
           in: query
           required: false
           description: >
-            Feature/event annotations (e.g. `[AR,HMI_HARP;SPoCA,1],[CH,all,1]`).
+            Legacy feature/event annotations as a bracket-string, e.g.
+            ``[AR,HMI_HARP;SPoCA,1],[CH,all,1]``. Superseded by
+            ``event_selections``; used only when ``event_selections`` is absent.
           schema:
             type: string
         - name: eventLabels
           in: query
           required: false
-          description: Annotate each event marker with a text label.
+          description: >
+            Annotate each event marker with a text label. Applies to whichever
+            of ``event_selections`` / ``events`` is used.
           schema:
             type: boolean
         - $ref: '#/components/parameters/screenshotScale'
@@ -2160,6 +2167,42 @@ components:
         full:
           type: string
 
+    EventSelections:
+      type: array
+      maxItems: 200
+      description: >
+        Canonical event selection paths, each a ``SOURCE>>Label[>>FRM[>>...]]``
+        string (variable depth allowed). Upstream cap is 200 selections per
+        request.
+      items:
+        type: string
+        minLength: 1
+        maxLength: 600
+      example: ["HEK>>Active Region", "CCMC>>DONKI"]
+
+    EventVisibilitySelections:
+      type: object
+      additionalProperties: false
+      description: >
+        Per-source marker/label visibility. Keys are canonical event source
+        names; both flags are optional per source and default to true
+        server-side when omitted.
+      properties:
+        HEK:    { $ref: '#/components/schemas/EventSourceFlags' }
+        CCMC:   { $ref: '#/components/schemas/EventSourceFlags' }
+        RHESSI: { $ref: '#/components/schemas/EventSourceFlags' }
+        WSA:    { $ref: '#/components/schemas/EventSourceFlags' }
+      example:
+        HEK: { marker_visibility: true, label_visibility: false }
+        CCMC: { marker_visibility: true, label_visibility: true }
+
+    EventSourceFlags:
+      type: object
+      additionalProperties: false
+      properties:
+        marker_visibility: { type: boolean }
+        label_visibility:  { type: boolean }
+
     PostMovieRequest:
       type: object
       required: [startTime, endTime, imageScale, layers]
@@ -2175,11 +2218,10 @@ components:
         layers:
           type: string
           example: "[3,1,100]"
-        eventsState:
-          type: object
-          description: >
-            Optional feature/event annotation state. See the Helioviewer
-            events state documentation for structure details.
+        event_selections:
+          $ref: '#/components/schemas/EventSelections'
+        event_visibility_selections:
+          $ref: '#/components/schemas/EventVisibilitySelections'
         imageScale:
           type: number
           format: double
@@ -2263,9 +2305,10 @@ components:
         layers:
           type: string
           example: "[3,1,100]"
-        eventsState:
-          type: object
-          description: Optional feature/event annotation state.
+        event_selections:
+          $ref: '#/components/schemas/EventSelections'
+        event_visibility_selections:
+          $ref: '#/components/schemas/EventVisibilitySelections'
         scale:
           type: boolean
           default: false

@@ -12,6 +12,7 @@ const VALID_ACTIONS = array(
     'getUsageStatistics'             => 'WebClient',
     'getDataCoverageTimeline'        => 'WebClient',
     'getDataCoverage'                => 'WebClient',
+    'eventsDataCoverage'             => 'WebClient',
     'updateDataCoverage'             => 'WebClient', // Deprecated, remove in V3, replaced by management scripts
     'shortenURL'                     => 'WebClient',
     'goto'                           => 'WebClient',

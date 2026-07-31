@@ -1,41 +1,6 @@
 {
   "imageScale": 5.608481803348903,
   "layers": "[SDO,AIA,131,1,100,0,60,1,2018-03-30T04:18:36.000Z]",
-  "eventsState": {
-    "tree_HEK": {
-      "id": "HEK",
-      "layers": [
-        {
-          "event_type": "CE",
-          "frms": [
-            "CACTus_\\(Computer_Aided_CME_Tracking\\)"
-          ],
-          "event_instances": [],
-          "open": 1
-        }
-      ],
-      "visible": true,
-      "labels_visible": true,
-      "markers_visible": true,
-      "layer_available_visible": false
-    },
-    "tree_CCMC": {
-      "id": "CCMC",
-      "layers": [],
-      "visible": true,
-      "labels_visible": true,
-      "markers_visible": true,
-      "layer_available_visible": true
-    },
-    "tree_RHESSI": {
-      "id": "RHESSI",
-      "layers": [],
-      "visible": true,
-      "labels_visible": true,
-      "markers_visible": true,
-      "layer_available_visible": true
-    }
-  },
   "scale": true,
   "scaleType": "earth",
   "scaleX": -2334,

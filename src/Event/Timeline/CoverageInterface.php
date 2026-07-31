@@ -12,7 +12,7 @@ interface CoverageInterface
     /**
      * @param EventsApiInterface $eventsApi
      * @param TimeRange $range Extended time range
-     * @param array $paths Selection paths from EventSelections
+     * @param array $paths Canonical SOURCE>>Label[>>FRM] selection paths
      * @param string $resolution Resolution string
      * @return array Series data for the timeline
      */
