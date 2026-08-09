@@ -773,7 +773,7 @@ class ImageRetrievalDaemon:
             raise BadImage("DATE")
 
         # AIA
-        if params['detector'] == "AIA":
+        if params['detector'] == "AIA" and params['observatory'] != "Surya":
             if params['header'].get("IMG_TYPE") == "DARK":
                 raise BadImage("DARK")
             if float(params['header'].get('PERCENTD')) < 50:

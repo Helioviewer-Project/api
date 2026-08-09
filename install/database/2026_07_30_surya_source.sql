@@ -1,0 +1,41 @@
+INSERT INTO datasources (id, name, description, units, layeringOrder, enabled, sourceIdGroup, displayOrder)
+VALUES
+(135, 'Surya AIA 94',   'Surya AIA 94',   'Å', 1, 0, '', 0),
+(136, 'Surya AIA 131',  'Surya AIA 131',  'Å', 1, 0, '', 0),
+(137, 'Surya AIA 171',  'Surya AIA 171',  'Å', 1, 0, '', 0),
+(138, 'Surya AIA 193',  'Surya AIA 193',  'Å', 1, 0, '', 0),
+(139, 'Surya AIA 211',  'Surya AIA 211',  'Å', 1, 0, '', 0),
+(140, 'Surya AIA 304',  'Surya AIA 304',  'Å', 1, 0, '', 0),
+(141, 'Surya AIA 335',  'Surya AIA 335',  'Å', 1, 0, '', 0),
+(142, 'Surya AIA 1600', 'Surya AIA 1600', 'Å', 1, 0, '', 0),
+(143, 'Surya AIA 1700', 'Surya AIA 1700', 'Å', 1, 0, '', 0);
+
+INSERT INTO datasource_property (sourceId, label, name, fitsName, description, uiOrder)
+VALUES
+(135, 'Observatory', 'Surya', 'Surya', 'Surya AI Forecast', 1),
+(135, 'Instrument',  'AIA',   'AIA',   'AIA',               2),
+(135, 'Measurement', '94',    '94',    '94 Angstrom',       3),
+(136, 'Observatory', 'Surya', 'Surya', 'Surya AI Forecast', 1),
+(136, 'Instrument',  'AIA',   'AIA',   'AIA',               2),
+(136, 'Measurement', '131',   '131',   '131 Angstrom',      3),
+(137, 'Observatory', 'Surya', 'Surya', 'Surya AI Forecast', 1),
+(137, 'Instrument',  'AIA',   'AIA',   'AIA',               2),
+(137, 'Measurement', '171',   '171',   '171 Angstrom',      3),
+(138, 'Observatory', 'Surya', 'Surya', 'Surya AI Forecast', 1),
+(138, 'Instrument',  'AIA',   'AIA',   'AIA',               2),
+(138, 'Measurement', '193',   '193',   '193 Angstrom',      3),
+(139, 'Observatory', 'Surya', 'Surya', 'Surya AI Forecast', 1),
+(139, 'Instrument',  'AIA',   'AIA',   'AIA',               2),
+(139, 'Measurement', '211',   '211',   '211 Angstrom',      3),
+(140, 'Observatory', 'Surya', 'Surya', 'Surya AI Forecast', 1),
+(140, 'Instrument',  'AIA',   'AIA',   'AIA',               2),
+(140, 'Measurement', '304',   '304',   '304 Angstrom',      3),
+(141, 'Observatory', 'Surya', 'Surya', 'Surya AI Forecast', 1),
+(141, 'Instrument',  'AIA',   'AIA',   'AIA',               2),
+(141, 'Measurement', '335',   '335',   '335 Angstrom',      3),
+(142, 'Observatory', 'Surya', 'Surya', 'Surya AI Forecast', 1),
+(142, 'Instrument',  'AIA',   'AIA',   'AIA',               2),
+(142, 'Measurement', '1600',  '1600',  '1600 Angstrom',     3),
+(143, 'Observatory', 'Surya', 'Surya', 'Surya AI Forecast', 1),
+(143, 'Instrument',  'AIA',   'AIA',   'AIA',               2),
+(143, 'Measurement', '1700',  '1700',  '1700 Angstrom',     3);

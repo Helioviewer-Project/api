@@ -195,6 +195,9 @@ class JP2parser:
         This either returns the observatory that exists in the imageData or
         any overrides we need to apply.
         """
+        # Surya forecast files embed SDO metadata but are identified by ORIGIN
+        if self._data.get('ORIGIN', '').lower().startswith('surya'):
+            return "Surya"
         observatory = imageData.observatory.strip().replace(" ","_")
         if observatory == "CCOR-2":
             return "SWFO-L1"

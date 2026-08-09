@@ -57,11 +57,11 @@ def get_config(filepath):
     default_userconfig = os.path.join(basedir, 'settings/settings.cfg')
 
     if filepath is not None and os.path.isfile(filepath):
-        config.readfp(open(filepath))
+        config.read(filepath)
     elif os.path.isfile(default_userconfig):
-        config.readfp(open(default_userconfig))
+        config.read(default_userconfig)
     else:
-        config.readfp(open(os.path.join(basedir, 'settings/settings.example.cfg')))
+        config.read(os.path.join(basedir, 'settings/settings.example.cfg'))
 
     return config
 
@@ -72,12 +72,12 @@ def get_db_with_config(cfg):
     dbuser = conf.get('database', 'dbuser')
     dbpass = conf.get('database', 'dbpass')
     db, cursor = get_db_cursor(dbhost, dbname, dbuser, dbpass)
-    return cursor
+    return db, cursor
 
 def main():
     args = parse_args()
     print(args)
-    cursor = get_db_with_config(args.config)
+    db, cursor = get_db_with_config(args.config)
 
     extract_datasource_name(args.jp2_file, cursor)
 
