@@ -79,6 +79,46 @@ final class HelioviewerJPXImageTest extends TestCase
         $this->_cleanupTestFiles();
     }
 
+    /**
+     * Regression test for getJPXClosestToMidPoint.
+     *
+     * The 'array_ints' validation rule converts the startTimes/endTimes
+     * request parameters into PHP arrays before they reach this class. This
+     * test verifies that the midpoint code path accepts those arrays directly
+     * instead of throwing a TypeError from explode() (the arguments used to be
+     * comma-separated strings). See Module_JHelioviewer::getJPXClosestToMidPoint.
+     */
+    public function testMidPointAcceptsArrayInput() {
+        $output_name = "test_midpoint_SOHO_LASCO_C2.jpx";
+        $output_json = "test_midpoint_SOHO_LASCO_C2.json";
+
+        // Known LASCO C2 time range present in the test database, expressed as
+        // arrays of Unix timestamps (the shape produced by the array_ints
+        // validator for the startTimes/endTimes parameters).
+        $startTimes = [strtotime("2023-12-01 00:00:00 UTC")];
+        $endTimes   = [strtotime("2023-12-01 01:00:00 UTC")];
+
+        // Constructing with array inputs and middleFrames = true exercises the
+        // midpoint query. Before the fix this threw:
+        //   explode(): Argument #2 ($string) must be of type string, array given
+        $jpx = new Image_JPEG2000_HelioviewerJPXImage(
+                    4, // LASCO C2 source
+                    $startTimes,
+                    $endTimes,
+                    false,
+                    false,
+                    $output_name,
+                    true); // middleFrames = true -> midpoint path
+
+        // If the array input was handled correctly, a JPX file was generated
+        // for the frame closest to the interval midpoint.
+        $this->assertFileExists(self::MOVIE_DIR . $output_name, "Expected a JPX file to be generated from array midpoint input.");
+
+        // Remove generated files.
+        @unlink(self::MOVIE_DIR . $output_name);
+        @unlink(self::MOVIE_DIR . $output_json);
+    }
+
     private function _setupTestFiles() {
         if (!is_dir(self::MOVIE_DIR)) {
             mkdir(self::MOVIE_DIR);

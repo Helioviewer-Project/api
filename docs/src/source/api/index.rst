@@ -12,3 +12,4 @@ For an interactive "Try it out" experience, see the
 .. openapi:: ../../openapi.yaml
    :group:
    :examples:
+   :format: markdown

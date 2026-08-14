@@ -192,11 +192,11 @@ class Image_JPEG2000_HelioviewerJPXImage extends Image_JPEG2000_JPXImage {
 
         $imgIndex = new Database_ImgIndex();
 
-		// Parse List of dates and convert them to Unix Timestaps
-		$startTimesArray                 = explode(',', $this->_startTime);
-		$endTimesArray                   = explode(',', $this->_endTime);
+		// List of start/end dates as arrays of Unix timestamps
+		$startTimesArray                 = $this->_startTime;
+		$endTimesArray                   = $this->_endTime;
 
-		if(count($startTimesArray) < 1 || count($endTimesArray) < 1){
+		if(!is_array($startTimesArray) || !is_array($endTimesArray) || count($startTimesArray) < 1 || count($endTimesArray) < 1){
 			throw new Exception('At least one Start and End date need to be specified. Please use timestamps separated with commas.', 61);
 		}
 

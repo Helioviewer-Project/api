@@ -105,12 +105,14 @@ class EventsStateManager
 
     /**
      * Creates a new EventsStateManager from events_state
-     * @param  array $events_state, events state posted from frontend
+     * @param  ?array $events_state, events state posted from frontend. When
+     *         null (e.g. the optional eventsState param was omitted), it is
+     *         treated as an empty events state.
      * @return EventsStateManager
      */
-    public static function buildFromEventsState(array $events_state) : EventsStateManager 
+    public static function buildFromEventsState(?array $events_state = null) : EventsStateManager
     {
-        return new self($events_state);
+        return new self($events_state ?? []);
     }
 
     /**

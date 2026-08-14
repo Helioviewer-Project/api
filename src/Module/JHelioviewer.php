@@ -208,10 +208,8 @@ class Module_JHelioviewer extends BaseModule implements ModuleInterface {
             //Build Statistic
             include_once HV_ROOT_DIR.'/../src/Database/Statistics.php';
             $statistics = new Database_Statistics();
-            $startArray = explode(",", $this->_params['startTimes']);
-			$endArray = explode(",", $this->_params['endTimes']);
-			$startTime = $startArray[0];
-			$endTime = array_pop($endArray);
+            $startTime = $this->_params['startTimes'][0];
+			$endTime = end($this->_params['endTimes']);
 
             $statistics->logJPX(date('Y-m-d H:i:s', $startTime), date('Y-m-d H:i:s', $endTime), $this->_params['sourceId']);
 
@@ -309,8 +307,8 @@ class Module_JHelioviewer extends BaseModule implements ModuleInterface {
      * @return string Filename to use for generated JPX image
      */
     private function _getJPXMidPointFilename($cadence, $linked) {
-		$startTimesArray                 = explode(',', $this->_params['startTimes']);
-		$endTimesArray                   = explode(',', $this->_params['endTimes']);
+		$startTimesArray                 = $this->_params['startTimes'];
+		$endTimesArray                   = $this->_params['endTimes'];
         $endArrayValues = array_values($endTimesArray);
 
         $from = str_replace(':', '.', date("Y-m-d\TH:i:s\Z", current($startTimesArray)) );
@@ -335,7 +333,7 @@ class Module_JHelioviewer extends BaseModule implements ModuleInterface {
             $filename .= 'L';
         }
 
-        $hash_of_midpoints = md5($this->_params['startTimes'].">>".$this->_params['endTimes']);
+        $hash_of_midpoints = md5(implode(',', $this->_params['startTimes']).">>".implode(',', $this->_params['endTimes']));
 
         $result_filename = str_replace(' ', '-', $filename);
 

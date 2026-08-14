@@ -28,7 +28,7 @@ tags:
   - name: Official Clients
     description: Endpoints intended for use by official Helioviewer clients
   - name: Solar Features & Events
-    description: Solar feature and event data from HEK and DONKI
+    description: Solar feature and event data from HEK, CCMC, and RHESSI
   - name: YouTube
     description: Share movies to YouTube
   - name: Website
@@ -49,9 +49,7 @@ paths:
 
         **Example Request**
 
-        .. parsed-literal::
-
-            `https://api.helioviewer.org/v2/downloadImage/?id=189536650 <https://api.helioviewer.org/v2/downloadImage/?id=189536650>`_
+        [`https://api.helioviewer.org/v2/downloadImage/?id=189536650`](<https://api.helioviewer.org/v2/downloadImage/?id=189536650>)
       operationId: downloadImage
       parameters:
         - name: id
@@ -115,9 +113,7 @@ paths:
 
         **Example Request**
 
-        .. parsed-literal::
-
-            `https://api.helioviewer.org/v2/getJP2Header/?id=189536650 <https://api.helioviewer.org/v2/getJP2Header/?id=189536650>`_
+        [`https://api.helioviewer.org/v2/getJP2Header/?id=189536650`](<https://api.helioviewer.org/v2/getJP2Header/?id=189536650>)
       operationId: getJP2Header
       parameters:
         - name: id
@@ -151,26 +147,20 @@ paths:
       description: |
         Download the JP2 image for the specified datasource that is closest in
         time to the requested date. By default returns binary JP2 data. Set
-        ``jpip=true`` for a JPIP URI, and additionally ``json=true`` for a JSON
+        `jpip=true` for a JPIP URI, and additionally `json=true` for a JSON
         response.
 
         **Example Request** — binary JP2 image data (default):
 
-        .. parsed-literal::
-
-            `https://api.helioviewer.org/v2/getJP2Image/?date=2014-01-01T23:59:59Z&sourceId=14 <https://api.helioviewer.org/v2/getJP2Image/?date=2014-01-01T23:59:59Z&sourceId=14>`_
+        [`https://api.helioviewer.org/v2/getJP2Image/?date=2014-01-01T23:59:59Z&sourceId=14`](<https://api.helioviewer.org/v2/getJP2Image/?date=2014-01-01T23:59:59Z&sourceId=14>)
 
         **Example Request** — JPIP URI as plain text:
 
-        .. parsed-literal::
-
-            `https://api.helioviewer.org/v2/getJP2Image/?date=2014-01-01T23:59:59Z&sourceId=14&jpip=true <https://api.helioviewer.org/v2/getJP2Image/?date=2014-01-01T23:59:59Z&sourceId=14&jpip=true>`_
+        [`https://api.helioviewer.org/v2/getJP2Image/?date=2014-01-01T23:59:59Z&sourceId=14&jpip=true`](<https://api.helioviewer.org/v2/getJP2Image/?date=2014-01-01T23:59:59Z&sourceId=14&jpip=true>)
 
         **Example Request** — JPIP URI as JSON:
 
-        .. parsed-literal::
-
-            `https://api.helioviewer.org/v2/getJP2Image/?date=2014-01-01T23:59:59Z&sourceId=14&jpip=true&json=true <https://api.helioviewer.org/v2/getJP2Image/?date=2014-01-01T23:59:59Z&sourceId=14&jpip=true&json=true>`_
+        [`https://api.helioviewer.org/v2/getJP2Image/?date=2014-01-01T23:59:59Z&sourceId=14&jpip=true&json=true`](<https://api.helioviewer.org/v2/getJP2Image/?date=2014-01-01T23:59:59Z&sourceId=14&jpip=true&json=true>)
       operationId: getJP2Image
       parameters:
         - name: date
@@ -230,31 +220,23 @@ paths:
       summary: Generate and download a JPX movie
       description: |
         Generate and optionally download a custom JPX movie for the specified
-        datasource. Without ``jpip`` or ``verbose``, returns binary JPX data.
+        datasource. Without `jpip` or `verbose`, returns binary JPX data.
 
         **Example Request** — binary JPX movie data:
 
-        .. parsed-literal::
-
-            `https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14 <https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14>`_
+        [`https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14`](<https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14>)
 
         **Example Request** — JPIP URI as plain text:
 
-        .. parsed-literal::
-
-            `https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14&jpip=true <https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14&jpip=true>`_
+        [`https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14&jpip=true`](<https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14&jpip=true>)
 
         **Example Request** — JPIP URI in JSON with frame timestamps:
 
-        .. parsed-literal::
-
-            `https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14&jpip=true&verbose=true <https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14&jpip=true&verbose=true>`_
+        [`https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14&jpip=true&verbose=true`](<https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14&jpip=true&verbose=true>)
 
         **Example Request** — HTTP URI in JSON with frame timestamps:
 
-        .. parsed-literal::
-
-            `https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14&verbose=true <https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14&verbose=true>`_
+        [`https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14&verbose=true`](<https://api.helioviewer.org/v2/getJPX/?startTime=2014-01-01T00:00:00Z&endTime=2014-01-01T00:45:00Z&sourceId=14&verbose=true>)
       operationId: getJPX
       parameters:
         - name: startTime
@@ -344,15 +326,11 @@ paths:
 
         **Example Request** — binary JPX movie data:
 
-        .. parsed-literal::
-
-            `https://api.helioviewer.org/v2/getJPXClosestToMidPoint/?startTimes=1306886400,1306887000,1306887600&endTimes=1306886700,1306887300,1306887900&sourceId=14 <https://api.helioviewer.org/v2/getJPXClosestToMidPoint/?startTimes=1306886400,1306887000,1306887600&endTimes=1306886700,1306887300,1306887900&sourceId=14>`_
+        [`https://api.helioviewer.org/v2/getJPXClosestToMidPoint/?startTimes=1306886400,1306887000,1306887600&endTimes=1306886700,1306887300,1306887900&sourceId=14`](<https://api.helioviewer.org/v2/getJPXClosestToMidPoint/?startTimes=1306886400,1306887000,1306887600&endTimes=1306886700,1306887300,1306887900&sourceId=14>)
 
         **Example Request** — JPIP URI in JSON:
 
-        .. parsed-literal::
-
-            `https://api.helioviewer.org/v2/getJPXClosestToMidPoint/?startTimes=1306886400,1306887000,1306887600&endTimes=1306886700,1306887300,1306887900&sourceId=14&jpip=true&verbose=true <https://api.helioviewer.org/v2/getJPXClosestToMidPoint/?startTimes=1306886400,1306887000,1306887600&endTimes=1306886700,1306887300,1306887900&sourceId=14&jpip=true&verbose=true>`_
+        [`https://api.helioviewer.org/v2/getJPXClosestToMidPoint/?startTimes=1306886400,1306887000,1306887600&endTimes=1306886700,1306887300,1306887900&sourceId=14&jpip=true&verbose=true`](<https://api.helioviewer.org/v2/getJPXClosestToMidPoint/?startTimes=1306886400,1306887000,1306887600&endTimes=1306886700,1306887300,1306887900&sourceId=14&jpip=true&verbose=true>)
       operationId: getJPXClosestToMidPoint
       parameters:
         - name: startTimes
@@ -431,9 +409,7 @@ paths:
 
         **Example Request**
 
-        .. parsed-literal::
-
-            `https://api.helioviewer.org/v2/getStatus/ <https://api.helioviewer.org/v2/getStatus/>`_
+        [`https://api.helioviewer.org/v2/getStatus/`](<https://api.helioviewer.org/v2/getStatus/>)
       operationId: getStatus
       responses:
         "200":
@@ -459,14 +435,12 @@ paths:
       summary: Queue a custom movie (GET)
       description: |
         Submit a request to the movie generation queue and receive a unique
-        Movie ID. Use ``getMovieStatus`` to poll for completion and
-        ``downloadMovie`` to retrieve the file.
+        Movie ID. Use `getMovieStatus` to poll for completion and
+        `downloadMovie` to retrieve the file.
 
         **Example Request**
 
-        .. parsed-literal::
-
-            `https://api.helioviewer.org/v2/queueMovie/?startTime=2010-03-01T12:12:12Z&endTime=2010-03-04T12:12:12Z&layers=[3,1,100],[4,1,100]&events=[AR,HMI_HARP;SPoCA,1],[CH,all,1]&eventsLabels=false&imageScale=21.04&x1=-5000&y1=-5000&x2=5000&y2=5000 <https://api.helioviewer.org/v2/queueMovie/?startTime=2010-03-01T12:12:12Z&endTime=2010-03-04T12:12:12Z&layers=[3,1,100],[4,1,100]&events=[AR,HMI_HARP;SPoCA,1],[CH,all,1]&eventsLabels=false&imageScale=21.04&x1=-5000&y1=-5000&x2=5000&y2=5000>`_
+        [`https://api.helioviewer.org/v2/queueMovie/?startTime=2010-03-01T12:12:12Z&endTime=2010-03-04T12:12:12Z&layers=[3,1,100],[4,1,100]&events=[AR,HMI_HARP;SPoCA,1],[CH,all,1]&eventsLabels=false&imageScale=21.04&x1=-5000&y1=-5000&x2=5000&y2=5000`](<https://api.helioviewer.org/v2/queueMovie/?startTime=2010-03-01T12:12:12Z&endTime=2010-03-04T12:12:12Z&layers=[3,1,100],[4,1,100]&events=[AR,HMI_HARP;SPoCA,1],[CH,all,1]&eventsLabels=false&imageScale=21.04&x1=-5000&y1=-5000&x2=5000&y2=5000>)
       operationId: queueMovie
       parameters:
         - $ref: '#/components/parameters/movieStartTime'
@@ -535,30 +509,30 @@ paths:
 
         **Example Request Body**
 
-        .. code-block:: json
-
-            {
-                "startTime":   "2010-03-01T12:12:12Z",
-                "endTime":     "2010-03-04T12:12:12Z",
-                "imageScale":  21.04,
-                "layers":      "[3,1,100]",
-                "eventsState": {
-                    "tree_HEK": {
-                        "labels_visible": true,
-                        "layers": [
-                            {
-                                "event_type": "flare",
-                                "frms": ["frm10", "frm20"],
-                                "event_instances": ["flare--frm1--event1", "flare--frm2--event2"]
-                            }
-                        ]
-                    }
-                },
-                "x1": -5000,
-                "y1": -5000,
-                "x2":  5000,
-                "y2":  5000
-            }
+        ```json
+        {
+            "startTime":   "2010-03-01T12:12:12Z",
+            "endTime":     "2010-03-04T12:12:12Z",
+            "imageScale":  21.04,
+            "layers":      "[3,1,100]",
+            "eventsState": {
+                "tree_HEK": {
+                    "labels_visible": true,
+                    "layers": [
+                        {
+                            "event_type": "flare",
+                            "frms": ["frm10", "frm20"],
+                            "event_instances": ["flare--frm1--event1", "flare--frm2--event2"]
+                        }
+                    ]
+                }
+            },
+            "x1": -5000,
+            "y1": -5000,
+            "x2":  5000,
+            "y2":  5000
+        }
+        ```
       operationId: postMovie
       requestBody:
         required: true
@@ -585,13 +559,11 @@ paths:
       summary: Re-generate an expired movie
       description: |
         Re-generate a custom movie that is no longer cached on disk. Use the
-        returned Movie ID with ``getMovieStatus`` and ``downloadMovie``.
+        returned Movie ID with `getMovieStatus` and `downloadMovie`.
 
         **Example Request**
 
-        .. parsed-literal::
-
-            `https://api.helioviewer.org/v2/reQueueMovie/?id=w1Pj5 <https://api.helioviewer.org/v2/reQueueMovie/?id=w1Pj5>`_
+        [`https://api.helioviewer.org/v2/reQueueMovie/?id=w1Pj5`](<https://api.helioviewer.org/v2/reQueueMovie/?id=w1Pj5>)
       operationId: reQueueMovie
       parameters:
         - name: id
@@ -631,15 +603,11 @@ paths:
 
         **Example Request**
 
-        .. parsed-literal::
-
-            `https://api.helioviewer.org/v2/getMovieStatus/?id=w1Pj5&format=mp4 <https://api.helioviewer.org/v2/getMovieStatus/?id=w1Pj5&format=mp4>`_
+        [`https://api.helioviewer.org/v2/getMovieStatus/?id=w1Pj5&format=mp4`](<https://api.helioviewer.org/v2/getMovieStatus/?id=w1Pj5&format=mp4>)
 
         **Example Request** — verbose with JSONP callback:
 
-        .. parsed-literal::
-
-            `https://api.helioviewer.org/v2/getMovieStatus/?id=w1Pj5&format=webm&verbose=true&callback=callbackTest <https://api.helioviewer.org/v2/getMovieStatus/?id=w1Pj5&format=webm&verbose=true&callback=callbackTest>`_
+        [`https://api.helioviewer.org/v2/getMovieStatus/?id=w1Pj5&format=webm&verbose=true&callback=callbackTest`](<https://api.helioviewer.org/v2/getMovieStatus/?id=w1Pj5&format=webm&verbose=true&callback=callbackTest>)
       operationId: getMovieStatus
       parameters:
         - name: id
@@ -705,9 +673,7 @@ paths:
 
         **Example Request**
 
-        .. parsed-literal::
-
-            `https://api.helioviewer.org/v2/downloadMovie/?id=w1Pj5&format=mp4 <https://api.helioviewer.org/v2/downloadMovie/?id=w1Pj5&format=mp4>`_
+        [`https://api.helioviewer.org/v2/downloadMovie/?id=w1Pj5&format=mp4`](<https://api.helioviewer.org/v2/downloadMovie/?id=w1Pj5&format=mp4>)
       operationId: downloadMovie
       parameters:
         - name: id
@@ -753,9 +719,7 @@ paths:
 
         **Example Request**
 
-        .. parsed-literal::
-
-            `https://api.helioviewer.org/v2/playMovie/?id=w1Pj5&format=mp4&hq=true <https://api.helioviewer.org/v2/playMovie/?id=w1Pj5&format=mp4&hq=true>`_
+        [`https://api.helioviewer.org/v2/playMovie/?id=w1Pj5&format=mp4&hq=true`](<https://api.helioviewer.org/v2/playMovie/?id=w1Pj5&format=mp4&hq=true>)
       operationId: playMovie
       parameters:
         - name: id
@@ -809,21 +773,22 @@ paths:
       summary: Generate a custom screenshot (GET)
       description: |
         Generate a custom screenshot. Specify the field of view using either
-        (``x1``, ``y1``, ``x2``, ``y2``) or (``x0``, ``y0``, ``width``,
-        ``height``). By default returns a JSON object with a screenshot ``id``;
-        set ``display=true`` to receive the PNG binary directly.
+        (`x1`, `y1`, `x2`, `y2`) or (`x0`, `y0`, `width`,
+        `height`). By default returns a JSON object with a screenshot `id`;
+        set `display=true` to receive the PNG binary directly.
+
+        **MCP note:** Leave `display` unset (or `false`) so `takeScreenshot`
+        returns the JSON `{id}` object. `display=true` returns raw PNG bytes,
+        which the MCP layer cannot return as structured output; retrieve the
+        image itself via its URL outside MCP.
 
         **Example Request** — JSON response with screenshot ID:
 
-        .. parsed-literal::
-
-            `https://api.helioviewer.org/v2/takeScreenshot/?date=2014-01-01T23:59:59Z&imageScale=2.4204409&layers=[SDO,AIA,AIA,335,1,100]&events=[AR,HMI_HARP;SPoCA,1],[CH,all,1]&eventsLabels=false&x0=0&y0=0&width=1920&height=1200 <https://api.helioviewer.org/v2/takeScreenshot/?date=2014-01-01T23:59:59Z&imageScale=2.4204409&layers=[SDO,AIA,AIA,335,1,100]&events=[AR,HMI_HARP;SPoCA,1],[CH,all,1]&eventsLabels=false&x0=0&y0=0&width=1920&height=1200>`_
+        [`https://api.helioviewer.org/v2/takeScreenshot/?date=2014-01-01T23:59:59Z&imageScale=2.4204409&layers=[SDO,AIA,AIA,335,1,100]&events=[AR,HMI_HARP;SPoCA,1],[CH,all,1]&eventsLabels=false&x0=0&y0=0&width=1920&height=1200`](<https://api.helioviewer.org/v2/takeScreenshot/?date=2014-01-01T23:59:59Z&imageScale=2.4204409&layers=[SDO,AIA,AIA,335,1,100]&events=[AR,HMI_HARP;SPoCA,1],[CH,all,1]&eventsLabels=false&x0=0&y0=0&width=1920&height=1200>)
 
         **Example Request** — PNG binary directly:
 
-        .. parsed-literal::
-
-            `https://api.helioviewer.org/v2/takeScreenshot/?imageScale=2.4204409&layers=[SDO,AIA,AIA,304,1,100]&events=[CH,all,1]&eventLabels=true&scale=true&scaleType=earth&scaleX=0&scaleY=0&date=2014-02-25T15:53:00.136Z&x1=-929.2475775696686&x2=106.70112763033143&y1=-970.7984919973343&y2=486.3069298026657&display=true&watermark=true <https://api.helioviewer.org/v2/takeScreenshot/?imageScale=2.4204409&layers=[SDO,AIA,AIA,304,1,100]&events=[CH,all,1]&eventLabels=true&scale=true&scaleType=earth&scaleX=0&scaleY=0&date=2014-02-25T15:53:00.136Z&x1=-929.2475775696686&x2=106.70112763033143&y1=-970.7984919973343&y2=486.3069298026657&display=true&watermark=true>`_
+        [`https://api.helioviewer.org/v2/takeScreenshot/?imageScale=2.4204409&layers=[SDO,AIA,AIA,304,1,100]&events=[CH,all,1]&eventLabels=true&scale=true&scaleType=earth&scaleX=0&scaleY=0&date=2014-02-25T15:53:00.136Z&x1=-929.2475775696686&x2=106.70112763033143&y1=-970.7984919973343&y2=486.3069298026657&display=true&watermark=true`](<https://api.helioviewer.org/v2/takeScreenshot/?imageScale=2.4204409&layers=[SDO,AIA,AIA,304,1,100]&events=[CH,all,1]&eventLabels=true&scale=true&scaleType=earth&scaleX=0&scaleY=0&date=2014-02-25T15:53:00.136Z&x1=-929.2475775696686&x2=106.70112763033143&y1=-970.7984919973343&y2=486.3069298026657&display=true&watermark=true>)
       operationId: takeScreenshot
       parameters:
         - $ref: '#/components/parameters/screenshotDate'
@@ -877,30 +842,30 @@ paths:
       summary: Generate a custom screenshot (POST)
       description: |
         Generate a custom screenshot via a JSON POST request. Specify the field
-        of view with (``x1``, ``y1``, ``x2``, ``y2``) or (``x0``, ``y0``,
-        ``width``, ``height``). Set ``display=true`` to receive the PNG binary
+        of view with (`x1`, `y1`, `x2`, `y2`) or (`x0`, `y0`,
+        `width`, `height`). Set `display=true` to receive the PNG binary
         directly.
 
         **Example Request Body** — JSON response with screenshot ID:
 
-        .. code-block:: json
-
-            {
-                "date":       "2014-01-01T23:59:59Z",
-                "imageScale": 2.4204409,
-                "layers":     "[3,1,100]"
-            }
+        ```json
+        {
+            "date":       "2014-01-01T23:59:59Z",
+            "imageScale": 2.4204409,
+            "layers":     "[3,1,100]"
+        }
+        ```
 
         **Example Request Body** — PNG binary directly:
 
-        .. code-block:: json
-
-            {
-                "date":       "2014-01-01T23:59:59Z",
-                "imageScale": 2.4204409,
-                "layers":     "[3,1,100]",
-                "display":    true
-            }
+        ```json
+        {
+            "date":       "2014-01-01T23:59:59Z",
+            "imageScale": 2.4204409,
+            "layers":     "[3,1,100]",
+            "display":    true
+        }
+        ```
       operationId: postScreenshot
       requestBody:
         required: true
@@ -927,13 +892,11 @@ paths:
       tags: [Screenshots]
       summary: Download a generated screenshot
       description: |
-        Download a screenshot that was previously generated with ``takeScreenshot``.
+        Download a screenshot that was previously generated with `takeScreenshot`.
 
         **Example Request**
 
-        .. parsed-literal::
-
-            `https://api.helioviewer.org/v2/downloadScreenshot/?id=3240748 <https://api.helioviewer.org/v2/downloadScreenshot/?id=3240748>`_
+        [`https://api.helioviewer.org/v2/downloadScreenshot/?id=3240748`](<https://api.helioviewer.org/v2/downloadScreenshot/?id=3240748>)
       operationId: downloadScreenshot
       parameters:
         - name: id
@@ -962,9 +925,7 @@ paths:
 
         **Example Request**
 
-        .. parsed-literal::
-
-            `https://api.helioviewer.org/v2/getEclipseImage/ <https://api.helioviewer.org/v2/getEclipseImage/>`_
+        [`https://api.helioviewer.org/v2/getEclipseImage/`](<https://api.helioviewer.org/v2/getEclipseImage/>)
       operationId: getEclipseImage
       parameters:
         - name: moon
@@ -995,9 +956,7 @@ paths:
 
         **Example Request**
 
-        .. parsed-literal::
-
-            `https://api.helioviewer.org/v2/getClosestImage/?date=2014-01-01T23:59:59Z&sourceId=14 <https://api.helioviewer.org/v2/getClosestImage/?date=2014-01-01T23:59:59Z&sourceId=14>`_
+        [`https://api.helioviewer.org/v2/getClosestImage/?date=2014-01-01T23:59:59Z&sourceId=14`](<https://api.helioviewer.org/v2/getClosestImage/?date=2014-01-01T23:59:59Z&sourceId=14>)
       operationId: getClosestImage
       parameters:
         - name: date
@@ -1024,15 +983,20 @@ paths:
               schema:
                 $ref: '#/components/schemas/ClosestImageResponse'
               example:
-                id: 34205701
+                id: "34205701"
                 date: "2014-01-02 00:00:02"
+                name: "AIA 335"
                 scale: 0.58996068317702
                 scaleCorrection: 1.01701692521
                 width: 4096
                 height: 4096
                 refPixelX: 2048.5
                 refPixelY: 2048.5
+                offsetX: 0
+                offsetY: 0
+                rotation: 0
                 rsun: 1600
+                dsun: 147094770000
                 sunCenterOffsetParams: []
                 layeringOrder: 1
 
@@ -1042,14 +1006,12 @@ paths:
       summary: List available image datasources
       description: |
         Return a hierarchical list of available datasources. Set
-        ``verbose=true`` for a JHelioviewer-compatible format. Use ``enable``
+        `verbose=true` for a JHelioviewer-compatible format. Use `enable`
         to include additional observatories in verbose mode.
 
         **Example Request**
 
-        .. parsed-literal::
-
-            `https://api.helioviewer.org/v2/getDataSources/ <https://api.helioviewer.org/v2/getDataSources/>`_
+        [`https://api.helioviewer.org/v2/getDataSources/`](<https://api.helioviewer.org/v2/getDataSources/>)
       operationId: getDataSources
       parameters:
         - name: verbose
@@ -1104,13 +1066,11 @@ paths:
       description: |
         Request a single 512×512 pixel PNG image tile for use in the
         Helioviewer viewport. Obtain the image identifier via
-        ``getClosestImage``.
+        `getClosestImage`.
 
         **Example Request**
 
-        .. parsed-literal::
-
-            `https://api.helioviewer.org/v2/getTile/?id=36275490&x=-1&y=-1&imageScale=2.42044088 <https://api.helioviewer.org/v2/getTile/?id=36275490&x=-1&y=-1&imageScale=2.42044088>`_
+        [`https://api.helioviewer.org/v2/getTile/?id=36275490&x=-1&y=-1&imageScale=2.42044088`](<https://api.helioviewer.org/v2/getTile/?id=36275490&x=-1&y=-1&imageScale=2.42044088>)
       operationId: getTile
       parameters:
         - name: id
@@ -1199,17 +1159,13 @@ paths:
       tags: [Official Clients]
       summary: Shorten a Helioviewer URL
       description: |
-        .. warning::
-
-            **This endpoint is obsolete and will go away in future versions**
+        > **This endpoint is obsolete and will go away in future versions**
 
         Shorten a Helioviewer.org URL using the bit.ly service.
 
         **Example Request**
 
-        .. parsed-literal::
-
-            `https://api.helioviewer.org/v2/shortenURL/?queryString=date%3D2014-02-25T15%3A18%3A07.000Z%26imageScale%3D2.4204409%26imageLayers%3D%255BSDO%2CAIA%2CAIA%2C304%2C1%2C100%255D <https://api.helioviewer.org/v2/shortenURL/?queryString=date%3D2014-02-25T15%3A18%3A07.000Z%26imageScale%3D2.4204409%26imageLayers%3D%255BSDO%2CAIA%2CAIA%2C304%2C1%2C100%255D>`_
+        [`https://api.helioviewer.org/v2/shortenURL/?queryString=date%3D2014-02-25T15%3A18%3A07.000Z%26imageScale%3D2.4204409%26imageLayers%3D%255BSDO%2CAIA%2CAIA%2C304%2C1%2C100%255D`](<https://api.helioviewer.org/v2/shortenURL/?queryString=date%3D2014-02-25T15%3A18%3A07.000Z%26imageScale%3D2.4204409%26imageLayers%3D%255BSDO%2CAIA%2CAIA%2C304%2C1%2C100%255D>)
       operationId: shortenURL
       parameters:
         - name: queryString
@@ -1261,32 +1217,27 @@ paths:
       tags: [Solar Features & Events]
       summary: Get solar feature and event data
       description: |
-        Returns a list of HEK events in the Helioviewer event format.
-        Event-specific data conforms to the HEK Event Specification.
+        Returns a list of solar feature/event data in the Helioviewer event
+        format, aggregated from HEK, CCMC, and RHESSI. Event-specific data
+        conforms to the HEK Event Specification.
 
-        When ``format=simpletree`` is requested, that flat payload is re-shaped into
-        a single-level map whose keys are ``SOURCE>>Label`` strings (one per known
+        When `format=simpletree` is requested, that flat payload is re-shaped into
+        a single-level map whose keys are `SOURCE>>Label` strings (one per known
         event type for the requested sources) and whose values are arrays of the
         matching events. Empty buckets are kept so the client can render the full
         catalogue regardless of what's in the response.
 
         **Example Request**
 
-        .. parsed-literal::
-
-            `https://api.helioviewer.org/v2/events/?startTime=2023-03-30T00:00:00Z <https://api.helioviewer.org/v2/events/?startTime=2023-03-30T00:00:00Z>`_
+        [`https://api.helioviewer.org/v2/events/?startTime=2023-03-30T00:00:00Z`](<https://api.helioviewer.org/v2/events/?startTime=2023-03-30T00:00:00Z>)
 
         **Example simpletree Request**
 
-        .. parsed-literal::
-
-            `https://api.helioviewer.org/v2/events/?startTime=2023-03-30T00:00:00Z&sources=HEK&format=simpletree <https://api.helioviewer.org/v2/events/?startTime=2023-03-30T00:00:00Z&sources=HEK&format=simpletree>`_
+        [`https://api.helioviewer.org/v2/events/?startTime=2023-03-30T00:00:00Z&sources=HEK&format=simpletree`](<https://api.helioviewer.org/v2/events/?startTime=2023-03-30T00:00:00Z&sources=HEK&format=simpletree>)
 
         **Example flat Request**
 
-        .. parsed-literal::
-
-            `https://api.helioviewer.org/v2/events/?startTime=2023-03-30T00:00:00Z&sources=HEK&format=flat <https://api.helioviewer.org/v2/events/?startTime=2023-03-30T00:00:00Z&sources=HEK&format=flat>`_
+        [`https://api.helioviewer.org/v2/events/?startTime=2023-03-30T00:00:00Z&sources=HEK&format=flat`](<https://api.helioviewer.org/v2/events/?startTime=2023-03-30T00:00:00Z&sources=HEK&format=flat>)
       operationId: getEvents
       parameters:
         - name: startTime
@@ -1302,18 +1253,18 @@ paths:
           required: false
           description: >
             Comma-separated external data sources to query. Current options:
-            HEK, DONKI. If omitted, all sources are queried.
+            HEK, CCMC, RHESSI. If omitted, all sources are queried.
           schema:
             type: string
-            example: "HEK,DONKI"
+            example: "HEK,CCMC,RHESSI"
         - name: format
           in: query
           required: false
           description: >
-            Output shape. ``tree`` (default) returns the legacy nested
+            Output shape. `tree` (default) returns the legacy nested
             category/group structure described in the Helioviewer event format.
-            ``simpletree`` buckets the flat response into a one-level
-            ``SOURCE>>Label`` map keyed by event type. ``flat`` returns the new
+            `simpletree` buckets the flat response into a one-level
+            `SOURCE>>Label` map keyed by event type. `flat` returns the new
             v1 per-source response (one object per event with no category
             nesting).
           schema:
@@ -1323,13 +1274,33 @@ paths:
             example: simpletree
       responses:
         "200":
-          description: Array of solar event groups.
+          description: |
+            Solar feature/event data. The shape depends on the `format`
+            parameter: `tree` (default) and `flat` return arrays, while
+            `simpletree` returns an object map keyed by `SOURCE>>Label`.
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/EventGroup'
+                oneOf:
+                  - title: tree
+                    description: Default nested category/group structure.
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EventGroup'
+                  - title: flat
+                    description: One object per event, no category nesting.
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FlatEvent'
+                  - title: simpletree
+                    description: >-
+                      One-level map keyed by `SOURCE>>Label`; each value is an
+                      array of matching events (empty buckets are kept).
+                    type: object
+                    additionalProperties:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/FlatEvent'
               examples:
                 tree:
                   summary: Default tree format
@@ -1384,9 +1355,7 @@ paths:
 
         **Example Request**
 
-        .. parsed-literal::
-
-            `https://api.helioviewer.org/v2/checkYouTubeAuth/ <https://api.helioviewer.org/v2/checkYouTubeAuth/>`_
+        [`https://api.helioviewer.org/v2/checkYouTubeAuth/`](<https://api.helioviewer.org/v2/checkYouTubeAuth/>)
       operationId: checkYouTubeAuth
       parameters:
         - $ref: '#/components/parameters/callback'
@@ -1409,9 +1378,7 @@ paths:
 
         **Example Request**
 
-        .. parsed-literal::
-
-            `https://api.helioviewer.org/v2/getYouTubeAuth/?id=VXvX5&title=AIA%204500%20(2013-12-30%2016%3A00%3A07%20-%202014-01-27%2015%3A00%3A07%20UTC)&description=This%20movie%20was%20produced%20by%20Helioviewer.org&tags=SDO%2CAIA%2C4500&share=true <https://api.helioviewer.org/v2/getYouTubeAuth/?id=VXvX5&title=AIA%204500%20(2013-12-30%2016%3A00%3A07%20-%202014-01-27%2015%3A00%3A07%20UTC)&description=This%20movie%20was%20produced%20by%20Helioviewer.org&tags=SDO%2CAIA%2C4500&share=true>`_
+        [`https://api.helioviewer.org/v2/getYouTubeAuth/?id=VXvX5&title=AIA%204500%20(2013-12-30%2016%3A00%3A07%20-%202014-01-27%2015%3A00%3A07%20UTC)&description=This%20movie%20was%20produced%20by%20Helioviewer.org&tags=SDO%2CAIA%2C4500&share=true`](<https://api.helioviewer.org/v2/getYouTubeAuth/?id=VXvX5&title=AIA%204500%20(2013-12-30%2016%3A00%3A07%20-%202014-01-27%2015%3A00%3A07%20UTC)&description=This%20movie%20was%20produced%20by%20Helioviewer.org&tags=SDO%2CAIA%2C4500&share=true>)
       operationId: getYouTubeAuth
       parameters:
         - name: id
@@ -1465,9 +1432,7 @@ paths:
 
         **Example Request**
 
-        .. code-block::
-
-            https://api.helioviewer.org/v2/uploadMovieToYouTube/?id=y9tX5&title=AIA+94+(2014-02-26+16%3A14%3A25+-+2014-02-27+15%3A37%3A49+UTC)&description=This+movie+was+produced+by+Helioviewer.org&tags=SDO%2CAIA%2C94&share=true
+        [`https://api.helioviewer.org/v2/uploadMovieToYouTube/?id=y9tX5&title=AIA+94+(2014-02-26+16%3A14%3A25+-+2014-02-27+15%3A37%3A49+UTC)&description=This+movie+was+produced+by+Helioviewer.org&tags=SDO%2CAIA%2C94&share=true`](<https://api.helioviewer.org/v2/uploadMovieToYouTube/?id=y9tX5&title=AIA+94+(2014-02-26+16%3A14%3A25+-+2014-02-27+15%3A37%3A49+UTC)&description=This+movie+was+produced+by+Helioviewer.org&tags=SDO%2CAIA%2C94&share=true>)
       operationId: uploadMovieToYouTube
       parameters:
         - name: id
@@ -1531,9 +1496,7 @@ paths:
 
         **Example Request**
 
-        .. parsed-literal::
-
-            `https://api.helioviewer.org/v2/getUserVideos/?num=2 <https://api.helioviewer.org/v2/getUserVideos/?num=2>`_
+        [`https://api.helioviewer.org/v2/getUserVideos/?num=2`](<https://api.helioviewer.org/v2/getUserVideos/?num=2>)
       operationId: getUserVideos
       parameters:
         - name: num
@@ -1601,9 +1564,7 @@ paths:
 
         **Example Request**
 
-        .. parsed-literal::
-
-            `https://api.helioviewer.org/v2/getNewsFeed/ <https://api.helioviewer.org/v2/getNewsFeed/>`_
+        [`https://api.helioviewer.org/v2/getNewsFeed/`](<https://api.helioviewer.org/v2/getNewsFeed/>)
       operationId: getNewsFeed
       parameters:
         - $ref: '#/components/parameters/callback'
@@ -2134,7 +2095,10 @@ components:
         layers:
           type: string
         events:
-          type: string
+          type: object
+          description: >
+            Event/feature annotation state (keyed by event tree, e.g.
+            tree_HEK). Only returned when verbose=true.
         timestamp:
           type: string
         x1:
@@ -2316,13 +2280,17 @@ components:
         - layeringOrder
       properties:
         id:
-          type: integer
+          type: string
           description: Unique image identifier.
-          example: 34205701
+          example: "34205701"
         date:
           type: string
           description: Date/time of the selected image.
           example: "2014-01-02 00:00:02"
+        name:
+          type: string
+          description: Human-readable name of the datasource.
+          example: "AIA 335"
         scale:
           type: number
           description: Normalized image scale in arcseconds per pixel.
@@ -2347,10 +2315,26 @@ components:
           type: number
           description: Y-coordinate of the reference pixel.
           example: 2048.5
+        offsetX:
+          type: number
+          description: Horizontal offset of Sun center from the reference pixel.
+          example: 0
+        offsetY:
+          type: number
+          description: Vertical offset of Sun center from the reference pixel.
+          example: 0
+        rotation:
+          type: number
+          description: Rotation of the image in degrees.
+          example: 0
         rsun:
           type: number
           description: Solar radius in pixels.
           example: 1600
+        dsun:
+          type: number
+          description: Distance from the observer to the Sun in meters.
+          example: 147094770000
         sunCenterOffsetParams:
           description: FITS header positioning metadata.
         layeringOrder:
@@ -2389,6 +2373,31 @@ components:
           items:
             type: object
             description: Event-specific data conforming to the HEK Event Specification.
+
+    FlatEvent:
+      type: object
+      description: >-
+        A single solar feature/event as returned by `format=flat` and inside
+        the buckets of `format=simpletree`. Additional event-specific fields
+        (per the HEK Event Specification) may be present.
+      additionalProperties: true
+      properties:
+        concept:
+          type: string
+          description: Event type name (e.g. "Active Region").
+          example: Active Region
+        frm_name:
+          type: string
+          description: Feature Recognition Method (FRM) name.
+          example: NOAA SWPC Observer
+        path:
+          type: string
+          description: Full `SOURCE>>Label>>FRM` path for the event.
+          example: "HEK>>Active Region>>NOAA SWPC Observer"
+        pin:
+          type: string
+          description: Short event type code (e.g. "AR").
+          example: AR
 
     UserVideo:
       type: object
