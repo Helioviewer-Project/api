@@ -126,6 +126,9 @@ class JP2parser:
             image['measurement'] = 'white-light'
         elif image['instrument'] == "CCOR2":
             image['measurement'] = 'white-light'
+        elif image['instrument'] == "SPICE":
+            image['measurement'] = 'intensity'
+            image['line'] = self._get_spice_line(imageData)
         else:
             image['measurement'] = measurement
         image['date'] = self._get_date(imageData)
@@ -178,9 +181,25 @@ class JP2parser:
             leafs = ["observatory", "energy_band", "reconstruction_method"]
         elif img["observatory"] == "PUNCH":
             leafs = ["observatory", "instrument", "title"]
+        elif img["instrument"] == "SPICE":
+            leafs = ["observatory", "instrument", "measurement", "line"]
         else:
             leafs = ["observatory", "instrument", "detector", "measurement"]
         return leafs
+
+    def _get_spice_line(self, imageData):
+        """
+        Returns the SPICE spectral line name from JP2 metadata.
+        """
+        for key in ["cmpnam", "CMPNAM"]:
+            try:
+                line = imageData.meta.get(key)
+            except AttributeError:
+                line = imageData.meta[key] if key in imageData.meta else None
+            if line is not None and str(line).strip():
+                return str(line).strip()
+
+        raise ValueError("SPICE JP2 missing required CMPNAM metadata; cannot determine datasource line")
 
     def _get_punch_file_type(self, filepath):
         """
@@ -504,4 +523,3 @@ class JP2parser:
             "HV_RHESSI_IMAGE_RECONSTRUCTION_METHOD"
         ]
         return image
-
