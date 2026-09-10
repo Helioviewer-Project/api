@@ -72,12 +72,12 @@ def get_db_with_config(cfg):
     dbuser = conf.get('database', 'dbuser')
     dbpass = conf.get('database', 'dbpass')
     db, cursor = get_db_cursor(dbhost, dbname, dbuser, dbpass)
-    return cursor
+    return db, cursor
 
 def main():
     args = parse_args()
     print(args)
-    cursor = get_db_with_config(args.config)
+    db, cursor = get_db_with_config(args.config)
 
     extract_datasource_name(args.jp2_file, cursor)
 
