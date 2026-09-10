@@ -99,6 +99,9 @@ class JP2parser:
             # For PUNCH, the different types (e.g. CAM, PAM) are only in the file name,
             # not anywhere inside the metadata.
             image['detector'] = self._get_punch_file_type(self._filepath)
+        elif image['instrument'] == 'SoloHI':
+            imageData.nickname = 'HI Difference Mosaic'
+            image['detector'] = ""
         # In sunpy V3, the nickname changed to include the filter.
         # Having the space in it breaks how helioviewer loads images due to
         # the space in the file name. To prevent this problem we're selecting
@@ -129,6 +132,8 @@ class JP2parser:
         elif image['instrument'] == "SPICE":
             image['measurement'] = 'intensity'
             image['line'] = self._get_spice_line(imageData)
+        elif image['instrument'] == 'SoloHI':
+            image['measurement'] = 'Difference Mosaic'
         else:
             image['measurement'] = measurement
         image['date'] = self._get_date(imageData)
