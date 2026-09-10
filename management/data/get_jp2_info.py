@@ -57,11 +57,11 @@ def get_config(filepath):
     default_userconfig = os.path.join(basedir, 'settings/settings.cfg')
 
     if filepath is not None and os.path.isfile(filepath):
-        config.readfp(open(filepath))
+        config.read_file(open(filepath))
     elif os.path.isfile(default_userconfig):
-        config.readfp(open(default_userconfig))
+        config.read_file(open(default_userconfig))
     else:
-        config.readfp(open(os.path.join(basedir, 'settings/settings.example.cfg')))
+        config.read_file(open(os.path.join(basedir, 'settings/settings.example.cfg')))
 
     return config
 
