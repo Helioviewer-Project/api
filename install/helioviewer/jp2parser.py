@@ -101,7 +101,7 @@ class JP2parser:
             image['detector'] = self._get_punch_file_type(self._filepath)
         elif image['instrument'] == 'SoloHI':
             imageData.nickname = 'HI Difference Mosaic'
-            image['detector'] = ""
+            image['detector'] = "SoloHI"
         # In sunpy V3, the nickname changed to include the filter.
         # Having the space in it breaks how helioviewer loads images due to
         # the space in the file name. To prevent this problem we're selecting
