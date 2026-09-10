@@ -9,7 +9,7 @@ INSERT INTO datasources (
     displayOrder
 )
 VALUES
-    (503, 'SoloHI', 'Solar Orbiter Heliospheric Imager',  NULL, 1, 0, '', 0, 0, 0, 0);
+    (503, 'SoloHI', 'Solar Orbiter Heliospheric Imager',  NULL, 1, 0, '', 0);
 
 INSERT INTO datasource_property (
     sourceId,
