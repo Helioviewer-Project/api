@@ -876,6 +876,7 @@ class ImageRetrievalDaemon:
             "kcor": "KCORDataServer",
             "hv_kcor": "HVKCORDataServer",
             "solar_orbiter": "SolarOrbiterDataServer",
+            "solohi": "SoloHIDataServer",
             "spice": "SpiceDataServer",
             "suvi": "SUVIDataServer",
             "iris": "IRISDataServer",
