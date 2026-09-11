@@ -945,7 +945,7 @@ INSERT INTO `datasource_property` (`sourceId`, `label`, `name`, `fitsName`, `des
 (133, 'Measurement', 'white-light', 'white-light', 'White Light',3),
 (503, 'Observatory', 'SOLO', 'Solar_Orbiter', 'Solar Orbiter', 1),
 (503, 'Instrument',  'SoloHI', 'SoloHI', 'SoloHI', 2),
-(503, 'Measurement', 'Difference Mosaic', 'Difference Mosaic', 'Difference Mosaic', 3),
+(503, 'Measurement', 'Difference Mosaic', '5400', 'Difference Mosaic', 3),
 (601, 'Observatory', 'SOLO', 'Solar_Orbiter', 'Solar Orbiter', 1),
 (601, 'Instrument', 'SPICE', 'SPICE', 'SPICE', 2),
 (601, 'Measurement', 'intensity', 'intensity', 'intensity', 3),

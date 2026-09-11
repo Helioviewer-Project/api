@@ -22,4 +22,4 @@ INSERT INTO datasource_property (
 VALUES
     (503, 'Observatory', 'SOLO', 'Solar_Orbiter', 'Solar Orbiter', 1),
     (503, 'Instrument',  'SoloHI', 'SoloHI', 'SoloHI', 2),
-    (503, 'Measurement', 'Difference Mosaic', 'Difference Mosaic', 'Difference Mosaic', 3);
+    (503, 'Measurement', 'Difference Mosaic', '5400', 'Difference Mosaic', 3);

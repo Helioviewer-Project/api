@@ -132,8 +132,6 @@ class JP2parser:
         elif image['instrument'] == "SPICE":
             image['measurement'] = 'intensity'
             image['line'] = self._get_spice_line(imageData)
-        elif image['instrument'] == 'SoloHI':
-            image['measurement'] = 'Difference Mosaic'
         else:
             image['measurement'] = measurement
         image['date'] = self._get_date(imageData)
