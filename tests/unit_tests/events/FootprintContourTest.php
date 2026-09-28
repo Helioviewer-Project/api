@@ -6,6 +6,7 @@
 
 use PHPUnit\Framework\TestCase;
 use Helioviewer\Api\Event\FootprintContour;
+use Helioviewer\Api\Event\Shape;
 
 final class FootprintContourTest extends TestCase
 {
@@ -48,8 +49,10 @@ final class FootprintContourTest extends TestCase
         $this->assertCount(1, $shapes['fills']);
         $this->assertSame([], $shapes['ghosts']);
         $this->assertSame([], $shapes['tints']);
-        $this->assertTrue($shapes['fills'][0]['closed']);
-        $this->assertSame(8, count($shapes['fills'][0]['points']));
+        $this->assertInstanceOf(Shape::class, $shapes['fills'][0]);
+        $this->assertTrue($shapes['fills'][0]->isFill());
+        $this->assertTrue($shapes['fills'][0]->closed);
+        $this->assertSame(8, $shapes['fills'][0]->count());
     }
 
     public function testBehindContourYieldsOneGhostAndOneTintNoFill(): void
@@ -62,8 +65,8 @@ final class FootprintContourTest extends TestCase
         $this->assertSame([], $shapes['fills']);
         $this->assertCount(1, $shapes['ghosts']);
         $this->assertCount(1, $shapes['tints']);
-        $this->assertTrue($shapes['ghosts'][0]['closed']);
-        $this->assertTrue($shapes['tints'][0]['closed']);
+        $this->assertTrue($shapes['ghosts'][0]->closed);
+        $this->assertTrue($shapes['tints'][0]->closed);
     }
 
     // --- runs / wrap-merge --------------------------------------------------
@@ -118,14 +121,14 @@ final class FootprintContourTest extends TestCase
 
         // The ghost is an OPEN polyline extended by one near-side neighbour at
         // each end (4 behind points + 2 neighbours = 6).
-        $this->assertFalse($shapes['ghosts'][0]['closed']);
-        $this->assertSame(6, count($shapes['ghosts'][0]['points']));
+        $this->assertFalse($shapes['ghosts'][0]->closed);
+        $this->assertSame(6, $shapes['ghosts'][0]->count());
 
         // Fills/tints are closed and non-trivial.
-        $this->assertTrue($shapes['fills'][0]['closed']);
-        $this->assertGreaterThanOrEqual(3, count($shapes['fills'][0]['points']));
-        $this->assertTrue($shapes['tints'][0]['closed']);
-        $this->assertGreaterThanOrEqual(3, count($shapes['tints'][0]['points']));
+        $this->assertTrue($shapes['fills'][0]->closed);
+        $this->assertGreaterThanOrEqual(3, $shapes['fills'][0]->count());
+        $this->assertTrue($shapes['tints'][0]->closed);
+        $this->assertGreaterThanOrEqual(3, $shapes['tints'][0]->count());
     }
 
     public function testStraddlerWithTwoBehindRunsYieldsTwoGhosts(): void
@@ -182,23 +185,29 @@ final class FootprintContourTest extends TestCase
         $s = $c->shapes();
         $this->assertCount(1, $s['ghosts']);
         $this->assertCount(1, $s['tints']);
-        $this->assertSame(2, count($s['ghosts'][0]['points']));
-        $this->assertTrue($s['ghosts'][0]['closed']);
+        $this->assertSame(2, $s['ghosts'][0]->count());
+        $this->assertTrue($s['ghosts'][0]->closed);
         $this->assertSame([], $s['fills']);
     }
 
     // --- misc ---------------------------------------------------------------
 
-    public function testEveryShapeHasKindClosedAndPoints(): void
+    public function testEveryShapeIsAShapeObjectAndGroupMatchesKind(): void
     {
+        $expectedKind = [
+            'tints'  => Shape::TINT,
+            'ghosts' => Shape::GHOST,
+            'fills'  => Shape::FILL,
+        ];
         $shapes = (new FootprintContour(self::circle(10, 900.0, [2, 3, 4, 5])))->shapes();
-        foreach (['tints', 'ghosts', 'fills'] as $group) {
+        foreach ($expectedKind as $group => $kind) {
             foreach ($shapes[$group] as $shape) {
-                $this->assertArrayHasKey('kind', $shape);
-                $this->assertArrayHasKey('closed', $shape);
-                $this->assertArrayHasKey('points', $shape);
-                $this->assertNotEmpty($shape['points']);
-                foreach ($shape['points'] as $p) {
+                $this->assertInstanceOf(Shape::class, $shape);
+                $this->assertSame($kind, $shape->kind);           // the group matches the Shape's kind
+                $this->assertIsBool($shape->closed);
+                $this->assertNotEmpty($shape->points);
+                $this->assertSame(count($shape->points), $shape->count());
+                foreach ($shape->points as $p) {
                     $this->assertArrayHasKey('x', $p);
                     $this->assertArrayHasKey('y', $p);
                     $this->assertIsFloat($p['x']);
