@@ -21,6 +21,9 @@ require_once HV_ROOT_DIR.'/../src/Module/SolarBodies.php';
 
 use Helioviewer\Api\Sentry\Sentry;
 use Helioviewer\Api\Event\EventContext;
+use Helioviewer\Api\Event\FootprintContour;
+use Helioviewer\Api\Event\EventRegionSvg;
+use Helioviewer\Api\Event\SvgRasterizer;
 
 class Image_Composite_HelioviewerCompositeImage {
 
@@ -639,51 +642,94 @@ class Image_Composite_HelioviewerCompositeImage {
         $events_to_render = $this->eventContext->getEventsForDate($this->date);
         if (empty($events_to_render)) return;
 
-        // Draw event footprint polygons onto the composite image.
-        // Footprint is a list of rings; each ring is a list of {x, y} points in HPC arcseconds
-        // (already rotated by Events API). We convert each point from arcseconds to pixel
-        // coordinates relative to the ROI, then draw one polygon per ring matching the
-        // frontend SVG style.
+        // Project an HPC-arcsec {x, y} point to pixel coordinates relative to the ROI:
+        //   px_x = (hpc_x - roi_left) / imageScale - timeOffsetX
+        //   px_y = (-hpc_y - roi_top) / imageScale - timeOffsetY  (Y negated: HPC up → pixel down)
+        $toPixel = function (array $p): array {
+            return [
+                'x' => (( $p['x'] - $this->roi->left()) / $this->roi->imageScale()) - $this->_timeOffsetX,
+                'y' => ((-$p['y'] - $this->roi->top() ) / $this->roi->imageScale()) - $this->_timeOffsetY,
+            ];
+        };
+
+        // Project a shape's HPC points to pixels. Returns null if any coordinate
+        // is non-finite (a broken shape we must never hand to ImageMagick — it
+        // aborts the whole drawImage with a "non-conforming primitive" error).
+        $project = function (array $points) use ($toPixel): ?array {
+            $out = [];
+            foreach ($points as $p) {
+                $px = $toPixel($p);
+                if (!is_finite($px['x']) || !is_finite($px['y'])) {
+                    return null;
+                }
+                $out[] = $px;
+            }
+            return $out;
+        };
+
+        // PASS A — regions. The whole footprint layer (far-side tints + dashed
+        // ghosts and near-side fills, with the per-event own-fill masks) is emitted
+        // as ONE SVG and rasterised in a single pass by rsvg-convert (librsvg),
+        // exactly like the web client (reports/region-drawing-spec.html section 9).
+        // librsvg is REQUIRED: if rsvg-convert is not installed we throw rather than
+        // degrade. Pins (pass B) then sit above every region.
+        $canvasW = (int) round($this->width);   // svg canvas size; $this->width/height
+        $canvasH = (int) round($this->height);  // can be non-integer floats.
+
+        // Classify each event's rings once and project them to pixels, dropping any
+        // broken (non-finite / too-few-point) shapes.
+        $rendered = [];
         foreach ($events_to_render as $event) {
             if (empty($event['footprint'])) continue;
-
-            // Match frontend SVG spec:
-            // - Fill: per-type color (fallback #d4d4d4) at 40% opacity (0x66)
-            // - Stroke: black at ~53% opacity (0x88), 1.5px, round joins
-            $fillHex = self::EVENT_COLORS[$event['type'] ?? ''] ?? 'd4d4d4';
-
-            $draw = new \ImagickDraw();
-            $draw->setStrokeLineJoin(\Imagick::LINEJOIN_ROUND);
-            $draw->setStrokeColor('#00000088');
-            $draw->setStrokeWidth(1.5);
-            $draw->setStrokeAntialias(true);
-            $draw->setFillColor('#' . $fillHex . '66');
-
-            // Convert HPC arcseconds to pixel coordinates per ring:
-            //   px_x = (hpc_x - roi_left) / imageScale - timeOffsetX
-            //   px_y = (-hpc_y - roi_top) / imageScale - timeOffsetY  (Y negated: HPC up → pixel down)
-            $anyRingDrawn = false;
+            $hex = self::EVENT_COLORS[$event['type'] ?? ''] ?? 'd4d4d4';
+            $tints = []; $ghosts = []; $fills = [];
             foreach ($event['footprint'] as $ring) {
-                $polyArray = [];
-                foreach ($ring as $point) {
-                    $polyArray[] = [
-                        'x' => (( $point['x'] - $this->roi->left()) / $this->roi->imageScale()) - $this->_timeOffsetX,
-                        'y' => ((-$point['y'] - $this->roi->top() ) / $this->roi->imageScale()) - $this->_timeOffsetY,
-                    ];
+                if (count($ring) < 2) continue;
+                $shapes = (new FootprintContour($ring))->shapes();
+                $tints  = array_merge($tints,  $shapes['tints']);
+                $ghosts = array_merge($ghosts, $shapes['ghosts']);
+                $fills  = array_merge($fills,  $shapes['fills']);
+            }
+            $tintPolys = [];
+            foreach ($tints as $sh) {
+                $p = $project($sh->points);
+                if ($p !== null && count($p) >= 3) $tintPolys[] = $p;
+            }
+            $ghostShapes = [];
+            foreach ($ghosts as $sh) {
+                $p = $project($sh->points);
+                if ($p !== null && count($p) >= 2) {
+                    $ghostShapes[] = ['pts' => $p, 'closed' => $sh->closed];
                 }
-                // Need at least 3 points to form a polygon
-                if (count($polyArray) < 3) continue;
-                $draw->polygon($polyArray);
-                $anyRingDrawn = true;
             }
-
-            if ($anyRingDrawn) {
-                $imagickImage->drawImage($draw);
+            $fillPolys = [];
+            foreach ($fills as $sh) {
+                $p = $project($sh->points);
+                if ($p !== null && count($p) >= 3) $fillPolys[] = $p;
             }
-            $draw->destroy();
+            if (empty($tintPolys) && empty($ghostShapes) && empty($fillPolys)) continue;
+            $rendered[] = ['hex' => $hex, 'tints' => $tintPolys, 'ghosts' => $ghostShapes, 'fills' => $fillPolys];
         }
 
-        // Now lay down the event MARKERS
+        // Emit the region layer as one SVG (EventRegionSvg) and rasterise it in a
+        // single pass with rsvg-convert (SvgRasterizer). librsvg is REQUIRED — if it
+        // is missing, or the rasterise fails, these throw rather than silently degrade.
+        if (!empty($rendered)) {
+            $rasterizer = new SvgRasterizer();
+            if (!$rasterizer->isAvailable()) {
+                throw new \RuntimeException(
+                    'Event-region rendering requires rsvg-convert (librsvg), which was not found on PATH.'
+                );
+            }
+            $svg = (new EventRegionSvg($rendered, $canvasW, $canvasH))->toSvg();
+            $png = $rasterizer->rasterize($svg, $canvasW, $canvasH); // throws with exit code + stderr on failure
+            $svgLayer = new \Imagick();
+            $svgLayer->readImageBlob($png);
+            $imagickImage->compositeImage($svgLayer, \Imagick::COMPOSITE_OVER, 0, 0);
+            $svgLayer->destroy();
+        }
+
+        // PASS B — event MARKERS (pins) and labels, above every region.
         // Cache marker images by resolved path — multiple unknown types share one UNK.png load
         $markerCache = [];
         $markerDir = HV_ROOT_DIR . '/resources/images/eventMarkers';
@@ -695,6 +741,14 @@ class Image_Composite_HelioviewerCompositeImage {
             }
             $marker = clone $markerCache[$path];
 
+            // Far-side event: dim + desaturate the pin (and its label) to match the
+            // web client (CSS opacity 0.6, grayscale 0.3). Multiply the existing
+            // alpha channel so the icon's transparency is preserved.
+            $behind = (($event['visible'] ?? true) === false);
+            if ($behind) {
+                $marker->modulateImage(100, 70, 100); // saturation 70% ≈ grayscale(0.3)
+                $marker->evaluateImage(\Imagick::EVALUATE_MULTIPLY, 0.6, \Imagick::CHANNEL_ALPHA);
+            }
 
             $x = round(( $event['hv_hpc_x'] - $this->roi->left()) / $this->roi->imageScale());
             $y = round((-$event['hv_hpc_y'] - $this->roi->top() ) / $this->roi->imageScale());
@@ -725,7 +779,7 @@ class Image_Composite_HelioviewerCompositeImage {
                     $text->setStrokeColor('#000C');
                     $text->setStrokeAntialias(true);
                     $text->setStrokeWidth(3);
-                    $text->setStrokeOpacity(0.3);
+                    $text->setStrokeOpacity($behind ? 0.18 : 0.3);
                     $imagickImage->annotateImage($text, $x, $y+($count*12), 0, $value );
 
                     // Write words in white over outline
@@ -734,6 +788,7 @@ class Image_Composite_HelioviewerCompositeImage {
                     $text->setFont(HV_ROOT_DIR.'/../resources/fonts/DejaVuSans.ttf');
                     $text->setFontSize(10);
                     $text->setFillColor('#ffff');
+                    if ($behind) $text->setFillOpacity(0.6);
                     $text->setTextAntialias(true);
                     $text->setStrokeWidth(0);
                     $imagickImage->annotateImage($text, $x, $y+($count*12), 0, $value );
