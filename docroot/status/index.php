@@ -82,7 +82,7 @@
     }
 
     function genCoverageLink($source) {
-        $coverage_page = "/statistics/coverage.php";
+        $coverage_page = "/statistics/dashboards.php";
         return "<a href=".$coverage_page.">$source</a>";
     }
 

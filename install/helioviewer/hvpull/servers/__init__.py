@@ -52,9 +52,8 @@ class DataServer:
         """Default start time to use when retrieving data"""
         return datetime.datetime.utcnow() - datetime.timedelta(hours=6)
 
-    def get_dates(self, starttime, endtime):
+    def get_dates(self, starttime, endtime, fmt = "%Y/%m/%d"):
         """Get a complete list of dates between the start and the end time"""
-        fmt = "%Y/%m/%d"
         dates = [starttime.strftime(fmt)]
 
         date = starttime.date()

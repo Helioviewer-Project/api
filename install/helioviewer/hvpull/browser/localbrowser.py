@@ -1,6 +1,6 @@
 """Local data browser"""
 import os
-from typing import Callable, Optional
+from collections.abc import Callable
 from helioviewer.hvpull.browser.basebrowser import BaseDataBrowser
 
 
@@ -15,7 +15,7 @@ class LocalDataBrowser(BaseDataBrowser):
         """Get a list of directories at the passed uri"""
         return self.server.compute_directories(start_date, end_date)
 
-    def get_files(self, location, extension, filter_func: Optional[Callable] = None):
+    def get_files(self, location, extension, filter_func: Callable | None = None):
         """Get all the files that end with specified extension at the uri"""
 
         # ensure the location exists

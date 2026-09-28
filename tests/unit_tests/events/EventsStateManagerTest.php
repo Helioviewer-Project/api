@@ -498,5 +498,28 @@ class EventsStateManagerTest extends TestCase
         $manager = EventsStateManager::buildFromEventsState($state);
         $this->assertEquals([], $manager->getSources());
     }
+
+    // Regression: postScreenshot/postMovie pass the optional eventsState param
+    // straight through, so an omitted eventsState arrives here as null. It must
+    // be treated as an empty events state rather than throwing a TypeError.
+    public function testItShouldBuildFromNullEventsStateAsEmpty()
+    {
+        $manager = EventsStateManager::buildFromEventsState(null);
+        $this->assertInstanceOf(EventsStateManager::class, $manager);
+        $this->assertFalse($manager->hasEvents());
+        $this->assertEquals([], $manager->getStateTree());
+        $this->assertEquals([], $manager->getStateTreeLabelVisibility());
+        $this->assertEquals([], $manager->getSources());
+    }
+
+    // The eventsState argument is optional; calling with no argument must
+    // behave identically to passing an empty events state.
+    public function testItShouldBuildFromOmittedEventsStateAsEmpty()
+    {
+        $manager = EventsStateManager::buildFromEventsState();
+        $this->assertInstanceOf(EventsStateManager::class, $manager);
+        $this->assertFalse($manager->hasEvents());
+        $this->assertEquals([], $manager->getSources());
+    }
 }
 
