@@ -27,9 +27,14 @@ use Helioviewer\Api\Sentry\Sentry;
  *     'label'     => 'AR 13700',       // empty string '' when labels are hidden for this source
  *     'type'      => 'AR',
  *     'pin'       => 'AR',
+ *     'visible'   => true,             // false = event is behind the sun this frame (dim the pin)
  *     'hv_hpc_x'  => -119.0,           // rotated for this frame
  *     'hv_hpc_y'  => 570.2,
- *     'footprint' => [[{x,y}, ...], ...],  // list of rings; every point already shifted by (dx,dy)
+ *     'footprint' => [[{x,y,visible?}, ...], ...],  // list of rings; every point already shifted by
+ *                                                   // (dx,dy). A point carries visible=false only when
+ *                                                   // it is behind the sun; the key is absent otherwise,
+ *                                                   // mirroring the wire shape so the renderer's far-side
+ *                                                   // test stays a strict === false.
  *   ]
  *
  * NOTE: there is no separate label_visibility flag. The renderer treats an
@@ -210,7 +215,18 @@ class EventContext
             if (!empty($rawFootprint)) {
                 $footprint = array_map(
                     fn(array $ring) => array_map(
-                        fn($p) => ['x' => $p['x'] + $dx, 'y' => $p['y'] + $dy],
+                        function ($p) use ($dx, $dy) {
+                            $shifted = ['x' => $p['x'] + $dx, 'y' => $p['y'] + $dy];
+                            // Preserve the far-side flag. Upstream sends visible=false
+                            // for points behind the sun and omits the key on near-side
+                            // points, so we keep exactly that: copy the key only when it
+                            // is === false. The renderer's contour classification tests
+                            // strictly against false, matching the web client.
+                            if (($p['visible'] ?? null) === false) {
+                                $shifted['visible'] = false;
+                            }
+                            return $shifted;
+                        },
                         $ring
                     ),
                     $rawFootprint
@@ -223,6 +239,10 @@ class EventContext
                 'label'     => $labelVisible ? $event->get('label', '') : '',
                 'type'      => $type,
                 'pin'       => $event->get('pin', $type),
+                // Per-frame event-level visibility from the observations block:
+                // false = the event is behind the sun this frame (dim the pin).
+                // Absent -> assume near side (true).
+                'visible'   => ($coords['visible'] ?? true) !== false,
                 'hv_hpc_x'  => $event->get('hv_hpc_x', 0.0) + $dx,
                 'hv_hpc_y'  => $event->get('hv_hpc_y', 0.0) + $dy,
                 'footprint' => $footprint,
