@@ -105,6 +105,51 @@ final class EventContextTest extends TestCase
         $this->assertSame(120.0, $events[0]['hv_hpc_x']);
         $this->assertSame(230.0, $events[0]['hv_hpc_y']);
         $this->assertTrue($context->hasEvents());
+        // Observation omits 'visible' -> event assumed near side (true).
+        $this->assertTrue($events[0]['visible']);
+    }
+
+    public function testFootprintPreservesFarSideFlagAndDropsItNearSide(): void
+    {
+        $eventId = 'event-uuid';
+        $ts      = '2024-01-01T00:00:00.000Z';
+        $this->mockApi->method('getEventsForFramesWithSelections')->willReturn([
+            'events' => [
+                $eventId => [
+                    'label'     => 'CH',
+                    'type'      => 'CH',
+                    'pin'       => 'CH',
+                    'path'      => 'WSA>>Coronal Hole>>SO',
+                    'hv_hpc_x'  => 0.0,
+                    'hv_hpc_y'  => 0.0,
+                    'footprint' => [[
+                        ['x' => 10.0, 'y' => 20.0],                     // near side: key absent
+                        ['x' => 30.0, 'y' => 40.0, 'visible' => false], // far side
+                    ]],
+                ],
+            ],
+            'timestamps' => [
+                // event is behind the sun this frame -> dim the pin
+                $ts => [$eventId => ['dx' => 1.0, 'dy' => 2.0, 'visible' => false]],
+            ],
+        ]);
+
+        $context = EventContext::build([$ts], ['WSA>>Coronal Hole>>SO'], [], $this->mockApi);
+        $events  = $context->getEventsForDate($ts);
+        $ring    = $events[0]['footprint'][0];
+
+        // Near-side point: shifted by (dx,dy), NO 'visible' key (mirrors the wire shape).
+        $this->assertSame(11.0, $ring[0]['x']);
+        $this->assertSame(22.0, $ring[0]['y']);
+        $this->assertArrayNotHasKey('visible', $ring[0]);
+
+        // Far-side point: shifted, visible=false preserved.
+        $this->assertSame(31.0, $ring[1]['x']);
+        $this->assertSame(42.0, $ring[1]['y']);
+        $this->assertFalse($ring[1]['visible']);
+
+        // Event-level visibility flows through from the observations block.
+        $this->assertFalse($events[0]['visible']);
     }
 
     public function testHiddenLabelIsEncodedAsEmptyString(): void
