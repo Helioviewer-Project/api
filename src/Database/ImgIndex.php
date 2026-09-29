@@ -73,7 +73,7 @@ class Database_ImgIndex {
 
 
         $sql = sprintf(
-                  "INSERT INTO screenshots "
+                  "INSERT INTO " . HV_DB_TABLE_SCREENSHOTS . " "
                 . "SET "
                 .     "id "                . " = NULL, "
                 .     "timestamp "         . " = CURRENT_TIMESTAMP, "
@@ -137,7 +137,7 @@ class Database_ImgIndex {
 
         $sql = sprintf(
                    "SELECT movies.*, movieFormats.movieId, movieFormats.format, movieFormats.status, movieFormats.procTime, movieFormats.modified, ST_AsText(regionOfInterest) AS roi "
-                 . "FROM movies "
+                 . "FROM " . HV_DB_TABLE_MOVIES . " movies "
                  . "LEFT JOIN "
                  .     "movieFormats ON movies.id = movieFormats.movieId "
                  . "WHERE "
@@ -169,7 +169,7 @@ class Database_ImgIndex {
         $this->_dbConnect();
 
         $sql = sprintf(
-                   "UPDATE movies "
+                   "UPDATE " . HV_DB_TABLE_MOVIES . " "
                  . "SET "
                  .     "startDate "    . " ='%s', "
                  .     "endDate "      . " ='%s', "
@@ -217,7 +217,7 @@ class Database_ImgIndex {
         $this->_dbConnect();
 
         $sql = sprintf(
-                   "UPDATE movies "
+                   "UPDATE " . HV_DB_TABLE_MOVIES . " "
                  . "SET "
                  .     "buildTimeStart='%s', "
                  .     "buildTimeEnd='%s' "
@@ -350,7 +350,7 @@ class Database_ImgIndex {
 
         $sql = sprintf(
                    "SELECT * "
-                 . "FROM screenshots "
+                 . "FROM " . HV_DB_TABLE_SCREENSHOTS . " "
                  . "WHERE id = %d "
                  . "LIMIT 1;",
                  (int)$screenshotId
@@ -1631,7 +1631,7 @@ class Database_ImgIndex {
         $this->_dbConnect();
 
         $sql = sprintf('SELECT *, ST_AsText(regionOfInterest) as roi ' .
-            'FROM screenshots WHERE id=%d LIMIT 1;',
+            'FROM ' . HV_DB_TABLE_SCREENSHOTS . ' WHERE id=%d LIMIT 1;',
              (int)$screenshotId
         );
         try {

@@ -603,7 +603,7 @@ class Database_Statistics {
 
                 $sqlScreenshots = sprintf(
                     "SELECT dataSourceString "
-                . "FROM movies "
+                . "FROM " . HV_DB_TABLE_MOVIES . " "
                 . "WHERE "
                 .     "timestamp BETWEEN '%s' AND '%s' ;",
                 $this->_dbConnection->link->real_escape_string($dateStartStr),
@@ -655,7 +655,7 @@ class Database_Statistics {
 
                 $sqlScreenshots = sprintf(
                     "SELECT dataSourceString "
-                . "FROM screenshots "
+                . "FROM " . HV_DB_TABLE_SCREENSHOTS . " "
                 . "WHERE "
                 .     "timestamp BETWEEN '%s' AND '%s' ;",
                 $this->_dbConnection->link->real_escape_string($dateStartStr),

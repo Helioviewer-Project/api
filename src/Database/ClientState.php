@@ -24,7 +24,7 @@ class ClientState extends Database_DbConnection
         $state_json = json_encode($state); 
         $state_key = hash('sha256',$state_json);
 
-        $create_sql = "REPLACE INTO client_states(id, state) VALUES ('%s','%s')";
+        $create_sql = "REPLACE INTO " . HV_DB_TABLE_CLIENT_STATES . "(id, state) VALUES ('%s','%s')";
         $create_state_sql = sprintf($create_sql, $state_key, $this->link->real_escape_string($state_json));
 
         // intentionally let exception thrown
@@ -40,7 +40,7 @@ class ClientState extends Database_DbConnection
      */
     public function find(string $state_key): ?array 
     {
-        $find_sql = "SELECT * FROM client_states WHERE id = '%s' LIMIT 1";
+        $find_sql = "SELECT * FROM " . HV_DB_TABLE_CLIENT_STATES . " WHERE id = '%s' LIMIT 1";
 
         $find_state_sql = sprintf($find_sql, $this->link->real_escape_string($state_key));
 
@@ -66,7 +66,7 @@ class ClientState extends Database_DbConnection
      */
     public function all(int $limit = 100): ?array 
     {
-        $all_sql = "SELECT * FROM client_states LIMIT $limit";
+        $all_sql = "SELECT * FROM " . HV_DB_TABLE_CLIENT_STATES . " LIMIT $limit";
 
         $query_result = $this->query($all_sql);
 
@@ -85,7 +85,7 @@ class ClientState extends Database_DbConnection
      */
     public function update(string $state_key, array $state): bool 
     {
-        $find_sql = "SELECT * FROM client_states WHERE id = '%s' LIMIT 1";
+        $find_sql = "SELECT * FROM " . HV_DB_TABLE_CLIENT_STATES . " WHERE id = '%s' LIMIT 1";
 
         $find_state_sql = sprintf($find_sql, $this->link->real_escape_string($state_key));
 
@@ -96,7 +96,7 @@ class ClientState extends Database_DbConnection
             return false;
         }
 
-        $update_sql = "UPDATE client_states SET state = '%s' WHERE id = '%s'";
+        $update_sql = "UPDATE " . HV_DB_TABLE_CLIENT_STATES . " SET state = '%s' WHERE id = '%s'";
 
         $update_state_sql = sprintf($update_sql, $this->link->real_escape_string(json_encode($state)), $this->link->real_escape_string($state_key));
 
