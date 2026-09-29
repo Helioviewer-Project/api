@@ -125,6 +125,24 @@ function events_migration_batch_size(array $argv, int $default = 10000): int
 }
 
 /**
+ * Read a --start-id=N argument: migrate only rows with id > N. Defaults to 0
+ * (whole table). Lets a huge migration start past an id already done, or resume
+ * after an interruption from the last id it reported.
+ *
+ * @param array $argv the script's $argv
+ * @return int  a non-negative starting id (exclusive lower bound)
+ */
+function events_migration_start_id(array $argv): int
+{
+    foreach ($argv as $arg) {
+        if (preg_match('/^--start-id=(\d+)$/', $arg, $m)) {
+            return max(0, (int)$m[1]);
+        }
+    }
+    return 0;
+}
+
+/**
  * Migrate one events-state table (movies / screenshots) to the canonical shape
  * in keyset-paginated batches. Per page it runs ONE SELECT (10k rows ordered by
  * id) and, when $apply, ONE `UPDATE ... SET eventsState = CASE id ... END WHERE
@@ -141,6 +159,7 @@ function events_migration_batch_size(array $argv, int $default = 10000): int
  * @param string $table       resolved table name (an HV_DB_TABLE_* constant)
  * @param bool   $apply        false = dry-run (reads + counts, writes nothing)
  * @param int    $batchSize    rows per page
+ * @param int    $startId      migrate only rows with id > this (0 = whole table)
  * @param int    $migrated     out (by ref): rows converted / would-convert
  * @param int    $skipped      out (by ref): rows already new-shape
  * @param array  $conversions  out (by ref): unique conversions for the report
@@ -150,6 +169,7 @@ function events_migrate_table(
     string $table,
     bool $apply,
     int $batchSize,
+    int $startId,
     int &$migrated,
     int &$skipped,
     array &$conversions
@@ -162,7 +182,7 @@ function events_migrate_table(
 
     $started = microtime(true);
     $page    = 0;
-    $lastId  = 0;
+    $lastId  = $startId; // keyset starts here — only rows with id > startId are touched
     do {
         $page++;
 

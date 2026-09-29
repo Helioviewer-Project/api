@@ -14,6 +14,8 @@
  *   - Keyset-paginated: reads in batches of --batch rows (default 10000) and
  *     writes each batch with ONE `CASE` UPDATE, so a table of N rows migrates in
  *     ~2*ceil(N/batch) queries instead of one UPDATE per row.
+ *   - --start-id=N migrates only rows with id > N — resume a huge run, or skip
+ *     an already-done id range.
  *   - Runs inside the maintenance window, after the new code is deployed.
  *
  * Retired in the post-deploy cleanup (with EventsStateManager).
@@ -22,6 +24,7 @@
  *   php management/events/migrate_movies_events_shape.php               # dry-run
  *   php management/events/migrate_movies_events_shape.php --apply       # write
  *   php management/events/migrate_movies_events_shape.php --apply --batch=5000
+ *   php management/events/migrate_movies_events_shape.php --apply --start-id=1000000
  */
 
 require_once sprintf('%s/../../vendor/autoload.php', __DIR__);
@@ -31,16 +34,18 @@ require_once sprintf('%s/events_shape.php', __DIR__);
 
 $apply     = in_array('--apply', $argv, true);
 $batchSize = events_migration_batch_size($argv); // --batch=N (default 10000)
+$startId   = events_migration_start_id($argv);   // --start-id=N (migrate id > N)
+$from      = $startId > 0 ? ", id > $startId" : "";
 echo $apply
-    ? "MODE: APPLY — writing changes to movies (batch $batchSize)\n\n"
-    : "MODE: DRY-RUN — no writes; re-run with --apply to write (batch $batchSize)\n\n";
+    ? "MODE: APPLY — writing changes to movies (batch $batchSize$from)\n\n"
+    : "MODE: DRY-RUN — no writes; re-run with --apply to write (batch $batchSize$from)\n\n";
 
 $db = new Database_DbConnection();
 
 $migrated = 0;
 $skipped  = 0;
 $conversions = [];
-events_migrate_table($db, HV_DB_TABLE_MOVIES, $apply, $batchSize, $migrated, $skipped, $conversions);
+events_migrate_table($db, HV_DB_TABLE_MOVIES, $apply, $batchSize, $startId, $migrated, $skipped, $conversions);
 
 events_migration_print_unique($conversions, 'movies');
 
