@@ -154,8 +154,18 @@ function events_migrate_table(
     int &$skipped,
     array &$conversions
 ): void {
-    $lastId = 0;
+    // Upper bound for the % readout (PK max — one cheap, indexed query).
+    $maxRes = $db->query(sprintf('SELECT MAX(id) AS m FROM %s', $table));
+    $maxRow = $maxRes->fetch_assoc();
+    $maxRes->close();
+    $maxId  = (int)($maxRow['m'] ?? 0);
+
+    $started = microtime(true);
+    $page    = 0;
+    $lastId  = 0;
     do {
+        $page++;
+
         // One SELECT per page — keyset on the PK (no OFFSET rescans).
         $sql  = sprintf(
             'SELECT id, eventsState FROM %s WHERE id > %d ORDER BY id LIMIT %d',
@@ -189,7 +199,35 @@ function events_migrate_table(
         if ($apply && $updates) {
             events_apply_eventsstate_batch($db, $table, $updates);
         }
+
+        events_migration_progress($table, $page, $lastId, $maxId, $migrated, $skipped, $started);
     } while (count($rows) === $batchSize);
+}
+
+/**
+ * Print one progress line to STDERR after each page — so a long run shows life
+ * without polluting the STDOUT report/summary. Shows the keyset position
+ * (id reached / max, %), the running migrated & skipped counts, elapsed time,
+ * and throughput.
+ */
+function events_migration_progress(
+    string $table,
+    int $page,
+    int $lastId,
+    int $maxId,
+    int $migrated,
+    int $skipped,
+    float $started
+): void {
+    $elapsed = microtime(true) - $started;
+    $scanned = $migrated + $skipped;
+    $rate    = $elapsed > 0 ? (int)round($scanned / $elapsed) : 0;
+    $pct     = $maxId > 0 ? min(100, (int)round($lastId / $maxId * 100)) : 100;
+
+    fwrite(STDERR, sprintf(
+        "  [%s] page %d — id %d/%d (%d%%) · scanned %d · migrated %d · skipped %d · %.1fs · %d rows/s\n",
+        $table, $page, $lastId, $maxId, $pct, $scanned, $migrated, $skipped, $elapsed, $rate
+    ));
 }
 
 /**
