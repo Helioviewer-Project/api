@@ -30,7 +30,7 @@ echo $apply
     : "MODE: DRY-RUN — no writes; re-run with --apply to write\n\n";
 
 $db  = new Database_DbConnection();
-$res = $db->query("SELECT id, eventsState FROM screenshots");
+$res = $db->query("SELECT id, eventsState FROM " . HV_DB_TABLE_SCREENSHOTS);
 
 $migrated = 0;
 $skipped  = 0;
@@ -52,7 +52,7 @@ while ($row = $res->fetch_assoc()) {
 
     if ($apply) {
         $new_blob = json_encode($shape);
-        $stmt = $db->link->prepare("UPDATE screenshots SET eventsState = ? WHERE id = ?");
+        $stmt = $db->link->prepare("UPDATE " . HV_DB_TABLE_SCREENSHOTS . " SET eventsState = ? WHERE id = ?");
         $stmt->bind_param('si', $new_blob, $row['id']);
         $stmt->execute();
         $stmt->close();
