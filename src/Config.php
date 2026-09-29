@@ -121,6 +121,19 @@ class Config {
         define('HV_LOG_DIR',      HV_ROOT_DIR     . '/../log');
         define('HV_CACHE_URL',    HV_WEB_ROOT_URL . '/cache');
 
+        // Database table names. Overridable from Config.ini (db_table_movies,
+        // db_table_screenshots, db_table_client_states); default to the
+        // canonical names so existing deployments need no config change.
+        if ( !defined('HV_DB_TABLE_MOVIES') ) {
+            define('HV_DB_TABLE_MOVIES', 'movies');
+        }
+        if ( !defined('HV_DB_TABLE_SCREENSHOTS') ) {
+            define('HV_DB_TABLE_SCREENSHOTS', 'screenshots');
+        }
+        if ( !defined('HV_DB_TABLE_CLIENT_STATES') ) {
+            define('HV_DB_TABLE_CLIENT_STATES', 'client_states');
+        }
+
         // 1 au in meters (http://maia.usno.navy.mil/NSFA/IAU2009_consts.html)
         define('HV_CONSTANT_AU',     149597870700);
         // Solar radius in arc-seconds at 1 au

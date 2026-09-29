@@ -27,7 +27,7 @@ final class ClientStateTest extends TestCase
         // just a precaution to clean database after we are done
         $this->createdIds[] = $client_state->upsert($state);
 
-        $count_sql = sprintf("SELECT COUNT(*) FROM client_states WHERE id = '%s'", hash('sha256', json_encode($state)));
+        $count_sql = sprintf("SELECT COUNT(*) FROM " . HV_DB_TABLE_CLIENT_STATES . " WHERE id = '%s'", hash('sha256', json_encode($state)));
 
         $result = $client_state->query($count_sql);
 
@@ -49,7 +49,7 @@ final class ClientStateTest extends TestCase
         $client_state->upsert($state);
         $client_state->upsert($state);
 
-        $count_sql = sprintf("SELECT COUNT(*) FROM client_states WHERE id = '%s'", hash('sha256', json_encode($state)));
+        $count_sql = sprintf("SELECT COUNT(*) FROM " . HV_DB_TABLE_CLIENT_STATES . " WHERE id = '%s'", hash('sha256', json_encode($state)));
 
         $result = $client_state->query($count_sql);
 
@@ -103,7 +103,7 @@ final class ClientStateTest extends TestCase
     public function tearDown(): void
     {
         $client_state = new ClientState();
-        $client_state->query(sprintf("DELETE FROM client_states WHERE id in ('%s') LIMIT %d", join("','", $this->createdIds), count($this->createdIds)));
+        $client_state->query(sprintf("DELETE FROM " . HV_DB_TABLE_CLIENT_STATES . " WHERE id in ('%s') LIMIT %d", join("','", $this->createdIds), count($this->createdIds)));
     }
 
 

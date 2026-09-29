@@ -84,7 +84,7 @@ class Database_MovieDatabase {
         $old_events_labels_bool = false;
 
         $sql = sprintf(
-                   'INSERT INTO movies '
+                   'INSERT INTO ' . HV_DB_TABLE_MOVIES . ' '
                  . 'SET '
                  .     'id '                . ' = NULL, '
                  .     'timestamp '         . ' = CURRENT_TIMESTAMP, '
@@ -282,7 +282,7 @@ class Database_MovieDatabase {
                  .     'queueNum, '
                  .     'TIMESTAMPDIFF(SECOND, buildTimeStart, buildTimeEnd) '
                  .         'AS time '
-                 .  'FROM movies '
+                 .  'FROM ' . HV_DB_TABLE_MOVIES . ' '
                  .  'WHERE '
                  .     'TIMESTAMPDIFF(SECOND, buildTimeStart, buildTimeEnd) '
                  .         '> 0 '
@@ -360,7 +360,7 @@ class Database_MovieDatabase {
                  . 'youtube.keywords, youtube.shared, movies.imageScale, movies.dataSourceString, movies.eventSourceString, '
                  . 'movies.movieLength, movies.width, movies.height, movies.startDate, movies.endDate '
                  . 'FROM youtube '
-                 . 'LEFT JOIN movies '
+                 . 'LEFT JOIN ' . HV_DB_TABLE_MOVIES . ' movies '
                  . 'ON movies.id = youtube.movieId '
                  . 'WHERE '
                  .     'youtube.shared>0 AND '
@@ -427,7 +427,7 @@ class Database_MovieDatabase {
                  . 'youtube.keywords, youtube.thumbnail, youtube.shared, youtube.checked, movies.imageScale, movies.dataSourceString, movies.eventSourceString, '
                  . 'movies.movieLength, movies.width, movies.height, movies.startDate, movies.endDate, ST_AsText(regionOfInterest) as roi '
                  . 'FROM youtube '
-                 . 'LEFT JOIN movies '
+                 . 'LEFT JOIN ' . HV_DB_TABLE_MOVIES . ' movies '
                  . 'ON movies.id = youtube.movieId '
                  . 'WHERE '
                  .     'youtube.shared>0 AND '
@@ -493,7 +493,7 @@ class Database_MovieDatabase {
         $this->_dbConnect();
 
         $sql = sprintf('SELECT *, ST_AsText(regionOfInterest) as roi '
-             . 'FROM movies WHERE movies.id=%d LIMIT 1;',
+             . 'FROM ' . HV_DB_TABLE_MOVIES . ' movies WHERE movies.id=%d LIMIT 1;',
              (int)$movieId
         );
         try {
