@@ -10,13 +10,17 @@
  *   - Idempotent + resumable: rows already carrying event_selections are
  *     skipped, so the script is safe to re-run and to interrupt.
  *   - The primary key (auto-inc id) is never touched.
+ *   - Keyset-paginated: reads in batches of --batch rows (default 10000) and
+ *     writes each batch with ONE `CASE` UPDATE, so a table of N rows migrates in
+ *     ~2*ceil(N/batch) queries instead of one UPDATE per row.
  *   - Runs inside the maintenance window, after the new code is deployed.
  *
  * Retired in the post-deploy cleanup (with EventsStateManager).
  *
  * Usage:
- *   php management/events/migrate_screenshots_events_shape.php            # dry-run
- *   php management/events/migrate_screenshots_events_shape.php --apply    # write
+ *   php management/events/migrate_screenshots_events_shape.php               # dry-run
+ *   php management/events/migrate_screenshots_events_shape.php --apply       # write
+ *   php management/events/migrate_screenshots_events_shape.php --apply --batch=5000
  */
 
 require_once sprintf('%s/../../vendor/autoload.php', __DIR__);
@@ -24,42 +28,18 @@ require_once sprintf('%s/../config.php', __DIR__);
 require_once sprintf('%s/../../src/Database/DbConnection.php', __DIR__);
 require_once sprintf('%s/events_shape.php', __DIR__);
 
-$apply = in_array('--apply', $argv, true);
+$apply     = in_array('--apply', $argv, true);
+$batchSize = events_migration_batch_size($argv); // --batch=N (default 10000)
 echo $apply
-    ? "MODE: APPLY — writing changes to screenshots\n\n"
-    : "MODE: DRY-RUN — no writes; re-run with --apply to write\n\n";
+    ? "MODE: APPLY — writing changes to screenshots (batch $batchSize)\n\n"
+    : "MODE: DRY-RUN — no writes; re-run with --apply to write (batch $batchSize)\n\n";
 
-$db  = new Database_DbConnection();
-$res = $db->query("SELECT id, eventsState FROM " . HV_DB_TABLE_SCREENSHOTS);
+$db = new Database_DbConnection();
 
 $migrated = 0;
 $skipped  = 0;
 $conversions = [];
-while ($row = $res->fetch_assoc()) {
-    $tree = json_decode($row['eventsState'] ?? '', true);
-    if (!is_array($tree)) {
-        $tree = [];
-    }
-
-    // Already new-shape — leave it alone (idempotency / resume).
-    if (isset($tree['event_selections'])) {
-        $skipped++;
-        continue;
-    }
-
-    $shape = events_shape_from_tree($tree);
-    events_migration_collect($conversions, "#{$row['id']}", $tree, $shape);
-
-    if ($apply) {
-        $new_blob = json_encode($shape);
-        $stmt = $db->link->prepare("UPDATE " . HV_DB_TABLE_SCREENSHOTS . " SET eventsState = ? WHERE id = ?");
-        $stmt->bind_param('si', $new_blob, $row['id']);
-        $stmt->execute();
-        $stmt->close();
-    }
-    $migrated++;
-}
-$res->close();
+events_migrate_table($db, HV_DB_TABLE_SCREENSHOTS, $apply, $batchSize, $migrated, $skipped, $conversions);
 
 events_migration_print_unique($conversions, 'screenshots');
 

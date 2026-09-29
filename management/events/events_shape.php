@@ -106,3 +106,116 @@ function events_migration_print_unique(array $bucket, string $table): void
     }
     echo count($bucket) . " unique conversion(s)\n";
 }
+
+/**
+ * Read a --batch=N argument (rows per page); defaults to 10000.
+ *
+ * @param array $argv    the script's $argv
+ * @param int   $default rows per page when --batch is absent
+ * @return int  a positive batch size
+ */
+function events_migration_batch_size(array $argv, int $default = 10000): int
+{
+    foreach ($argv as $arg) {
+        if (preg_match('/^--batch=(\d+)$/', $arg, $m)) {
+            return max(1, (int)$m[1]);
+        }
+    }
+    return $default;
+}
+
+/**
+ * Migrate one events-state table (movies / screenshots) to the canonical shape
+ * in keyset-paginated batches. Per page it runs ONE SELECT (10k rows ordered by
+ * id) and, when $apply, ONE `UPDATE ... SET eventsState = CASE id ... END WHERE
+ * id IN (...)` — so a table of N rows costs ~2*ceil(N/$batchSize) queries rather
+ * than one UPDATE per row.
+ *
+ * The id primary key is never written (a CASE UPDATE can only touch existing
+ * rows — it cannot insert, so the NOT NULL/no-default columns are irrelevant),
+ * rows already carrying event_selections are skipped (idempotent/resumable),
+ * and each page's write is wrapped in a transaction. Unique tree=>shape
+ * conversions accumulate into $conversions for the dry-run report.
+ *
+ * @param Database_DbConnection $db
+ * @param string $table       resolved table name (an HV_DB_TABLE_* constant)
+ * @param bool   $apply        false = dry-run (reads + counts, writes nothing)
+ * @param int    $batchSize    rows per page
+ * @param int    $migrated     out (by ref): rows converted / would-convert
+ * @param int    $skipped      out (by ref): rows already new-shape
+ * @param array  $conversions  out (by ref): unique conversions for the report
+ */
+function events_migrate_table(
+    Database_DbConnection $db,
+    string $table,
+    bool $apply,
+    int $batchSize,
+    int &$migrated,
+    int &$skipped,
+    array &$conversions
+): void {
+    $lastId = 0;
+    do {
+        // One SELECT per page — keyset on the PK (no OFFSET rescans).
+        $sql  = sprintf(
+            'SELECT id, eventsState FROM %s WHERE id > %d ORDER BY id LIMIT %d',
+            $table, $lastId, $batchSize
+        );
+        $res  = $db->query($sql);
+        $rows = $res->fetch_all(MYSQLI_ASSOC);
+        $res->close();
+
+        $updates = []; // id => new eventsState blob, for this page's single UPDATE
+        foreach ($rows as $row) {
+            $lastId = (int)$row['id']; // advance keyset by the max id examined
+
+            $tree = json_decode($row['eventsState'] ?? '', true);
+            if (!is_array($tree)) {
+                $tree = [];
+            }
+
+            // Already new-shape — leave it alone (idempotency / resume).
+            if (isset($tree['event_selections'])) {
+                $skipped++;
+                continue;
+            }
+
+            $shape = events_shape_from_tree($tree);
+            events_migration_collect($conversions, "#{$row['id']}", $tree, $shape);
+            $updates[(int)$row['id']] = json_encode($shape);
+            $migrated++;
+        }
+
+        if ($apply && $updates) {
+            events_apply_eventsstate_batch($db, $table, $updates);
+        }
+    } while (count($rows) === $batchSize);
+}
+
+/**
+ * Write one page of {id => eventsState} back with a single CASE UPDATE, in a
+ * transaction. Values are escaped (ids cast to int, blobs real_escape_string'd);
+ * the table name is a trusted HV_DB_TABLE_* constant, never user input.
+ *
+ * @param Database_DbConnection $db
+ * @param string $table
+ * @param array<int,string> $updates id => eventsState JSON blob
+ */
+function events_apply_eventsstate_batch(Database_DbConnection $db, string $table, array $updates): void
+{
+    $case = '';
+    foreach ($updates as $id => $blob) {
+        $case .= sprintf(" WHEN %d THEN '%s'", (int)$id, $db->link->real_escape_string($blob));
+    }
+    $ids = implode(',', array_map('intval', array_keys($updates)));
+    $sql = sprintf('UPDATE %s SET eventsState = CASE id%s END WHERE id IN (%s)', $table, $case, $ids);
+
+    $db->link->begin_transaction();
+    try {
+        $db->query($sql);
+        $db->link->commit();
+    } catch (\Throwable $e) {
+        $db->link->rollback();
+        throw $e;
+    }
+}
