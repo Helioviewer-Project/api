@@ -9,22 +9,19 @@ use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Psr7\Response;
 use Helioviewer\Api\Event\Api\EventsApi;
 use Helioviewer\Api\Event\Api\EventsApiException;
-use Helioviewer\Api\Event\Api\LegacyEventsInterface;
 use Helioviewer\Api\Sentry\ClientInterface as SentryClientInterface;
 
 final class GetEventsForFramesWithSelectionsTest extends TestCase
 {
     private $mockClient;
     private $mockSentry;
-    private $mockLegacyEvents;
     private $eventsApi;
 
     protected function setUp(): void
     {
         $this->mockClient = $this->createMock(ClientInterface::class);
         $this->mockSentry = $this->createMock(SentryClientInterface::class);
-        $this->mockLegacyEvents = $this->createMock(LegacyEventsInterface::class);
-        $this->eventsApi = new EventsApi($this->mockClient, $this->mockSentry, $this->mockLegacyEvents);
+        $this->eventsApi = new EventsApi($this->mockClient, $this->mockSentry);
     }
 
     public function testItShouldThrowForEmptySelections(): void

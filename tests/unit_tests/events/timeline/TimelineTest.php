@@ -34,7 +34,7 @@ final class TimelineTest extends TestCase
                         && $range->extendedStart() === -1000
                         && $range->extendedEnd() === 5000;
                 }),
-                // [AR,all,1],[C3,all,1] → paths
+                // canonical paths, passed straight through
                 $this->equalTo(['HEK>>Active Region', 'CCMC>>DONKI']),
                 // Range 2000ms → minute resolution
                 $this->equalTo('m')
@@ -42,7 +42,7 @@ final class TimelineTest extends TestCase
             ->willReturn([]);
 
         $timeline = new Timeline(
-            '[AR,all,1],[C3,all,1]', 1000, 3000, 2000,
+            ['HEK>>Active Region', 'CCMC>>DONKI'], 1000, 3000, 2000,
             $this->mockEventsApi,
             $this->mockStrategy
         );
@@ -60,7 +60,7 @@ final class TimelineTest extends TestCase
         $this->mockStrategy->method('execute')->willReturn($strategyOutput);
 
         $timeline = new Timeline(
-            '[AR,all,1]', 1000, 2000, 1500,
+            ['HEK>>Active Region'], 1000, 2000, 1500,
             $this->mockEventsApi,
             $this->mockStrategy
         );

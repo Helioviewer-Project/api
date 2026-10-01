@@ -16,7 +16,8 @@
                     "enum": [
                         "HEK",
                         "CCMC",
-                        "RHESSI"
+                        "RHESSI",
+                        "WSA"
                     ]
                 },
                 "visible": { "type": "boolean" },
@@ -53,7 +54,7 @@
                             },
                             "event_instances": {
                                 "type": "array",
-                                "maxItems": 30,
+                                "maxItems": 200,
                                 "items": {
                                     "type": "string",
                                     "pattern": "^[a-zA-Z0-9]{2,3}--[a-zA-Z0-9_ +\\\\()\\-]{1,50}--[a-zA-Z0-9_.\\()+]+$",
@@ -66,6 +67,7 @@
                 },
                 "layers_v2": {
                     "type": "array",
+                    "maxItems": 200,
                     "items": {
                         "type": "string",
                         "minLength": 1,

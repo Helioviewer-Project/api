@@ -35,7 +35,6 @@ require_once HV_ROOT_DIR . '/../src/Helper/HelioviewerLayers.php';
 require_once HV_ROOT_DIR . '/../src/Helper/RegionOfInterest.php';
 require_once HV_ROOT_DIR . '/../src/Helper/Serialize.php';
 
-use Helioviewer\Api\Event\EventsStateManager;
 use Helioviewer\Api\Event\EventContext;
 use Helioviewer\Api\Event\Api\EventsApi;
 use Helioviewer\Api\Sentry\Sentry;
@@ -87,7 +86,9 @@ class Movie_HelioviewerMovie {
 
     private $_db;
     private $_layers;
-    private $_eventsManager;
+    private $_selections           = [];
+    private $_visibilitySelections = [];
+    private $_eventsStateBlob      = [];
     private $_roi;
     private $_timestamps = array();
     private $_frames     = array();
@@ -169,14 +170,15 @@ class Movie_HelioviewerMovie {
         // ATTENTION! These two fields eventsLabels and eventSourceString needs to be kept in DB schema
         // We are keeping them to support old takeScreenshot , queueMovie requests
 
-        // Events Manager
-        $events_state_from_info = json_decode($info['eventsState'], true);
-
-        if(!empty($events_state_from_info)) {
-            $this->_eventsManager = EventsStateManager::buildFromEventsState($events_state_from_info);
-        } else {
-            $this->_eventsManager = EventsStateManager::buildFromLegacyEventStrings($info['eventSourceString'], (bool)$info['eventsLabels']);
-        }
+        // The persisted eventsState blob is the canonical shape:
+        //   { event_selections: [...], event_visibility_selections: {...} }
+        // Every pre-existing row is converted to this shape by the deploy-time
+        // migration scripts, so the worker reads it directly with no
+        // legacy-shape branch.
+        $events_state_from_info = json_decode($info['eventsState'], true) ?? [];
+        $this->_eventsStateBlob      = $events_state_from_info;
+        $this->_selections           = $events_state_from_info['event_selections']            ?? [];
+        $this->_visibilitySelections = $events_state_from_info['event_visibility_selections'] ?? [];
 
         // Regon of interest
         $this->_roi = Helper_RegionOfInterest::parsePolygonString($info['roi'], $info['imageScale']);
@@ -337,7 +339,7 @@ class Movie_HelioviewerMovie {
                 'duration'   => $this->_getDuration(),
                 'imageScale' => $this->imageScale,
                 'layers'     => $this->_layers->serialize(),
-                'events'     => $this->_eventsManager->getState(),
+                'events'     => $this->_eventsStateBlob,
                 'x1'         => $this->_roi->left(),
                 'y1'         => $this->_roi->top(),
                 'x2'         => $this->_roi->right(),
@@ -541,9 +543,9 @@ class Movie_HelioviewerMovie {
 
         $contextStart = microtime(true);
         $eventContext = EventContext::build(
-            timestamps: $timestamps,
-            selections: $this->_eventsManager->getSelections(),
-            visibilitySelections: $this->_eventsManager->getVisibilitySelections(),
+            frameTimestamps: $timestamps,
+            selections: $this->_selections,
+            visibilitySelections: $this->_visibilitySelections,
             api: new EventsApi(),
             chunkSize: $chunkSize,
             logLabel: "Movie:{$movieId}",
@@ -557,8 +559,6 @@ class Movie_HelioviewerMovie {
             $eventContext->hasEvents() ? 'true' : 'false',
             $contextMs
         ));
-
-        $options['eventContext'] = $eventContext;
 
         // Index of preview frame
         $previewIndex = floor($this->numFrames/2);
@@ -579,7 +579,7 @@ class Movie_HelioviewerMovie {
             try {
                 $frameStart = microtime(true);
                 $screenshot = new Image_Composite_HelioviewerMovieFrame(
-                    $filepath, $this->_layers, $this->_eventsManager,
+                    $filepath, $this->_layers, $eventContext,
                     $this->movieIcons, $this->celestialBodies,
                     $this->scale, $this->scaleType, $this->scaleX, $this->scaleY,
                     $time, $this->_roi, $options);

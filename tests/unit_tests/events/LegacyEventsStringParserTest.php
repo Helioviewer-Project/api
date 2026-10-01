@@ -1,13 +1,19 @@
 <?php declare(strict_types=1);
 
 /**
+ * Parse-case fixtures ported verbatim from EventSelectionsTest -- the parsing
+ * logic moved unchanged from EventSelections::buildFromLegacyEventStrings to
+ * LegacyEventsStringParser::parse(). The ArrayAccess/Countable wrapper tests
+ * did not port: the parser returns a plain string[], and that wrapper behavior
+ * retires with EventSelections.
+ *
  * @author Kasim Necdet Percinel <kasim.n.percinel@nasa.gov>
  */
 
 use PHPUnit\Framework\TestCase;
-use Helioviewer\Api\Event\EventSelections;
+use Helioviewer\Api\Event\LegacyEventsStringParser;
 
-final class EventSelectionsTest extends TestCase
+final class LegacyEventsStringParserTest extends TestCase
 {
     public static function legacyStringProvider(): array
     {
@@ -31,6 +37,10 @@ final class EventSelectionsTest extends TestCase
             'rhessi_source' => [
                 '[F2,all,1]',
                 ['RHESSI>>Solar Flares'],
+            ],
+            'wsa_source' => [
+                '[MC,SO,1]',
+                ['WSA>>Magnetic Connectivity>>SO'],
             ],
             'multiple_groups' => [
                 '[AR,all,1],[FL,all,1]',
@@ -86,31 +96,29 @@ final class EventSelectionsTest extends TestCase
     /**
      * @dataProvider legacyStringProvider
      */
-    public function testItShouldBuildCorrectSelectionsFromLegacyString(string $input, array $expected): void
+    public function testItParsesLegacyStringsToPaths(string $input, array $expected): void
     {
-        $selections = EventSelections::buildFromLegacyEventStrings($input);
-        $this->assertEquals($expected, iterator_to_array($selections));
+        $this->assertSame($expected, LegacyEventsStringParser::parse($input));
     }
 
-    public function testItShouldBeCountableIterableAndArrayAccessible(): void
+    public function testSelectionsFromUrlParamsPairsPathsWithVisibility(): void
     {
-        $selections = EventSelections::buildFromLegacyEventStrings('[AR,all,1],[FL,all,1]');
+        [$selections, $visibility] = LegacyEventsStringParser::selectionsFromUrlParams('[AR,all,1],[MC,SO,1]', true);
 
-        // Countable
-        $this->assertCount(2, $selections);
+        $this->assertSame(['HEK>>Active Region', 'WSA>>Magnetic Connectivity>>SO'], $selections);
 
-        // Iterable
-        $paths = [];
-        foreach ($selections as $path) {
-            $paths[] = $path;
+        // One entry per known source; markers always visible, labels from the flag.
+        $this->assertEqualsCanonicalizing(['HEK', 'CCMC', 'RHESSI', 'WSA'], array_keys($visibility));
+        foreach ($visibility as $flags) {
+            $this->assertSame(['marker_visibility' => true, 'label_visibility' => true], $flags);
         }
-        $this->assertEquals(['HEK>>Active Region', 'HEK>>Flare'], $paths);
+    }
 
-        // ArrayAccess
-        $this->assertEquals('HEK>>Active Region', $selections[0]);
-        $this->assertEquals('HEK>>Flare', $selections[1]);
-        $this->assertTrue(isset($selections[0]));
-        $this->assertFalse(isset($selections[99]));
-        $this->assertNull($selections[99]);
+    public function testSelectionsFromUrlParamsPropagatesLabelsFlagFalse(): void
+    {
+        [, $visibility] = LegacyEventsStringParser::selectionsFromUrlParams('[AR,all,1]', false);
+
+        $this->assertFalse($visibility['HEK']['label_visibility']);
+        $this->assertTrue($visibility['HEK']['marker_visibility']);
     }
 }

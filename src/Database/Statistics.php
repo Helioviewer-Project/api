@@ -603,7 +603,7 @@ class Database_Statistics {
 
                 $sqlScreenshots = sprintf(
                     "SELECT dataSourceString "
-                . "FROM movies "
+                . "FROM " . HV_DB_TABLE_MOVIES . " "
                 . "WHERE "
                 .     "timestamp BETWEEN '%s' AND '%s' ;",
                 $this->_dbConnection->link->real_escape_string($dateStartStr),
@@ -655,7 +655,7 @@ class Database_Statistics {
 
                 $sqlScreenshots = sprintf(
                     "SELECT dataSourceString "
-                . "FROM screenshots "
+                . "FROM " . HV_DB_TABLE_SCREENSHOTS . " "
                 . "WHERE "
                 .     "timestamp BETWEEN '%s' AND '%s' ;",
                 $this->_dbConnection->link->real_escape_string($dateStartStr),
@@ -791,6 +791,7 @@ class Database_Statistics {
             'getUsageStatistics'          => array(),
             'getDataCoverageTimeline'     => array(),
             'getDataCoverage'             => array(),
+            'eventsDataCoverage'          => array(),
             'updateDataCoverage'          => array(),
             'shortenURL'                  => array(),
             'saveWebClientState'          => array(),
@@ -862,6 +863,7 @@ class Database_Statistics {
             'getUsageStatistics'          => 0,
             'getDataCoverageTimeline'     => 0,
             'getDataCoverage'             => 0,
+            'eventsDataCoverage'          => 0,
             'updateDataCoverage'          => 0,
             'shortenURL'                  => 0,
             'saveWebClientState'          => 0,

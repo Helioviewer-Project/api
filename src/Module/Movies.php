@@ -14,7 +14,7 @@
  */
 use Helioviewer\Api\Module\BaseModule;
 use Helioviewer\Api\Module\ModuleInterface;
-use Helioviewer\Api\Event\EventsStateManager;
+use Helioviewer\Api\Event\LegacyEventsStringParser;
 use Helioviewer\Api\Sentry\Sentry;
 
 class Module_Movies extends BaseModule implements ModuleInterface {
@@ -112,7 +112,12 @@ class Module_Movies extends BaseModule implements ModuleInterface {
             throw new Exception('Invalid layer choices! You must specify 1-5 comma-separated layer names.', 22);
         }
 
-		$events_manager = EventsStateManager::buildFromEventsState($json_params['eventsState']);
+        // Client sends event_selections + event_visibility_selections directly;
+        // persist that shape verbatim into the movies row for later rehydration.
+        $events_state_blob = json_encode([
+            'event_selections'            => $json_params['event_selections']            ?? [],
+            'event_visibility_selections' => $json_params['event_visibility_selections'] ?? [],
+        ]);
 
         // TODO 2012/04/11
         // Discard any layers which do not share an overlap with the roi to
@@ -169,7 +174,7 @@ class Module_Movies extends BaseModule implements ModuleInterface {
             $options['watermark'],
             $json_params['layers'],
             $bitmask,
-			$events_manager->export(),
+			$events_state_blob,
             (isset($json_params['movieIcons']) ? $json_params['movieIcons'] : false),
             (isset($json_params['followViewport']) ? $json_params['followViewport'] : false),
             $options['scale'],
@@ -302,11 +307,15 @@ class Module_Movies extends BaseModule implements ModuleInterface {
             $event_labels = (bool)$this->_params['eventLabels'];
         }
 
-        // ATTENTION! These two fields eventsLabels and eventSourceString needs to be kept in DB schema
-        // We are keeping them to support old takeScreenshot , queueMovie requests
-
-        // Events manager built from old logic
-        $events_manager = EventsStateManager::buildFromLegacyEventStrings($events_legacy_string, $event_labels);
+        // Parse the legacy ?events= bracket-string into the canonical shape and
+        // persist it verbatim, so the movie worker rehydrates it exactly like a
+        // JSON postMovie row.
+        [$selections, $visibilitySelections] =
+            LegacyEventsStringParser::selectionsFromUrlParams($events_legacy_string, $event_labels);
+        $events_state_blob = json_encode([
+            'event_selections'            => $selections,
+            'event_visibility_selections' => $visibilitySelections,
+        ]);
 
         // TODO 2012/04/11
         // Discard any layers which do not share an overlap with the roi to
@@ -363,7 +372,7 @@ class Module_Movies extends BaseModule implements ModuleInterface {
             $options['watermark'],
             $this->_params['layers'],
             $bitmask,
-            $events_manager->export(),
+            $events_state_blob,
             (isset($this->_params['movieIcons']) ? $this->_params['movieIcons'] : false),
             (isset($this->_params['followViewport']) ? $this->_params['followViewport'] : false),
             $options['scale'],
