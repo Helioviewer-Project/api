@@ -977,54 +977,107 @@ class Database_ImgIndex {
     }
 
     /**
-     * Extract metadata from JP2 image file's XML header
+     * Extract metadata from JP2 image file's XML header.
      *
      * @param string $image_filepath Full path to JP2 image file
      *
-     * @return array A subset of the information stored in the jp2 header
+     * @return array A subset of the information stored in the JP2 header
      */
     public function extractJP2MetaInfo($image_filepath) {
 
-        include_once HV_ROOT_DIR.'/../src/Image/JPEG2000/JP2ImageXMLBox.php';
+        include_once HV_ROOT_DIR
+            . '/../src/Image/JPEG2000/JP2ImageXMLBox.php';
 
         try {
-            $xmlBox = new Image_JPEG2000_JP2ImageXMLBox($image_filepath);
+            $xmlBox = new Image_JPEG2000_JP2ImageXMLBox(
+                $image_filepath
+            );
 
-            $dimensions              = $xmlBox->getImageDimensions();
-            $refPixel                = $xmlBox->getRefPixelCoords();
-            $imageScale              = (float) $xmlBox->getImagePlateScale();
-            $dsun                    = (float) $xmlBox->getDSun();
-            $rsun                    = (float) $xmlBox->getRSun();
-            $sunCenterOffsetParams   = $xmlBox->getSunCenterOffsetParams();
-            $layeringOrder           = $xmlBox->getLayeringOrder();
-            $rotation                = $xmlBox->getRotation();
-            $offsets                 = $xmlBox->getCRValOffsets();
+            $dimensions = $xmlBox->getImageDimensions();
+            $refPixel = $xmlBox->getRefPixelCoords();
+            $imageScale = (float) $xmlBox->getImagePlateScale();
+            $wcs = $xmlBox->getWCSMetadata();
 
-            // Normalize image scale
-            $normalizedScale = $imageScale * ($dsun / HV_CONSTANT_AU);
+            $dsun = (float) $xmlBox->getDSun();
+            $rsun = (float) $xmlBox->getRSun();
+
+            $sunCenterOffsetParams =
+                $xmlBox->getSunCenterOffsetParams();
+
+            $layeringOrder = $xmlBox->getLayeringOrder();
+            $rotation = $xmlBox->getRotation();
+            $offsets = $xmlBox->getCRValOffsets();
+
+            /*
+             * Normalize angular scales to one astronomical unit.
+             *
+             * The legacy scalar scale is retained. New WCS-aware clients
+             * additionally receive independent X/Y scales and the PC/CD
+             * matrices.
+             */
+            $distanceCorrection = $dsun / HV_CONSTANT_AU;
+
+            $normalizedScale =
+                $imageScale * $distanceCorrection;
+
+            $normalizedWcs = $wcs;
+
+            $normalizedWcs['scaleX'] =
+                $wcs['scaleX'] * $distanceCorrection;
+
+            $normalizedWcs['scaleY'] =
+                $wcs['scaleY'] * $distanceCorrection;
+
+            $normalizedWcs['cd'] = array(
+                array(
+                    $wcs['cd'][0][0] * $distanceCorrection,
+                    $wcs['cd'][0][1] * $distanceCorrection
+                ),
+                array(
+                    $wcs['cd'][1][0] * $distanceCorrection,
+                    $wcs['cd'][1][1] * $distanceCorrection
+                )
+            );
 
             $meta = array(
-                "scale"      => $normalizedScale,
-                "scaleCorrection" => $imageScale / $normalizedScale,
-                "width"      => (int) $dimensions[0],
-                "height"     => (int) $dimensions[1],
-                "refPixelX"  => (float) $refPixel[0],
-                "refPixelY"  => (float) $refPixel[1],
-                "offsetX"    => (float) $offsets[0],
-                "offsetY"    => (float) $offsets[1],
-                "rotation"   => $rotation,
-                "rsun"       => (float) $rsun,
-                "dsun"       => $dsun,
-                "sunCenterOffsetParams" => $sunCenterOffsetParams,
-                "layeringOrder"         => $layeringOrder
+                'scale' => $normalizedScale,
+
+                'scaleCorrection' =>
+                    $imageScale / $normalizedScale,
+
+                'width' => (int) $dimensions[0],
+                'height' => (int) $dimensions[1],
+
+                'refPixelX' => (float) $refPixel[0],
+                'refPixelY' => (float) $refPixel[1],
+
+                'offsetX' => (float) $offsets[0],
+                'offsetY' => (float) $offsets[1],
+
+                'rotation' => $rotation,
+
+                /*
+                 * Additional backward-compatible WCS object.
+                 */
+                'wcs' => $normalizedWcs,
+
+                'rsun' => $rsun,
+                'dsun' => $dsun,
+
+                'sunCenterOffsetParams' =>
+                    $sunCenterOffsetParams,
+
+                'layeringOrder' => $layeringOrder
             );
-        }
-        catch (Exception $e) {
+        } catch (Exception $e) {
             throw new Exception(
-                sprintf("Unable to process XML Header for %s: %s",
-                        $image_filepath,
-                        $e->getMessage()
-                       ), 13);
+                sprintf(
+                    'Unable to process XML Header for %s: %s',
+                    $image_filepath,
+                    $e->getMessage()
+                ),
+                13
+            );
         }
 
         return $meta;
