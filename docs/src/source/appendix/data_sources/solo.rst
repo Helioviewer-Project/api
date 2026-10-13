@@ -34,9 +34,32 @@ Solar Orbiter
 SPICE Import
 ^^^^^^^^^^^^
 
-The SPICE downloader reads JP2 files from the directory configured by
-``SPICE_DATA_PATH``. The expected layout under that root is ``YYYY/MM/DD``.
+SPICE JP2 files are retrieved directly from the IAS Helioviewer archive:
+
+    https://helioviewer.ias.u-psud.fr/jp2/SPICE/
+
+The downloader scans the SPICE measurement directories for each requested date.
+The remote archive follows the layout ``YYYY/MM/DD/<measurement>``.
+
+The currently supported measurement directories are:
+
+- ``774`` (Ne VIII 77.04 nm)
+- ``103.19`` (O VI 103.19 nm)
+- ``70.38`` (O III 70.38 nm)
+- ``78.77`` (O IV 78.77 nm)
+- ``70.6`` (Mg IX 70.60 nm)
+- ``97.25`` (H Ly gamma 97.25 nm)
+- ``76.51`` (N IV 76.51 nm)
+- ``97.7`` (C III 97.70 nm)
+
+SPICE observation times are extracted from the acquisition timestamp embedded
+in the JP2 filename, using the ``YYYYMMDDTHHMMSS`` format. For example::
+
+    solo_L4_spice-n-ras_20260101T061925_369098771-000-DR5_7_0.jp2
+
+The SPICE datasource is polled every 60 minutes.
 
 Example::
 
-    SPICE_DATA_PATH=/path/to/spice/jp2 python install/downloader.py -b local -m localmove -d spice
+    python install/downloader.py -d spice -b http -m urllib \
+        -s "2026-01-01 00:00:00" -e "2026-01-01 23:59:59"
