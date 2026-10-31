@@ -540,7 +540,6 @@ class FastMovie
             $this->layers->toHumanReadableString(), $date));
         $image->setImageBackgroundColor(new ImagickPixel('black'));
         $image->setImageAlphaChannel(11);
-        $image->mergeImageLayers(Imagick::LAYERMETHOD_FLATTEN);   // its result was discarded, as in the previous code
         $image->setImageType(Imagick::IMGTYPE_TRUECOLOR);
         if (isset(self::SIZE_PRESETS[$this->size])) {
             [$w, $h] = self::SIZE_PRESETS[$this->size];
