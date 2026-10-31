@@ -9,10 +9,11 @@
  * @link     https://github.com/Helioviewer-Project
  */
 
-include_once HV_ROOT_DIR.'/../src/Movie/HelioviewerMovie.php';
+include_once HV_ROOT_DIR.'/../src/Movie/FastMovie.php';
 include_once HV_ROOT_DIR.'/../src/Helper/ErrorHandler.php';
 include_once HV_ROOT_DIR.'/../lib/Redisent/Redisent.php';
 
+use Helioviewer\Api\Movie\FastMovie;
 use Helioviewer\Api\Sentry\Sentry;
 
 class Job_MovieBuilder
@@ -41,8 +42,7 @@ class Job_MovieBuilder
         // Build movie
         $startMs = microtime(true);
         try {
-            $movie = new Movie_HelioviewerMovie($movieId);
-            $movie->build();
+            FastMovie::build($movieId);
         } catch (Exception $e) {
 
             Sentry::capture($e);
