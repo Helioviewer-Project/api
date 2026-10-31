@@ -493,7 +493,6 @@ class FastMovie
      */
     private function writeFrame(string $date, string $filepath): Imagick
     {
-        set_time_limit(90);   // as the composite image's constructor did, once per frame
         $layers = [];
         foreach ($this->layers->toArray() as $layer) {
             $layers[] = $this->buildLayer($this->switchSource($layer, $date), $date);
@@ -905,8 +904,6 @@ class FastMovie
             $fraction($region['top'] / $jp2['height']), $fraction($region['left'] / $jp2['width']),
             $fraction(($region['bottom'] - $region['top']) / $jp2['height']),
             $fraction(($region['right'] - $region['left']) / $jp2['width']));
-
-        set_time_limit(600);   // as the subfield image did before each decode
 
         for ($attempt = 0; $attempt < 3; $attempt++) {
             exec(escapeshellcmd($cmd) . ' 2>&1', $out, $ret);
