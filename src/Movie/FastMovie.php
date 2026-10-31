@@ -1325,7 +1325,7 @@ class FastMovie
         $coordinates = $labels['labels'];
         foreach (array_reverse(array_keys($selected)) as $observer) {
             foreach (array_reverse($selected[$observer]) as $body) {
-                if ($coordinates[$observer][$body] == null || !in_array($body, $selected[$observer])) {
+                if ($coordinates[$observer][$body] == null) {
                     continue;
                 }
                 [$px, $py] = $this->celestialBodyToPixel($coordinates[$observer][$body]);
@@ -1398,7 +1398,7 @@ class FastMovie
         $coordinates = $trajectories['trajectories'];
         foreach (array_reverse(array_keys($selected)) as $observer) {
             foreach (array_reverse($selected[$observer]) as $body) {
-                if ($coordinates[$observer][$body] == null || !in_array($body, $selected[$observer])) {
+                if ($coordinates[$observer][$body] == null) {
                     continue;
                 }
                 $times    = array_keys((array) $coordinates[$observer][$body]);
