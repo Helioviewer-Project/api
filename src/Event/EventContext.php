@@ -138,6 +138,9 @@ class EventContext
                 'log_label'              => $logLabel,
             ]);
             Sentry::capture($e);
+            if ($logLabel !== '') {
+                error_log(sprintf('[%s] events fetch failed, the frames get no events: %s', $logLabel, $e->getMessage()));
+            }
             return new self(
                 $requestedTimestampsSet,
                 rawSelections: $rawSelections,

@@ -34,8 +34,14 @@ final class GetEventsForFramesWithSelectionsParallelTest extends TestCase
     /** @var array<int, array{0: Promise, 1: callable}> replies not delivered yet */
     private array $pending = [];
 
-    /** @var array<int, true> chunk numbers (1-based, in send order) that fail */
+    /**
+     * @var array<int, int> chunk number (1-based, in first-send order) => how
+     *      many times its request fails before it succeeds (PHP_INT_MAX: always)
+     */
     private array $failing = [];
+
+    /** @var array<string, int> chunk number by its first timestamp, so a retry is the same chunk */
+    private array $chunkOf = [];
 
     protected function setUp(): void
     {
@@ -47,7 +53,9 @@ final class GetEventsForFramesWithSelectionsParallelTest extends TestCase
         $handler = function (RequestInterface $request) {
             $body = json_decode((string) $request->getBody(), true);
             $this->sent[] = $body;
-            $n = count($this->sent);
+            $first = $body['timestamps'][0];
+            $this->chunkOf[$first] ??= count($this->chunkOf) + 1;
+            $n = $this->chunkOf[$first];
             $promise = new Promise(function () {
                 // Deliver every held reply, newest first.
                 while ($this->pending) {
@@ -56,7 +64,8 @@ final class GetEventsForFramesWithSelectionsParallelTest extends TestCase
                 }
             });
             $this->pending[] = [$promise, function (Promise $p) use ($body, $n, $request) {
-                if (isset($this->failing[$n])) {
+                if (($this->failing[$n] ?? 0) > 0) {
+                    $this->failing[$n]--;
                     $p->reject(new \GuzzleHttp\Exception\ConnectException("chunk $n failed", $request));
                     return;
                 }
@@ -103,6 +112,31 @@ final class GetEventsForFramesWithSelectionsParallelTest extends TestCase
 
         $this->assertCount(12, $this->sent);
         $this->assertSame(array_fill(0, 12, 25), array_map(fn ($b) => count($b['timestamps']), $this->sent));
+    }
+
+    public function testItShouldKeepARequestWithinADayOfMovieTime(): void
+    {
+        // A month-long movie: 300 timestamps 2.4 h apart. Chunks of 50 would
+        // span five days each; a day per request gives 30 chunks of 10.
+        $month = [];
+        for ($i = 0; $i < 300; $i++) {
+            $month[] = date('Y-m-d H:i:s', 1758630569 + 8640 * $i);
+        }
+        $this->api(6)->getEventsForFramesWithSelections($month, ['HEK>>Flare'], 150);
+
+        $this->assertCount(30, $this->sent);
+        $this->assertSame(array_fill(0, 30, 10), array_map(fn ($b) => count($b['timestamps']), $this->sent));
+        $this->assertSame([], array_filter($this->sent, fn ($b) => !isset($b['timestamps'][0])), 'no empty chunk');
+        foreach ($this->sent as $body) {
+            $span = strtotime(end($body['timestamps'])) - strtotime(reset($body['timestamps']));
+            $this->assertLessThanOrEqual(86400, $span, 'one request covers at most a day of movie time');
+        }
+        $this->assertSame($month, array_merge(...array_map(fn ($b) => $b['timestamps'], $this->sent)), 'every timestamp once, in order');
+
+        // The same rule without the pool: 300 timestamps, one request at a time.
+        $this->sent = [];
+        $this->api(1)->getEventsForFramesWithSelections($month, ['HEK>>Flare'], 150);
+        $this->assertCount(30, $this->sent);
     }
 
     public function testItShouldNotMakeChunksSmallerThanTheMinimum(): void
@@ -162,9 +196,30 @@ final class GetEventsForFramesWithSelectionsParallelTest extends TestCase
         $this->assertSame($sequential, $parallel);
     }
 
-    public function testItShouldThrowAndCaptureSentryWhenAChunkFails(): void
+    public function testItShouldRetryAFailedChunkAndMergeAsIfNothingHappened(): void
     {
-        $this->failing = [2 => true, 4 => true];
+        // chunk 2 fails once, chunk 3 twice: both succeed within the 3 attempts
+        $timestamps = self::timestamps(40);
+        $this->failing = [2 => 1, 3 => 2];
+        $this->mockSentry->expects($this->never())->method('capture');
+
+        $merged = $this->api(4)->getEventsForFramesWithSelections($timestamps, ['HEK>>Flare'], 150);
+
+        // 4 chunks + 1 retry of chunk 2 + 2 retries of chunk 3; a retry sends the same timestamps
+        $this->assertCount(7, $this->sent);
+        $this->assertSame($this->sent[1]['timestamps'], $this->sent[4]['timestamps'], 'chunk 2 retried as is');
+        $this->assertSame($this->sent[2]['timestamps'], $this->sent[6]['timestamps'], 'chunk 3 retried as is');
+
+        // the result is the one without failures: merged in chunk order
+        $this->sent = [];
+        $this->chunkOf = [];
+        $this->failing = [];
+        $this->assertSame($this->api(4)->getEventsForFramesWithSelections($timestamps, ['HEK>>Flare'], 150), $merged);
+    }
+
+    public function testItShouldThrowAndCaptureSentryWhenAChunkKeepsFailing(): void
+    {
+        $this->failing = [2 => PHP_INT_MAX, 4 => PHP_INT_MAX];
 
         $this->mockSentry->expects($this->once())
             ->method('capture')
@@ -174,7 +229,12 @@ final class GetEventsForFramesWithSelectionsParallelTest extends TestCase
         $this->expectException(EventsApiException::class);
         $this->expectExceptionMessage('Failed to fetch frames_with_selections: chunk 2 failed');
 
-        $this->api(4)->getEventsForFramesWithSelections(self::timestamps(40), ['HEK>>Flare'], 150);
+        try {
+            $this->api(4)->getEventsForFramesWithSelections(self::timestamps(40), ['HEK>>Flare'], 150);
+        } finally {
+            // 4 chunks, then chunks 2 and 4 twice more: three attempts each, no more
+            $this->assertCount(8, $this->sent);
+        }
     }
 
     public function testItShouldThrowWhenAChunkReplyIsNotJson(): void

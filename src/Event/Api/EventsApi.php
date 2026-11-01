@@ -47,6 +47,48 @@ class EventsApi implements EventsApiInterface {
     private const MAX_PARALLEL_CHUNK = 25;
 
     /**
+     * The most movie time one frames_with_selections request may span, in
+     * seconds. The events server assembles every event alive in the span of
+     * a request, with its footprints, and its proxy cuts a request off at
+     * 60 s (504): a month-long movie sent as 6 chunks of 50 timestamps, five
+     * days each, took the server ~60 s per chunk and failed at random. A day
+     * per request keeps it near 15 s. A movie of a day or less is unaffected.
+     */
+    private const MAX_CHUNK_SPAN = 86400;
+
+    /**
+     * How many times a frames_with_selections chunk is tried. The movie's
+     * events are all or nothing: one failed chunk and the whole movie comes
+     * out without events, so a transient failure (a connection that timed
+     * out, a proxy 504, a dropped reply) is retried before giving up.
+     */
+    private const FRAMES_ATTEMPTS = 3;
+
+    /**
+     * The connect timeout of a frames request, in seconds. The client's
+     * default of 2 s suits the interactive calls; a movie job runs on a
+     * loaded host where the TLS handshake alone has taken longer than that
+     * ("cURL error 28: SSL connection timeout").
+     */
+    private const FRAMES_CONNECT_TIMEOUT = 10;
+
+    /**
+     * The largest chunk whose timestamps stay within MAX_CHUNK_SPAN, assuming
+     * they are evenly spaced (a movie's frames are). PHP_INT_MAX when the
+     * span cannot be read.
+     */
+    private static function chunkSizeForSpan(array $timestamps): int
+    {
+        $first = strtotime((string) reset($timestamps));
+        $last  = strtotime((string) end($timestamps));
+        if ($first === false || $last === false || $last <= $first) {
+            return PHP_INT_MAX;
+        }
+        $spans = (int) ceil(($last - $first) / self::MAX_CHUNK_SPAN);
+        return max(1, (int) ceil(count($timestamps) / $spans));
+    }
+
+    /**
      * Upstream-imposed cap on timestamps per batch request. Driven by
      * HV_EVENTS_API_EVENTS_PER_FRAME_MAX_CHUNK_SIZE in Config.ini.
      */
@@ -253,6 +295,10 @@ class EventsApi implements EventsApiInterface {
             $chunkSize = $maxChunk;
         }
 
+        // A long movie gets smaller chunks: a request never spans more than
+        // MAX_CHUNK_SPAN of movie time (300 frames over a month -> 10 per chunk).
+        $chunkSize = min($chunkSize, self::chunkSizeForSpan($timestamps));
+
         $url = "/helioviewer/events/frames_with_selections";
 
         // In parallel mode, spread the timestamps over the concurrent requests
@@ -291,17 +337,39 @@ class EventsApi implements EventsApiInterface {
         if ($this->concurrency > 1 && count($chunks) > 1) {
             $this->fetchChunksInParallel($url, $chunks, $selections, $merge, $logChunk, $logLabel);
         } else {
-            $this->fetchChunksInSequence($url, $chunks, $selections, $merge, $logChunk);
+            $this->fetchChunksInSequence($url, $chunks, $selections, $merge, $logChunk, $logLabel);
         }
 
         return $merged;
     }
 
+    /** The request options of one frames_with_selections chunk. */
+    private function framesRequest(array $chunkTimestamps, array $selections): array
+    {
+        return [
+            'json' => [
+                'timestamps' => $chunkTimestamps,
+                'selections' => $selections,
+            ],
+            'connect_timeout' => self::FRAMES_CONNECT_TIMEOUT,
+        ];
+    }
+
+    /** "chunk 3 (attempt 1 of 3) failed, retrying: cURL error 28 …" */
+    private function logRetry(string $logLabel, int $i, int $attempt, \Throwable $e): void
+    {
+        error_log(sprintf(
+            "[%s] EventsApi frames_with_selections chunk %d (attempt %d of %d) failed, retrying: %s",
+            $logLabel === '' ? 'EventsApi' : $logLabel, $i + 1, $attempt, self::FRAMES_ATTEMPTS, $e->getMessage()
+        ));
+    }
+
     /**
      * One frames_with_selections request per chunk, one after another; each
-     * reply is handed to $merge as it arrives.
+     * reply is handed to $merge as it arrives. A chunk that fails is tried
+     * again, up to FRAMES_ATTEMPTS times.
      */
-    private function fetchChunksInSequence(string $url, array $chunks, array $selections, callable $merge, callable $logChunk): void
+    private function fetchChunksInSequence(string $url, array $chunks, array $selections, callable $merge, callable $logChunk, string $logLabel): void
     {
         foreach ($chunks as $i => $chunkTimestamps) {
             $this->sentry->setContext('EventsApi', [
@@ -310,16 +378,17 @@ class EventsApi implements EventsApiInterface {
                 'selection_count' => count($selections),
             ]);
             $start = microtime(true);
-            try {
-                $response = $this->client->request('POST', $url, [
-                    'json' => [
-                        'timestamps' => $chunkTimestamps,
-                        'selections' => $selections,
-                    ],
-                ]);
-                $merge($this->parseResponse($response));
-            } catch (\Throwable $e) {
-                throw $this->framesRequestFailed($e);
+            for ($attempt = 1; ; $attempt++) {
+                try {
+                    $response = $this->client->request('POST', $url, $this->framesRequest($chunkTimestamps, $selections));
+                    $merge($this->parseResponse($response));
+                    break;
+                } catch (\Throwable $e) {
+                    if ($attempt >= self::FRAMES_ATTEMPTS) {
+                        throw $this->framesRequestFailed($e);
+                    }
+                    $this->logRetry($logLabel, $i, $attempt, $e);
+                }
             }
             $logChunk($i, count($chunks), count($chunkTimestamps), (int) round((microtime(true) - $start) * 1000));
         }
@@ -335,8 +404,10 @@ class EventsApi implements EventsApiInterface {
      * order, so the result is the same as fetching one after another: a reply
      * that arrives early is held unparsed (Guzzle keeps bodies in php://temp,
      * which spills to disk past 2 MB) until the chunks before it are merged.
-     * If any chunk fails, the lowest-index failure is reported and thrown, as
-     * the sequential path would.
+     * The chunks that failed (a rejected request or an unreadable reply) go
+     * through the pool again, up to FRAMES_ATTEMPTS times in all; replies
+     * held meanwhile are kept. If a chunk still fails, the lowest-index
+     * failure is reported and thrown, as the sequential path would.
      */
     private function fetchChunksInParallel(string $url, array $chunks, array $selections, callable $merge, callable $logChunk, string $logLabel): void
     {
@@ -350,19 +421,15 @@ class EventsApi implements EventsApiInterface {
 
         $held = [];        // replies waiting for an earlier chunk, by chunk index
         $next = 0;         // the next chunk to merge
-        $errors = [];      // failures, by chunk index
+        $errors = [];      // failures of the current attempt, by chunk index
         $times = [];       // transfer time per chunk, for the log
-        $requests = function () use ($url, $chunks, $selections, &$times) {
-            foreach ($chunks as $i => $chunkTimestamps) {
+        $requests = function (array $pending) use ($url, $selections, &$times) {
+            foreach ($pending as $i => $chunkTimestamps) {
                 // A closure, not an arrow function: an arrow function captures
-                // $times by value, and on_stats would fill a copy (every chunk
-                // logged as 0 ms).
+                // $times by value, and on_stats would fill a copy (chunk times
+                // all logged as 0 ms).
                 yield $i => function () use ($url, $chunkTimestamps, $selections, &$times, $i) {
-                    return $this->client->requestAsync('POST', $url, [
-                        'json' => [
-                            'timestamps' => $chunkTimestamps,
-                            'selections' => $selections,
-                        ],
+                    return $this->client->requestAsync('POST', $url, $this->framesRequest($chunkTimestamps, $selections) + [
                         'on_stats' => function (TransferStats $stats) use (&$times, $i) {
                             $times[$i] = $stats->getTransferTime();
                         },
@@ -383,21 +450,33 @@ class EventsApi implements EventsApiInterface {
         };
 
         $start = microtime(true);
-        $pool = new Pool($this->client, $requests(), [
-            'concurrency' => $this->concurrency,
-            'fulfilled' => function ($response, $i) use (&$held, $mergeReady) {
-                $held[$i] = $response;
-                $mergeReady();
-            },
-            'rejected' => function ($reason, $i) use (&$errors) {
-                $errors[$i] = $reason instanceof \Throwable ? $reason : new \RuntimeException((string) $reason);
-            },
-        ]);
-        $pool->promise()->wait();
+        $pending = $chunks;
+        for ($attempt = 1; $pending; $attempt++) {
+            $errors = [];
+            $pool = new Pool($this->client, $requests($pending), [
+                'concurrency' => $this->concurrency,
+                'fulfilled' => function ($response, $i) use (&$held, $mergeReady) {
+                    $held[$i] = $response;
+                    $mergeReady();
+                },
+                'rejected' => function ($reason, $i) use (&$errors) {
+                    $errors[$i] = $reason instanceof \Throwable ? $reason : new \RuntimeException((string) $reason);
+                },
+            ]);
+            $pool->promise()->wait();
+            $mergeReady();                              // a retried chunk may have unblocked held replies
 
-        if ($errors) {
             ksort($errors);
-            throw $this->framesRequestFailed(reset($errors));
+            $pending = array_intersect_key($chunks, $errors);
+            if (!$pending) {
+                break;
+            }
+            if ($attempt >= self::FRAMES_ATTEMPTS) {
+                throw $this->framesRequestFailed(reset($errors));
+            }
+            foreach ($errors as $i => $e) {
+                $this->logRetry($logLabel, $i, $attempt, $e);
+            }
         }
         foreach ($chunks as $i => $chunkTimestamps) {
             $logChunk($i, count($chunks), count($chunkTimestamps), (int) round(1000 * ($times[$i] ?? 0)));
