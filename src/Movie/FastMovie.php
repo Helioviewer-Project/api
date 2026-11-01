@@ -1604,7 +1604,8 @@ class FastMovie
 
     /**
      * The layer names in one column and their times in a second column
-     * right of the widest name, bottom left, outlined in black.
+     * right of the widest name, bottom left, outlined in black. The names
+     * are the same on every frame, the times are not.
      */
     private function drawWatermarkText(Imagick $image, array $layers): void
     {
@@ -1619,13 +1620,15 @@ class FastMovie
         // Room for the Earth scale box when it sits in the corner.
         $left = ($this->scale == false || $this->scaleX != 0 || $this->scaleY != 0) ? 12 : 85;
 
-        $underText = $this->text(12, '#000C', 2, null, null);
-        $image->annotateImage($underText, $left, $bottom, 0, $names);
-        $metrics = $image->queryFontMetrics($underText, $names, true);
+        // The names: outline and text, rendered once per movie and pasted on every frame (WatermarkNames).
+        WatermarkNames::draw($image, $names, $left, $bottom);
+
+        // The times: outline, then text, drawn as before.
+        $underText = WatermarkNames::outlineDraw();
+        $metrics   = $image->queryFontMetrics($underText, $names, true);
         $image->annotateImage($underText, $left + ($metrics['textWidth'] ? $metrics['textWidth'] + 10 : 120), $bottom, 0, $times);
 
-        $text = $this->text(12, null, 0, null, 'white');
-        $image->annotateImage($text, $left, $bottom, 0, $names);
+        $text    = WatermarkNames::textDraw();
         $metrics = $image->queryFontMetrics($text, $names, true);
         $image->annotateImage($text, $left + ($metrics['textWidth'] ? $metrics['textWidth'] + 10 : 120), $bottom, 0, $times);
 
