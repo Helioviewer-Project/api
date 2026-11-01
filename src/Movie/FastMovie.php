@@ -1188,12 +1188,17 @@ class FastMovie
             if (!$rasterizer->isAvailable()) {
                 throw new \RuntimeException('Event-region rendering requires rsvg-convert (librsvg), which was not found on PATH.');
             }
-            $svg   = (new EventRegionSvg($rendered, $canvasWidth, $canvasHeight))->toSvg();
-            $png   = $rasterizer->rasterize($svg, $canvasWidth, $canvasHeight);
-            $layer = new Imagick();
-            $layer->readImageBlob($png);
-            $image->compositeImage($layer, Imagick::COMPOSITE_OVER, 0, 0);
-            $layer->destroy();
+            // Only the part of the frame the regions are drawn on is rasterised.
+            $regions = new EventRegionSvg($rendered, $canvasWidth, $canvasHeight);
+            $area    = $regions->area();
+            if ($area !== null) {
+                [$areaX, $areaY, $areaWidth, $areaHeight] = $area;
+                $png   = $rasterizer->rasterize($regions->toSvg(), $areaWidth, $areaHeight);
+                $layer = new Imagick();
+                $layer->readImageBlob($png);
+                $image->compositeImage($layer, Imagick::COMPOSITE_OVER, $areaX, $areaY);
+                $layer->destroy();
+            }
         }
 
         // The pins and labels. A far-side event is dimmed and desaturated.
