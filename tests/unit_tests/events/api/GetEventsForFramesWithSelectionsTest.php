@@ -21,7 +21,10 @@ final class GetEventsForFramesWithSelectionsTest extends TestCase
     {
         $this->mockClient = $this->createMock(ClientInterface::class);
         $this->mockSentry = $this->createMock(SentryClientInterface::class);
-        $this->eventsApi = new EventsApi($this->mockClient, $this->mockSentry);
+        // concurrency 1: these tests cover chunking and merging through the
+        // one-after-another path (request()); the parallel path is covered by
+        // GetEventsForFramesWithSelectionsParallelTest.
+        $this->eventsApi = new EventsApi($this->mockClient, $this->mockSentry, 1);
     }
 
     public function testItShouldThrowForEmptySelections(): void
