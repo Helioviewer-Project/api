@@ -56,6 +56,7 @@ use Imagick;
 use ImagickDraw;
 use ImagickPixel;
 use Helioviewer\Api\Event\EventContext;
+use Helioviewer\Api\Event\EventLabelRenderer;
 use Helioviewer\Api\Event\Api\EventsApi;
 use Helioviewer\Api\Event\Api\EventsApiInterface;
 use Helioviewer\Api\Event\FootprintContour;
@@ -1228,13 +1229,8 @@ class FastMovie
             $marker->destroy();
 
             if ($event['label'] !== '') {
-                $x += 11;
-                $y -= 24;
-                foreach (explode("\n", $event['label']) as $line => $value) {
-                    $value = str_replace(['u03b1', 'u03b2', 'u03b3', 'u00b1', 'u00b2', '&deg;'], ['α', 'β', 'γ', '±', '²', '°'], $value);
-                    $image->annotateImage($this->text(10, '#000C', 3, $behind ? 0.18 : 0.3, null), $x, $y + $line * 12, 0, $value);
-                    $image->annotateImage($this->text(10, null, 0, null, '#ffff', $behind ? 0.6 : null), $x, $y + $line * 12, 0, $value);
-                }
+                // Rendered once per label and reused on every frame (EventLabelRenderer).
+                EventLabelRenderer::draw($image, $event['label'], $behind, $x + 11, $y - 24);
             }
         }
         foreach ($markerCache as $m) {
