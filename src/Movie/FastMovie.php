@@ -20,7 +20,7 @@
  *        c. overlays   events, movie icons, celestial bodies,   (draw*)
  *                      scale indicator, watermark
  *   5. previews      PNG thumbnails of the middle frame         (writePreviews)
- *   6. encode        hq mp4, mp4, flv and webm with ffmpeg      (encodeMovie)
+ *   6. encode        the hq mp4 and the mp4 with ffmpeg        (encodeMovie)
  *   7. finish        statuses in the database, statistics,     (run)
  *                    frames deleted
  *
@@ -1664,10 +1664,10 @@ class FastMovie
     // =========================================================================
 
     /**
-     * The video files, with ffmpeg: the hq mp4 from the frames, the mp4 from
-     * the hq one, the flv as a copy of the mp4's stream, and the webm from
-     * the frames. The mp4 row is marked finished after the flv, the webm row
-     * after the webm.
+     * The video files, with ffmpeg: the hq mp4 from the frames and the mp4
+     * from the hq one; the mp4 row is marked finished after the second. Only
+     * the mp4 is produced: the player uses it, Flash is gone, and the webm
+     * (libvpx on one core) was the slowest step of a movie.
      */
     private function encodeMovie(): void
     {
@@ -1680,10 +1680,8 @@ class FastMovie
         $title       = sprintf('%s (%s)', $layerString, $dateString);
         $description = sprintf('The Sun as seen through %s from %s.', $layerString, str_replace('-', ' to ', $dateString));
         $comment     = sprintf('This movie was produced by Helioviewer.org. See the original at %s or download a high-quality version from %s.', $playUrl, $downloadUrl);
-        $metadata    = function (string $format) use ($title, $description, $comment): string {
-            return sprintf('-metadata title="%s" -metadata artist="Helioviewer.org" -metadata description="%s" -metadata comment="%s" -metadata creation_time="%s" ',
-                $title, $description, str_replace('mp4', $format, $comment), date("Y-m-d\TH:i:s\Z"));
-        };
+        $metadata    = sprintf('-metadata title="%s" -metadata artist="Helioviewer.org" -metadata description="%s" -metadata comment="%s" -metadata creation_time="%s" ',
+            $title, $description, $comment, date("Y-m-d\TH:i:s\Z"));
 
         // The frame rate with one decimal (launchpad bug 979231), twice in
         // every command, before and after the input, or ffmpeg drops frames.
@@ -1693,19 +1691,13 @@ class FastMovie
         $base   = $this->directory . substr($this->filename, 0, -4);
         $this->ffmpegLog = fopen($this->directory . 'ffmpeg.log', 'a');
 
+        // Both with -y: a rebuilt movie replaces its files.
         $mp4Start = time();
         $this->ffmpeg(sprintf('%s -r %s -i %s -r %s -vcodec libx264 -pix_fmt yuv420p -preset %s %s-threads %d -crf 15 -s %dx%d -an -y %s-hq.mp4',
-            HV_FFMPEG, $frameRate, $frames, $frameRate, HV_X264_HQ_PRESET, $metadata('mp4'), HV_FFMPEG_MAX_THREADS, $width, $height, $base), $base . '-hq.mp4');
-        $this->ffmpeg(sprintf('%s -i %s-hq.mp4 -preset %s  -threads %d -crf 18 %s.mp4',
+            HV_FFMPEG, $frameRate, $frames, $frameRate, HV_X264_HQ_PRESET, $metadata, HV_FFMPEG_MAX_THREADS, $width, $height, $base), $base . '-hq.mp4');
+        $this->ffmpeg(sprintf('%s -i %s-hq.mp4 -preset %s  -threads %d -crf 18 -y %s.mp4',
             HV_FFMPEG, $base, HV_X264_PRESET, HV_FFMPEG_MAX_THREADS, $base), $base . '.mp4');
-        $this->ffmpeg(sprintf('%s -i %s.mp4 -vcodec copy %s -threads %d %s.flv',
-            HV_FFMPEG, $base, $metadata('mp4'), HV_FFMPEG_MAX_THREADS, $base), $base . '.flv');
         $this->db->markMovieAsFinished($this->id, 'mp4', time() - $mp4Start);
-
-        $webmStart = time();
-        $this->ffmpeg(sprintf('%s -r %f -i %s -r %f -f webm -vcodec libvpx -pix_fmt yuv420p -qmin 1 -qmax 40 %s -threads %d -s %dx%d -an -y %s.webm',
-            HV_FFMPEG, $frameRate, $frames, $frameRate, $metadata('webm'), HV_FFMPEG_MAX_THREADS, $width, $height, $base), $base . '.webm');
-        $this->db->markMovieAsFinished($this->id, 'webm', time() - $webmStart);
 
         fclose($this->ffmpegLog);
         $this->status = self::STATUS_COMPLETED;

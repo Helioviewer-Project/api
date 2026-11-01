@@ -168,8 +168,8 @@ final class reQueueMovieTest extends TestCase
         $movieDatabase = new Database_MovieDatabase();
         $formats = $movieDatabase->getMovieFormats($movieId);
 
+        $this->assertCount(1, $formats, "one format row: the mp4");
         $this->assertEquals($formats[0]['status'], 0, "mp4 should have status of 0 to indicate it was queued");
-        $this->assertEquals($formats[1]['status'], 0, "webm should have status of 0 to indicate it was queued");
         // Create instance of class to break the movie.
         $builder = new HelioviewerMovie_BuildBreaker($result->id);
         // Call abort to simulate move build failure.
@@ -181,7 +181,6 @@ final class reQueueMovieTest extends TestCase
 
         $formats = $movieDatabase->getMovieFormats($movieId);
         $this->assertEquals($formats[0]['status'], 3, "mp4 should have status of 3 to indicate an error");
-        $this->assertEquals($formats[1]['status'], 3, "webm should have status of 3 to indicate an error");
     }
 
 }

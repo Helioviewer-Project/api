@@ -599,7 +599,7 @@ paths:
 
         **Example Request** — verbose with JSONP callback:
 
-        [`https://api.helioviewer.org/v2/getMovieStatus/?id=w1Pj5&format=webm&verbose=true&callback=callbackTest`](<https://api.helioviewer.org/v2/getMovieStatus/?id=w1Pj5&format=webm&verbose=true&callback=callbackTest>)
+        [`https://api.helioviewer.org/v2/getMovieStatus/?id=w1Pj5&format=mp4&verbose=true&callback=callbackTest`](<https://api.helioviewer.org/v2/getMovieStatus/?id=w1Pj5&format=mp4&verbose=true&callback=callbackTest>)
       operationId: getMovieStatus
       parameters:
         - name: id
@@ -612,7 +612,7 @@ paths:
         - name: format
           in: query
           required: true
-          description: Movie format.
+          description: Movie format. Only mp4 is produced; webm is accepted for older clients and answered with the mp4.
           schema:
             type: string
             enum: [mp4, webm]
@@ -661,7 +661,7 @@ paths:
       tags: [Movies]
       summary: Download a generated movie
       description: |
-        Download a custom movie in mp4 or webm format.
+        Download a custom movie in mp4 format.
 
         **Example Request**
 
@@ -678,7 +678,7 @@ paths:
         - name: format
           in: query
           required: true
-          description: Movie format.
+          description: Movie format. Only mp4 is produced; webm is accepted for older clients and answered with the mp4.
           schema:
             type: string
             enum: [mp4, webm]
@@ -694,10 +694,6 @@ paths:
           description: Movie binary data.
           content:
             video/mp4:
-              schema:
-                type: string
-                format: binary
-            video/webm:
               schema:
                 type: string
                 format: binary
@@ -724,7 +720,7 @@ paths:
         - name: format
           in: query
           required: true
-          description: Movie format.
+          description: Movie format. Only mp4 is produced; webm is accepted for older clients and answered with the mp4.
           schema:
             type: string
             enum: [mp4, webm]
@@ -1656,7 +1652,7 @@ components:
       name: format
       in: query
       required: false
-      description: Movie format. Default is mp4.
+      description: Movie format. Default is mp4; only mp4 is produced, webm is accepted for older clients and answered with the mp4.
       schema:
         type: string
         enum: [mp4, webm]
@@ -2192,6 +2188,7 @@ components:
           example: 21.04
         format:
           type: string
+          description: Movie format. Only mp4 is produced; webm is accepted for older clients and answered with the mp4.
           enum: [mp4, webm]
           default: mp4
         frameRate:
