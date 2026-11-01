@@ -79,6 +79,12 @@ class FastMovie
 
     const FONT = HV_ROOT_DIR . '/../resources/fonts/DejaVuSans.ttf';
 
+    /** Colour tables kept by colorTableFor(); all are dropped when this many are held. */
+    const MAX_COLOR_TABLES = 100;
+
+    /** @var Imagick[] colour tables by file and brightness correction, see colorTableFor() */
+    private static array $colorTables = [];
+
     /** Fill colour of an event's region, by event type (hex without #). */
     const EVENT_COLORS = [
         'AR' => 'FF8F97', 'CME' => 'FFB294', 'CD' => 'FFD391', 'CH' => 'FEF38E', 'CW' => 'E8FF8C',
@@ -846,16 +852,9 @@ class FastMovie
             $image->setImageDepth(8);
             $image->setImageCompressionQuality(10);
 
+            // The brightness correction, if there is one, is folded into the table.
             if ($recipe['colorTable'] && $applyColorTable) {
-                if ($recipe['brightness'] !== null) {
-                    // Half of the correction as gamma, all of it as brightness.
-                    $gammaScale = (($recipe['brightness'] - 1) / 2) + 1;
-                    $image->levelImage(0, $gammaScale, 65535);
-                    $image->modulateImage($recipe['brightness'] * 100, 100, 100);
-                }
-                $clut = new Imagick($recipe['colorTable']);
-                $image->clutImage($clut);
-                $clut->destroy();
+                $image->clutImage(self::colorTableFor($recipe['colorTable'], $recipe['brightness']));
             }
         } else {
             $image = new Imagick($input);
@@ -882,6 +881,55 @@ class FastMovie
             @unlink($input);
         }
         return $image;
+    }
+
+    /**
+     * The colour table to apply to the decoded 8-bit grayscale image, with
+     * the brightness correction folded in when one is set.
+     *
+     * The correction (a gamma curve, then a brightness scale) and the colour
+     * table each map a gray level to a new value on their own, and the image
+     * holds only 256 gray levels once its depth is 8. So the steps are run
+     * once on a strip of those 256 levels instead of on every pixel: a
+     * 256-wide table is looked up exactly at each level, so the result is the
+     * same as running them on the image. Tables are kept per process (the AIA
+     * correction changes once a day), up to MAX_COLOR_TABLES.
+     */
+    public static function colorTableFor(string $colorTable, ?float $brightness): Imagick
+    {
+        $key = $colorTable . '|' . var_export($brightness, true);
+        if (!isset(self::$colorTables[$key])) {
+            if (count(self::$colorTables) >= self::MAX_COLOR_TABLES) {
+                self::clearColorTables();
+            }
+            $clut = new Imagick($colorTable);
+            if ($brightness !== null) {
+                // The 256 gray levels, loaded and set up like the decoded image.
+                $levels = new Imagick();
+                $levels->readImageBlob("P5\n256 1\n255\n" . implode('', array_map('chr', range(0, 255))));
+                $levels->setImageFormat('PNG');
+                $levels->setImageDepth(8);
+
+                // Half of the correction as gamma, all of it as brightness.
+                $gammaScale = (($brightness - 1) / 2) + 1;
+                $levels->levelImage(0, $gammaScale, 65535);
+                $levels->modulateImage($brightness * 100, 100, 100);
+                $levels->clutImage($clut);
+                $clut->destroy();
+                $clut = $levels;
+            }
+            self::$colorTables[$key] = $clut;
+        }
+        return self::$colorTables[$key];
+    }
+
+    /** Frees the colour tables kept by colorTableFor(). */
+    public static function clearColorTables(): void
+    {
+        foreach (self::$colorTables as $clut) {
+            $clut->destroy();
+        }
+        self::$colorTables = [];
     }
 
     /**
