@@ -20,7 +20,7 @@
  *        c. overlays   events, movie icons, celestial bodies,   (draw*)
  *                      scale indicator, watermark
  *   5. previews      PNG thumbnails of the middle frame         (writePreviews)
- *   6. encode        the hq mp4 and the mp4 with ffmpeg        (encodeMovie)
+ *   6. encode        the hq mp4 and the mp4, one ffmpeg pass   (encodeMovie)
  *   7. finish        statuses in the database, statistics,     (run)
  *                    frames deleted
  *
@@ -1664,10 +1664,13 @@ class FastMovie
     // =========================================================================
 
     /**
-     * The video files, with ffmpeg: the hq mp4 from the frames and the mp4
-     * from the hq one; the mp4 row is marked finished after the second. Only
-     * the mp4 is produced: the player uses it, Flash is gone, and the webm
-     * (libvpx on one core) was the slowest step of a movie.
+     * The video files: one ffmpeg pass reads the frames once and encodes them
+     * twice, the hq mp4 (HV_X264_HQ_PRESET, crf 15) and the normal mp4
+     * (HV_X264_PRESET, crf 18). The normal mp4 used to be converted from the
+     * hq one, a second generation of the frames in a second pass; from the
+     * frames it has the quality of a slower preset of that conversion, in
+     * less time. Only the mp4 is produced: the player uses it, Flash is
+     * gone, and the webm (libvpx on one core) was the slowest step.
      */
     private function encodeMovie(): void
     {
@@ -1691,12 +1694,17 @@ class FastMovie
         $base   = $this->directory . substr($this->filename, 0, -4);
         $this->ffmpegLog = fopen($this->directory . 'ffmpeg.log', 'a');
 
-        // Both with -y: a rebuilt movie replaces its files.
+        // The frames decoded once, scaled to the movie's size (as -s did, before
+        // the conversion to yuv420p: a frame of odd size is scaled, not padded)
+        // and split to the two encoders, each with its preset, crf and output;
+        // both with -y, so a rebuilt movie replaces its files.
         $mp4Start = time();
-        $this->ffmpeg(sprintf('%s -r %s -i %s -r %s -vcodec libx264 -pix_fmt yuv420p -preset %s %s-threads %d -crf 15 -s %dx%d -an -y %s-hq.mp4',
-            HV_FFMPEG, $frameRate, $frames, $frameRate, HV_X264_HQ_PRESET, $metadata, HV_FFMPEG_MAX_THREADS, $width, $height, $base), $base . '-hq.mp4');
-        $this->ffmpeg(sprintf('%s -i %s-hq.mp4 -preset %s  -threads %d -crf 18 -y %s.mp4',
-            HV_FFMPEG, $base, HV_X264_PRESET, HV_FFMPEG_MAX_THREADS, $base), $base . '.mp4');
+        $this->ffmpeg(sprintf('%s -r %s -i %s -filter_complex "[0:v]scale=%d:%d,format=yuv420p,split=2[hq][normal]"'
+                . ' -map "[hq]" -r %s -vcodec libx264 -preset %s %s-threads %d -crf 15 -an -y %s-hq.mp4'
+                . ' -map "[normal]" -r %s -vcodec libx264 -preset %s %s-threads %d -crf 18 -an -y %s.mp4',
+            HV_FFMPEG, $frameRate, $frames, $width, $height,
+            $frameRate, HV_X264_HQ_PRESET, $metadata, HV_FFMPEG_MAX_THREADS, $base,
+            $frameRate, HV_X264_PRESET, $metadata, HV_FFMPEG_MAX_THREADS, $base), $base . '-hq.mp4', $base . '.mp4');
         $this->db->markMovieAsFinished($this->id, 'mp4', time() - $mp4Start);
 
         fclose($this->ffmpegLog);
@@ -1704,18 +1712,20 @@ class FastMovie
         $this->timings['encode'] = microtime(true) - $start;
     }
 
-    /** Runs one ffmpeg command, logged to ffmpeg.log, and checks that it produced a file. */
-    private function ffmpeg(string $cmd, string $outputFile): void
+    /** Runs one ffmpeg command, logged to ffmpeg.log, and checks that it produced its files. */
+    private function ffmpeg(string $cmd, string ...$outputFiles): void
     {
         fwrite($this->ffmpegLog, "========================================================\n$cmd\n");
         shell_exec($cmd . ' 2>/dev/null');
 
         // A crashed ffmpeg may still leave an empty container behind.
-        if (!file_exists($outputFile)) {
-            throw new Exception("FFMpeg error encountered - movie file $outputFile does not exist");
-        }
-        if (filesize($outputFile) < 1000) {
-            throw new Exception("FFmpeg error encountered - Expected movie to be at least 1000 bytes, got " . filesize($outputFile) . " ($outputFile)", 43);
+        foreach ($outputFiles as $outputFile) {
+            if (!file_exists($outputFile)) {
+                throw new Exception("FFMpeg error encountered - movie file $outputFile does not exist");
+            }
+            if (filesize($outputFile) < 1000) {
+                throw new Exception("FFmpeg error encountered - Expected movie to be at least 1000 bytes, got " . filesize($outputFile) . " ($outputFile)", 43);
+            }
         }
     }
 
