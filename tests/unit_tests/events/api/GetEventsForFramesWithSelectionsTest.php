@@ -232,4 +232,25 @@ final class GetEventsForFramesWithSelectionsTest extends TestCase
         $this->assertEquals(3.5, $merged['timestamps']['2024-01-15 12:02:00']['evt-BAR']['hv_hpc_x']);
         $this->assertEquals(5.5, $merged['timestamps']['2024-01-15 12:03:00']['evt-BAZ']['hv_hpc_x']);
     }
+
+    public function testItShouldHandEachChunkToOnChunkInOrderAndReturnNothing(): void
+    {
+        $timestamps = ['2024-01-15 12:00:00', '2024-01-15 12:01:00'];
+        $chunk1 = ['events' => ['evt-FOO' => ['label' => 'FOO']], 'timestamps' => [$timestamps[0] => ['evt-FOO' => ['dx' => 1.5]]]];
+        $chunk2 = ['events' => ['evt-BAR' => ['label' => 'BAR']], 'timestamps' => [$timestamps[1] => ['evt-BAR' => ['dx' => 2.5]]]];
+        $this->mockClient->expects($this->exactly(2))
+            ->method('request')
+            ->willReturnOnConsecutiveCalls(
+                new Response(200, [], json_encode($chunk1)),
+                new Response(200, [], json_encode($chunk2))
+            );
+
+        $received = [];
+        $result = $this->eventsApi->getEventsForFramesWithSelections($timestamps, ['HEK>>Flare'], 1, '', function (array $chunk) use (&$received) {
+            $received[] = $chunk;
+        });
+
+        $this->assertSame([], $result);
+        $this->assertSame([$chunk1, $chunk2], $received);
+    }
 }

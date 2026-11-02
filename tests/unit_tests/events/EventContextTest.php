@@ -276,4 +276,45 @@ final class EventContextTest extends TestCase
         $this->assertFalse($empty->hasEvents());
         $this->assertSame([], $empty->getEventsForDate('2099-12-31T00:00:00.000Z'));
     }
+
+    public function testChunksHandedToTheContextAreAbsorbedAsTheyArriveFirstWins(): void
+    {
+        $eventId = 'event-uuid';
+        $ts1     = '2024-01-01T00:00:00.000Z';
+        $ts2     = '2024-01-02T00:00:00.000Z';
+        $chunk1 = [
+            'events'     => [$eventId => ['label' => 'from chunk 1', 'type' => 'AR', 'path' => 'HEK>>Active Region>>SPoCA',
+                                          'hv_hpc_x' => 100.0, 'hv_hpc_y' => 200.0, 'footprint' => [[['x' => 1.0, 'y' => 2.0]]]]],
+            'timestamps' => [$ts1 => [$eventId => ['dx' => 10.0, 'dy' => 20.0]]],
+        ];
+        $chunk2 = [
+            'events'     => [$eventId => ['label' => 'from chunk 2', 'type' => 'AR', 'path' => 'HEK>>Active Region>>SPoCA',
+                                          'hv_hpc_x' => 0.0, 'hv_hpc_y' => 0.0, 'footprint' => []]],
+            'timestamps' => [
+                $ts1 => [$eventId => ['dx' => 99.0, 'dy' => 99.0]],   // seen again: the first chunk's stays
+                $ts2 => [$eventId => ['dx' => 30.0, 'dy' => 40.0, 'visible' => false]],
+            ],
+        ];
+        // A client that streams: each chunk to $onChunk, nothing returned.
+        $this->mockApi->method('getEventsForFramesWithSelections')
+            ->willReturnCallback(function (array $timestamps, array $selections, int $chunkSize, string $logLabel, ?callable $onChunk) use ($chunk1, $chunk2) {
+                $onChunk($chunk1);
+                $onChunk($chunk2);
+                return [];
+            });
+
+        $context = EventContext::build([$ts1, $ts2], ['HEK>>Active Region>>SPoCA'], [], $this->mockApi);
+
+        $this->assertTrue($context->hasEvents());
+        $first = $context->getEventsForDate($ts1);
+        $this->assertCount(1, $first);
+        $this->assertSame('from chunk 1', $first[0]['label']);
+        $this->assertSame(110.0, $first[0]['hv_hpc_x']);
+        $this->assertSame([[['x' => 11.0, 'y' => 22.0]]], $first[0]['footprint']);
+        $this->assertTrue($first[0]['visible']);
+        $second = $context->getEventsForDate($ts2);
+        $this->assertSame('from chunk 1', $second[0]['label']);
+        $this->assertSame(130.0, $second[0]['hv_hpc_x']);
+        $this->assertFalse($second[0]['visible']);
+    }
 }

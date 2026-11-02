@@ -258,4 +258,16 @@ final class GetEventsForFramesWithSelectionsParallelTest extends TestCase
         (new EventsApi($client, $this->mockSentry, 6))
             ->getEventsForFramesWithSelections(self::timestamps(8), ['HEK>>Flare'], 150);
     }
+
+    public function testItShouldHandChunksToOnChunkInChunkOrderWhateverOrderRepliesArrive(): void
+    {
+        $timestamps = self::timestamps(40);
+        $labels = [];
+        $result = $this->api(4)->getEventsForFramesWithSelections($timestamps, ['HEK>>Flare'], 150, '', function (array $chunk) use (&$labels) {
+            $labels[] = $chunk['events']['evt-SHARED']['label'];
+        });
+
+        $this->assertSame([], $result);
+        $this->assertSame(['from chunk 1', 'from chunk 2', 'from chunk 3', 'from chunk 4'], $labels);
+    }
 }

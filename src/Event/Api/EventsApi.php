@@ -275,7 +275,8 @@ class EventsApi implements EventsApiInterface {
         array $timestamps,
         array $selections,
         int $chunkSize = 50,
-        string $logLabel = ''
+        string $logLabel = '',
+        ?callable $onChunk = null
     ): array {
         if (empty($selections)) {
             throw new EventsApiException("No selections given. At least one path-prefix selection is required.");
@@ -320,12 +321,14 @@ class EventsApi implements EventsApiInterface {
             ));
         };
 
-        // Merge each chunk's reply into the result in chunk order (events
-        // keyed by uuid, timestamps by datetime string; + is a first-wins
-        // union), then drop it: every reply repeats the events' footprints, so
-        // only the merged result is kept in memory.
+        // Each chunk's reply, decoded, goes to the caller's $onChunk in chunk
+        // order and is then dropped, so one decoded chunk is in memory at a
+        // time (a chunk of a month of events is 5 MB of JSON and 43 MB
+        // decoded). Without $onChunk the chunks are merged into one reply
+        // (events keyed by uuid, timestamps by datetime string; + is a
+        // first-wins union), which is the whole reply as PHP arrays.
         $merged = null;
-        $merge = function (array $chunk) use (&$merged) {
+        $merge = $onChunk ?? function (array $chunk) use (&$merged) {
             if ($merged === null) {
                 $merged = $chunk;
                 return;
@@ -340,7 +343,7 @@ class EventsApi implements EventsApiInterface {
             $this->fetchChunksInSequence($url, $chunks, $selections, $merge, $logChunk, $logLabel);
         }
 
-        return $merged;
+        return $merged ?? [];
     }
 
     /** The request options of one frames_with_selections chunk. */

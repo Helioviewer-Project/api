@@ -8,18 +8,22 @@ use Helioviewer\Api\Sentry\Sentry;
 /**
  * Lazy aggregate of "all events the renderer needs, per date".
  *
- * Built via build() (single HTTP call to
- * EventsApi::getEventsForFramesWithSelections), then queried per-frame via
+ * Built via build() (one EventsApi::getEventsForFramesWithSelections call,
+ * whose reply arrives in chunks), then queried per-frame via
  * getEventsForDate($date). The renderer never sees EventsStateManager,
  * never sees EventsApi, never sees the raw upstream wire shape -- it just
  * receives draw-ready event dicts.
  *
- * Memory model: build() DOES NOT materialize per-frame shifted footprints.
- * It keeps the raw upstream events + per-timestamp observations blocks and
- * shapes exactly one frame's list on each getEventsForDate() call, then
- * throws it away. That keeps live memory proportional to a single frame,
- * not (frames × events × footprint_points). Callers must not accumulate the
- * returned list across frames -- iterate, render, discard.
+ * Memory model: build() DOES NOT materialize per-frame shifted footprints,
+ * and it does not keep the reply as decoded either. Each chunk of the reply
+ * is packed as it arrives (see absorb()): an event becomes an EventRecord,
+ * its footprint one string of doubles per ring, and an observation 17 bytes
+ * (dx, dy, the far-side flag). A month of events with 1.6 million footprint
+ * points is 70 MB this way against 839 MB as PHP arrays, and only one
+ * decoded chunk is in memory at a time. getEventsForDate() shapes exactly one
+ * frame's list on each call and throws it away, so live memory stays
+ * proportional to a single frame. Callers must not accumulate the returned
+ * list across frames -- iterate, render, discard.
  *
  * Each event dict returned by getEventsForDate() has the shape:
  *   [
@@ -50,9 +54,9 @@ class EventContext
      *                                                           used to distinguish "no events at this
      *                                                           frame" (expected) from "caller asked
      *                                                           for a date we never fetched" (bug).
-     * @param array<string, array<string, mixed>> $events        Raw upstream 'events' block: uuid => event data.
-     * @param array<string, array<string, array{dx: float, dy: float}>> $observations
-     *                                                           Raw upstream 'timestamps' block: ts => uuid => {dx, dy}.
+     * @param array<string, EventRecord>   $events               The reply's 'events' block, packed: uuid => record.
+     * @param array<string, array<string, string>> $observations The reply's 'timestamps' block, packed:
+     *                                                           ts => uuid => 17 bytes (see packObservation).
      * @param array<string, mixed>         $visibilitySelections Per-source visibility flags (label_visibility only,
      *                                                           marker_visibility is filtered at build() time).
      */
@@ -127,10 +131,34 @@ class EventContext
             );
         }
 
+        // Each chunk of the reply is packed into these two blocks the moment
+        // it is decoded, then dropped. Chunks arrive in order and an event or
+        // a timestamp seen twice keeps its first form, as merging the raw
+        // chunks with + did.
+        $events = [];
+        $observations = [];
+        $absorb = function (array $chunk) use (&$events, &$observations) {
+            foreach ($chunk['events'] ?? [] as $uuid => $data) {
+                if (!isset($events[$uuid])) {
+                    $events[$uuid] = EventRecord::fromWire($data);
+                }
+            }
+            foreach ($chunk['timestamps'] ?? [] as $ts => $obs) {
+                if (!isset($observations[$ts])) {
+                    $observations[$ts] = array_map(self::packObservation(...), $obs);
+                }
+            }
+        };
+
         try {
+            // A client that hands the chunks to $absorb returns []; one that
+            // returns the whole merged reply instead (a fake) is absorbed here.
             $raw = $api->getEventsForFramesWithSelections(
-                $frameTimestamps, $selections, $chunkSize, $logLabel
+                $frameTimestamps, $selections, $chunkSize, $logLabel, $absorb
             );
+            if ($raw) {
+                $absorb($raw);
+            }
         } catch (\Throwable $e) {
             Sentry::setContext('EventContext', [
                 'frame_timestamps_count' => count($frameTimestamps),
@@ -148,22 +176,25 @@ class EventContext
             );
         }
 
-        // Wrap each raw event once so getEventsForDate can call methods on it
-        // instead of poking at array keys. Cheap: N events, not N × frames.
-        $events = [];
-        foreach ($raw['events'] ?? [] as $uuid => $data) {
-            $events[$uuid] = new EventRecord($data);
-        }
-
-        // Stash the raw blocks verbatim. Shaping happens lazily in getEventsForDate.
         return new self(
             $requestedTimestampsSet,
             $events,
-            $raw['timestamps'] ?? [],
+            $observations,
             $visibilitySelections,
             $rawSelections,
             $rawVisibilitySelections
         );
+    }
+
+    /**
+     * One observation of the reply's 'timestamps' block ({dx, dy, visible?})
+     * as 17 bytes: the two doubles, then '0' when the event is behind the sun
+     * at that frame (visible === false) and '1' otherwise.
+     */
+    private static function packObservation(array $coords): string
+    {
+        return pack('dd', (float) ($coords['dx'] ?? 0.0), (float) ($coords['dy'] ?? 0.0))
+            . ((($coords['visible'] ?? true) !== false) ? '1' : '0');
     }
 
     /**
@@ -197,7 +228,7 @@ class EventContext
         }
 
         $list = [];
-        foreach ($obs as $eventId => $coords) {
+        foreach ($obs as $eventId => $packed) {
             $event = $this->events[$eventId] ?? null;
             if (!$event) {
                 continue;
@@ -205,50 +236,24 @@ class EventContext
 
             // Default to true: when the source isn't in the visibility map,
             // assume labels are on.
-            $source       = $event->getSourceFromPath();
-            $labelVisible = (bool) ($this->visibilitySelections[$source]['label_visibility'] ?? true);
+            $labelVisible = (bool) ($this->visibilitySelections[$event->source()]['label_visibility'] ?? true);
 
-            // Rotation delta from canonical to this frame — now delivered
-            // directly by the upstream events API.
-            $dx = $coords['dx'] ?? 0.0;
-            $dy = $coords['dy'] ?? 0.0;
+            // Rotation delta from canonical to this frame, delivered by the
+            // events API per observation, and the far-side flag of the event.
+            ['dx' => $dx, 'dy' => $dy] = unpack('ddx/ddy', $packed);
+            $visible = $packed[16] !== '0';
 
-            $footprint = [];
-            $rawFootprint = $event->get('footprint');
-            if (!empty($rawFootprint)) {
-                $footprint = array_map(
-                    fn(array $ring) => array_map(
-                        function ($p) use ($dx, $dy) {
-                            $shifted = ['x' => $p['x'] + $dx, 'y' => $p['y'] + $dy];
-                            // Preserve the far-side flag. Upstream sends visible=false
-                            // for points behind the sun and omits the key on near-side
-                            // points, so we keep exactly that: copy the key only when it
-                            // is === false. The renderer's contour classification tests
-                            // strictly against false, matching the web client.
-                            if (($p['visible'] ?? null) === false) {
-                                $shifted['visible'] = false;
-                            }
-                            return $shifted;
-                        },
-                        $ring
-                    ),
-                    $rawFootprint
-                );
-            }
-
-            $type = $event->get('type', 'UNK');
             $list[] = [
                 'id'        => $eventId,
-                'label'     => $labelVisible ? $event->get('label', '') : '',
-                'type'      => $type,
-                'pin'       => $event->get('pin', $type),
+                'label'     => $labelVisible ? $event->label() : '',
+                'type'      => $event->type(),
+                'pin'       => $event->pin(),
                 // Per-frame event-level visibility from the observations block:
                 // false = the event is behind the sun this frame (dim the pin).
-                // Absent -> assume near side (true).
-                'visible'   => ($coords['visible'] ?? true) !== false,
-                'hv_hpc_x'  => $event->get('hv_hpc_x', 0.0) + $dx,
-                'hv_hpc_y'  => $event->get('hv_hpc_y', 0.0) + $dy,
-                'footprint' => $footprint,
+                'visible'   => $visible,
+                'hv_hpc_x'  => $event->hpcX() + $dx,
+                'hv_hpc_y'  => $event->hpcY() + $dy,
+                'footprint' => $event->hasFootprint() ? $event->footprintShifted($dx, $dy) : [],
             ];
         }
         return $list;
