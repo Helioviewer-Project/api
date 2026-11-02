@@ -170,6 +170,8 @@ class FastMovie
     private $ffmpegLog = null;
     private float $startedAt;          // when this process took the movie up; every log line carries the seconds since
     private ?Pieces $pieces = null;    // the movie's pieces in Redis, when it is built as queued pieces
+    private array $frameTimes = [];    // seconds of the last frame's steps, for the log: layers, composite, events, overlays, write
+    private array $eventTimes = [];    // seconds of the last frame's event drawing: list, regions, labels
 
     /**
      * The worker's entry point: builds the movie whose public id this is.
@@ -702,6 +704,10 @@ class FastMovie
 
         $this->fetchEvents(array_slice($this->timestamps, $first, $last - $first + 1));
 
+        // The label sprites, rendered once per movie between all its pieces
+        // (EventLabelRenderer), in a folder next to the frames.
+        EventLabelRenderer::$spriteDir = $this->directory . 'labels/';
+
         // The previews come from the middle frame of the plan, by the range
         // that builds it, while the frame is still in memory.
         $previewIndex = (int) floor($this->numFrames / 2);
@@ -724,8 +730,11 @@ class FastMovie
 
                 $built++;
                 $this->pieces?->frameDone();
-                $this->log(sprintf('frame %d/%d (%d%%) in %dms', $index + 1, $this->numFrames,
-                    round(100 * ($index + 1) / $this->numFrames), $frameMs));
+                $this->log(sprintf('frame %d/%d (%d%%) in %dms (layers %d, composite %d, events %d [list %d, regions %d, labels %d], overlays %d, write %d)',
+                    $index + 1, $this->numFrames, round(100 * ($index + 1) / $this->numFrames), $frameMs,
+                    1000 * $this->frameTimes['layers'], 1000 * $this->frameTimes['composite'], 1000 * $this->frameTimes['events'],
+                    1000 * ($this->eventTimes['list'] ?? 0), 1000 * ($this->eventTimes['regions'] ?? 0), 1000 * ($this->eventTimes['labels'] ?? 0),
+                    1000 * $this->frameTimes['overlays'], 1000 * $this->frameTimes['write']));
             } catch (Exception $e) {
                 Sentry::capture($e);
                 $failures++;
@@ -773,11 +782,13 @@ class FastMovie
      */
     private function writeFrame(int $index, string $filepath): Imagick
     {
+        $t0     = microtime(true);
         $date   = $this->timestamps[$index];
         $layers = [];
         foreach ($this->layers->toArray() as $i => $layer) {
             $layers[] = $this->buildLayer($this->switchSource($layer, $date), $date, $this->frameImages[$index][$i]);
         }
+        $tLayers = microtime(true);
         if (empty($layers)) {
             throw new Exception('Unable to create layers needed for composite image', 30);
         }
@@ -793,7 +804,9 @@ class FastMovie
             }
         }
 
+        $tComposite = microtime(true);
         $this->drawEvents($image, $date);
+        $tEvents = microtime(true);
         if ($this->movieIcons) {
             $this->drawMovieIcons($image, $date);
         }
@@ -813,6 +826,8 @@ class FastMovie
             $this->drawWatermark($image, $layers);
         }
 
+        $tOverlays = microtime(true);
+
         // Flatten on black (11 = remove the alpha channel) and write the BMP,
         // resized to the preset when the request asked for one.
         $image->setImageDepth(8);
@@ -826,6 +841,8 @@ class FastMovie
             $image->thumbnailImage($w, $h, true, true);
         }
         $image->writeImage($filepath);
+        $this->frameTimes = ['layers' => $tLayers - $t0, 'composite' => $tComposite - $tLayers, 'events' => $tEvents - $tComposite,
+                             'overlays' => $tOverlays - $tEvents, 'write' => microtime(true) - $tOverlays];
 
         if (!@file_exists($filepath)) {
             throw new Exception('The requested image is either unavailable or does not exist.', 31);
@@ -1442,7 +1459,9 @@ class FastMovie
         if ($this->roi->getPixelWidth() < 200 || $this->roi->getPixelHeight() < 200) {
             return;
         }
+        $tList  = microtime(true);
         $events = $this->events->getEventsForDate($date);
+        $this->eventTimes = ['list' => microtime(true) - $tList, 'regions' => 0.0, 'labels' => 0.0];
         if (empty($events)) {
             return;
         }
@@ -1506,6 +1525,7 @@ class FastMovie
         if (!empty($rendered)) {
             $canvasWidth  = (int) round($this->roi->getPixelWidth());
             $canvasHeight = (int) round($this->roi->getPixelHeight());
+            $tRegions     = microtime(true);
             $rasterizer   = new SvgRasterizer();
             if (!$rasterizer->isAvailable()) {
                 throw new \RuntimeException('Event-region rendering requires rsvg-convert (librsvg), which was not found on PATH.');
@@ -1519,6 +1539,7 @@ class FastMovie
                 $layer = new Imagick();
                 $layer->readImageBlob($png);
                 $image->compositeImage($layer, Imagick::COMPOSITE_OVER, $areaX, $areaY);
+                $this->eventTimes['regions'] = microtime(true) - $tRegions;
                 $layer->destroy();
             }
         }
@@ -1551,7 +1572,9 @@ class FastMovie
 
             if ($event['label'] !== '') {
                 // Rendered once per label and reused on every frame (EventLabelRenderer).
+                $tLabel = microtime(true);
                 EventLabelRenderer::draw($image, $event['label'], $behind, $x + 11, $y - 24);
+                $this->eventTimes['labels'] += microtime(true) - $tLabel;
             }
         }
         foreach ($markerCache as $m) {
@@ -2031,19 +2054,23 @@ class FastMovie
     // 7. finish
     // =========================================================================
 
-    /** Deletes the frames, their folder and the plan (kept for the tests when asked). */
+    /** Deletes the frames, the label sprites, their folders and the plan (kept for the tests when asked). */
     private function deleteFrames(): void
     {
         if ($this->keepFrames) {
             return;
         }
         @unlink($this->directory . self::PLAN_FILE);
-        $dir = $this->directory . 'frames/';
-        if (@file_exists($dir)) {
-            foreach (glob($dir . '*') as $file) {
-                @unlink($file);
+        foreach (['frames/', 'labels/'] as $sub) {
+            $dir = $this->directory . $sub;
+            if (@file_exists($dir)) {
+                foreach (glob($dir . '{,.}*', GLOB_BRACE) as $file) {
+                    if (is_file($file)) {
+                        @unlink($file);
+                    }
+                }
+                @rmdir($dir);
             }
-            @rmdir($dir);
         }
     }
 }

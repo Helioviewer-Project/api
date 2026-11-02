@@ -72,7 +72,29 @@ final class EventLabelRendererTest extends TestCase
         return $peak;
     }
 
-    public function testItShouldMatchDrawingTheTextDirectly(): void
+    /** Mean per-channel RGB difference in 8-bit levels over the whole image. */
+    private function meanDiff(Imagick $a, Imagick $b): float
+    {
+        $w = $a->getImageWidth(); $h = $a->getImageHeight();
+        $pa = $a->exportImagePixels(0, 0, $w, $h, 'RGB', Imagick::PIXEL_CHAR);
+        $pb = $b->exportImagePixels(0, 0, $w, $h, 'RGB', Imagick::PIXEL_CHAR);
+        $sum = 0;
+        foreach ($pa as $i => $v) {
+            $sum += abs($v - $pb[$i]);
+        }
+        return $sum / count($pa);
+    }
+
+    /**
+     * The sprite's outline is two rings of a dilated mask, not a stroke: the
+     * same text at the same place with a halo of the same darkness one and
+     * two pixels out, so the scene matches the stroked drawing closely but
+     * not pixel for pixel. The stroke draws its segments one over another, so
+     * its halo varies with the shape of the glyph where the rings are even:
+     * single pixels differ by a lot, the picture by a little (measured: a
+     * mean under 2 levels).
+     */
+    public function testItShouldMatchDrawingTheTextDirectlyClosely(): void
     {
         $labels = [['CH 3', false], ["AR 13742\nu03b2u03b3 class", false], ['M1.2 u00b1 0.3', true], ["CME\n1200 km/s\n45&deg;", true]];
         $direct = $this->background();
@@ -83,7 +105,21 @@ final class EventLabelRendererTest extends TestCase
                 EventLabelRenderer::draw($sprites, $label, $behind, (float) ($x + $i), (float) ($y + $i));
             }
         }
-        $this->assertLessThanOrEqual(1, $this->peakDiff($direct, $sprites), 'labels differ by more than rounding');
+        $this->assertLessThan(4.0, $this->meanDiff($direct, $sprites), 'labels differ by more than their outline');
+    }
+
+    public function testItShouldDrawWhiteTextWithADarkOutline(): void
+    {
+        foreach ([false, true] as $behind) {
+            $im = new Imagick();
+            $im->newImage(40, 24, new ImagickPixel('#808080'));
+            EventLabelRenderer::draw($im, 'M', $behind, 10.0, 16.0);
+            $stem = $im->getImagePixelColor(11, 12)->getColor()['r'];     // inside the first stem of the M
+            $below = $im->getImagePixelColor(11, 17)->getColor()['r'];    // one pixel under the baseline: outline only
+            $this->assertGreaterThan($behind ? 140 : 220, $stem, 'the text is white (60% white for a far-side event)');
+            $this->assertLessThan(120, $below, 'the outline darkens the pixels around the glyph');
+            EventLabelRenderer::clearCache();
+        }
     }
 
     public function testItShouldRenderEachLabelOnceAndReuseIt(): void
@@ -115,5 +151,42 @@ final class EventLabelRendererTest extends TestCase
         $drawn = clone $plain;
         EventLabelRenderer::draw($drawn, 'CH 3', false, 40.0, 50.0);
         $this->assertGreaterThan(100, $this->peakDiff($plain, $drawn));
+    }
+
+    public function testItShouldShareSpritesThroughTheFolder(): void
+    {
+        $dir = sys_get_temp_dir() . '/hv-labels-' . getmypid() . '/';
+        EventLabelRenderer::$spriteDir = $dir;
+        try {
+            $plain = $this->background();              // plasma: is random, so one background for both
+            $a = clone $plain;
+            EventLabelRenderer::draw($a, "AR 13742\nclass", false, 100.0, 100.0);
+            $this->assertCount(1, glob($dir . '*.miff'), 'the sprite is written once rendered');
+
+            // Another process: nothing in memory, the sprite is in the folder.
+            EventLabelRenderer::clearCache();
+            $b = clone $plain;
+            EventLabelRenderer::draw($b, "AR 13742\nclass", false, 100.0, 100.0);
+            $this->assertSame(1, EventLabelRenderer::cacheSize(), 'loaded from the folder');
+            $this->assertSame(0, $this->peakDiff($a, $b), 'the sprite from the folder draws the same pixels');
+            $this->assertCount(1, glob($dir . '*.miff'), 'not written again');
+
+            // The job that renders a label holds a lock file meanwhile; it is gone afterwards.
+            $this->assertCount(0, glob($dir . '*.lock'), 'no lock left behind');
+
+            // A lock left by a job that died does not stop anyone: the label is rendered anyway.
+            EventLabelRenderer::clearCache();
+            $res = $plain->getImageResolution();
+            $stale = $dir . md5('n|' . $res['x'] . 'x' . $res['y'] . '|CH 3') . '.miff.lock';   // the renderer's key and path
+            touch($stale, time() - 60);
+            $c = clone $plain;
+            EventLabelRenderer::draw($c, 'CH 3', false, 40.0, 50.0);
+            $this->assertCount(2, glob($dir . '*.miff'), 'rendered despite the stale lock');
+            $this->assertGreaterThan(100, $this->peakDiff($plain, $c));
+        } finally {
+            EventLabelRenderer::$spriteDir = null;
+            array_map('unlink', glob($dir . '*') ?: []);
+            @rmdir($dir);
+        }
     }
 }
