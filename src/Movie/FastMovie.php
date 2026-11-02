@@ -9,13 +9,17 @@
  * Everything that happens from then on is in this file, top to bottom:
  *
  *   1. load          the movie row                              (loadMovie)
- *   2. plan          the frame timestamps, the movie's size,    (planMovie)
- *                    frame rate and file name; written back to the row
- *   3. events        every frame's events in one request        (fetchEvents)
- *   4. frames        for every timestamp one BMP                (writeFrame)
- *        a. layers     closest image per layer, decoded with    (buildLayer,
- *                      kdu_expand, coloured, masked, scaled      decodeLayer)
- *                      and placed on the movie's canvas
+ *   2. plan          the frame timestamps, the image of every   (planMovie)
+ *                    frame per layer, the movie's size, frame
+ *                    rate and file name; written back to the
+ *                    row and, for the frame builders, to plan.json
+ *   3. events        the events of a range of frames, one       (fetchEvents)
+ *                    request
+ *   4. frames        a range of frames from the plan, one BMP   (buildFrames,
+ *                    per timestamp                              writeFrame)
+ *        a. layers     the planned image per layer, decoded     (buildLayer,
+ *                      with kdu_expand, coloured, masked,        decodeLayer)
+ *                      scaled and placed on the movie's canvas
  *        b. composite  the layers on top of each other
  *        c. overlays   events, movie icons, celestial bodies,   (draw*)
  *                      scale indicator, watermark
@@ -23,6 +27,11 @@
  *   6. encode        the hq mp4 and the mp4, one ffmpeg pass   (encodeMovie)
  *   7. finish        statuses in the database, statistics,     (run)
  *                    frames deleted
+ *
+ * Steps 3 and 4 are a piece of the movie: buildFrames() builds any range of
+ * frames from plan.json, in an object that did not make the plan, so the
+ * ranges can later be built by several workers at once. run() builds the one
+ * range that is the whole movie that way.
  *
  * It produces the same frames and files as the previous code, which was
  * spread over Movie_HelioviewerMovie, Image_Composite_HelioviewerMovieFrame,
@@ -79,6 +88,9 @@ class FastMovie
 
     const FONT = HV_ROOT_DIR . '/../resources/fonts/DejaVuSans.ttf';
 
+    /** The plan, next to the frames: what buildFrames() needs that the row does not hold. */
+    const PLAN_FILE = 'plan.json';
+
     /** Colour tables kept by colorTableFor(); all are dropped when this many are held. */
     const MAX_COLOR_TABLES = 100;
 
@@ -134,6 +146,7 @@ class FastMovie
     public string $directory = '';     // <cache>/movies/YYYY/MM/DD/<publicId>/
     public string $filename  = '';     // of the mp4, without directory
     public array  $timestamps = [];    // one per frame, 'YYYY-MM-DD HH:MM:SS'
+    public array  $frameImages = [];   // per frame, per layer: the image row the plan chose
     public array  $timings = [];       // seconds per step, for the log and the tests
     public bool   $keepFrames = false; // tests: leave the frames on disk
 
@@ -238,8 +251,17 @@ class FastMovie
                 $buildStart = date('Y-m-d H:i:s');
 
                 $this->planMovie();
-                $this->fetchEvents();
-                $this->writeFrames();
+                $this->writePlan();
+
+                // The frames, built the way a piece of the movie will be built
+                // by a worker of its own: a separate object reads the plan
+                // back from disk and builds its range, here the whole movie.
+                $piece = new self($this->publicId, $this->eventsApi);
+                $piece->buildFrames(0, $this->numFrames - 1);
+                $this->timings += $piece->timings;
+
+                $this->closeFrameGaps();
+                $this->writePreviewsIfMissing();
 
                 $this->db->finishedBuildingMovieFrames($this->id, $buildStart, date('Y-m-d H:i:s'));
             } else {
@@ -316,6 +338,17 @@ class FastMovie
         $this->endDate   = $this->timestamps[$this->numFrames - 1];
         $this->filename  = $this->movieFilename();
 
+        // The image of every frame per layer is chosen now, once, so that the
+        // frames come out the same whoever builds them and whenever: an image
+        // ingested between the plan and a frame does not change the frame.
+        foreach ($this->timestamps as $date) {
+            $images = [];
+            foreach ($this->layers->toArray() as $layer) {
+                $images[] = $this->db->getClosestData($date, $this->switchSource($layer, $date)['sourceId']);
+            }
+            $this->frameImages[] = $images;
+        }
+
         // The request gives either the frame rate or the length of the movie.
         if ($this->frameRate) {
             $this->movieLength = $this->numFrames / $this->frameRate;
@@ -351,6 +384,48 @@ class FastMovie
         ]);
 
         $this->timings['plan'] = microtime(true) - $start;
+    }
+
+    /**
+     * plan.json, next to the frames: what a frame builder needs that the row
+     * does not hold. The row has the video's size (the preset's when one was
+     * asked for); the frames have the region's own size, kept here.
+     */
+    private function writePlan(): void
+    {
+        if (!@file_exists($this->directory)) {
+            @mkdir($this->directory, 0775, true);
+        }
+        file_put_contents($this->directory . self::PLAN_FILE, json_encode([
+            'timestamps'  => $this->timestamps,
+            'frameImages' => $this->frameImages,
+            'startDate'   => $this->startDate,
+            'endDate'     => $this->endDate,
+            'frameRate'   => $this->frameRate,
+            'movieLength' => $this->movieLength,
+            'width'       => $this->width,
+            'height'      => $this->height,
+            'filename'    => $this->filename,
+        ]));
+    }
+
+    /** The plan as written by writePlan(), into the fields planMovie() would have set. */
+    private function readPlan(): void
+    {
+        $plan = json_decode((string) @file_get_contents($this->directory . self::PLAN_FILE), true);
+        if (!is_array($plan)) {
+            throw new Exception('No plan for movie ' . $this->publicId . ' in ' . $this->directory);
+        }
+        $this->timestamps  = $plan['timestamps'];
+        $this->frameImages = $plan['frameImages'];
+        $this->numFrames   = count($this->timestamps);
+        $this->startDate   = $plan['startDate'];
+        $this->endDate     = $plan['endDate'];
+        $this->frameRate   = (float) $plan['frameRate'];
+        $this->movieLength = (float) $plan['movieLength'];
+        $this->width       = (int) $plan['width'];
+        $this->height      = (int) $plan['height'];
+        $this->filename    = $plan['filename'];
     }
 
     /**
@@ -406,21 +481,21 @@ class FastMovie
     }
 
     // =========================================================================
-    // 3. events: one request for every frame
+    // 3. events: one request for a range of frames
     // =========================================================================
 
     /**
-     * Asks the events API for the events of every frame at once (the client
-     * splits the timestamps into chunks). No selections, no request: the
-     * context is then empty and the frames get no events.
+     * Asks the events API for the events of the given frames at once (the
+     * client splits the timestamps into chunks). No selections, no request:
+     * the context is then empty and the frames get no events.
      */
-    private function fetchEvents(): void
+    private function fetchEvents(array $timestamps): void
     {
         $start = microtime(true);
 
         $chunkSize = defined('HV_EVENTS_API_EVENTS_PER_FRAME_CHUNKSIZE') ? (int) HV_EVENTS_API_EVENTS_PER_FRAME_CHUNKSIZE : 50;
         $this->events = EventContext::build(
-            frameTimestamps: $this->timestamps,
+            frameTimestamps: $timestamps,
             selections: $this->eventSelections,
             visibilitySelections: $this->eventVisibilitySelections,
             api: $this->eventsApi,
@@ -430,20 +505,27 @@ class FastMovie
 
         $this->timings['events'] = microtime(true) - $start;
         $this->log(sprintf('Starting movie build, frames=%d, hasEvents=%s, event context built in %dms',
-            $this->numFrames, $this->events->hasEvents() ? 'true' : 'false', 1000 * $this->timings['events']));
+            count($timestamps), $this->events->hasEvents() ? 'true' : 'false', 1000 * $this->timings['events']));
     }
 
     // =========================================================================
-    // 4. frames
+    // 4. frames: a range of the plan
     // =========================================================================
 
     /**
-     * Writes frames/frame0.bmp, frame1.bmp, ... one per timestamp, and the
-     * previews from the middle frame. A frame that fails is skipped (and the
-     * movie gets one frame shorter) up to MAX_FAILED_FRAMES times.
+     * A piece of the movie: the frames $first to $last of the plan, each
+     * written as frames/frame<index>.bmp, with their events fetched first.
+     * This object knows nothing the plan and the row do not say, so any
+     * range can be built by any process. A frame that fails is skipped,
+     * leaving a gap in the numbering (closeFrameGaps() shortens the movie
+     * by it), up to MAX_FAILED_FRAMES times.
      */
-    private function writeFrames(): void
+    public function buildFrames(int $first, int $last): void
     {
+        date_default_timezone_set('UTC');
+        $this->directory = $this->movieDirectory();
+        $this->readPlan();
+
         // The frames folder exists from the start, so the status API's
         // "current frame" poll never sees it missing.
         $framesDir = $this->directory . 'frames';
@@ -451,61 +533,82 @@ class FastMovie
             @mkdir($framesDir, 0775, true);
         }
 
-        $previewIndex = floor($this->numFrames / 2);
-        $previewFrame = null;
-        $frameNumber  = 0;
-        $failures     = 0;
-        $loopStart    = microtime(true);
+        $this->fetchEvents(array_slice($this->timestamps, $first, $last - $first + 1));
+
+        // The previews come from the middle frame of the plan, by the range
+        // that builds it, while the frame is still in memory.
+        $previewIndex = (int) floor($this->numFrames / 2);
+        $built     = 0;
+        $failures  = 0;
+        $loopStart = microtime(true);
         $this->timings['frames'] = [];
 
-        foreach ($this->timestamps as $date) {
-            $filepath = sprintf('%sframes/frame%d.bmp', $this->directory, $frameNumber);
+        for ($index = $first; $index <= $last; $index++) {
+            $filepath = sprintf('%sframes/frame%d.bmp', $this->directory, $index);
             try {
                 $frameStart = microtime(true);
-                $frame      = $this->writeFrame($date, $filepath);
+                $frame      = $this->writeFrame($index, $filepath);
                 $frameMs    = (int) round(1000 * (microtime(true) - $frameStart));
                 $this->timings['frames'][] = $frameMs / 1000;
-
-                if ($frameNumber == $previewIndex) {
-                    $previewFrame = $frame;
-                } else {
-                    $frame->destroy();
+                if ($index === $previewIndex) {
+                    $this->writePreviews($frame);
                 }
-                $frameNumber++;
-                $this->log(sprintf('frame %d/%d (%d%%) in %dms', $frameNumber, $this->numFrames,
-                    round(100 * $frameNumber / $this->numFrames), $frameMs));
+                $frame->destroy();
+
+                $built++;
+                $this->log(sprintf('frame %d/%d (%d%%) in %dms', $index + 1, $this->numFrames,
+                    round(100 * ($index + 1) / $this->numFrames), $frameMs));
             } catch (Exception $e) {
                 Sentry::capture($e);
                 $failures++;
-                $this->log(sprintf('frame %d/%d FAILED (failure %d/%d): %s', $frameNumber + 1, $this->numFrames,
+                $this->log(sprintf('frame %d/%d FAILED (failure %d/%d): %s', $index + 1, $this->numFrames,
                     $failures, self::MAX_FAILED_FRAMES, $e->getMessage()));
                 if ($failures > self::MAX_FAILED_FRAMES) {
                     throw $e;
                 }
-                $this->numFrames--;
             }
         }
 
         $this->timings['framesTotal'] = microtime(true) - $loopStart;
         $this->log(sprintf('Build complete: %d/%d frames in %dms (event context: %dms, frame loop: %dms, avg %dms/frame, failures: %d)',
-            $frameNumber, count($this->timestamps), 1000 * ($this->timings['events'] + $this->timings['framesTotal']),
+            $built, $last - $first + 1, 1000 * ($this->timings['events'] + $this->timings['framesTotal']),
             1000 * $this->timings['events'], 1000 * $this->timings['framesTotal'],
-            $frameNumber ? 1000 * $this->timings['framesTotal'] / $frameNumber : 0, $failures));
-
-        $this->writePreviews($previewFrame);
-        $previewFrame->destroy();
+            $built ? 1000 * $this->timings['framesTotal'] / $built : 0, $failures));
     }
 
     /**
-     * One frame: the layers decoded and placed on the canvas, composited
-     * bottom to top, the overlays drawn on top, written as a BMP.
+     * After every range is built: the frames renumbered without the gaps
+     * the failed ones left, so ffmpeg reads frame0 to frameN-1, and the
+     * movie that many frames long, as the old loop made it by numbering
+     * the frames as they came.
+     */
+    private function closeFrameGaps(): void
+    {
+        $next = 0;
+        for ($index = 0; $index < count($this->timestamps); $index++) {
+            $file = sprintf('%sframes/frame%d.bmp', $this->directory, $index);
+            if (!@file_exists($file)) {
+                continue;
+            }
+            if ($index !== $next) {
+                rename($file, sprintf('%sframes/frame%d.bmp', $this->directory, $next));
+            }
+            $next++;
+        }
+        $this->numFrames = $next;
+    }
+
+    /**
+     * One frame of the plan: its layers decoded and placed on the canvas,
+     * composited bottom to top, the overlays drawn on top, written as a BMP.
      * Returns the frame's image (the caller destroys it).
      */
-    private function writeFrame(string $date, string $filepath): Imagick
+    private function writeFrame(int $index, string $filepath): Imagick
     {
+        $date   = $this->timestamps[$index];
         $layers = [];
-        foreach ($this->layers->toArray() as $layer) {
-            $layers[] = $this->buildLayer($this->switchSource($layer, $date), $date);
+        foreach ($this->layers->toArray() as $i => $layer) {
+            $layers[] = $this->buildLayer($this->switchSource($layer, $date), $date, $this->frameImages[$index][$i]);
         }
         if (empty($layers)) {
             throw new Exception('Unable to create layers needed for composite image', 30);
@@ -594,17 +697,16 @@ class FastMovie
     // -------------------------------------------------------------------------
 
     /**
-     * The image of one layer at one time: the closest JP2 of the layer's
-     * source is found, the offset of the Sun's centre worked out (and moved
-     * for a viewport that follows the rotation), the running or base
-     * difference image found, and the layer decoded.
+     * The image of one layer at one time: $image is the JP2 the plan chose
+     * (the closest of the layer's source), the offset of the Sun's centre is
+     * worked out (and moved for a viewport that follows the rotation), the
+     * running or base difference image found, and the layer decoded.
      *
      * Returns the layer's image on the movie canvas and its two watermark
      * lines.
      */
-    private function buildLayer(array $layer, string $date): array
+    private function buildLayer(array $layer, string $date, array $image): array
     {
-        $image = $this->db->getClosestData($date, $layer['sourceId']);
         $jp2   = [
             'path'   => HV_JP2_DIR . $image['filepath'] . '/' . $image['filename'],
             'width'  => $image['width'],
@@ -1643,6 +1745,20 @@ class FastMovie
     // 5. previews
     // =========================================================================
 
+    /**
+     * When the middle frame failed, no range made the previews: they are made
+     * from the last frame's BMP instead (the old loop had none in that case).
+     */
+    private function writePreviewsIfMissing(): void
+    {
+        if (@file_exists($this->directory . 'preview-full.png') || $this->numFrames < 1) {
+            return;
+        }
+        $frame = new Imagick(sprintf('%sframes/frame%d.bmp', $this->directory, $this->numFrames - 1));
+        $this->writePreviews($frame);
+        $frame->destroy();
+    }
+
     /** preview-full.png and four thumbnails, letterboxed in black, from the middle frame. */
     private function writePreviews(Imagick $frame): void
     {
@@ -1747,12 +1863,13 @@ class FastMovie
     // 7. finish
     // =========================================================================
 
-    /** Deletes the frames and their folder (kept for the tests when asked). */
+    /** Deletes the frames, their folder and the plan (kept for the tests when asked). */
     private function deleteFrames(): void
     {
         if ($this->keepFrames) {
             return;
         }
+        @unlink($this->directory . self::PLAN_FILE);
         $dir = $this->directory . 'frames/';
         if (@file_exists($dir)) {
             foreach (glob($dir . '*') as $file) {
