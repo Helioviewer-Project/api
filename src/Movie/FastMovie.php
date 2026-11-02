@@ -25,13 +25,17 @@
  *                      scale indicator, watermark
  *   5. previews      PNG thumbnails of the middle frame         (writePreviews)
  *   6. encode        the hq mp4 and the mp4, one ffmpeg pass   (encodeMovie)
- *   7. finish        statuses in the database, statistics,     (run)
+ *   7. finish        statuses in the database, statistics,     (finishMovie)
  *                    frames deleted
  *
  * Steps 3 and 4 are a piece of the movie: buildFrames() builds any range of
- * frames from plan.json, in an object that did not make the plan, so the
- * ranges can later be built by several workers at once. run() builds the one
- * range that is the whole movie that way.
+ * frames from plan.json, in an object that did not make the plan. A movie
+ * long enough is cut into pieces (pieceRanges) that run as Job_MoviePiece
+ * jobs on the piece queue, as many workers as there are pieces, their
+ * progress kept in Redis (Pieces); the last piece to end queues the end of
+ * the movie (finish: steps 5 to 7). A short movie, or one built in-process
+ * (the tests), runs its pieces one after another in run() and ends the
+ * same way.
  *
  * It produces the same frames and files as the previous code, which was
  * spread over Movie_HelioviewerMovie, Image_Composite_HelioviewerMovieFrame,
@@ -59,6 +63,7 @@ require_once HV_ROOT_DIR . '/../src/Helper/RegionOfInterest.php';
 require_once HV_ROOT_DIR . '/../src/Helper/ImageBrightness.php';
 require_once HV_ROOT_DIR . '/../src/Module/SolarBodies.php';
 require_once HV_ROOT_DIR . '/../scripts/rot_hpc.php';
+require_once HV_ROOT_DIR . '/../lib/Resque.php';
 
 use Exception;
 use Imagick;
@@ -90,6 +95,10 @@ class FastMovie
 
     /** The plan, next to the frames: what buildFrames() needs that the row does not hold. */
     const PLAN_FILE = 'plan.json';
+
+    /** A piece has at least this many frames, a movie at most this many pieces, unless Config.ini says otherwise. */
+    const DEFAULT_PIECE_MIN_FRAMES = 10;
+    const DEFAULT_PIECES_MAX = 8;
 
     /** Colour tables kept by colorTableFor(); all are dropped when this many are held. */
     const MAX_COLOR_TABLES = 100;
@@ -149,6 +158,9 @@ class FastMovie
     public array  $frameImages = [];   // per frame, per layer: the image row the plan chose
     public array  $timings = [];       // seconds per step, for the log and the tests
     public bool   $keepFrames = false; // tests: leave the frames on disk
+    public bool   $inProcess  = false; // tests: the pieces one after another in this process, never queued
+    public int    $jobEta     = 0;     // the movie job's eta and counter args, handed on to the pieces
+    public bool   $jobCounter = false; // so the end of the movie settles the queue's wait estimate
 
     private \Database_ImgIndex $db;
     private EventsApiInterface $eventsApi;
@@ -157,13 +169,39 @@ class FastMovie
     private float $timeOffsetY = 0;    // the Sun's rotation (set per frame by buildLayer)
     private $ffmpegLog = null;
     private float $startedAt;          // when this process took the movie up; every log line carries the seconds since
+    private ?Pieces $pieces = null;    // the movie's pieces in Redis, when it is built as queued pieces
 
     /**
      * The worker's entry point: builds the movie whose public id this is.
+     * Returns true when the movie is finished, false when its pieces were
+     * queued and the last of them will finish it.
      */
-    public static function build(string $publicId): void
+    public static function build(string $publicId, int $eta = 0, bool $counter = false): bool
     {
-        (new self($publicId))->run();
+        $movie = new self($publicId);
+        $movie->jobEta     = $eta;
+        $movie->jobCounter = $counter;
+        return $movie->run();
+    }
+
+    /** A piece job's entry point: the frames $first to $last, from the plan, reported to Redis. */
+    public static function buildPiece(string $publicId, int $first, int $last): void
+    {
+        $movie = new self($publicId);
+        $movie->pieces = new Pieces($publicId);
+        $movie->buildFrames($first, $last);
+    }
+
+    /** The end of a movie built as queued pieces, run by the piece that ended last. */
+    public static function finish(string $publicId): void
+    {
+        (new self($publicId))->finishPieces();
+    }
+
+    /** The queue of the piece jobs, movie_piece_queue in Config.ini. */
+    public static function pieceQueue(): string
+    {
+        return defined('HV_MOVIE_PIECE_QUEUE') ? HV_MOVIE_PIECE_QUEUE : 'api_movie_piece';
     }
 
     public function __construct(string $publicId, ?EventsApiInterface $eventsApi = null)
@@ -233,39 +271,102 @@ class FastMovie
     // The build, start to finish
     // =========================================================================
 
-    public function run(): void
+    /**
+     * Plans the movie and builds its frames, as queued pieces when there are
+     * several (false is returned: the last piece finishes the movie) or in
+     * this process when there is one or the tests ask for it (true: the
+     * movie is finished). A movie whose frames are already on disk (a
+     * retried encode) skips straight to the end.
+     */
+    public function run(): bool
     {
         date_default_timezone_set('UTC');
 
         if ($this->status == self::STATUS_COMPLETED) {
-            return;
+            return true;
         }
 
         $this->db->markMovieAsProcessing($this->id, 'mp4');
         $this->directory = $this->movieDirectory();
 
+        $buildStart = date('Y-m-d H:i:s');
         try {
-            // A movie whose frames are already on disk (a retried encode)
-            // skips straight to the encode.
             if (!@file_exists($this->directory . 'frames')) {
-                $buildStart = date('Y-m-d H:i:s');
-
                 $this->planMovie();
                 $this->writePlan();
 
-                // The frames, built the way a piece of the movie will be built
-                // by a worker of its own: a separate object reads the plan
-                // back from disk and builds its range, here the whole movie.
-                $piece = new self($this->publicId, $this->eventsApi);
-                $piece->buildFrames(0, $this->numFrames - 1);
-                $this->timings += $piece->timings;
+                $ranges = self::pieceRanges($this->numFrames, self::pieceMinFrames(), self::piecesMax());
+                if (count($ranges) > 1 && !$this->inProcess) {
+                    $this->queuePieces($ranges, $buildStart);
+                    return false;
+                }
 
+                // The pieces one after another: each a separate object that
+                // reads the plan back from disk and builds its range, as a
+                // piece job does.
+                foreach ($ranges as [$first, $last]) {
+                    $piece = new self($this->publicId, $this->eventsApi);
+                    $piece->buildFrames($first, $last);
+                    $this->timings += $piece->timings;
+                }
+            } else {
+                // A retried encode: the frames are there, the build was recorded.
+                $this->readPlanIfAny();
+                $buildStart = null;
+            }
+        } catch (Exception $e) {
+            Sentry::capture($e);
+            $this->abort('Error encountered during movie frame compilation: ' . $e->getFile() . ':' . $e->getLine()
+                . ' - ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+        }
+
+        $this->finishMovie($buildStart);
+        return true;
+    }
+
+    /**
+     * The end of a movie whose pieces ran as jobs: run by the last piece to
+     * end. A piece that failed fails the movie, as a frame loop with too
+     * many failed frames did.
+     */
+    private function finishPieces(): void
+    {
+        date_default_timezone_set('UTC');
+        $this->directory = $this->movieDirectory();
+        $this->pieces    = new Pieces($this->publicId);
+        $progress        = $this->pieces->progress();
+
+        try {
+            if ($progress['failed'] > 0) {
+                throw new Exception(sprintf('%d of %d pieces failed', $progress['failed'], $progress['count']));
+            }
+            $this->readPlan();
+        } catch (Exception $e) {
+            Sentry::capture($e);
+            $this->abort('Error encountered during movie frame compilation: ' . $e->getMessage());
+        }
+
+        $this->finishMovie($progress['started'] ?: date('Y-m-d H:i:s'));
+        $this->pieces->clear();
+    }
+
+    /**
+     * Steps 5 to 7 once every frame is on disk: the gaps of failed frames
+     * closed, the previews made if no piece made them, the frame build
+     * recorded (when frames were built: $buildStart is null for a retried
+     * encode), the video files encoded, the statistics logged, the frames
+     * deleted.
+     */
+    private function finishMovie(?string $buildStart): void
+    {
+        try {
+            if ($this->timestamps) {
                 $this->closeFrameGaps();
                 $this->writePreviewsIfMissing();
-
+            }
+            $this->filename = $this->movieFilename();
+            if ($buildStart !== null) {
                 $this->db->finishedBuildingMovieFrames($this->id, $buildStart, date('Y-m-d H:i:s'));
-            } else {
-                $this->filename = $this->movieFilename();
             }
         } catch (Exception $e) {
             Sentry::capture($e);
@@ -290,6 +391,64 @@ class FastMovie
         }
 
         $this->deleteFrames();
+    }
+
+    /**
+     * The ranges of frames the pieces build: at least $minFrames frames a
+     * piece, at most $maxPieces pieces, the frames spread evenly. A 300-frame
+     * movie is 8 pieces of 37 or 38 frames with the defaults, a 30-frame
+     * movie 3 pieces of 10, a 5-frame movie one piece.
+     *
+     * @return list<array{int, int}> [first, last] per piece, in order
+     */
+    public static function pieceRanges(int $numFrames, int $minFrames, int $maxPieces): array
+    {
+        $pieces = max(1, min($maxPieces, intdiv($numFrames, max(1, $minFrames))));
+        $ranges = [];
+        $first  = 0;
+        for ($i = 1; $i <= $pieces; $i++) {
+            $last     = (int) round($i * $numFrames / $pieces) - 1;
+            $ranges[] = [$first, $last];
+            $first    = $last + 1;
+        }
+        return $ranges;
+    }
+
+    public static function pieceMinFrames(): int
+    {
+        return defined('HV_MOVIE_PIECE_MIN_FRAMES') ? max(1, (int) HV_MOVIE_PIECE_MIN_FRAMES) : self::DEFAULT_PIECE_MIN_FRAMES;
+    }
+
+    public static function piecesMax(): int
+    {
+        return defined('HV_MOVIE_PIECES_MAX') ? max(1, (int) HV_MOVIE_PIECES_MAX) : self::DEFAULT_PIECES_MAX;
+    }
+
+    /**
+     * One Job_MoviePiece per range on the piece queue, which the workers read
+     * before the movie queue, so a movie in progress is finished before a
+     * new one is started. The movie's Pieces record is opened first, so a
+     * piece that ends at once finds it.
+     */
+    private function queuePieces(array $ranges, string $buildStart): void
+    {
+        $this->pieces = new Pieces($this->publicId);
+        $this->pieces->open(count($ranges), $buildStart);
+
+        foreach ($ranges as $i => [$first, $last]) {
+            \Resque::enqueue(self::pieceQueue(), 'Job_MoviePiece', [
+                'movieId' => $this->publicId,
+                'first'   => $first,
+                'last'    => $last,
+                'piece'   => $i + 1,
+                'pieces'  => count($ranges),
+                'format'  => 'mp4',
+                'eta'     => $this->jobEta,
+                'counter' => $this->jobCounter,
+            ]);
+        }
+        $this->log(sprintf('%d pieces queued on %s: %s', count($ranges), self::pieceQueue(),
+            implode(', ', array_map(fn($r) => sprintf('%d-%d', $r[0] + 1, $r[1] + 1), $ranges))));
     }
 
     /**
@@ -407,6 +566,14 @@ class FastMovie
             'height'      => $this->height,
             'filename'    => $this->filename,
         ]));
+    }
+
+    /** The plan when there is one (a retried encode may have frames without it, from before plans were written). */
+    private function readPlanIfAny(): void
+    {
+        if (@file_exists($this->directory . self::PLAN_FILE)) {
+            $this->readPlan();
+        }
     }
 
     /** The plan as written by writePlan(), into the fields planMovie() would have set. */
@@ -556,6 +723,7 @@ class FastMovie
                 $frame->destroy();
 
                 $built++;
+                $this->pieces?->frameDone();
                 $this->log(sprintf('frame %d/%d (%d%%) in %dms', $index + 1, $this->numFrames,
                     round(100 * ($index + 1) / $this->numFrames), $frameMs));
             } catch (Exception $e) {

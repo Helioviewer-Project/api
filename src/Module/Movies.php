@@ -973,8 +973,22 @@ class Module_Movies extends BaseModule implements ModuleInterface {
             );
         }
         else if ($movie->status == 1) {
-            $current_frame = $movie->getCurrentFrame();
-            $progress = $current_frame / $movie->numFrames;
+            // A movie built as queued pieces counts its frames in Redis (the
+            // pieces write them in no fixed order, so the newest file says
+            // nothing); one whose pieces stopped reporting, a worker having
+            // died with the piece it held, is failed here rather than left
+            // "processing" for good.
+            include_once HV_ROOT_DIR.'/../src/Movie/Pieces.php';
+            $pieces = (new \Helioviewer\Api\Movie\Pieces($this->_params['id']))->progress();
+            if ($pieces['count'] > 0 && time() - $pieces['updated'] > 600) {
+                error_log(sprintf("[Movie:%s] no piece has reported for 10 minutes, the movie is failed", $this->_params['id']));
+                include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
+                (new Database_ImgIndex())->markMovieAsInvalid($movie->id, 0);
+                (new \Helioviewer\Api\Movie\Pieces($this->_params['id']))->clear();
+                $movie = new Movie_HelioviewerMovie($this->_params['id'], $this->_params['format']);
+            }
+            $current_frame = $pieces['count'] > 0 ? $pieces['frames'] : $movie->getCurrentFrame();
+            $progress = $movie->numFrames > 0 ? $current_frame / $movie->numFrames : 0;
             $progress = (float)number_format($progress, 3);
 
             $response = array(

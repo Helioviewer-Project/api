@@ -10,6 +10,7 @@
  */
 
 include_once HV_ROOT_DIR.'/../src/Movie/FastMovie.php';
+include_once HV_ROOT_DIR.'/../src/Job/MoviePiece.php';
 include_once HV_ROOT_DIR.'/../src/Helper/ErrorHandler.php';
 include_once HV_ROOT_DIR.'/../lib/Redisent/Redisent.php';
 
@@ -37,12 +38,20 @@ class Job_MovieBuilder
     {
         $movieId = $this->args['movieId'];
         $format  = $this->args['format'] ?? 'mp4';
-        error_log(sprintf("[Movie:%s] Worker picked up, format=%s", $movieId, $format));
+        $stage   = $this->args['stage'] ?? 'build';
+        error_log(sprintf("[Movie:%s] Worker picked up%s, format=%s", $movieId, $stage === 'finish' ? ' the end of the movie' : '', $format));
 
-        // Build movie
+        // Build the movie: the plan and the frames, or the frames as queued
+        // pieces (then the last piece queues this job again with stage
+        // "finish" for the encode and the statuses).
         $startMs = microtime(true);
         try {
-            FastMovie::build($movieId);
+            if ($stage === 'finish') {
+                FastMovie::finish($movieId);
+            } elseif (!FastMovie::build($movieId, (int) ($this->args['eta'] ?? 0), (bool) ($this->args['counter'] ?? false))) {
+                error_log(sprintf("[Movie:%s] Worker queued the pieces in %dms", $movieId, (int) round((microtime(true) - $startMs) * 1000)));
+                return;
+            }
         } catch (Exception $e) {
 
             Sentry::capture($e);
