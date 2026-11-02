@@ -1563,8 +1563,11 @@ class FastMovie
                 $marker->evaluateImage(Imagick::EVALUATE_MULTIPLY, 0.6, Imagick::CHANNEL_ALPHA);
             }
 
-            $x = round(( $event['hv_hpc_x'] - $this->roi->left()) / $this->roi->imageScale()) - $this->timeOffsetX;
-            $y = round((-$event['hv_hpc_y'] - $this->roi->top())  / $this->roi->imageScale()) - $this->timeOffsetY;
+            // Whole pixels: the viewport's drift when it follows the Sun is
+            // fractional, and a label at a fractional position cannot be a
+            // sprite (EventLabelRenderer draws it with the stroke instead).
+            $x = (int) round(( $event['hv_hpc_x'] - $this->roi->left()) / $this->roi->imageScale() - $this->timeOffsetX);
+            $y = (int) round((-$event['hv_hpc_y'] - $this->roi->top())  / $this->roi->imageScale() - $this->timeOffsetY);
 
             // The pin's tip is 12 pixels from its left edge and 38 from its top.
             $image->compositeImage($marker, Imagick::COMPOSITE_DISSOLVE, $x - 12, $y - 38);
@@ -1611,7 +1614,7 @@ class FastMovie
             $y = -$yCenterOffset + $height / 2 + (($top + $bottom) / 2) / $this->roi->imageScale() * (float) $video['imageScale'] - $this->timeOffsetY;
 
             $marker = new Imagick(HV_ROOT_DIR . '/resources/images/eventMarkers/movie.png');
-            $image->compositeImage($marker, Imagick::COMPOSITE_DISSOLVE, $x - 10, $y);
+            $image->compositeImage($marker, Imagick::COMPOSITE_DISSOLVE, (int) ($x - 10), (int) $y);
             $marker->destroy();
 
             $image->annotateImage($this->text(10, '#000C', 3, 0.3, null), $x + 12, $y + 14, 0, $name);
