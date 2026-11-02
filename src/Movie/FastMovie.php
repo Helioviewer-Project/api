@@ -143,6 +143,7 @@ class FastMovie
     private float $timeOffsetX = 0;    // the viewport's drift in pixels when it follows
     private float $timeOffsetY = 0;    // the Sun's rotation (set per frame by buildLayer)
     private $ffmpegLog = null;
+    private float $startedAt;          // when this process took the movie up; every log line carries the seconds since
 
     /**
      * The worker's entry point: builds the movie whose public id this is.
@@ -154,6 +155,7 @@ class FastMovie
 
     public function __construct(string $publicId, ?EventsApiInterface $eventsApi = null)
     {
+        $this->startedAt = microtime(true);
         $this->db        = new \Database_ImgIndex();
         $this->eventsApi = $eventsApi ?? new EventsApi();
         $this->loadMovie($publicId);
@@ -286,9 +288,10 @@ class FastMovie
         return sprintf('%s/movies/%s/%s/', HV_CACHE_DIR, $date, $this->publicId);
     }
 
+    /** "[Movie:7966n +123.456s] …": the seconds since the movie was taken up, so the log reads as a timeline. */
     private function log(string $message): void
     {
-        error_log(sprintf('[Movie:%s] %s', $this->publicId, $message));
+        error_log(sprintf('[Movie:%s +%.3fs] %s', $this->publicId, microtime(true) - $this->startedAt, $message));
     }
 
     // =========================================================================
