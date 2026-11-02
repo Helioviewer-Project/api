@@ -27,6 +27,10 @@ setenv MAGICK_THREAD_LIMIT 1
 
 setenv MOVIE_QUEUE_STATUS "UNKNOWN"
 
+# The names of workers that died with an earlier container (or an earlier run
+# of this one) stay registered in Redis and would be counted below.
+php $SCRIPTPATH/resque_prune.php
+
 
 set queues_alive = 0
 set arr = `resque list | awk -F" " '{print $1 }'`
