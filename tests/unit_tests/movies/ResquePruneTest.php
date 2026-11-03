@@ -70,11 +70,17 @@ final class ResquePruneTest extends TestCase
         $this->assertNotContains($gone, $workers, $out);
         $this->assertSame(0, (int) $this->redis->exists("resque:worker:$gone:started"));
         $this->assertSame(1, (int) $this->redis->exists("resque:worker:$live:started"));
-        $this->assertStringContainsString('Pruned 2 dead', $out);
+        // At least the two names above: the registry may hold the names of a
+        // movies container of another host too (a dev box, or CI, where the
+        // container is stopped before the tests), and those go as well.
+        $this->assertMatchesRegularExpression('/^Pruned (\d+) dead worker registration\(s\); \d+ remain\.$/m', $out);
+        preg_match('/^Pruned (\d+) dead/m', $out, $m);
+        $this->assertGreaterThanOrEqual(2, (int) $m[1], $out);
     }
 
     public function testNothingToPruneIsNotAnError(): void
     {
+        $this->prune();                                                   // whatever was there is gone now
         $out = $this->prune();
         $this->assertStringContainsString('Pruned 0 dead', $out);
     }
