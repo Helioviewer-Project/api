@@ -124,6 +124,7 @@ class EventsApi implements EventsApiInterface {
     private ClientInterface $client;
     private SentryClientInterface $sentry;
     private int $concurrency;
+    private ?EventsApiSlots $slots;     // the box's cap on frames requests in flight; null = no cap
 
     /**
      * EventsApi constructor.
@@ -132,10 +133,14 @@ class EventsApi implements EventsApiInterface {
      *
      * @param ClientInterface|null $client Optional Guzzle client for testing
      * @param SentryClientInterface|null $sentry Optional Sentry client for testing
+     * @param int|null $concurrency Chunk requests in flight from this process (events_api_events_per_frame_concurrency)
+     * @param EventsApiSlots|null $slots The box's cap on frames requests in flight; by default the one of
+     *        Config.ini (events_api_max_in_flight) with the real client, none with an injected one (tests)
      */
-    public function __construct(ClientInterface $client = null, SentryClientInterface $sentry = null, ?int $concurrency = null)
+    public function __construct(ClientInterface $client = null, SentryClientInterface $sentry = null, ?int $concurrency = null, ?EventsApiSlots $slots = null)
     {
         $this->concurrency = max(1, $concurrency ?? self::concurrency());
+        $this->slots = $slots ?? ($client === null ? EventsApiSlots::fromConfig() : null);
         $timeout = defined('HV_EVENTS_API_TIMEOUT') ? HV_EVENTS_API_TIMEOUT : 10;
         $connectTimeout = 2;
         $baseUrl = defined('HV_EVENTS_API_URL') ? HV_EVENTS_API_URL : 'https://events.helioviewer.org';
@@ -382,6 +387,12 @@ class EventsApi implements EventsApiInterface {
             ]);
             $start = microtime(true);
             for ($attempt = 1; ; $attempt++) {
+                // The box's cap (events_api_max_in_flight): a slot is taken
+                // before each attempt and given back after it, so a retry
+                // waits its turn like a first try. The wait is here, on our
+                // side, instead of in the server's queue where the proxy's
+                // 60 s clock runs. Null when there is no cap.
+                $slot = $this->slots?->take($logLabel);
                 try {
                     $response = $this->client->request('POST', $url, $this->framesRequest($chunkTimestamps, $selections));
                     $merge($this->parseResponse($response));
@@ -391,6 +402,8 @@ class EventsApi implements EventsApiInterface {
                         throw $this->framesRequestFailed($e);
                     }
                     $this->logRetry($logLabel, $i, $attempt, $e);
+                } finally {
+                    $this->slots?->release($slot);          // on success, failure and the final throw alike
                 }
             }
             $logChunk($i, count($chunks), count($chunkTimestamps), (int) round((microtime(true) - $start) * 1000));
@@ -452,12 +465,31 @@ class EventsApi implements EventsApiInterface {
             }
         };
 
+        // The box's cap (events_api_max_in_flight) on the parallel path. The
+        // pool below keeps $inFlight requests going at once, so this process
+        // needs that many slots. It waits for one (a fetch never starts with
+        // none), then takes up to concurrency - 1 more only if they are free
+        // right now, and keeps them all until the fetch is done, retries
+        // included. The pool then runs as wide as the slots allow: 6 with six
+        // slots, 1 with one. A slot per request instead would mean waiting
+        // inside the pool's loop, with the replies already in flight stalled
+        // behind the wait. When take() returned null (Redis trouble, or the
+        // 600 s give-up) no slot is held and the pool runs at full width.
+        $inFlight = $this->concurrency;
+        if ($this->slots !== null) {
+            $this->slots->take($logLabel);
+            while (count($this->slots->held()) < $this->concurrency && $this->slots->tryTake($logLabel) !== null) {
+            }
+            $inFlight = max(1, min($this->concurrency, count($this->slots->held()) ?: $this->concurrency));
+        }
+
         $start = microtime(true);
         $pending = $chunks;
+        try {
         for ($attempt = 1; $pending; $attempt++) {
             $errors = [];
             $pool = new Pool($this->client, $requests($pending), [
-                'concurrency' => $this->concurrency,
+                'concurrency' => $inFlight,
                 'fulfilled' => function ($response, $i) use (&$held, $mergeReady) {
                     $held[$i] = $response;
                     $mergeReady();
@@ -481,13 +513,16 @@ class EventsApi implements EventsApiInterface {
                 $this->logRetry($logLabel, $i, $attempt, $e);
             }
         }
+        } finally {
+            $this->slots?->releaseAll();                        // whether the fetch finished or threw
+        }
         foreach ($chunks as $i => $chunkTimestamps) {
             $logChunk($i, count($chunks), count($chunkTimestamps), (int) round(1000 * ($times[$i] ?? 0)));
         }
         if ($logLabel !== '') {
             error_log(sprintf(
                 "[%s] EventsApi frames_with_selections %d chunks, %d at a time, took %dms",
-                $logLabel, count($chunks), $this->concurrency, (int) round((microtime(true) - $start) * 1000)
+                $logLabel, count($chunks), $inFlight, (int) round((microtime(true) - $start) * 1000)
             ));
         }
     }
