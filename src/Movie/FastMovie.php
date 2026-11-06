@@ -169,6 +169,7 @@ class FastMovie
     private float $timeOffsetY = 0;    // the Sun's rotation (set per frame by buildLayer)
     private $ffmpegLog = null;
     private float $startedAt;          // when this process took the movie up; every log line carries the seconds since
+    public static string $worker = '';  // the pid of the Resque worker running this process, '' outside a worker (setWorker)
     private ?Pieces $pieces = null;    // the movie's pieces in Redis, when it is built as queued pieces
     private array $frameTimes = [];    // seconds of the last frame's steps, for the log: layers, composite, events, overlays, write
     private array $eventTimes = [];    // seconds of the last frame's event drawing: list, regions, labels
@@ -198,6 +199,26 @@ class FastMovie
     public static function finish(string $publicId): void
     {
         (new self($publicId))->finishPieces();
+    }
+
+    /**
+     * Remembers the worker running the job for the log: the pid part of its
+     * id "host:pid:queues". The job itself runs in a forked child, so
+     * getmypid() would name a different process for every job.
+     */
+    public static function setWorker(?\Resque_Worker $worker): void
+    {
+        self::$worker = $worker === null ? '' : (explode(':', (string) $worker)[1] ?? '');
+    }
+
+    /**
+     * "Movie:Zq66n w28": what every log line of the movie starts with, with
+     * the worker's pid when a worker runs it, so the lines of one worker can
+     * be followed through the log of all of them.
+     */
+    public static function logTag(string $publicId): string
+    {
+        return 'Movie:' . $publicId . (self::$worker === '' ? '' : ' w' . self::$worker);
     }
 
     /** The queue of the piece jobs, movie_piece_queue in Config.ini. */
@@ -474,7 +495,7 @@ class FastMovie
     /** "[Movie:7966n +123.456s] …": the seconds since the movie was taken up, so the log reads as a timeline. */
     private function log(string $message): void
     {
-        error_log(sprintf('[Movie:%s +%.3fs] %s', $this->publicId, microtime(true) - $this->startedAt, $message));
+        error_log(sprintf('[%s +%.3fs] %s', self::logTag($this->publicId), microtime(true) - $this->startedAt, $message));
     }
 
     // =========================================================================
@@ -669,7 +690,7 @@ class FastMovie
             visibilitySelections: $this->eventVisibilitySelections,
             api: $this->eventsApi,
             chunkSize: $chunkSize,
-            logLabel: 'Movie:' . $this->publicId,
+            logLabel: self::logTag($this->publicId),
         );
 
         $this->timings['events'] = microtime(true) - $start;

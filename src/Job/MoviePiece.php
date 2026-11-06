@@ -38,7 +38,9 @@ class Job_MoviePiece
         $movieId = $this->args['movieId'];
         $first   = (int) $this->args['first'];
         $last    = (int) $this->args['last'];
-        error_log(sprintf("[Movie:%s] Worker picked up piece %d/%d, frames %d-%d", $movieId,
+        FastMovie::setWorker($this->job->worker ?? null);
+        $tag = FastMovie::logTag($movieId);
+        error_log(sprintf("[%s] Worker picked up piece %d/%d, frames %d-%d", $tag,
             $this->args['piece'], $this->args['pieces'], $first + 1, $last + 1));
 
         $startMs = microtime(true);
@@ -48,7 +50,7 @@ class Job_MoviePiece
         } catch (Throwable $e) {
             $ok = false;
             Sentry::capture($e);
-            error_log(sprintf("[Movie:%s] piece %d/%d failed after %dms: %s", $movieId,
+            error_log(sprintf("[%s] piece %d/%d failed after %dms: %s", $tag,
                 $this->args['piece'], $this->args['pieces'], (int) round((microtime(true) - $startMs) * 1000), $e->getMessage()));
             if ($e instanceof Exception) {
                 logException($e, "Resque_");
@@ -65,7 +67,7 @@ class Job_MoviePiece
                 'counter' => $this->args['counter'] ?? false,
             ]);
         }
-        error_log(sprintf("[Movie:%s] Worker finished piece %d/%d in %dms%s", $movieId,
+        error_log(sprintf("[%s] Worker finished piece %d/%d in %dms%s", $tag,
             $this->args['piece'], $this->args['pieces'], (int) round((microtime(true) - $startMs) * 1000), $ok ? '' : ' (failed)'));
     }
 }
