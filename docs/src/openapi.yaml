@@ -1346,6 +1346,61 @@ paths:
                       frm_name: SPoCA
                       path: "HEK>>Coronal Hole>>SPoCA"
 
+  /getEvent/:
+    get:
+      tags: [Solar Features & Events]
+      summary: Get one solar event by id
+      description: |
+        Returns one event, as the events API's ``/api/v1/events/{uuid}``
+        gives it: the full record, including the ``source`` field with the
+        data as the event's provider published it. The ``id`` of every event
+        in a ``format=flat`` or ``format=simpletree`` ``events`` response is
+        the id to pass here.
+
+        **Example Request**
+
+        .. parsed-literal::
+
+            `https://api.helioviewer.org/v2/getEvent/?uuid=01a0f8f2-502e-732d-a2cc-e46d43dc1292 <https://api.helioviewer.org/v2/getEvent/?uuid=01a0f8f2-502e-732d-a2cc-e46d43dc1292>`_
+      operationId: getEvent
+      parameters:
+        - name: uuid
+          in: query
+          required: true
+          description: "The event's id, a UUID."
+          schema:
+            type: string
+            format: uuid
+            example: "01a0f8f2-502e-732d-a2cc-e46d43dc1292"
+      responses:
+        "200":
+          description: The event.
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                id: "01a0f8f2-502e-732d-a2cc-e46d43dc1292"
+                type: AR
+                pin: AR
+                label: "AR 13700"
+                path: "HEK>>Active Region>>NOAA SWPC Observer"
+                start: "2026-09-30T00:00:00Z"
+                end: "2026-10-02T00:00:00Z"
+                hv_hpc_x: 123.4
+                hv_hpc_y: -56.7
+                source:
+                  frm_name: NOAA SWPC Observer
+                  ar_noaanum: 13700
+        "404":
+          description: The events API knows no event with that id.
+          content:
+            application/json:
+              example:
+                status_code: 404
+                status_txt: Not Found
+                data: "No event with id 01a0f8f2-502e-732d-a2cc-e46d43dc1292"
+
   # ── YOUTUBE ──────────────────────────────────────────────────────────────
 
   /checkYouTubeAuth/:

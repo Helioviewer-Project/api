@@ -7,6 +7,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Pool;
 use GuzzleHttp\TransferStats;
 use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Exception\ClientException;
 use Helioviewer\Api\Sentry\Sentry;
 use Helioviewer\Api\Sentry\ClientInterface as SentryClientInterface;
 
@@ -221,6 +222,41 @@ class EventsApi implements EventsApiInterface {
             $this->sentry->capture($exception);
             throw $exception;
         }
+    }
+
+    /** {@inheritdoc} */
+    public function getEvent(string $uuid): ?array
+    {
+        $url = "/api/v1/events/" . rawurlencode($uuid);
+
+        $this->sentry->setContext('EventsApi', [
+            'endpoint' => $url,
+        ]);
+
+        try {
+            $response = $this->client->request('GET', $url);
+            return $this->parseResponse($response);
+        } catch (ClientException $e) {
+            // The events API answers 404 for an id it does not know: not an
+            // error of ours, the caller says "no such event".
+            if ($e->getResponse()->getStatusCode() === 404) {
+                return null;
+            }
+            throw $this->eventError($e);
+        } catch (\Throwable $e) {
+            throw $this->eventError($e);
+        }
+    }
+
+    /** Report a failed single-event request to Sentry and wrap it. */
+    private function eventError(\Throwable $e): EventsApiException
+    {
+        $this->sentry->setContext('EventsApi', [
+            'error' => $e->getMessage(),
+        ]);
+        $exception = new EventsApiException("Failed to fetch event: " . $e->getMessage(), 0, $e);
+        $this->sentry->capture($exception);
+        return $exception;
     }
 
     /** {@inheritdoc} */

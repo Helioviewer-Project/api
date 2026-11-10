@@ -28,6 +28,16 @@ interface EventsApiInterface {
     public function getEventsForSource(DateTimeInterface $observationTime, string $source): array;
 
     /**
+     * Get one event by its id via the v1 endpoint (events/{uuid}): the full
+     * record, source data included.
+     *
+     * @param string $uuid The event's id as the events API gives it
+     * @return array|null The event; null when the events API knows no event with that id
+     * @throws EventsApiException on API errors or unexpected responses
+     */
+    public function getEvent(string $uuid): ?array;
+
+    /**
      * Get events within a time range for given selection paths
      *
      * @param int $fromTimestamp Unix timestamp (seconds) for range start

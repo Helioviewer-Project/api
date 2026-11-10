@@ -251,6 +251,31 @@ class Module_SolarEvents extends BaseModule implements ModuleInterface {
         echo json_encode($data);
     }
 
+    /**
+     * One event by its id, relayed from the events API (api/v1/events/{uuid}):
+     * the full record, source data included. 404 when the events API knows
+     * no event with that id.
+     *
+     * @return void
+     */
+    public function getEvent() {
+        try {
+            $event = $this->eventsApi()->getEvent($this->_params['uuid']);
+        } catch (EventsApiException $e) {
+            return $this->_sendResponse(500, 'Internal Server Error', 'Failed to fetch event ' . $this->_params['uuid']);
+        } catch (\Throwable $e) {
+            Sentry::capture($e);
+            return $this->_sendResponse(500, 'Internal Server Error', 'Failed to fetch event ' . $this->_params['uuid']);
+        }
+
+        if ($event === null) {
+            return $this->_sendResponse(404, 'Not Found', 'No event with id ' . $this->_params['uuid']);
+        }
+
+        header("Content-Type: application/json");
+        echo json_encode($event);
+    }
+
     public function getValidationRules(): array {
         switch( $this->_params['action'] ) {
 
@@ -304,6 +329,12 @@ class Module_SolarEvents extends BaseModule implements ModuleInterface {
                 'dates'    => array('startTime'),
                 'alphanumlist' => array('eventType', 'sources'),
                 'choices'  => array('format' => ['tree', 'flat', 'simpletree']),
+            );
+            break;
+        case 'getEvent':
+            $expected = array(
+                'required' => array('uuid'),
+                'uuids'    => array('uuid')
             );
             break;
         default:
