@@ -145,6 +145,7 @@ class EventsApi implements EventsApiInterface {
         $timeout = defined('HV_EVENTS_API_TIMEOUT') ? HV_EVENTS_API_TIMEOUT : 10;
         $connectTimeout = 2;
         $baseUrl = defined('HV_EVENTS_API_URL') ? HV_EVENTS_API_URL : 'https://events.helioviewer.org';
+        $userAgent = defined('HV_EVENTS_API_USER_AGENT') && HV_EVENTS_API_USER_AGENT !== '' ? HV_EVENTS_API_USER_AGENT : 'Helioviewer-API/2.0';
 
         $options = [
             'base_uri' => $baseUrl,
@@ -156,7 +157,7 @@ class EventsApi implements EventsApiInterface {
             'decode_content' => 'gzip',
             'headers' => [
                 'Accept' => 'application/json',
-                'User-Agent' => 'Helioviewer-API/2.0'
+                'User-Agent' => $userAgent
             ]
         ];
         if (defined('HV_PROXY_HOST')) {
