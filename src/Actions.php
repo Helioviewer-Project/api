@@ -37,6 +37,7 @@ const VALID_ACTIONS = array(
     'getUserVideos'                  => 'Movies',
     'getObservationDateVideos'       => 'Movies',
     'events'                         => 'SolarEvents',
+    'getEvent'                       => 'SolarEvents',
     'getEventFRMs'                   => 'SolarEvents',
     'getFRMs'                        => 'SolarEvents',
     'getDefaultEventTypes'           => 'SolarEvents',

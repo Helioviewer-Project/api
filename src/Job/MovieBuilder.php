@@ -9,10 +9,12 @@
  * @link     https://github.com/Helioviewer-Project
  */
 
-include_once HV_ROOT_DIR.'/../src/Movie/HelioviewerMovie.php';
+include_once HV_ROOT_DIR.'/../src/Movie/FastMovie.php';
+include_once HV_ROOT_DIR.'/../src/Job/MoviePiece.php';
 include_once HV_ROOT_DIR.'/../src/Helper/ErrorHandler.php';
 include_once HV_ROOT_DIR.'/../lib/Redisent/Redisent.php';
 
+use Helioviewer\Api\Movie\FastMovie;
 use Helioviewer\Api\Sentry\Sentry;
 
 class Job_MovieBuilder
@@ -36,20 +38,29 @@ class Job_MovieBuilder
     {
         $movieId = $this->args['movieId'];
         $format  = $this->args['format'] ?? 'mp4';
-        error_log(sprintf("[Movie:%s] Worker picked up, format=%s", $movieId, $format));
+        $stage   = $this->args['stage'] ?? 'build';
+        FastMovie::setWorker($this->job->worker ?? null);
+        $tag = FastMovie::logTag($movieId);
+        error_log(sprintf("[%s] Worker picked up%s, format=%s", $tag, $stage === 'finish' ? ' the end of the movie' : '', $format));
 
-        // Build movie
+        // Build the movie: the plan and the frames, or the frames as queued
+        // pieces (then the last piece queues this job again with stage
+        // "finish" for the encode and the statuses).
         $startMs = microtime(true);
         try {
-            $movie = new Movie_HelioviewerMovie($movieId);
-            $movie->build();
+            if ($stage === 'finish') {
+                FastMovie::finish($movieId);
+            } elseif (!FastMovie::build($movieId, (int) ($this->args['eta'] ?? 0), (bool) ($this->args['counter'] ?? false))) {
+                error_log(sprintf("[%s] Worker queued the pieces in %dms", $tag, (int) round((microtime(true) - $startMs) * 1000)));
+                return;
+            }
         } catch (Exception $e) {
 
             Sentry::capture($e);
             $elapsed = (int) round((microtime(true) - $startMs) * 1000);
             error_log(sprintf(
-                "[Movie:%s] Worker error after %dms: %s",
-                $movieId, $elapsed, $e->getMessage()
+                "[%s] Worker error after %dms: %s",
+                $tag, $elapsed, $e->getMessage()
             ));
             logException($e, "Resque_");
 
@@ -60,7 +71,7 @@ class Job_MovieBuilder
         }
 
         $elapsed = (int) round((microtime(true) - $startMs) * 1000);
-        error_log(sprintf("[Movie:%s] Worker finished in %dms", $movieId, $elapsed));
+        error_log(sprintf("[%s] Worker finished in %dms", $tag, $elapsed));
         $this->_updateCounter();
 
         // If the queue is empty and no jobs are being processed, set estimated

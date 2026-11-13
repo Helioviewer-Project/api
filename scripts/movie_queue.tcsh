@@ -9,10 +9,27 @@ set SCRIPT=`readlink -f "$0"`
 set SCRIPTPATH=`dirname "$SCRIPT"`
 
 setenv APP_INCLUDE "$SCRIPTPATH/resque_env.php"
-setenv QUEUE "api_movie"
-setenv COUNT 30
+# The queues in the order a worker checks them: the pieces of a movie in
+# progress first, a new movie (api_movie) only when no piece is waiting, so a
+# half-built movie is finished before the next one is started. The names are
+# movie_piece_queue and movie_queue in Config.ini.
+setenv QUEUE "api_movie_piece,api_movie"
+# COUNT from the environment wins (a dev box runs fewer workers).
+if ( ! $?COUNT ) setenv COUNT 30
+# Seconds an idle worker sleeps before polling again (php-resque's default is
+# 5): a piece should not wait that long for a free worker to notice it.
+setenv INTERVAL 1
+# ImageMagick threads per worker. Left alone, every worker's ImageMagick runs
+# one thread per core for each filter; with many pieces on a box that is
+# cores × workers threads fighting for the cores, and the switching costs more
+# than the work. One thread each: the pieces are the parallelism.
+setenv MAGICK_THREAD_LIMIT 1
 
 setenv MOVIE_QUEUE_STATUS "UNKNOWN"
+
+# The names of workers that died with an earlier container (or an earlier run
+# of this one) stay registered in Redis and would be counted below.
+php $SCRIPTPATH/resque_prune.php
 
 
 set queues_alive = 0
