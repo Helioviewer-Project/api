@@ -307,6 +307,10 @@ class Image_Composite_HelioviewerCompositeImage {
             'originalOffsetX' => $originalOffsetX,
             'originalOffsetY' => $originalOffsetY,
             'followViewport'  => $this->followViewport,
+            // Tiles remain in the canonical raster grid. Only composites
+            // (screenshots and movie frames) bake native WCS into the pixels.
+            'compositeWCS'    => true,
+            'wcsViewportOffset' => array($this->_timeOffsetX, $this->_timeOffsetY),
             'grayscale'       => $this->grayscale
         );
 
@@ -465,7 +469,7 @@ class Image_Composite_HelioviewerCompositeImage {
                 // For memory purposes, destroy $previous when done with it.
                 if ($previous) {
                     $image->compositeImage(
-                        $previous, IMagick::COMPOSITE_DSTOVER, 0, 0 );
+                        $previous, $layer->getCompositeOperator(), 0, 0 );
                     $previous->destroy();
                 }
             }

@@ -133,6 +133,11 @@ class Image_HelioviewerImage extends Image_SubFieldImage {
         return $this->options['opacity'];
     }
 
+    /** Place earlier layers behind this layer. */
+    public function getCompositeOperator() {
+        return Imagick::COMPOSITE_DSTOVER;
+    }
+
     /**
      * Check to see if the image is cached
      *
