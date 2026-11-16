@@ -28,6 +28,16 @@ interface EventsApiInterface {
     public function getEventsForSource(DateTimeInterface $observationTime, string $source): array;
 
     /**
+     * Get one event by its id via the v1 endpoint (events/{uuid}): the full
+     * record, source data included.
+     *
+     * @param string $uuid The event's id as the events API gives it
+     * @return array|null The event; null when the events API knows no event with that id
+     * @throws EventsApiException on API errors or unexpected responses
+     */
+    public function getEvent(string $uuid): ?array;
+
+    /**
      * Get events within a time range for given selection paths
      *
      * @param int $fromTimestamp Unix timestamp (seconds) for range start
@@ -54,7 +64,7 @@ interface EventsApiInterface {
      * Fetch events for multiple observation timestamps filtered by a list of
      * path-prefix selections. Posts to /helioviewer/events/frames_with_selections.
      *
-     * Returns the RAW merged response (no legacy conversion):
+     * The RAW response (no legacy conversion) has the shape
      *   [
      *     'events'     => [ <uuid> => {path, label, start, end, hv_hpc_x, hv_hpc_y, footprint, type, pin} ],
      *     'timestamps' => [ <ts>   => { <uuid> => {dx, dy} } ],
@@ -62,18 +72,25 @@ interface EventsApiInterface {
      *
      * Timestamps are paginated by $chunkSize (capped at the upstream limit of
      * 150). Selections are sent verbatim with every request (limit: 200).
+     * Each chunk's reply is in that shape; with $onChunk given, every reply is
+     * handed to it in chunk order as it arrives and the method returns [], so
+     * the caller can keep the events in a form of its choosing and only one
+     * decoded reply is in memory at a time. Without it the replies are merged
+     * (first wins on an event or a timestamp seen twice) and returned.
      *
      * @param string[] $timestamps Array of observation datetime strings
      * @param string[] $selections Path-prefix strings (e.g. ['HEK>>Flare', 'CCMC>>DONKI>>CME']); max 200
      * @param int $chunkSize Max timestamps per upstream POST request (capped at 150)
      * @param string $logLabel Optional label prepended to per-chunk error_log lines
-     * @return array Merged raw response with 'events' and 'timestamps' keys
+     * @param callable|null $onChunk Receives each chunk's reply (array) in chunk order
+     * @return array Merged raw response with 'events' and 'timestamps' keys, or [] with $onChunk
      * @throws EventsApiException on API errors, empty selections, or selections > 200
      */
     public function getEventsForFramesWithSelections(
         array $timestamps,
         array $selections,
         int $chunkSize = 50,
-        string $logLabel = ''
+        string $logLabel = '',
+        ?callable $onChunk = null
     ): array;
 }

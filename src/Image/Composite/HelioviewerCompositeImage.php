@@ -714,6 +714,9 @@ class Image_Composite_HelioviewerCompositeImage {
         // Emit the region layer as one SVG (EventRegionSvg) and rasterise it in a
         // single pass with rsvg-convert (SvgRasterizer). librsvg is REQUIRED — if it
         // is missing, or the rasterise fails, these throw rather than silently degrade.
+        // The SVG covers only the part of the canvas the regions are drawn on
+        // (EventRegionSvg::area()): it is rasterised at that size and placed at
+        // that offset, as the movie frames do.
         if (!empty($rendered)) {
             $rasterizer = new SvgRasterizer();
             if (!$rasterizer->isAvailable()) {
@@ -721,12 +724,16 @@ class Image_Composite_HelioviewerCompositeImage {
                     'Event-region rendering requires rsvg-convert (librsvg), which was not found on PATH.'
                 );
             }
-            $svg = (new EventRegionSvg($rendered, $canvasW, $canvasH))->toSvg();
-            $png = $rasterizer->rasterize($svg, $canvasW, $canvasH); // throws with exit code + stderr on failure
-            $svgLayer = new \Imagick();
-            $svgLayer->readImageBlob($png);
-            $imagickImage->compositeImage($svgLayer, \Imagick::COMPOSITE_OVER, 0, 0);
-            $svgLayer->destroy();
+            $regions = new EventRegionSvg($rendered, $canvasW, $canvasH);
+            $area = $regions->area();
+            if ($area !== null) {
+                [$areaX, $areaY, $areaW, $areaH] = $area;
+                $png = $rasterizer->rasterize($regions->toSvg(), $areaW, $areaH); // throws with exit code + stderr on failure
+                $svgLayer = new \Imagick();
+                $svgLayer->readImageBlob($png);
+                $imagickImage->compositeImage($svgLayer, \Imagick::COMPOSITE_OVER, $areaX, $areaY);
+                $svgLayer->destroy();
+            }
         }
 
         // PASS B — event MARKERS (pins) and labels, above every region.

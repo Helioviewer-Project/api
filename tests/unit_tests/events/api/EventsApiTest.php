@@ -32,4 +32,18 @@ final class EventsApiTest extends TestCase
 
         new EventsApi($this->mockClient, $this->mockSentry);
     }
+
+    /**
+     * The User-Agent of the real client comes from events_api_user_agent in
+     * Config.ini (the test configuration sets it), not from a literal in the code.
+     */
+    public function testRealClientSendsTheConfiguredUserAgent(): void
+    {
+        $this->assertTrue(defined('HV_EVENTS_API_USER_AGENT'), 'events_api_user_agent missing from the test Config.ini');
+        $api = new EventsApi(null, $this->mockSentry);
+        $property = new ReflectionProperty(EventsApi::class, 'client');
+        $property->setAccessible(true);
+        $headers = $property->getValue($api)->getConfig('headers');
+        $this->assertSame(HV_EVENTS_API_USER_AGENT, $headers['User-Agent']);
+    }
 }

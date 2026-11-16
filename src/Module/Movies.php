@@ -201,11 +201,8 @@ class Module_Movies extends BaseModule implements ModuleInterface {
             'counter' => $updateCounter
         );
 
-        // Create entries for each version of the movie in the movieFormats
-        // table
-        foreach(array('mp4', 'webm') as $format) {
-            $movieDb->insertMovieFormat($dbId, $format);
-        }
+        // Create the movie's entry in the movieFormats table
+        $movieDb->insertMovieFormat($dbId, 'mp4');
 
         $token = Resque::enqueue(HV_MOVIE_QUEUE, 'Job_MovieBuilder', $args, true);
 
@@ -399,11 +396,8 @@ class Module_Movies extends BaseModule implements ModuleInterface {
             'counter' => $updateCounter
         );
 
-        // Create entries for each version of the movie in the movieFormats
-        // table
-        foreach(array('mp4', 'webm') as $format) {
-            $movieDb->insertMovieFormat($dbId, $format);
-        }
+        // Create the movie's entry in the movieFormats table
+        $movieDb->insertMovieFormat($dbId, 'mp4');
 
         $token = Resque::enqueue(HV_MOVIE_QUEUE, 'Job_MovieBuilder', $args, true);
 
@@ -597,12 +591,9 @@ class Module_Movies extends BaseModule implements ModuleInterface {
         ));
 
 
-        // Create entries for each version of the movie in the movieFormats
-        // table
+        // A fresh format row for the rebuild
         $movieDatabase->deleteMovieFormats($movieId);
-        foreach(array('mp4', 'webm') as $format) {
-            $movieDatabase->insertMovieFormat($movieId, $format);
-        }
+        $movieDatabase->insertMovieFormat($movieId, 'mp4');
 
         // Print response
         $response = array(
@@ -651,9 +642,8 @@ class Module_Movies extends BaseModule implements ModuleInterface {
         // time to build the frames the parameters of this estimation are
         // hard-coded for now to save time (Feb 15, 2012)
 
-        // MP4, WebM
-        $encodingEst = max(1, 0.066 * $numFrames + 0.778) +
-                       max(1, 0.094 * $numFrames + 2.298);
+        // MP4
+        $encodingEst = max(1, 0.066 * $numFrames + 0.778);
 
         // Scale by pixel area
         $encodingEst = ($numPixels / (1920 * 1200)) * $encodingEst;
@@ -874,7 +864,7 @@ class Module_Movies extends BaseModule implements ModuleInterface {
             if($params['format'] === 'gif'){
 	            header('Content-type: image/gif');
             } else{
- 	            header('Content-type: video/'.$params['format']);
+ 	            header('Content-type: video/'.$movie->format);
             }
 
             // Serve movie data
@@ -983,8 +973,22 @@ class Module_Movies extends BaseModule implements ModuleInterface {
             );
         }
         else if ($movie->status == 1) {
-            $current_frame = $movie->getCurrentFrame();
-            $progress = $current_frame / $movie->numFrames;
+            // A movie built as queued pieces counts its frames in Redis (the
+            // pieces write them in no fixed order, so the newest file says
+            // nothing); one whose pieces stopped reporting, a worker having
+            // died with the piece it held, is failed here rather than left
+            // "processing" for good.
+            include_once HV_ROOT_DIR.'/../src/Movie/Pieces.php';
+            $pieces = (new \Helioviewer\Api\Movie\Pieces($this->_params['id']))->progress();
+            if ($pieces['count'] > 0 && time() - $pieces['updated'] > 600) {
+                error_log(sprintf("[Movie:%s] no piece has reported for 10 minutes, the movie is failed", $this->_params['id']));
+                include_once HV_ROOT_DIR.'/../src/Database/ImgIndex.php';
+                (new Database_ImgIndex())->markMovieAsInvalid($movie->id, 0);
+                (new \Helioviewer\Api\Movie\Pieces($this->_params['id']))->clear();
+                $movie = new Movie_HelioviewerMovie($this->_params['id'], $this->_params['format']);
+            }
+            $current_frame = $pieces['count'] > 0 ? $pieces['frames'] : $movie->getCurrentFrame();
+            $progress = $movie->numFrames > 0 ? $current_frame / $movie->numFrames : 0;
             $progress = (float)number_format($progress, 3);
 
             $response = array(
@@ -1445,7 +1449,6 @@ class Module_Movies extends BaseModule implements ModuleInterface {
 
 	<video width="<?=($options['width'] - 15)?>" height="<?=($options['height'] - 20)?>" poster="<?=$urlFolder?>/preview-full.png" controls="controls" preload="none">
 	    <source type="video/mp4" src="<?=$urlFolder?>/<?=$filename?>.mp4" />
-	    <source type="video/webm" src="<?=$urlFolder?>/<?=$filename?>.webm" />
 	    <!--<source type="video/ogg" src="myvideo.ogv" />-->
 	    <object width="<?=$options['width']?>" height="<?=($options['height'] - 20)?>" type="application/x-shockwave-flash" data="<?php echo HV_WEB_ROOT_URL; ?>/lib/mediaelement-2.22.0/build/flashmediaelement.swf">
 	        <param name="movie" value="<?php echo HV_WEB_ROOT_URL; ?>/lib/mediaelement-2.22.0/build/flashmediaelement.swf" />

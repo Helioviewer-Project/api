@@ -21,7 +21,10 @@ class Config {
                              'max_jpx_frames', 'max_movie_frames',
                              'events_api_events_per_frame_chunksize',
                              'events_api_events_per_frame_max_chunk_size',
-                             'events_api_events_per_frame_max_selections');
+                             'events_api_events_per_frame_max_selections',
+                             'events_api_events_per_frame_concurrency',
+                             'events_api_max_in_flight',
+                             'movie_piece_min_frames', 'movie_pieces_max');
     private $_floats = array('events_api_timeout');
     private $config;
 

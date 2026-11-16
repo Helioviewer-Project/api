@@ -65,6 +65,50 @@ final class reQueueMovieTest extends TestCase
     }
 
     /**
+     * The queued test movie, built. queueMovie puts a real job on the queue:
+     * where a worker is listening (a dev box) it builds the movie, and
+     * building it here as well would race it on the same frames folder;
+     * where none is (CI stops the movies container) it is built here.
+     */
+    private function _buildTestMovie($result) {
+        $movie = $this->_waitForWorker($result->id);
+        if ($movie === null) {
+            $movie = new Movie_HelioviewerMovie($result->id);
+            $movie->build();
+        }
+        return $movie;
+    }
+
+    /**
+     * The movie once a listening worker has finished it (completed or failed),
+     * or null when nothing has taken it off the queue within $untaken seconds.
+     */
+    private function _waitForWorker($id, $untaken = 5, $build = 90) {
+        $start = microtime(true);
+        while (true) {
+            $movie = new Movie_HelioviewerMovie($id);
+            if ($movie->status >= Movie_HelioviewerMovie::STATUS_COMPLETED) {
+                // The worker's last act after the statuses is to delete the
+                // frames folder; a test that removes the movie folder must
+                // not cross it.
+                $frames = dirname($movie->getFilepath()) . '/frames';
+                for ($i = 0; $i < 40 && is_dir($frames); $i++) {
+                    usleep(250000);
+                }
+                return $movie;
+            }
+            $elapsed = microtime(true) - $start;
+            if ($movie->status == Movie_HelioviewerMovie::STATUS_QUEUED && $elapsed > $untaken) {
+                return null;
+            }
+            if ($elapsed > $build) {
+                $this->fail("A worker took movie $id but did not finish it within $build s");
+            }
+            usleep(250000);
+        }
+    }
+
+    /**
      * reQueueMovie test where movie already exists.
      * Should result in an error saying it will not requeue since
      * the movie is already there
@@ -73,8 +117,7 @@ final class reQueueMovieTest extends TestCase
         // Queue the test movie
         $result = $this->_queueTestMovie();
         // Build the test movie
-        $movie = new Movie_HelioviewerMovie($result->id);
-        $movie->build();
+        $movie = $this->_buildTestMovie($result);
         // Attempt to requeue the movie and expect a failure
         $params = array("id" => $result->id);
         $api = new Module_Movies($params);
@@ -95,15 +138,19 @@ final class reQueueMovieTest extends TestCase
         // Queue the test movie
         $result = $this->_queueTestMovie();
         // Build the test movie
-        $movie = new Movie_HelioviewerMovie($result->id);
-        $movie->build();
+        $movie = $this->_buildTestMovie($result);
+        $movieId = intval(alphaId($result->id, true, 5, HV_MOVIE_ID_PASS));
+        $movieDatabase = new Database_MovieDatabase();
+        $formatBefore = $movieDatabase->getMovieFormats($movieId)[0]['id'];
         // Attempt to force requeue the movie
         $params = array("id" => $result->id, "force" => true);
         $api = new Module_Movies($params);
         $api->reQueueMovie();
-        // Assert that movie is requeued
+        // Assert that movie is requeued: a new format row, queued, or, with a
+        // worker listening, already taken or built again
+        $this->assertNotEquals($formatBefore, $movieDatabase->getMovieFormats($movieId)[0]['id'], "a forced requeue replaces the format row");
         $movie = new Movie_HelioviewerMovie($result->id);
-        $this->assertEquals(Movie_HelioviewerMovie::STATUS_QUEUED, $movie->status);
+        $this->assertContains((int) $movie->status, [Movie_HelioviewerMovie::STATUS_QUEUED, Movie_HelioviewerMovie::STATUS_PROCESSING, Movie_HelioviewerMovie::STATUS_COMPLETED]);
 
     }
 
@@ -115,17 +162,16 @@ final class reQueueMovieTest extends TestCase
     public function _testRequeueMovie_MovieProcessing($force) {
         // Queue the test movie
         $result = $this->_queueTestMovie();
-        // Build the test movie
-        $movie = new Movie_HelioviewerMovie($result->id);
-        // build required to fill in some metadata in the database
-        $movie->build();
+        // Build the test movie (required to fill in some metadata in the database)
+        $movie = $this->_buildTestMovie($result);
         // Mark the movie as processing instead of complete
         $this->_markMovieAsProcessing($movie);
         // Delete movie from disk so it should look like it is processing
         // Before deleting, assert that the movie is in the cache directory
         $cacheDir = HV_CACHE_DIR . "/movies";
-        $this->assertTrue(substr($movie->directory, 0, strlen($cacheDir)) === $cacheDir);
-        system("rm -r \"$movie->directory\"");
+        $movieDir = dirname($movie->getFilepath()) . '/';
+        $this->assertTrue(substr($movieDir, 0, strlen($cacheDir)) === $cacheDir);
+        system("rm -r \"$movieDir\"");
         // Attempt to requeue the movie
         $params = array("id" => $result->id, "force" => $force);
         $api = new Module_Movies($params);
@@ -164,12 +210,15 @@ final class reQueueMovieTest extends TestCase
         // Get the movie ID as an integer
         $movieId = alphaId($result->id, true, 5, HV_MOVIE_ID_PASS);
         $movieId = intval($movieId);
+        // A listening worker builds the queued movie; let it finish rather
+        // than break the movie under it
+        $this->_waitForWorker($result->id);
         // Get the movie details from the database
         $movieDatabase = new Database_MovieDatabase();
         $formats = $movieDatabase->getMovieFormats($movieId);
 
-        $this->assertEquals($formats[0]['status'], 0, "mp4 should have status of 0 to indicate it was queued");
-        $this->assertEquals($formats[1]['status'], 0, "webm should have status of 0 to indicate it was queued");
+        $this->assertCount(1, $formats, "one format row: the mp4");
+        $this->assertContains((int) $formats[0]['status'], [0, 2], "mp4 should be queued (no worker) or completed (a worker built it)");
         // Create instance of class to break the movie.
         $builder = new HelioviewerMovie_BuildBreaker($result->id);
         // Call abort to simulate move build failure.
@@ -181,7 +230,6 @@ final class reQueueMovieTest extends TestCase
 
         $formats = $movieDatabase->getMovieFormats($movieId);
         $this->assertEquals($formats[0]['status'], 3, "mp4 should have status of 3 to indicate an error");
-        $this->assertEquals($formats[1]['status'], 3, "webm should have status of 3 to indicate an error");
     }
 
 }
