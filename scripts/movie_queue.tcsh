@@ -14,8 +14,9 @@ setenv APP_INCLUDE "$SCRIPTPATH/resque_env.php"
 # half-built movie is finished before the next one is started. The names are
 # movie_piece_queue and movie_queue in Config.ini.
 setenv QUEUE "api_movie_piece,api_movie"
-# COUNT from the environment wins (a dev box runs fewer workers).
-if ( ! $?COUNT ) setenv COUNT 30
+# Workers to run: 64 on the production host (96 cores). COUNT from the
+# environment wins (a dev box runs fewer workers).
+if ( ! $?COUNT ) setenv COUNT 64
 # Seconds an idle worker sleeps before polling again (php-resque's default is
 # 5): a piece should not wait that long for a free worker to notice it.
 setenv INTERVAL 1
