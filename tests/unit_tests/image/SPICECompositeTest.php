@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 
 use PHPUnit\Framework\TestCase;
+use Helioviewer\Api\Event\EventContext;
 
 require_once HV_ROOT_DIR.'/../src/Image/Composite/HelioviewerScreenshot.php';
 require_once HV_ROOT_DIR.'/../src/Image/Composite/HelioviewerMovieFrame.php';
@@ -80,7 +81,7 @@ final class SPICECompositeTest extends TestCase
             'action' => 'downloadScreenshot', 'id' => 'fixture', 'timestamp' => '2021-08-21',
             'observationDate' => $date];
         $output = $this->dir.'/'.$name.'.png';
-        $args = [$layers, null, false, ['labels' => '', 'trajectories' => ''],
+        $args = [$layers, EventContext::empty(), false, ['labels' => '', 'trajectories' => ''],
             false, '', 0, 0, $date, $roi, $options];
         if ($movie) {
             $composite = new Image_Composite_HelioviewerMovieFrame($output, ...$args);
