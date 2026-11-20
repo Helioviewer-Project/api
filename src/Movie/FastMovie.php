@@ -61,6 +61,7 @@ require_once HV_ROOT_DIR . '/../src/Helper/DateTimeConversions.php';
 require_once HV_ROOT_DIR . '/../src/Helper/HelioviewerLayers.php';
 require_once HV_ROOT_DIR . '/../src/Helper/RegionOfInterest.php';
 require_once HV_ROOT_DIR . '/../src/Helper/ImageBrightness.php';
+require_once HV_ROOT_DIR . '/../src/Image/JPEG2000/JP2ImageXMLBox.php';
 require_once HV_ROOT_DIR . '/../src/Module/SolarBodies.php';
 require_once HV_ROOT_DIR . '/../scripts/rot_hpc.php';
 require_once HV_ROOT_DIR . '/../lib/Resque.php';
@@ -814,13 +815,14 @@ class FastMovie
             throw new Exception('Unable to create layers needed for composite image', 30);
         }
 
-        // The layers come in drawing order, so each one goes under the next.
+        // The layers come in drawing order, so each one goes under the next
+        // (DSTOVER), unless the layer's recipe composites it another way.
         $image = null;
         foreach ($layers as $layer) {
             $previous = $image;
             $image    = $layer['image'];
             if ($previous) {
-                $image->compositeImage($previous, Imagick::COMPOSITE_DSTOVER, 0, 0);
+                $image->compositeImage($previous, $layer['composite'], 0, 0);
                 $previous->destroy();
             }
         }
@@ -968,29 +970,37 @@ class FastMovie
 
         $recipe = $this->layerRecipe($layer['uiLabels'], $image['date']);
 
-        $decoded = $this->decodeLayer($jp2, $recipe, $offsetX, $offsetY,
-            $this->followViewport ? $originalOffsetX : $offsetX,
-            $this->followViewport ? $originalOffsetY : $offsetY,
-            (int) $layer['opacity'], $difference);
+        if ($recipe['wcs']) {
+            $decoded = $this->decodeWcsLayer($jp2, (int) $layer['opacity'], $difference);
+        } else {
+            $decoded = $this->decodeLayer($jp2, $recipe, $offsetX, $offsetY,
+                $this->followViewport ? $originalOffsetX : $offsetX,
+                $this->followViewport ? $originalOffsetY : $offsetY,
+                (int) $layer['opacity'], $difference);
+        }
 
         return [
-            'image' => $decoded,
-            'name'  => trim(join(' ', array_column($layer['uiLabels'], 'name'))) . "\n",
-            'date'  => str_replace('T', '   ', $image['date']) . $differenceLabel . "\n",
+            'image'     => $decoded,
+            'composite' => $recipe['composite'],
+            'name'      => trim(join(' ', array_column($layer['uiLabels'], 'name'))) . "\n",
+            'date'      => str_replace('T', '   ', $image['date']) . $differenceLabel . "\n",
         ];
     }
 
     /**
      * What makes each instrument's image look right: the colour table, the
-     * brightness correction, the occulter mask and whether the JP2 already
-     * carries its own palette. Decided from the layer's label hierarchy, e.g.
-     * [SDO, AIA, 304] or [STEREO_A, SECCHI, COR2, white-light].
+     * brightness correction, the occulter mask, whether the JP2 already
+     * carries its own palette, whether the layer is placed through its full
+     * WCS (decodeWcsLayer) and how it is composited onto the layers below.
+     * Decided from the layer's label hierarchy, e.g. [SDO, AIA, 304] or
+     * [STEREO_A, SECCHI, COR2, white-light].
      */
     private function layerRecipe(array $uiLabels, string $date): array
     {
         $names  = array_column($uiLabels, 'name');
         $tables = HV_ROOT_DIR . '/resources/images/color-tables/';
-        $recipe = ['colorTable' => false, 'brightness' => null, 'mask' => null, 'palettedJP2' => false, 'verifyGrayscale' => false];
+        $recipe = ['colorTable' => false, 'brightness' => null, 'mask' => null, 'palettedJP2' => false, 'verifyGrayscale' => false,
+                   'wcs' => false, 'composite' => Imagick::COMPOSITE_DSTOVER];
 
         if (count($names) >= 3 && $names[1] == 'SECCHI') {
             $instrument = substr($names[2], 0, 3) == 'COR' ? 'COR' : strtoupper($names[2]);
@@ -1096,6 +1106,13 @@ class FastMovie
                     $recipe['palettedJP2'] = true;
                 }
                 break;
+            case 'SPICE':
+                // Grayscale rasters with rectangular, rotated pixels: placed
+                // through the PC matrix, added onto the layers below like the
+                // interactive SPICE layer (Image_ImageType_SPICEImage).
+                $recipe['wcs']       = true;
+                $recipe['composite'] = Imagick::COMPOSITE_PLUS;
+                break;
             default:
                 throw new Exception('No image type for layer ' . join('/', $names), 30);
         }
@@ -1187,6 +1204,68 @@ class FastMovie
         $image->scaleImage(round($frameWidth), round($frameHeight));
         $image->setImageBackgroundColor('transparent');
         $image->extentImage($canvas['width'], $canvas['height'], $canvas['offsetX'], $canvas['offsetY']);
+
+        if (@file_exists($input)) {
+            @unlink($input);
+        }
+        return $image;
+    }
+
+    /**
+     * Decodes a whole JP2 and places it on the frame through its full WCS:
+     * the CD matrix (CDELT and PC) maps raster pixels to arcseconds, so a
+     * raster with rectangular or rotated pixels (SPICE) lands where its
+     * header says, as one affine distortion of the native pixels. The same
+     * transform as Image_ImageType_SPICEImage draws for screenshots.
+     *
+     * The whole raster is decoded, not a sub-region: a rotated raster can
+     * cross the viewport even when its unrotated rectangle does not. No
+     * colour table, no occulter mask.
+     */
+    private function decodeWcsLayer(array $jp2, int $opacity, ?string $difference): Imagick
+    {
+        $header = new \Image_JPEG2000_JP2ImageXMLBox($jp2['path']);
+        $cd     = $header->getCDMatrix();
+        $sun    = $header->getRefPixelCoords();   // CRPIX - inverse(CD) * CRVAL
+
+        // The same 1 AU normalisation as the tile metadata: the stored scale
+        // is |CDELT1| * DSUN/AU, not a second WCS transform.
+        $factor = $jp2['scale'] / $header->getImagePlateScale() / $this->roi->imageScale();
+        $a = $cd[0][0] * $factor;
+        $b = -$cd[1][0] * $factor;
+        $c = -$cd[0][1] * $factor;
+        $d = $cd[1][1] * $factor;
+
+        // The tile grid's origin is refPixelX and height - refPixelY:
+        // conjugating CD by the Y flip turns FITS Y-up into raster Y-down.
+        // Neither CROTA nor another rotation is applied after this affine;
+        // a following viewport shifts it by the frame's drift.
+        $tx = -$a * $sun[0] - $c * ($jp2['height'] - $sun[1])
+            - $this->roi->left() / $this->roi->imageScale() - $this->timeOffsetX;
+        $ty = -$b * $sun[0] - $d * ($jp2['height'] - $sun[1])
+            - $this->roi->top() / $this->roi->imageScale() - $this->timeOffsetY;
+
+        $region = ['left' => 0, 'top' => 0, 'right' => $jp2['width'], 'bottom' => $jp2['height']];
+        $input  = $this->directory . 'frames/' . rand() . '.pgm';
+        $this->extractRegion($jp2, $input, $region, 0);
+
+        $image = new Imagick($input);
+        if ($difference !== null) {
+            $image = $this->subtractDifferenceImage($image, $jp2, $difference, $region, 0, '.pgm');
+        }
+
+        // Grayscale pixels must take RGB layers below without pulling their
+        // colour tables to grayscale when composited.
+        $image->transformImageColorspace(Imagick::COLORSPACE_SRGB);
+        $this->setOpacity($image, $opacity);
+        $image->setImageVirtualPixelMethod(Imagick::VIRTUALPIXELMETHOD_TRANSPARENT);
+        $image->setImageBackgroundColor('transparent');
+        $image->setImagePage(0, 0, 0, 0);
+        $image->setImageArtifact('distort:viewport', sprintf('%dx%d+0+0',
+            round($this->roi->getPixelWidth()), round($this->roi->getPixelHeight())));
+        $image->distortImage(Imagick::DISTORTION_AFFINEPROJECTION, [$a, $b, $c, $d, $tx, $ty], false);
+        $image->setImagePage(0, 0, 0, 0);
+        $image->setImageDepth(8);
 
         if (@file_exists($input)) {
             @unlink($input);
